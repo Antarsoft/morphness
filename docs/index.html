@@ -115,7 +115,7 @@ h1 { font-size: clamp(34px, 6vw, 58px); line-height: 1.08; margin: 20px auto 16p
 .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 10px; font-weight: 600; text-decoration: none; border: 1px solid var(--border); color: var(--text); background: var(--surface); line-height: 1.3; }
 .btn:hover { background: var(--surface-2); }
-.btn.star img { height: 20px; border-radius: 4px; }
+.btn.star .count { padding-left: 10px; margin-left: 2px; border-left: 1px solid var(--border); color: var(--muted); font-variant-numeric: tabular-nums; }
 .btn.primary { background: linear-gradient(90deg, #7c3aed, #db2777); color: #fff; border-color: transparent; box-shadow: var(--shadow); }
 .btn.primary:hover { filter: brightness(1.06); }
 .facts { margin: 22px 0 0; color: var(--muted); font-size: 15px; }
@@ -210,7 +210,7 @@ footer p { margin: 6px 0; }
     <p class="lead">A Technical Lead plans each feature and waits for your approval. A Full-stack agent builds it, a QA agent verifies it, and a short retro turns what went wrong into rules. Every ten features, a prune deletes the rules that never fired.</p>
     <div class="cta">
       <a class="btn primary" href="#install">Install in one line</a>
-      <a class="btn star" href="https://github.com/antarsoft/morphness" aria-label="Star Morphness on GitHub"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>Star on GitHub<img src="https://img.shields.io/github/stars/antarsoft/morphness?style=flat-square&label=&color=7C3AED" alt="" height="20" onerror="this.remove()"></a>
+      <a class="btn star" href="https://github.com/antarsoft/morphness" aria-label="Star Morphness on GitHub"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>Star on GitHub<span class="count" data-stars hidden></span></a>
     </div>
     <p class="facts"><span>Open source, MIT</span><span>Any language or framework</span><span>Built and run for about 150 features on Twinpage</span></p>
     <ol class="loop" aria-label="The Morphness loop">
@@ -356,6 +356,19 @@ document.querySelectorAll('.copy').forEach(function (button) {
     }
   });
 });
+fetch('https://api.github.com/repos/antarsoft/morphness')
+  .then(function (r) { return r.ok ? r.json() : null; })
+  .then(function (repo) {
+    var n = repo && repo.stargazers_count;
+    if (!n) return;
+    var label = n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'k' : String(n);
+    document.querySelectorAll('[data-stars]').forEach(function (el) {
+      el.textContent = label;
+      el.hidden = false;
+      el.setAttribute('aria-label', n + ' stars');
+    });
+  })
+  .catch(function () {});
 </script>
 </body>
 </html>
