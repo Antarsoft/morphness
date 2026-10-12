@@ -79,6 +79,8 @@ h1 { font-size: clamp(34px, 6vw, 56px); line-height: 1.1; margin: 20px 0 12px; l
 .lead { font-size: clamp(18px, 2.4vw, 21px); color: var(--muted); max-width: 680px; margin: 0 auto 28px; }
 .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 .btn { display: inline-block; padding: 12px 20px; border-radius: 10px; font-weight: 600; text-decoration: none; border: 1px solid var(--border); color: var(--text); background: var(--surface); }
+.btn.star { display: inline-flex; align-items: center; gap: 8px; }
+.btn.star img { height: 20px; border-radius: 4px; }
 .btn.primary { background: linear-gradient(90deg, #7c3aed, #db2777); color: #fff; border-color: transparent; }
 .loop { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 36px 0 0; padding: 0; list-style: none; }
 .loop li { padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font-size: 15px; font-weight: 600; }
@@ -122,7 +124,7 @@ footer a { color: var(--muted); }
       <a href="#how">How it works</a>
       <a href="#install">Install</a>
       <a href="#community">Community</a>
-      <a href="https://github.com/antarsoft/morphness">GitHub</a>
+      <a href="https://github.com/antarsoft/morphness">Star on GitHub</a>
     </nav>
   </header>
 
@@ -132,7 +134,7 @@ footer a { color: var(--muted); }
     <p class="lead">Morphness is an open-source, multi-agent harness for Claude Code. A Technical Lead plans, Full-stack builds, QA verifies, and a retro and prune loop turns what goes wrong into rules that fit your project.</p>
     <div class="cta">
       <a class="btn primary" href="#install">Install in one command</a>
-      <a class="btn" href="https://github.com/antarsoft/morphness">View on GitHub</a>
+      <a class="btn star" href="https://github.com/antarsoft/morphness" aria-label="Star Morphness on GitHub"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>Star on GitHub<img src="https://img.shields.io/github/stars/antarsoft/morphness?style=flat-square&label=&color=7C3AED" alt="" height="20"></a>
     </div>
     <ul class="loop" aria-label="The Morphness loop">
       <li>Plan</li><li>Build</li><li>QA</li><li>Retro</li><li>Prune</li><li>Share</li>
@@ -212,6 +214,7 @@ footer a { color: var(--muted); }
     <div class="cta" style="justify-content:flex-start;margin-top:20px">
       <a class="btn primary" href="https://github.com/antarsoft/morphness/blob/main/CONTRIBUTING.md">Contribute a lesson</a>
       <a class="btn" href="https://github.com/antarsoft/morphness/discussions">Join the discussion</a>
+      <a class="btn" href="https://github.com/antarsoft/morphness">Star the repo</a>
     </div>
   </div>
 </section>
