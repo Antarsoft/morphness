@@ -3,6 +3,9 @@
   "owner": {
     "name": "Morphness contributors"
   },
+  "metadata": {
+    "description": "Morphness: a self-improving multi-agent harness for Claude Code."
+  },
   "plugins": [
     {
       "name": "morphness",
