@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "model": "{{models.tl}}",
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ],
+    "deny": [
+      "Read(./**/.env)",
+      "Read(./**/.env.local)",
+      "Read(./**/.env.*.local)",
+      "Edit(./**/.env)",
+      "Edit(./**/.env.local)",
+      "Edit(./**/.env.*.local)",
+      "Write(./**/.env)",
+      "Write(./**/.env.local)",
+      "Write(./**/.env.*.local)",
+      "Bash(git push*origin {{branches.production}})",
+      "Bash(git push*origin {{branches.integration}})",
+      "Bash(git push*:{{branches.production}})",
+      "Bash(git push*:{{branches.integration}})",
+      "Bash(git push*--force*)",
+      "Bash(git push -f*)",
+      "Bash(git push* -f *)",
+      "Bash(git push* -f)"
+    ],
+    "ask": []
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/session-start.sh\""
+          }
+        ]
+      }
+    ]
+  }
+}

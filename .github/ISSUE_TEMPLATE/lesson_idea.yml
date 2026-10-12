@@ -1,0 +1,23 @@
+name: Lesson idea
+description: A rule that caught a real problem and might help other projects, before you have a PR.
+labels: [lesson]
+body:
+  - type: textarea
+    id: rule
+    attributes:
+      label: The rule
+      description: One or two sentences, without project names, people, URLs or ids.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: What it prevented
+      description: The failure it caught, and how many features it fired on.
+    validations:
+      required: true
+  - type: input
+    id: scope
+    attributes:
+      label: Applies to
+      description: Any stack, or which stack / service (for example Next.js, Supabase, Playwright).

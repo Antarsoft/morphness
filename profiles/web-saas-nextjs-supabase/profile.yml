@@ -1,0 +1,193 @@
+# Profile: web SaaS on Next.js + Supabase in a pnpm monorepo.
+# Suggested answers for /morph-init. Every value is a suggestion the user confirms or edits;
+# morph-init never writes a value from here without showing it first.
+# Origin: Twinpage (an A/B testing SaaS), where these settings and lessons were learned.
+
+id: web-saas-nextjs-supabase
+title: Web SaaS (Next.js + Supabase, pnpm monorepo)
+
+# How morph-init decides to offer this profile: all of `require` and any of `signals`.
+# `package.json` means the root manifest or any workspace package's (apps/*, packages/*, or the
+# globs in pnpm-workspace.yaml): in a monorepo, Next.js is usually a dependency of an app.
+detect:
+  require:
+    - { file: package.json, contains: '"next"', workspaces: true }
+  signals:
+    - { file: pnpm-workspace.yaml }
+    - { file: supabase/config.toml }
+    - { file: package.json, contains: '"@supabase/', workspaces: true }
+    - { file: package.json, contains: '"drizzle-orm"', workspaces: true }
+    - { file: package.json, contains: '"@playwright/test"', workspaces: true }
+
+stack:
+  summary: "Next.js (App Router) + React + Tailwind, Supabase Postgres and Auth, Drizzle ORM, Playwright e2e, pnpm monorepo"
+  package_manager: pnpm
+  toolchain_setup: "corepack enable && corepack install"   # pnpm from packageManager; Node from .node-version
+  install_cmd: "pnpm install"
+
+# Commands behind the named checks (harness.config.yml -> checks; written to project/CONTROLS.md).
+# Assumes root scripts like Twinpage's: typecheck/lint/test/build run recursively; e2e starts a
+# local Supabase stack, builds the app against it and runs Playwright.
+cmd:
+  install: "pnpm install"
+  typecheck: "pnpm typecheck"
+  lint: "pnpm lint"
+  unit: "pnpm test"
+  build: "pnpm build"
+  e2e-targeted: "pnpm qa:stack && pnpm qa:build && pnpm test:e2e"   # followed by the spec paths
+  e2e-full: "pnpm e2e"                                               # = qa:stack -> qa:build -> test:e2e
+  # Extra named checks to offer (add the name to checks.before_qa or before_signoff if accepted):
+  integration: "pnpm test:integration"          # API role grants, RLS on every public table, billing
+  e2e-repeat: "pnpm test:e2e <spec> -g \"<test>\" --repeat-each=5"   # new fake-clock, hover or focus-timing tests
+
+checks:
+  before_qa: [install, typecheck, lint, unit, build, e2e-targeted]
+  before_signoff: [install, typecheck, lint, unit, build, integration, e2e-full]
+
+ci_gate: false        # Twinpage ran with CI manual-only; QA's recorded local run was the gate
+
+# Paths whose change gets the full e2e suite from Full-stack and a full QA round.
+# Adjust to the app's folder (apps/web here).
+cross_cutting_paths:
+  - packages/
+  - apps/web/db/
+  - apps/web/drizzle/
+  - supabase/
+  - apps/web/proxy.ts           # or middleware.ts
+  - apps/web/next.config.ts
+  - apps/web/app/layout.tsx
+  - apps/web/app/(auth)/
+  - apps/web/app/auth/
+  - apps/web/app/api/
+  - "apps/web/lib/ files whose name contains auth, session or env"
+  - apps/web/e2e/fixtures.ts
+  - apps/web/e2e/support/
+  - apps/web/playwright.config.ts
+  - package.json
+  - apps/web/package.json
+  - pnpm-lock.yaml
+
+risk_areas: [auth, billing, migrations, rls-and-tenancy, public-api, code-on-customer-sites]
+
+modules: [roadmap, data-access, browser-e2e, legal]
+
+# Permission rules to merge into .claude/settings.json (morph-init shows them first).
+permissions:
+  allow:
+    - "Bash(pnpm typecheck)"
+    - "Bash(pnpm test)"
+    - "Bash(pnpm lint)"
+    - "Bash(pnpm build)"
+    - "Bash(pnpm install)"
+    - "Bash(pnpm install:*)"
+  deny:
+    - "mcp__Supabase__apply_migration"
+    - "mcp__Supabase__create_branch"
+    - "mcp__Supabase__delete_branch"
+    - "mcp__Supabase__merge_branch"
+    - "mcp__Supabase__rebase_branch"
+    - "mcp__Supabase__reset_branch"
+    - "mcp__Supabase__create_project"
+    - "mcp__Supabase__pause_project"
+    - "mcp__Supabase__restore_project"
+    - "mcp__Supabase__deploy_edge_function"
+    - "mcp__supabase__apply_migration"
+    - "mcp__supabase__create_branch"
+    - "mcp__supabase__delete_branch"
+    - "mcp__supabase__merge_branch"
+    - "mcp__supabase__rebase_branch"
+    - "mcp__supabase__reset_branch"
+    - "mcp__supabase__create_project"
+    - "mcp__supabase__pause_project"
+    - "mcp__supabase__restore_project"
+    - "mcp__supabase__deploy_edge_function"
+    - "Bash(pnpm db:migrate*)"
+    - "Bash(pnpm db:push*)"
+    - "Bash(*supabase db push*)"
+    - "Bash(*supabase link*)"
+    - "Bash(*drizzle-kit push*)"
+  ask:
+    - "mcp__Supabase__execute_sql"
+    - "mcp__supabase__execute_sql"
+
+skills:
+  - { name: supabase, source: "supabase/agent-skills", why: "auth, RLS, migrations, CLI and debugging guidance" }
+  - { name: supabase-postgres-best-practices, source: "supabase/agent-skills", why: "schema, RLS policies, indexes, query performance" }
+  - { name: nextjs-app-router-patterns, why: "App Router, streaming, server components" }
+  - { name: vercel-react-best-practices, source: "vercel-labs/agent-skills", why: "React and Next.js performance rules" }
+  - { name: drizzle-orm-patterns, why: "schema and query patterns; no official Drizzle skill exists" }
+  - { name: shadcn, why: "when the UI uses shadcn/ui components" }
+  - { name: playwright-cli, why: "drive the browser and write e2e specs" }
+  - { name: web-design-guidelines, why: "UI review against interface guidelines" }
+  - { name: find-skills, why: "discover more skills later" }
+
+mcps:
+  - { name: context7, scope: project, config: ".mcp.json", why: "version-specific docs for Next.js, Drizzle, Supabase JS, Tailwind, Vitest" }
+  - { name: supabase, scope: user-connector, why: "read-only checks of the shared DEV project (list_tables, list_migrations, get_advisors, approved read-only SQL); account-wide, so always pass the project ref" }
+  - { name: github, scope: user-connector, why: "PRs, issues, CI status" }
+
+# Lesson ids from lessons/ that morph-init suggests for this profile, on top of the seed checklist.
+lessons:
+  stack/nextjs:
+    - nextjs-loading-boundary-status-code
+    - nextjs-route-claims-from-build-table
+    - nextjs-rethrow-in-try-catch
+    - nextjs-stale-dev-types-after-route-move
+    - nextjs-state-cleared-during-render-in-navigation
+    - nextjs-server-actions-accept-no-origin
+    - nextjs-metadata-base-trailing-slash
+    - nextjs-route-group-move-drops-layout
+    - nextjs-prefetch-is-two-requests
+    - nextjs-streamed-page-scope-test-ids
+    - nextjs-csp-blocks-zod-in-client
+    - nextjs-grep-every-header-source
+  stack/playwright:
+    - playwright-exact-name-locators
+    - playwright-scope-axe-to-modal-layer
+    - playwright-fulfill-204-for-pending-form-post
+    - playwright-unroute-all-wait
+    - playwright-headless-shell-glyph-widths
+    - playwright-locator-handler-for-overlays
+    - playwright-pin-timezone
+    - playwright-fixture-fails-on-csp-and-page-errors
+  stack/chromium:
+    - chromium-range-input-before-focus
+  stack/pnpm:
+    - pnpm-reresolve-lockfile-after-upgrade
+    - pnpm-allow-builds-opt-in
+  stack/drizzle:
+    - drizzle-schema-drift-check
+  service/supabase:
+    - supabase-deny-remote-writes
+    - supabase-mcp-account-wide
+    - supabase-local-target-guard
+    - supabase-explicit-api-grants
+    - supabase-confirm-email-before-trust
+    - supabase-auth-sessions-ip-is-server
+    - supabase-local-stack-db-wait
+    - supabase-auth-behaviour-checked-locally
+    - supabase-cheap-claims-check-keeps-authoritative
+    - supabase-prod-migration-role-before-release
+    - supabase-cloud-proxy-ca-for-auth
+  service/vercel:
+    - vercel-tier-limits-crons
+    - vercel-agents-never-deploy
+  service/github-actions:
+    - gha-docs-only-changes-skip
+    - gha-pin-runner-image
+  service/claude-code-web:          # only when environment includes claude-code-web
+    - cloud-sessions-cannot-push-tags
+    - cloud-setup-script-caches-images
+  service/paddle:                   # only when the project bills through Paddle
+    - paddle-verify-webhook-signatures
+    - paddle-customer-matching-before-relaxing
+    - paddle-preview-amount-before-charge
+  practice:                         # generic lessons outside the seed checklist that fit this stack
+    - polling-tests-with-slow-responses
+    - tab-return-uses-visibility-change
+    - qa-refuses-non-local-targets
+    - reset-local-stack-before-final-suite
+    - parallel-agents-separate-local-stack
+    - repeat-timing-sensitive-tests
+    - full-suite-in-background-with-long-limit
+    - pre-qa-code-review-for-high-risk

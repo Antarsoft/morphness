@@ -1,0 +1,13 @@
+name: lessons
+on:
+  pull_request:
+    paths: ["lessons/**", "scripts/check-lessons.sh"]
+  push:
+    branches: [main]
+    paths: ["lessons/**", "scripts/check-lessons.sh"]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: scripts/check-lessons.sh

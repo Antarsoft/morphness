@@ -1,0 +1,29 @@
+name: Bug report
+description: Something in the kit, a skill or install.sh doesn't work as documented.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you ran, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options: [/morph-init, /morph-doctor, /morph-share, install.sh, a template file, a lesson or profile, other]
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: Claude Code surface (CLI, desktop, web, Claude Projects) and Morphness commit or release.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Output or files
+      description: Paste the relevant output. Remove secrets and project details first.
+      render: text

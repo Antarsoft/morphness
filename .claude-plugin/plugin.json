@@ -1,0 +1,30 @@
+{
+  "name": "morphness",
+  "version": "2026.10.12",
+  "description": "Self-improving multi-agent harness for Claude Code: a Technical Lead plans, Full-stack builds, QA verifies, and a retro and prune loop turns lessons into rules that fit your project. Stack-agnostic AI coding workflow.",
+  "author": {
+    "name": "Morphness contributors"
+  },
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "agent-harness",
+    "harness-engineering",
+    "multi-agent",
+    "ai-agents",
+    "coding-agent",
+    "llm",
+    "subagents",
+    "claude-md",
+    "agents-md",
+    "context-engineering",
+    "ai-workflow",
+    "qa",
+    "code-review",
+    "retrospective",
+    "self-improving",
+    "developer-tools"
+  ],
+  "homepage": "https://github.com/antarsoft/morphness",
+  "repository": "https://github.com/antarsoft/morphness"
+}
