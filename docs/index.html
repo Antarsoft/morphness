@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Morphness: a self-improving agent harness for Claude Code</title>
+<meta name="description" content="Open-source multi-agent harness for Claude Code. A Technical Lead plans, Full-stack builds, QA verifies, and a retro and prune loop turns mistakes into rules that fit your project. Stack-agnostic, MIT.">
+<link rel="canonical" href="https://antarsoft.github.io/morphness/">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<meta name="theme-color" content="#7C3AED">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Morphness: a self-improving agent harness for Claude Code">
+<meta property="og:description" content="A Technical Lead plans, Full-stack builds, QA verifies, and retros turn mistakes into rules that fit your project. From the community, for the community.">
+<meta property="og:url" content="https://antarsoft.github.io/morphness/">
+<meta property="og:image" content="https://antarsoft.github.io/morphness/og.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://antarsoft.github.io/morphness/og.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  "name": "Morphness",
+  "description": "Self-improving multi-agent harness for Claude Code: plan, build, QA, retro, prune, share.",
+  "codeRepository": "https://github.com/antarsoft/morphness",
+  "license": "https://opensource.org/licenses/MIT",
+  "programmingLanguage": "Markdown",
+  "keywords": "Claude Code, agent harness, AI coding agents, multi-agent, subagents, CLAUDE.md, AGENTS.md, context engineering",
+  "author": { "@type": "Organization", "name": "Antarsoft", "url": "https://github.com/antarsoft" }
+}
+</script>
+<style>
+:root {
+  --bg: #ffffff;
+  --surface: #f7f5fb;
+  --border: #e6e1ef;
+  --text: #1b1626;
+  --muted: #5d5670;
+  --accent: #7c3aed;
+  --accent-2: #db2777;
+  --code-bg: #1b1626;
+  --code-text: #f4f0fb;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #110d18;
+    --surface: #1a1524;
+    --border: #2d2639;
+    --text: #f1edf8;
+    --muted: #a69fb8;
+    --accent: #a78bfa;
+    --accent-2: #f472b6;
+    --code-bg: #0a0710;
+    --code-text: #f1edf8;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 17px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); }
+code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+header.top { display: flex; align-items: center; justify-content: space-between; padding: 20px 0; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--text); text-decoration: none; }
+.brand img { width: 32px; height: 32px; }
+nav a { color: var(--muted); text-decoration: none; margin-left: 20px; font-size: 15px; }
+nav a:hover { color: var(--text); }
+.hero { text-align: center; padding: 56px 0 40px; }
+.hero img { width: 88px; height: 88px; }
+h1 { font-size: clamp(34px, 6vw, 56px); line-height: 1.1; margin: 20px 0 12px; letter-spacing: -0.02em; }
+.grad { background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lead { font-size: clamp(18px, 2.4vw, 21px); color: var(--muted); max-width: 680px; margin: 0 auto 28px; }
+.cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn { display: inline-block; padding: 12px 20px; border-radius: 10px; font-weight: 600; text-decoration: none; border: 1px solid var(--border); color: var(--text); background: var(--surface); }
+.btn.primary { background: linear-gradient(90deg, #7c3aed, #db2777); color: #fff; border-color: transparent; }
+.loop { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 36px 0 0; padding: 0; list-style: none; }
+.loop li { padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font-size: 15px; font-weight: 600; }
+.loop li + li::before { content: "→"; margin-right: 10px; color: var(--muted); font-weight: 400; }
+section { padding: 56px 0; border-top: 1px solid var(--border); }
+h2 { font-size: clamp(26px, 3.6vw, 34px); line-height: 1.2; margin: 0 0 12px; letter-spacing: -0.01em; }
+.sub { color: var(--muted); margin: 0 0 28px; max-width: 720px; }
+.grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.card { border: 1px solid var(--border); background: var(--surface); border-radius: 14px; padding: 20px; }
+.card h3 { margin: 0 0 6px; font-size: 18px; }
+.card p { margin: 0; color: var(--muted); font-size: 16px; }
+.grid.roles { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.roles .card .meta { margin-top: 10px; font-size: 14px; color: var(--muted); }
+pre { background: var(--code-bg); color: var(--code-text); padding: 16px 18px; border-radius: 12px; overflow-x: auto; margin: 0; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.card { min-width: 0; }
+.install { display: grid; gap: 16px; }
+.install .card { position: relative; }
+.copy { position: absolute; top: 16px; right: 16px; font: 600 13px/1 ui-sans-serif, system-ui, sans-serif; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer; }
+.install pre { margin-top: 12px; }
+ol.steps { padding-left: 22px; margin: 0; }
+ol.steps li { margin: 8px 0; }
+.stats { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 24px; }
+.stat { border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; background: var(--surface); }
+.stat b { display: block; font-size: 34px; line-height: 1.1; }
+.stat span { color: var(--muted); font-size: 15px; }
+.quote { font-size: 20px; font-weight: 600; margin: 0 0 16px; }
+footer { border-top: 1px solid var(--border); padding: 32px 0 48px; color: var(--muted); font-size: 15px; text-align: center; }
+footer a { color: var(--muted); }
+@media (max-width: 640px) {
+  nav { display: none; }
+  .hero { padding-top: 32px; }
+  section { padding: 44px 0; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="#"><img src="logo.svg" alt="" width="32" height="32">Morphness</a>
+    <nav>
+      <a href="#how">How it works</a>
+      <a href="#install">Install</a>
+      <a href="#community">Community</a>
+      <a href="https://github.com/antarsoft/morphness">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <img src="logo.svg" alt="Morphness logo" width="88" height="88">
+    <h1>An agent harness that <span class="grad">morphs into your project's own</span></h1>
+    <p class="lead">Morphness is an open-source, multi-agent harness for Claude Code. A Technical Lead plans, Full-stack builds, QA verifies, and a retro and prune loop turns what goes wrong into rules that fit your project.</p>
+    <div class="cta">
+      <a class="btn primary" href="#install">Install in one command</a>
+      <a class="btn" href="https://github.com/antarsoft/morphness">View on GitHub</a>
+    </div>
+    <ul class="loop" aria-label="The Morphness loop">
+      <li>Plan</li><li>Build</li><li>QA</li><li>Retro</li><li>Prune</li><li>Share</li>
+    </ul>
+  </div>
+</div>
+
+<section id="why">
+  <div class="wrap">
+    <h2>Your agent rules need a delete button</h2>
+    <p class="sub">If you've been writing <code>CLAUDE.md</code> rules, subagents and checklists by hand, you know they only grow. Morphness is that work packaged, with a loop that keeps it short and true.</p>
+    <div class="grid">
+      <div class="card"><h3>Plan first, then build</h3><p>The Technical Lead writes a plan with testable acceptance criteria and waits for your approval before any code is written.</p></div>
+      <div class="card"><h3>QA is never skipped</h3><p>A separate QA agent runs your checks and records evidence for every criterion, so "done" means verified, not claimed.</p></div>
+      <div class="card"><h3>Learns from its mistakes</h3><p>After every feature, a short retro turns what went wrong into rules. Every ten features, a prune questions the rules that never fired.</p></div>
+      <div class="card"><h3>Works on any codebase</h3><p>New or existing repos, any language or framework. It keeps your <code>CLAUDE.md</code>, shows a diff for settings and lands everything on a branch.</p></div>
+      <div class="card"><h3>Safe by default</h3><p>Secrets and pushes to protected branches are denied from the first install. Agents never write to a shared remote environment.</p></div>
+      <div class="card"><h3>Yours to configure</h3><p>Branches, checks, modules, risk areas, models and effort live in one <code>harness.config.yml</code>. Every rule is a Markdown file you own.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <h2>A small team of agents, with a process</h2>
+    <p class="sub">You talk to the Technical Lead in the main chat. It delegates the work and never writes code itself.</p>
+    <div class="grid roles">
+      <div class="card"><h3>Technical Lead</h3><p>Plans each feature, gets your approval, delegates and keeps the rules current.</p><div class="meta">Default: opus, high effort</div></div>
+      <div class="card"><h3>Full-stack</h3><p>Builds the approved plan and its tests.</p><div class="meta">Default: opus, high effort</div></div>
+      <div class="card"><h3>QA</h3><p>Runs the checks and validates every acceptance criterion.</p><div class="meta">Default: sonnet, high effort</div></div>
+      <div class="card"><h3>Legal writer</h3><p>Writes wording that makes a legal promise, when a feature needs it.</p><div class="meta">Default: fable or opus, high effort</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <h2>Install</h2>
+    <p class="sub">The setup scans your repo, then asks a short series of questions, each with a suggested answer. It suggests skills, connectors and lessons that fit your stack, and installs only the ones you accept.</p>
+    <div class="install">
+      <div class="card">
+        <h3>Ask your agent</h3>
+        <p>In any Claude Code session inside your repo:</p>
+        <button class="copy" data-copy="a1">Copy</button>
+        <pre id="a1">Install Morphness from https://github.com/antarsoft/morphness in this repo. Follow its INSTALL.md.</pre>
+      </div>
+      <div class="card">
+        <h3>Or as a plugin</h3>
+        <p>Add the marketplace, install, then run the setup:</p>
+        <button class="copy" data-copy="a2">Copy</button>
+        <pre id="a2">/plugin marketplace add antarsoft/morphness
+/plugin install morphness@morphness
+/morph-init</pre>
+      </div>
+    </div>
+    <h3 style="margin:32px 0 8px">Your first feature</h3>
+    <ol class="steps">
+      <li>Ask the Technical Lead: <code>plan &lt;feature&gt;</code>.</li>
+      <li>Read the plan and its acceptance criteria, then approve it.</li>
+      <li>Full-stack builds it, then QA checks every criterion.</li>
+      <li>You get a steps file (anything only you can do) and a short retro.</li>
+    </ol>
+  </div>
+</section>
+
+<section id="community">
+  <div class="wrap">
+    <p class="quote"><span class="grad">From the community, for the community.</span></p>
+    <h2>Rules that prove themselves can help the next team</h2>
+    <p class="sub">When a prune shows a rule caught a real problem, <code>/morph-share</code> drafts a PR to the shared catalog. <code>/morph-doctor</code> offers new lessons that match your stack.</p>
+    <div class="stats">
+      <div class="stat"><b>~150</b><span>features built with it on Twinpage</span></div>
+      <div class="stat"><b>112</b><span>lessons in the catalog, each with evidence</span></div>
+      <div class="stat"><b>29</b><span>stack and service lessons offered on match</span></div>
+    </div>
+    <p>The catalog starts with lessons from <a href="https://twinpage.app">Twinpage</a>, the product Morphness was built on. Yours could be the second project in it.</p>
+    <div class="cta" style="justify-content:flex-start;margin-top:20px">
+      <a class="btn primary" href="https://github.com/antarsoft/morphness/blob/main/CONTRIBUTING.md">Contribute a lesson</a>
+      <a class="btn" href="https://github.com/antarsoft/morphness/discussions">Join the discussion</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    MIT licensed · <a href="https://github.com/antarsoft/morphness">GitHub</a> · <a href="https://github.com/antarsoft/morphness/blob/main/CHANGELOG.md">Changelog</a> · <a href="https://github.com/antarsoft/morphness/issues">Issues</a> · Built by <a href="https://github.com/antarsoft">Antarsoft</a>
+  </div>
+</footer>
+
+<script>
+document.querySelectorAll('.copy').forEach(function (button) {
+  button.addEventListener('click', function () {
+    var text = document.getElementById(button.dataset.copy).textContent;
+    navigator.clipboard.writeText(text).then(function () {
+      button.textContent = 'Copied';
+      setTimeout(function () { button.textContent = 'Copy'; }, 1500);
+    });
+  });
+});
+</script>
+</body>
+</html>
