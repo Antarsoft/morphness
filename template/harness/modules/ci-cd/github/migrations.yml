@@ -9,7 +9,7 @@ on:
       environment:
         description: Which database to migrate
         type: choice
-        options: [staging, production]
+        options: [{{environments.names}}]
 
 permissions:
   contents: read
@@ -22,13 +22,22 @@ jobs:
       group: migrations-${{ inputs.environment }}
       cancel-in-progress: false
     steps:
-      # Migrations run from the integration branch: production gets them from the release being
-      # reviewed, before its PR merges (harness/RELEASE.md step 4).
+      # Each environment migrates from its own branch, except production: it gets the migrations from
+      # the release branch being reviewed, before the release PR merges (harness/RELEASE.md step 4).
       - name: branch guard
-        if: ${{ github.ref_name != '{{branches.integration}}' }}
+        env:
+          TARGET: ${{ inputs.environment }}
+          REF: ${{ github.ref_name }}
         run: |
-          echo "Migrations run from {{branches.integration}}; this run is on ${{ github.ref_name }}."
-          exit 1
+          case "$TARGET" in
+            # morph-init: fill one line per entry in harness.config.yml → environments: <name>) want=<branch> ;;
+            # with the release branch (the integration branch unless a middle environment has its own) for production.
+            *) echo "Unknown environment: $TARGET"; exit 1 ;;
+          esac
+          if [ "$REF" != "$want" ]; then
+            echo "Migrations for $TARGET run from $want; this run is on $REF."
+            exit 1
+          fi
 
       - uses: actions/checkout@v4
 

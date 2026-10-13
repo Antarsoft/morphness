@@ -1,4 +1,4 @@
-<!-- Feature PRs target `{{branches.integration}}`. Only a release PR (`{{branches.integration}}` → `{{branches.production}}`) targets `{{branches.production}}`. Always open with an explicit base (for example `gh pr create --base {{branches.integration}}`). -->
+<!-- Feature PRs target `{{branches.integration}}`. Only a release PR (from the release branch, `{{branches.integration}}` unless a middle environment has its own branch) targets `{{branches.production}}`. Always open with an explicit base (for example `gh pr create --base {{branches.integration}}`). -->
 <!--
 Keep it short. Delete sections that don't apply rather than writing "N/A".
 Never paste secrets, keys, connection strings or env file values here.
@@ -52,11 +52,11 @@ Agents fill these sections from the feature folder (plan.md, qa-result.md, the s
 
 ## Release
 
-<!-- Release PRs only (`{{branches.integration}}` → `{{branches.production}}`, title `Release vX.Y.Z`; process: harness/RELEASE.md, project/RELEASE.md). Delete this section on a feature PR. Merge with a merge commit, not squash. -->
+<!-- Release PRs only (release branch → `{{branches.production}}`, title `Release vX.Y.Z`; process: harness/RELEASE.md, project/RELEASE.md). Delete this section on a feature PR. Merge with a merge commit, not squash. -->
 
 - Features (each with its `QA/qa-result.md`):
   - `<slug>`: `_harness/features/<slug>/<version>/QA/qa-result.md`
-- Release QA: `_harness/releases/<version>/qa-result.md`, **pass** on the integration environment
+- Release QA: `_harness/releases/<version>/qa-result.md`, **pass** on the release QA environment
 - Migrations, in order (the owner applies them to production **before** merging; project/RELEASE.md § Production migrations):
   - `<path>`
   - [ ] Production migrations applied and nothing left pending (not needed when none were pending)

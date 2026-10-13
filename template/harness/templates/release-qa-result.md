@@ -1,7 +1,7 @@
 # Release QA result: vX.Y.Z
 
 **Release:** `vX.Y.Z`  
-**Release PR:** <link> (integration branch → production branch)  
+**Release PR:** <link> (release branch → production branch)  
 **Path:** `_harness/releases/<version>/qa-result.md` (QA engineer only)  
 **Created:** YYYY-MM-DD  
 **Updated:** YYYY-MM-DD  
@@ -12,8 +12,8 @@ Process: [harness/RELEASE.md](../../../harness/RELEASE.md) step 3; project speci
 
 ## Environment
 
-- **Integration commit tested:** (`git rev-parse origin/<integration>`; must be the release PR's head)
-- **Integration environment URL:** (preview or staging deploy; "local" when the project has none)
+- **Release branch commit tested:** (`git rev-parse origin/<release branch>`, the integration branch unless a middle environment has its own; must be the release PR's head)
+- **Release QA environment and URL:** (the `environments` entry just before production, `project/RELEASE.md`; "local" when there is none)
 - **Checks run:**
 
 ## What ships
@@ -24,7 +24,7 @@ From `git log --oneline origin/<production>..origin/<integration>`.
 |--------------------------------------------------|-----------|------------|-----------------|
 | `<slug>/<version>` | pass (`QA/qa-result.md`) | none / list | none / list |
 
-## Checks ([CONTROLS.md](../../../harness/CONTROLS.md), the full `before_signoff` suite on the integration commit)
+## Checks ([CONTROLS.md](../../../harness/CONTROLS.md), the full `before_signoff` suite on the tested commit)
 
 | Check (command from `project/CONTROLS.md`) | Exit code | Notes |
 |--------------------------------------------|-----------|-------|
@@ -35,7 +35,7 @@ From `git log --oneline origin/<production>..origin/<integration>`.
 | `build` | | |
 | `e2e-full` (browser-e2e module) | | |
 
-## Smoke on the integration environment
+## Smoke on the release QA environment
 
 Steps from `project/RELEASE.md` § Smoke checklist that apply to this release; mark the rest `n/a` with the reason.
 

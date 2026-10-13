@@ -18,10 +18,25 @@ fill comments left, JSON parses, relative links resolve, agent frontmatter, ever
   `modules` (stale rules agents would read).
 - Every agent file under `.claude/agents/` points at a body under `harness/agents/` that exists.
 - The branches in `harness.config.yml` exist on the remote (`git ls-remote --heads origin <name>`).
+- `environments` (when the key exists): names are unique; the first entry runs `branches.integration`
+  and the last runs `branches.production`; every entry's branch exists on the remote; `deploy` is one
+  of `host`, `workflow`, `manual`, `none`, and `workflow` only when `ci_cd.deploy` is a path; the last
+  entry has `real_data: true`; `project/RELEASE.md` § Where things deploy has one row per entry, in
+  order. After the owner edits the list, report each file still out of step (that table, the deploy
+  and migrations workflow choices and branch guards) and offer to bring them in line. The host's own
+  environments, reviewers and secrets can't be read from here: remind the owner to create or rename
+  them to match, with required reviewers on every `real_data: true` entry. A copy without the key
+  (installed before it existed): point to `/morph-update`.
+- `branch_protection.enabled: true`: every environment branch is in the ruleset file's `include` list
+  and has `git push` denies in `.claude/settings.json`. When `gh` can read it, check each branch's
+  live rules (`gh api repos/<owner>/<repo>/rules/branches/<branch>`) for `pull_request`,
+  `non_fast_forward` and `deletion`, and with `ci_gate: true` the CI check. Report each missing rule
+  as the owner's step (agents never change rulesets); if the rules can't be read, ask the owner.
 - With the ci-cd module: every path in `ci_cd` exists; the CI workflow has one step per `before_qa`
   check whose command matches `project/CONTROLS.md` (report each missing or differing step); no runner
   image ends in `-latest`; the CI workflow uses `pull_request`, not `pull_request_target`, and reads no
-  `secrets.` other than `GITHUB_TOKEN`; deploy and migrations jobs name an `environment`; a tag
+  `secrets.` other than `GITHUB_TOKEN`; deploy and migrations jobs name an `environment`, and their
+  `options` list exactly the names in `environments`; a tag
   workflow exists only with `release_tags: true`.
 - `ci_gate: true`: CI exists, and when `gh` can read it, the integration branch requires the CI
   check (`gh api repos/<owner>/<repo>/rules/branches/<integration>`). If it can't be read, ask the
