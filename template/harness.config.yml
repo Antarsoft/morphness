@@ -39,6 +39,13 @@ branch_protection:
   enabled: true
   required_approvals: 0
 
+# Who merges PRs. never: the human, or the Technical Lead on the human's explicit ask for that PR
+# (merge commands are `ask` rules in .claude/settings.json). integration: the Technical Lead may also
+# merge a ready feature PR into the integration branch once the merge gate holds. Merges into the
+# production branch (release, promotion, hotfix) are always the human's, so with a single-branch
+# flow integration acts as never.
+merge_by_agent: never
+
 # true: every merge to the production branch gets a version tag (harness/RELEASE.md § Versions), from
 # the tag workflow when ci_cd.tags has one, else from the command the Technical Lead hands the owner.
 # false: no tags; the release PR title and _harness/releases/<version>/ are the record.

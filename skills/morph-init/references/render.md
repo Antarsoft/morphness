@@ -86,7 +86,7 @@ Fill `installed_from` in `harness.config.yml` with the source repo URL, commit a
 
 Write the answers into `harness.config.yml`, replacing the defaults that aren't placeholders:
 `environment`, `branches`, `environments`, `pr_host`, `roadmap`, `modules`, `checks.before_qa`,
-`checks.before_signoff` (plus any extra named checks the user added), `ci_gate`, `branch_protection`, `release_tags`, `ci_cd` (delete the
+`checks.before_signoff` (plus any extra named checks the user added), `ci_gate`, `merge_by_agent`, `branch_protection`, `release_tags`, `ci_cd` (delete the
 block without the ci-cd module), `risk_areas`,
 `agents`, `claude_projects` (delete the block when Claude Projects isn't used) and `loop`.
 
@@ -106,6 +106,11 @@ template has for the integration branch for every other environment branch (a mi
 `.gitlab/merge_request_templates/Default.md` (the default merge request template) and, when nothing
 else is left in `.github/`, delete that folder; with `none`, delete the template. Kit text that names
 `.github/pull_request_template.md` then means that file.
+
+`merge_by_agent`: with `never`, keep the merge `ask` rules in `.claude/settings.json`, and add the
+merge tool of any other code-host connector the project uses. With `integration`, delete them (the
+Technical Lead merges into the integration branch without a prompt) and say in the hand-off that
+production merges stay the owner's by rule and by branch protection.
 
 A named check the project doesn't have: delete its row from `project/CONTROLS.md` § Named checks and
 its name from `checks.*`, rather than writing a placeholder command. Agents then record it as

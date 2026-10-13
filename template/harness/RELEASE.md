@@ -7,10 +7,10 @@ Project specifics (production database, hosting, smoke checklist, environment va
 | Branch | Holds | Deploys to |
 |--------|-------|------------|
 | feature branch | One feature's work. Starts from the integration branch on the remote | nothing (or a per-PR preview, if the host makes one) |
-| integration branch | Every feature that passed QA and was merged by the human | The integration environment (the first entry in `environments`), if the project has one |
+| integration branch | Every feature that passed QA and was merged by the human (or by the Technical Lead with `merge_by_agent: integration`) | The integration environment (the first entry in `environments`), if the project has one |
 | production branch | What is live. Moves only through a release PR or a hotfix | Production |
 
-Feature PRs target the integration branch, always opened with an explicit base: the repository's default branch may be the production branch. When a PR is opened as a draft and marked ready: `.claude/rules/technical-lead.md` § Commits and branches. Release and hotfix PRs follow the same states: a draft until their QA passes, then ready for the human.
+Feature PRs target the integration branch, always opened with an explicit base: the repository's default branch may be the production branch. When a PR is opened as a draft and marked ready: `.claude/rules/technical-lead.md` § Commits and branches. Release and hotfix PRs follow the same states: a draft until their QA passes, then ready for the human. Release, promotion and hotfix PRs are merged by the human only: no agent merges into a branch after the integration branch, whatever `merge_by_agent` says or a message asks.
 
 **Single-branch flow.** When `branches.integration` equals `branches.production`, there is no release PR: feature PRs merge straight to production, so the release steps below shrink to release QA on that branch before the human's go, the production prerequisites, the tag and the record. Feature PR titles don't name a version, so the tag workflow (if any) tags a release only when the human runs it by hand with the version. Hotfixes are ordinary feature branches.
 

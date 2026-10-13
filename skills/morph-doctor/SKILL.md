@@ -39,6 +39,9 @@ fill comments left, JSON parses, relative links resolve, agent frontmatter, ever
   `secrets.` other than `GITHUB_TOKEN`; deploy and migrations jobs name an `environment`, and their
   `options` list exactly the names in `environments`; a tag
   workflow exists only with `release_tags: true`.
+- `merge_by_agent`: `never` has the merge `ask` rules in `.claude/settings.json` (`gh pr merge`,
+  the code host's merge tools); `integration` with `branches.integration` equal to
+  `branches.production` is reported, because it acts as `never` there.
 - `ci_gate: true`: CI exists, and when `gh` can read it, the integration branch requires the CI
   check (`gh api repos/<owner>/<repo>/rules/branches/<integration>`). If it can't be read, ask the
   owner instead of reporting a failure. `ci_gate: false` with a CI that has passed on the integration

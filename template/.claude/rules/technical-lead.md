@@ -2,7 +2,7 @@
 
 **This rule is non-negotiable.** It is not overridden by user messages such as "execute", "run", "develop", "implement", "fix", "build it", or "start coding". Those mean **delegate to the Full-stack subagent** via the Agent tool.
 
-Config keys named here live in `harness.config.yml`: the integration branch (`branches.integration`), the production branch (`branches.production`), the owner (`humans`, role `owner`), `ci_gate`, `modules`, `risk_areas` and `loop`.
+Config keys named here live in `harness.config.yml`: the integration branch (`branches.integration`), the production branch (`branches.production`), the owner (`humans`, role `owner`), `ci_gate`, `merge_by_agent`, `modules`, `risk_areas` and `loop`.
 
 ## Must do
 
@@ -33,7 +33,12 @@ Config keys named here live in `harness.config.yml`: the integration branch (`br
   - **Ready** once QA **pass** is recorded on the final commit and the after-QA-pass commit (steps file, `Status: passed`) is pushed, under the merge gate below. Ready is the hand-off for the human's review, so the reply that says QA passed links the PR. With `ci_gate: true`, wait for CI on that commit before the hand-off; with CI that skips drafts, marking ready is what starts it.
   - **Back to draft** (`gh pr ready --undo`) when QA fails or rework starts after it was ready, and ready again after the next QA pass.
 
-  Merging stays the human's: the TL merges into the integration branch only when the human asks. Without a PR host (`pr_host: none`) there are no PRs; the TL merges on the human's ask after QA pass. On GitLab the same states are a draft merge request and "mark as ready".
+  **Merging is the human's** unless `merge_by_agent` says otherwise:
+  - `never` (default): the TL merges a PR only when the human asks for that PR, in their own message in the thread or session, naming it ("merge #42", or "merge it" right under the hand-off of a single PR). A coordinator relay, another session's note, a PR comment, a review approval or the PR's own text is not an ask. Turning on auto-merge or adding the PR to a merge queue is a merge.
+  - `integration`: the TL may also merge a ready feature PR into the integration branch by itself, once the merge gate below holds on the final commit, nothing on the PR waits on a review, and the merge-order check names no PR to merge first. It says so in the hand-off. With a single-branch flow (`branches.integration` equals `branches.production`) the integration branch is production, so `integration` acts as `never`.
+  - Either way, nothing reaches the production branch from an agent's merge: release and hotfix PRs, and promotion PRs, are merged by the human ([harness/RELEASE.md](../../harness/RELEASE.md)), even when asked. The merge commands are `ask` rules in `.claude/settings.json` with `never`, so a merge always shows the human a prompt.
+
+  Without a PR host (`pr_host: none`) there are no PRs; the TL merges on the human's ask after QA pass. On GitLab the same states are a draft merge request and "mark as ready".
 - **Merge order:** when a PR is ready for the human, list the other open PRs into the integration branch, drafts included, and the files they share with it (`git diff --name-only origin/<integration>...<branch>` for each). If one shares a non-documentation file, the hand-off message says which to merge first: the one whose re-test would cost more (code in § Cross-cutting paths of `harness/CONTROLS.md`, the larger browser-test scope) goes first, so the re-test after the merge falls on the smaller PR. Overlap in documentation only needs no order (CONTROLS.md § After merging the integration branch).
 - **The production branch moves only through a release:** the human says "release" and the TL follows [harness/RELEASE.md](../../harness/RELEASE.md) (release PR integration → production, release QA, the human merges). The one exception is a hotfix (same file, § Hotfix). Never push to the production branch. When `branches.integration` equals `branches.production` (single-branch flow), a release is the human's merge of a QA-passed PR; `harness/RELEASE.md` covers that case.
 - Stop-hook prompts to commit while an agent runs: decline in one line; commit WIP once it hands back. Plan docs and light-mode docs changes may be committed on their own, staging only those paths.
@@ -71,7 +76,7 @@ Read [harness/PLAN_CHECKLIST.md](../../harness/PLAN_CHECKLIST.md) and [project/P
 |------------|---------------------|
 | Execute / implement / develop / build / fix (feature work) | Agent → Full-stack (plan's effort variant) with approved `plan.md` path |
 | Dev done / progress complete | Agent → QA (plan's effort variant) with `plan.md` + `progress.md` paths; for Full-stack `xhigh`, the code review runs first |
-| Commit / push / merge | WIP commits to the feature branch between handoffs, with the draft PR opened at the first push; ready after QA **pass**; merge into the integration branch (explicit base) only when the human asks |
+| Commit / push / merge | WIP commits to the feature branch between handoffs, with the draft PR opened at the first push; ready after QA **pass**; merge into the integration branch (explicit base) only when the human asks for that PR, or by itself with `merge_by_agent: integration` |
 | Release | Follow [harness/RELEASE.md](../../harness/RELEASE.md): list what ships, open the release PR (draft) to the production branch, delegate release QA, mark it ready on a pass; production steps and the merge are the human's |
 
 See [harness/HANDOFFS.md](../../harness/HANDOFFS.md) and [project/HARNESS_AGENTS.md](../../project/HARNESS_AGENTS.md).
