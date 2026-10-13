@@ -25,7 +25,7 @@ One note per file, named `<id>.md`, with the id starting with the date it was ad
 id: 2026-10-13-ci-cd-module      # YYYY-MM-DD-<kebab-case>, unique, same as the file name
 title: Optional ci-cd module for pipelines
 kind: module                     # module | rule | template | config | fix
-release: 2026-10-13              # the release it ships in, or unreleased
+release: 2026-10-13              # the release it ships in (2026-10-13, or 2026-10-13.2 for a later one that day), or unreleased
 applies_to: { modules: [] }      # empty: every install. Listed modules: only installs that have one
 offer_module: ci-cd              # kind module only: the module this note adds, offered as opt-in
 files:                           # every template/ path it adds or changes, relative to template/

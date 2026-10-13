@@ -22,7 +22,8 @@ two, with options on short lines and your suggestion marked.
 1. **Locate the Morphness source.** In order: this skill's own plugin folder (`template/` two levels up
    from this file), or a local clone the user names (INSTALL.md has the user or their agent clone it
    first). Never download it yourself. Record the source repo URL and commit (`git rev-parse HEAD`)
-   for `installed_from`, and the release: the newest dated heading in the source's `CHANGELOG.md`.
+   for `installed_from`, and the release: the newest release heading in the source's `CHANGELOG.md` (`2026-10-14` or
+   `2026-10-14.2`, the first one below `## Unreleased`).
 2. **Check the target.** `git status` must be clean, apart from files `scripts/install.sh` just copied
    (ask the user to commit or stash anything else; never do it yourself). If `harness.config.yml`
    exists and still has `{{` placeholders, the files were copied by `scripts/install.sh`: carry on and

@@ -76,10 +76,13 @@ any time. Lessons you contribute stay anonymous whether or not you're listed.
 
 ## Releases
 
-Releases are dated: the release name, its tag and its `CHANGELOG.md` heading are the date
-(`2026-10-13`), and `.claude-plugin/plugin.json` → `version` is the same date with dots
-(`2026.10.13`). Claude Code only offers a plugin update when that version changes, so every release
-bumps it. Installs don't carry a version: they record the commit they last synced to, and
+Releases are named by date. The release name, its tag and its `CHANGELOG.md` heading are the date
+(`2026-10-14`); a later release the same day adds its number (`2026-10-14.2`, `2026-10-14.3`).
+`.claude-plugin/plugin.json` → `version` is the date as one number, then the release number of the
+day: `20261014.1.0`, then `20261014.2.0`. Claude Code compares that version as semver and only offers
+a plugin update when it goes up, so every release bumps it; a suffix like `2026.10.14-2` would read as
+a pre-release and sort *below* `2026.10.14`. (The first two releases, `2026-10-12` and `2026-10-13`,
+used the dotted date, `2026.10.13`; the new form sorts above it.) Installs don't carry a version: they record the commit they last synced to, and
 `/morph-update` works out what changed from there.
 
 **When to cut one**
@@ -87,15 +90,15 @@ bumps it. Installs don't carry a version: they record the commit they last synce
 - When **Unreleased** has at least one change to `template/` or `skills/`, batched about weekly.
 - The same day for a `kind: fix` update note (a kit instruction that was wrong or unsafe), or a
   skill bug that breaks an install or update.
-- At most one release a day. Lessons, profiles, catalog entries and docs alone don't need one:
+- Lessons, profiles, catalog entries and docs alone don't need one:
   `/morph-update` reads lessons from `main`; they go into the next release's notes.
 
 **How**
 
-1. A PR moves the **Unreleased** entries under `## <date>`, sets each update note's `release` from
-   `unreleased` to that date, and bumps `plugin.json` → `version`. `scripts/check-updates.sh` checks
+1. A PR moves the **Unreleased** entries under `## <release>`, sets each update note's `release` from
+   `unreleased` to that name, and bumps `plugin.json` → `version`. `scripts/check-updates.sh` checks
    that the three agree.
-2. After it merges, a maintainer creates the GitHub release with tag `<date>` on the merge commit,
+2. After it merges, a maintainer creates the GitHub release with tag `<release>` on the merge commit,
    using the changelog section as the release notes.
 
 By taking part you agree to the [Code of Conduct](CODE_OF_CONDUCT.md). Security issues go through
