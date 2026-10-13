@@ -2,7 +2,7 @@
 id: 2026-10-13-release-tags
 title: Release tags become optional and can be automated
 kind: config
-release: unreleased
+release: 2026-10-13.2
 applies_to: { modules: [] }
 files:
   - harness.config.yml

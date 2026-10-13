@@ -2,7 +2,7 @@
 id: 2026-10-13-pr-template
 title: PR template for drafts, release notes and hotfixes
 kind: template
-release: unreleased
+release: 2026-10-13.2
 applies_to: { modules: [] }
 files:
   - .github/pull_request_template.md
