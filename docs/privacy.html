@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy · Morphness</title>
+<meta name="description" content="Privacy policy for the Morphness plugin for Claude Code and its website.">
+<link rel="canonical" href="https://antarsoft.github.io/morphness/privacy.html">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<meta name="color-scheme" content="light dark">
+<style>
+  :root { --bg:#fff; --fg:#1f1d2b; --muted:#5b5870; --accent:#7C3AED; --border:#e6e3ef; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f0d17; --fg:#ece9f5; --muted:#a6a2b8; --accent:#a78bfa; --border:#2a2638; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  main { max-width:720px; margin:0 auto; padding:48px 16px 64px; }
+  a { color:var(--accent); }
+  h1 { font-size:2rem; line-height:1.2; margin:0 0 8px; }
+  h2 { font-size:1.15rem; margin:32px 0 8px; }
+  .muted { color:var(--muted); }
+  header a { text-decoration:none; font-weight:600; }
+  footer { border-top:1px solid var(--border); margin-top:48px; padding-top:16px; font-size:.9rem; }
+</style>
+</head>
+<body>
+<main>
+  <header><p><a href="./">← Morphness</a></p></header>
+  <h1>Privacy</h1>
+  <p class="muted">Last updated 2026-10-13</p>
+
+  <p>Morphness is an open-source plugin for Claude Code, made by Antarsoft. It has no servers, no accounts and no analytics. This page covers the plugin and this website.</p>
+
+  <h2>The plugin</h2>
+  <ul>
+    <li><strong>Nothing is collected.</strong> The plugin's skills run inside your own Claude Code session and work only on files in your repository.</li>
+    <li><strong>What it writes.</strong> <code>/morph-init</code> asks for the project owner's name and GitHub handle and saves them in <code>harness.config.yml</code> in your repository, so the harness knows who approves plans. They stay in your repository and are never sent to Morphness or Antarsoft.</li>
+    <li><strong>Sharing is opt-in.</strong> <code>/morph-share</code> drafts anonymised lessons for the public Morphness catalog. Nothing is sent unless you approve it. You then open a pull request on GitHub with your own account, and GitHub's privacy statement applies to it.</li>
+    <li><strong>Claude.</strong> Like any Claude Code plugin, the skills run through Claude. Anthropic's privacy policy covers what Claude Code sends to Anthropic.</li>
+  </ul>
+
+  <h2>This website</h2>
+  <ul>
+    <li>The site is hosted on GitHub Pages. GitHub may log visitor IP addresses for security, as described in GitHub's privacy statement.</li>
+    <li>The page sets no cookies and runs no analytics or tracking scripts.</li>
+    <li>Your browser fetches the public star count from the GitHub API (<code>api.github.com</code>) to show it on the page.</li>
+  </ul>
+
+  <h2>Contact</h2>
+  <p>Questions or requests: open an issue at <a href="https://github.com/antarsoft/morphness/issues">github.com/antarsoft/morphness/issues</a>.</p>
+
+  <footer class="muted">MIT licensed · <a href="https://github.com/antarsoft/morphness">GitHub</a> · Built by <a href="https://github.com/antarsoft">Antarsoft</a></footer>
+</main>
+</body>
+</html>
