@@ -26,5 +26,6 @@
     "developer-tools"
   ],
   "homepage": "https://antarsoft.github.io/morphness",
+  "privacyPolicyUrl": "https://antarsoft.github.io/morphness/privacy.html",
   "repository": "https://github.com/antarsoft/morphness"
 }
