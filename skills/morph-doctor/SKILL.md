@@ -34,7 +34,8 @@ fill comments left, JSON parses, relative links resolve, agent frontmatter, ever
   as the owner's step (agents never change rulesets); if the rules can't be read, ask the owner.
 - With the ci-cd module: every path in `ci_cd` exists; the CI workflow has one step per `before_qa`
   check whose command matches `project/CONTROLS.md` (report each missing or differing step); no runner
-  image ends in `-latest`; the CI workflow uses `pull_request`, not `pull_request_target`, and reads no
+  image ends in `-latest`; the CI workflow uses `pull_request`, not `pull_request_target`, lists `ready_for_review` in its
+  `types` and has a `merge_group` trigger, skips drafts exactly when `ci_cd.on_drafts` is false, and reads no
   `secrets.` other than `GITHUB_TOKEN`; deploy and migrations jobs name an `environment`, and their
   `options` list exactly the names in `environments`; a tag
   workflow exists only with `release_tags: true`.

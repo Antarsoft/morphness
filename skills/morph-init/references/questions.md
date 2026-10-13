@@ -129,6 +129,10 @@ the pipelines you don't have yet. Each one only on your yes:"
 
 1. **CI on pull requests**, running the `before_qa` checks with the commands from Q5. Suggest yes
    when there's no CI. When CI exists, offer only to keep it in step with `project/CONTROLS.md`.
+   Then ask whether CI also runs on draft PRs (the TL opens a feature's PR as a draft at its first
+   push and marks it ready after QA passes). Suggest no for a private repo (each push to a draft
+   costs minutes; CI runs when the PR is marked ready) and yes for a public one (Actions are free).
+   → `ci_cd.on_drafts`
 2. **Deploy workflow.** Only when an environment from Q6b deploys by `workflow` and the repo has no
    deploy workflow. It offers exactly the Q6b environments, each deployable only from its own branch;
    `host` and `manual` environments add no file.
@@ -204,7 +208,7 @@ pr_host: github
 ci_gate: false
 branch_protection: { enabled: true, required_approvals: 0 }
 release_tags: true
-ci_cd: { ci: none, deploy: host, migrations: none, tags: none, docs_regex: "" }   # ci-cd module; paths of accepted workflows
+ci_cd: { ci: none, on_drafts: false, deploy: host, migrations: none, tags: none, docs_regex: "" }   # ci-cd module; paths of accepted workflows
 roadmap: { enabled: true, file: docs/ROADMAP.md, versions_dir: docs/versions, first_version: { id: v1, goal: "" } }
 modules: []
 data: { migrations_reach_remote_by: "" }

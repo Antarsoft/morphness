@@ -43,7 +43,7 @@ Feature threads (Technical Lead):
 - One feature, one PR per thread. When the PR merges, resolve the thread.
 - Every decision the owner makes in chat goes into plan.md § Decisions in the same turn.
 - After two QA rework rounds, the thread may hand over to a fresh thread at a natural break
-  (QA pass, PR opened). The closing reply lists open decisions and links the new thread.
+  (QA pass, PR marked ready). The closing reply lists open decisions and links the new thread.
 - Ask the owner only for what agents can't do: approval, accounts, remote environments,
   judgement calls. Put those in the steps file.
 ```

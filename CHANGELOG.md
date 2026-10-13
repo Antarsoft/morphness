@@ -6,6 +6,10 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Feature PRs now open as a draft at the feature branch's first push and are marked ready once QA
+  passes (back to draft if QA fails later); release and hotfix PRs do the same. With the
+  `ci-cd` module, CI skips drafts unless `ci_cd.on_drafts` is `true`, runs when a PR is marked
+  ready, and runs in a merge queue. `/morph-init` asks about CI on drafts; `/morph-doctor` checks it.
 - Shared environments are now a list in `harness.config.yml` (`environments`), defaulting to two:
   `dev` on the integration branch and `production` on the production branch. `/morph-init` asks
   whether you want more (a `staging` or `uat` in between, on the integration branch or its own

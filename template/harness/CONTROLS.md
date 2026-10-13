@@ -21,7 +21,7 @@ A project may add its own names (for example a schema-drift check or an integrat
 
 `ci_gate` in `harness.config.yml` decides what gates a merge:
 
-- **`ci_gate: false`** (QA is the gate): QA's local run is the only gate before a merge, so `qa-result.md` must record the exit code of every `before_signoff` check, including, with the `browser-e2e` module, the full end-to-end run on the final commit (or its reuse under § After merging the integration branch). The Technical Lead does not recommend a merge, open a PR as ready, or sign off without that record, checked against `git rev-parse HEAD`. A stale or missing record goes back to QA.
+- **`ci_gate: false`** (QA is the gate): QA's local run is the only gate before a merge, so `qa-result.md` must record the exit code of every `before_signoff` check, including, with the `browser-e2e` module, the full end-to-end run on the final commit (or its reuse under § After merging the integration branch). The Technical Lead does not recommend a merge, mark a PR ready, or sign off without that record, checked against `git rev-parse HEAD`. A stale or missing record goes back to QA.
 - **`ci_gate: true`** (CI is also a gate): the same `qa-result.md` record is still required, and the PR's CI checks must be green on the final commit before the TL recommends a merge. CI does not replace QA's acceptance testing. Where the pipeline lives and what it runs: `project/CONTROLS.md` § CI.
 
 ## Before Full-stack → QA handoff
@@ -99,7 +99,7 @@ QA still runs `typecheck`, `lint`, `unit` and `build` on the merged head, and `q
 
 This leaves the same gap a conflict-free PR has (the host merges it without testing the two features together), so release QA's full run on the integration branch stays the check for features that break each other ([RELEASE.md](./RELEASE.md) step 3).
 
-**Merge order:** when a PR is ready for the human and another open PR into the integration branch shares a non-documentation file with it (`git diff --name-only origin/<integration>...<branch>` for each), the hand-off says which to merge first: the one whose re-test would cost more (code in § Cross-cutting paths, the larger end-to-end scope) goes first, so the re-test after the merge falls on the smaller PR. Overlap in documentation only needs no order.
+**Merge order:** when a PR is ready for the human and another open PR into the integration branch (a draft included) shares a non-documentation file with it (`git diff --name-only origin/<integration>...<branch>` for each), the hand-off says which to merge first: the one whose re-test would cost more (code in § Cross-cutting paths, the larger end-to-end scope) goes first, so the re-test after the merge falls on the smaller PR. Overlap in documentation only needs no order.
 
 ## Before the feature PR (Technical Lead)
 

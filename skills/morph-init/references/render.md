@@ -65,6 +65,7 @@ Replace every `{{key}}` in the copied files with its answer. Keys: `project.name
 `stack.package_manager`, `stack.toolchain_setup`, `stack.install_cmd`, `cmd.<check-name>`, `models.tl`,
 `models.fullstack`, `models.fullstack_medium`, `models.qa`, `models.qa_medium`, `models.legal`, `morphness.repo`, `morphness.commit`, `morphness.release`,
 and in ci-cd workflow scaffolds `ci.docs_regex` (a regex for the documentation paths in `project/CONTROLS.md`),
+`ci.on_drafts` (`ci_cd.on_drafts`, `true` or `false`),
 `environments.names` (the names in `environments`, comma-separated, in order) and `environments.first`
 (the first name), and in `.github/rulesets/environment-branches.json` `branch_protection.refs` (each
 distinct environment branch as `"refs/heads/<branch>"`, comma-separated) and

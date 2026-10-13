@@ -5,16 +5,24 @@ name: ci
 on:
   pull_request:
     branches: ["{{branches.integration}}", "{{branches.production}}"]
+    # ready_for_review: a draft that skipped CI gets its run the moment it's marked ready.
+    types: [opened, synchronize, reopened, ready_for_review]
+  # A merge queue runs the same required check on the PR combined with the latest base. Harmless
+  # without a queue; without it, a queue that requires this check never finishes.
+  merge_group:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.event.pull_request.number }}
+  group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   checks:
+    # Drafts skip CI unless harness.config.yml → ci_cd.on_drafts is true. A skipped job counts as
+    # passing a required check, which is safe: a draft can't merge, and marking it ready re-runs this.
+    if: ${{ !github.event.pull_request.draft || {{ci.on_drafts}} }}
     runs-on: ubuntu-24.04   # pinned: bump it in its own PR
     timeout-minutes: 30
     steps:
@@ -31,7 +39,8 @@ jobs:
           DOCS: '{{ci.docs_regex}}'
         run: |
           code=true
-          if [ -n "$DOCS" ] && ! git diff --name-only "$BASE...HEAD" | grep -vE "$DOCS" | grep -q .; then
+          # A merge queue run always checks everything.
+          if [ "$GITHUB_EVENT_NAME" != merge_group ] && [ -n "$DOCS" ] && ! git diff --name-only "$BASE...HEAD" | grep -vE "$DOCS" | grep -q .; then
             code=false; echo "Docs-only change: skipping the checks"
           fi
           echo "code=$code" >> "$GITHUB_OUTPUT"
