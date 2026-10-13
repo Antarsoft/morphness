@@ -71,7 +71,11 @@ security scan)?" and add each as a named check. Follow-up: "Which must pass befo
 - Single branch (feature PRs go straight to `main`)
 
 Follow-up for two branches: names. Follow-up for both: "Who runs production steps (deploys, prod
-migrations)?" (default: the owner only). → `branches.*`, `release.prod_steps_by`
+migrations)?" (default: the owner only). Then: "Tag each release with its version (`v1.4.0`)? Tags
+mark what shipped and help with rollbacks and hotfixes; nothing in the harness needs them." Default
+yes; for an ongoing project, suggest whatever its existing tags show (`git tag --sort=-creatordate |
+head`), and note any other version scheme for `project/RELEASE.md`. → `branches.*`,
+`release.prod_steps_by`, `release_tags`
 
 ## Q7. Code host and CI
 
@@ -106,6 +110,9 @@ the pipelines you don't have yet. Each one only on your yes:"
    Offer the workflow only for "a workflow" with none in the repo; "host" and "by hand" add no file.
 3. **Migrations workflow**, only with the data-access module and when Q9's answer was "CI
    workflow" with none in the repo.
+4. **Tag workflow**, only with `release_tags: true` and on GitHub or GitLab. Suggest yes: it tags each
+   merge to the production branch from the PR title, so nobody pushes tags by hand (cloud sessions
+   can't). With a single-branch flow, say the owner runs it by hand with the version for a release.
 
 Say plainly: agents write these files but never run deploys or migrations; the owner sets the
 secrets, the protected environments and the required check (the module's § Owner steps). For each
@@ -168,7 +175,8 @@ branches: { integration: dev, production: main }
 release: { prod_steps_by: owner }
 pr_host: github
 ci_gate: false
-ci_cd: { ci: none, deploy: host, migrations: none, docs_regex: "" }   # ci-cd module; paths of accepted workflows
+release_tags: true
+ci_cd: { ci: none, deploy: host, migrations: none, tags: none, docs_regex: "" }   # ci-cd module; paths of accepted workflows
 roadmap: { enabled: true, file: docs/ROADMAP.md, versions_dir: docs/versions, first_version: { id: v1, goal: "" } }
 modules: []
 data: { environments: [], migrations_reach_remote_by: "" }

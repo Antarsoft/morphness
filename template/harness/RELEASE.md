@@ -12,7 +12,7 @@ Project specifics (production database, hosting, smoke checklist, environment va
 
 Feature PRs target the integration branch, always opened with an explicit base: the repository's default branch may be the production branch. The commit policy (when a PR may be opened at all) lives in `.claude/rules/technical-lead.md`.
 
-**Single-branch flow.** When `branches.integration` equals `branches.production`, there is no release PR: feature PRs merge straight to production, so the release steps below shrink to release QA on that branch before the human's go, the production prerequisites, the tag and the record. Hotfixes are ordinary feature branches.
+**Single-branch flow.** When `branches.integration` equals `branches.production`, there is no release PR: feature PRs merge straight to production, so the release steps below shrink to release QA on that branch before the human's go, the production prerequisites, the tag and the record. Feature PR titles don't name a version, so the tag workflow (if any) tags a release only when the human runs it by hand with the version. Hotfixes are ordinary feature branches.
 
 ## When a release happens
 
@@ -40,7 +40,7 @@ Agents never touch remote databases or hosting settings: production migrations a
 4. **Production prerequisites (human).** The human applies the new migrations to production and sets the new or changed environment variables **before** merging, so the code never runs against a schema or config it doesn't expect. A project may have the human run a CI workflow that applies them instead; how this one does it: `project/RELEASE.md`.
 5. **Merge (human).** The human merges the release PR; the host deploys production from the production branch.
 6. **Live check (human).** The human checks the live product and says it is good.
-7. **Tag and record (Technical Lead).** Tag the production branch: `git tag -a vX.Y.Z -m "Release vX.Y.Z" origin/<production>`, then push the tag. If agents can't push tags here, the TL gives the human the exact command. Record the release in `_harness/LEARNINGS.md` and, with the roadmap module, in the roadmap's changelog; the roadmap module also folds the next version's per-feature steps files into its checklist in the same record commit and handles marking a version shipped ([modules/roadmap/](./modules/roadmap/README.md)). If the production branch has commits the integration branch lacks (`git log --oneline origin/<integration>..origin/<production>`; the release merge commit itself always shows up here, a hotfix too), bring the production branch back into the integration branch with a PR.
+7. **Tag and record (Technical Lead).** With `release_tags: false`, skip the tag. With the tag workflow (`ci_cd.tags`), the merge tags itself from the PR title: check the tag is there (`git ls-remote --tags origin vX.Y.Z`), and if it isn't (the run failed, or the title didn't match), ask the human to run the workflow by hand with the version. Without the workflow, tag the production branch: `git tag -a vX.Y.Z -m "Release vX.Y.Z" origin/<production>`, then push the tag. If agents can't push tags here (cloud sessions can't), the TL gives the human the exact command. Record the release in `_harness/LEARNINGS.md` and, with the roadmap module, in the roadmap's changelog; the roadmap module also folds the next version's per-feature steps files into its checklist in the same record commit and handles marking a version shipped ([modules/roadmap/](./modules/roadmap/README.md)). If the production branch has commits the integration branch lacks (`git log --oneline origin/<integration>..origin/<production>`; the release merge commit itself always shows up here, a hotfix too), bring the production branch back into the integration branch with a PR.
 
 ## Merge style
 
@@ -48,7 +48,7 @@ The release PR uses a **merge commit**, not squash or rebase, so both branches s
 
 ## Versions
 
-`vX.Y.Z` tags on the production branch. Before launch: `v0.x.y`, bumping the minor version per release and the patch version per hotfix; `v1.0.0` at launch. A project may use another scheme; it says so in `project/RELEASE.md`.
+`vX.Y.Z` tags on the production branch, when `harness.config.yml` → `release_tags` is `true` (the default). Tags mark exactly what shipped and are the reference for rollbacks and hotfixes; nothing in the harness reads them back, so a project that doesn't want them sets `release_tags: false` and keeps the release PR title and `_harness/releases/<version>/` as its record. With the `ci-cd` module's tag workflow, the merge itself creates the tag and its release; the version in the PR title (`Release vX.Y.Z`, `Hotfix vX.Y.Z`) is then what gets tagged, so get it right before the merge. Before launch: `v0.x.y`, bumping the minor version per release and the patch version per hotfix; `v1.0.0` at launch. A project may use another scheme; it says so in `project/RELEASE.md`.
 
 ## Rollback
 
@@ -60,8 +60,8 @@ The release PR uses a **merge commit**, not squash or rebase, so both branches s
 For a production bug that can't wait for the next release:
 
 1. Branch from the production branch on the remote.
-2. PR to the production branch (explicit base), only after QA **pass** on the hotfix and when the human asks.
-3. **Tag it.** Every merge to the production branch is tagged, a hotfix too. After the hotfix PR merges, the next **patch** version (v0.6.0 → v0.6.1) goes on the PR's merge commit. If agents can't push tags, the Technical Lead gives the human the exact command with the merge sha: `git tag -a vX.Y.Z -m "Hotfix vX.Y.Z" <merge sha> && git push origin vX.Y.Z`. The hotfix isn't finished until the tag is pushed.
+2. PR to the production branch (explicit base), only after QA **pass** on the hotfix and when the human asks. Title `Hotfix vX.Y.Z`, with the next **patch** version (v0.6.0 → v0.6.1).
+3. **Tag it** (with `release_tags: true`). Every merge to the production branch is tagged, a hotfix too, on the PR's merge commit. With the tag workflow, the merge does it; the Technical Lead checks the tag exists, as in release step 7. Without it, when agents can't push tags, the Technical Lead gives the human the exact command with the merge sha: `git tag -a vX.Y.Z -m "Hotfix vX.Y.Z" <merge sha> && git push origin vX.Y.Z`. The hotfix isn't finished until the tag is there.
 4. Bring the production branch into the integration branch (a PR), so the next release doesn't undo the fix.
 
 ## After release

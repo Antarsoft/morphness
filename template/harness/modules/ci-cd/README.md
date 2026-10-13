@@ -2,19 +2,21 @@
 
 Optional. Enable it in `harness.config.yml` → `modules` when the project wants the harness to set up and look after its pipelines. Without it, the harness still reads a pipeline the project already has (`ci_gate`, `project/CONTROLS.md` § CI, `project/RELEASE.md`); it just doesn't write or check one.
 
-The module covers three pipelines. `/morph-init` offers each one on its own and writes only the ones the owner accepts. Which ones exist is recorded in `harness.config.yml` → `ci_cd`.
+The module covers four pipelines. `/morph-init` offers each one on its own and writes only the ones the owner accepts. Which ones exist is recorded in `harness.config.yml` → `ci_cd`.
 
 | Pipeline | What it does | Who starts it | Scaffold (GitHub Actions) |
 |----------|--------------|---------------|---------------------------|
 | **CI** | Runs the `before_qa` named checks on every pull request into the integration or production branch | Every PR, automatically | [github/ci.yml](./github/ci.yml) |
 | **Deploy** | Deploys a branch to an environment, for hosts that don't deploy on push themselves | The owner (manual run), or a push to the integration branch for staging | [github/deploy.yml](./github/deploy.yml) |
 | **Migrations** | Applies database migrations to a shared environment, the workflow the `data-access` module and `project/RELEASE.md` refer to | The owner (manual run) only | [github/migrations.yml](./github/migrations.yml) |
+| **Tags** | Tags each merge to the production branch with the version from the merged PR's title (`Release vX.Y.Z` or `Hotfix vX.Y.Z`) and creates its release, using the PR body as the notes. Only with `release_tags: true` | A push to the production branch; the owner (manual run with a version) for a single-branch release or a missed tag | [github/tag.yml](./github/tag.yml) |
 
-On GitLab, morph-init writes the same jobs into `.gitlab-ci.yml`: CI as a merge-request pipeline, deploy and migrations as `when: manual` jobs on protected environments. Other hosts: describe the pipelines in `project/CONTROLS.md` § CI and `project/RELEASE.md`, and keep the rules below.
+On GitLab, morph-init writes the same jobs into `.gitlab-ci.yml`: CI as a merge-request pipeline, deploy and migrations as `when: manual` jobs on protected environments, and tags as a job on the production branch that reads the merge request title from the merge commit message and uses the `release:` keyword (which creates the tag with the job token). Other hosts: describe the pipelines in `project/CONTROLS.md` § CI and `project/RELEASE.md`, and keep the rules below.
 
 ## Rules
 
-- **Agents write pipelines; they never run deploys or migrations.** A pipeline file is code: Full-stack changes it in a planned feature, and QA reviews it like any other diff. No agent starts, re-runs or approves a deploy or migrations run, or edits environments, secrets, variables or branch rules (`AGENTS.md` § Shared remote environments). CI runs on its own.
+- **Tags come from the PR title, never from an agent push.** The tag workflow is the only writer of version tags when it exists; it skips a push whose PR title doesn't name a version and never moves an existing tag. Its token has `contents: write` only for the tag and release; the PR title and body reach its script through environment variables and a file, never inline in `${{ }}`, because they are untrusted text.
+- **Agents write pipelines; they never run deploys or migrations.** A pipeline file is code: Full-stack changes it in a planned feature, and QA reviews it like any other diff. No agent starts, re-runs or approves a deploy, migrations or tag run, or edits environments, secrets, variables or branch rules (`AGENTS.md` § Shared remote environments). CI runs on its own.
 - **The real guard is the host, not the deny list.** Deploy and migration credentials live only as **environment secrets** on environments that require the owner's approval (GitHub: Settings → Environments → Required reviewers). They are never repository secrets, so a pull-request job can't read them, and a run that reaches the environment waits for the owner. The `.claude/settings.json` denies only catch mistakes; a deny rule matches command text, not intent.
 - **CI uses the commands in `project/CONTROLS.md`, word for word.** One step per `before_qa` check, in the same order. When a command changes there, the same PR changes CI (plan checklist item 6, every affected file). `/morph-doctor` reports CI that has drifted.
 - **CI runs on `pull_request`, never `pull_request_target`,** with `permissions: contents: read`. A PR from a fork then runs with no secrets and a read-only token.
@@ -32,6 +34,7 @@ Agents can't do these; they go in `project/RELEASE.md` § Manual steps, and morp
 - [ ] Add the deploy and migration secrets as environment secrets, never repository secrets.
 - [ ] After CI has passed once on the integration branch, require its `checks` job before merging into the integration and production branches, then set `ci_gate: true`.
 - [ ] When the deploy workflow replaces the host's own deploy on push, turn the host's automatic deploys off (or the two will race).
+- [ ] With the tag workflow: if a ruleset protects version tags, let GitHub Actions bypass it for creation. Tags it pushes don't start other workflows (a GitHub rule for its built-in token), so a deploy that should run on a new tag keys on the push to the production branch instead.
 
 ## Technical Lead
 
@@ -41,6 +44,7 @@ Agents can't do these; they go in `project/RELEASE.md` § Manual steps, and morp
 
 ## On install
 
+- The tag workflow is offered only with `release_tags: true`. With a single-branch flow, say that feature PR titles don't name a version, so the owner tags a release by running the workflow by hand with the version.
 - Copy the accepted scaffolds to `.github/workflows/` without overwriting (a project's existing workflow is kept and described instead), fill their `{{…}}` keys and `# morph-init: fill` lines, and record the paths in `harness.config.yml` → `ci_cd`. A pipeline the owner declined is `none` there and has no file.
 - Fill [project/CONTROLS.md](../../../project/CONTROLS.md) § CI (each workflow, its trigger, its jobs, and whether it is a required gate) and [project/RELEASE.md](../../../project/RELEASE.md) § Where things deploy, § Manual steps (the owner steps above), § Production migrations and § Rollback from the chosen pipelines.
 - Add `.github/workflows/` (or `.gitlab-ci.yml`) to [project/CONTROLS.md](../../../project/CONTROLS.md) § Cross-cutting paths, and `CI/CD` to `harness.config.yml` → `risk_areas` when a deploy or migrations workflow was added.

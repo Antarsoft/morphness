@@ -19,6 +19,11 @@ branches:
 
 pr_host: github           # github | gitlab | none
 
+# true: every merge to the production branch gets a version tag (harness/RELEASE.md § Versions), from
+# the tag workflow when ci_cd.tags has one, else from the command the Technical Lead hands the owner.
+# false: no tags; the release PR title and _harness/releases/<version>/ are the record.
+release_tags: true
+
 roadmap:
   enabled: true
   file: docs/ROADMAP.md
@@ -37,11 +42,13 @@ ci_gate: false
 
 # ci-cd module: the pipelines the harness set up and checks. A workflow path, or none.
 # deploy can also be `host` (the hosting platform deploys on push) or `manual`.
+# tags: the workflow that tags merges to the production branch (only with release_tags: true).
 # Agents edit these files in a planned feature; only the owner runs deploys and migrations.
 ci_cd:
   ci: none
   deploy: host
   migrations: none
+  tags: none
 
 # Areas that never get medium effort and always get a careful plan (e.g. auth, billing, migrations).
 risk_areas: []

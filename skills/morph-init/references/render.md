@@ -81,7 +81,7 @@ Fill `installed_from` in `harness.config.yml` with the source repo URL, commit a
 
 Write the answers into `harness.config.yml`, replacing the defaults that aren't placeholders:
 `environment`, `branches`, `pr_host`, `roadmap`, `modules`, `checks.before_qa`,
-`checks.before_signoff` (plus any extra named checks the user added), `ci_gate`, `ci_cd` (delete the
+`checks.before_signoff` (plus any extra named checks the user added), `ci_gate`, `release_tags`, `ci_cd` (delete the
 block without the ci-cd module), `risk_areas`,
 `agents`, `claude_projects` (delete the block when Claude Projects isn't used) and `loop`.
 

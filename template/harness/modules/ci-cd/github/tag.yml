@@ -1,0 +1,82 @@
+# Release tags (Morphness ci-cd module). Tags each merge to the production branch and creates its
+# GitHub release, so nobody has to push a tag by hand (cloud sessions can't push tags at all).
+# The version comes from the merged PR's title: `Release vX.Y.Z` or `Hotfix vX.Y.Z` (harness/RELEASE.md).
+# A push with no such PR is skipped. The owner can also run it by hand with a version, for a
+# single-branch release or a missed tag. Agents never start or re-run it.
+name: tag
+
+on:
+  push:
+    branches: ["{{branches.production}}"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to tag on the head of {{branches.production}} (e.g. v1.4.0)
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: tag
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    runs-on: ubuntu-24.04   # pinned: bump it in its own PR
+    steps:
+      - uses: actions/checkout@v4
+
+      # PR titles and bodies are untrusted text: they reach the script only through env and files.
+      - name: find the version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_VERSION: ${{ inputs.version }}
+          # morph-init: fill only when project/RELEASE.md uses another version scheme (a regex for the
+          # version part of the title, no parentheses, e.g. '[0-9]{4}-[0-9]{2}-[0-9]{2}'); otherwise delete this comment.
+          VERSION_RE: 'v[0-9]+\.[0-9]+\.[0-9]+'
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            if [ "$GITHUB_REF_NAME" != "{{branches.production}}" ]; then
+              echo "Tags go only on {{branches.production}}; this run is on $GITHUB_REF_NAME."; exit 1
+            fi
+            version="$INPUT_VERSION"; kind=Release
+            : > notes.md
+          else
+            gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" \
+              | jq --arg base "$GITHUB_REF_NAME" '[.[] | select(.merged_at != null and .base.ref == $base)][0] // empty' > pr.json
+            title="$(jq -r '.title // ""' pr.json 2>/dev/null || true)"
+            if [[ ! "$title" =~ ^(Release|Hotfix)\ ($VERSION_RE)$ ]]; then
+              echo "No merged 'Release <version>' or 'Hotfix <version>' PR for $GITHUB_SHA; nothing to tag."
+              exit 0
+            fi
+            kind="${BASH_REMATCH[1]}"; version="${BASH_REMATCH[2]}"
+            jq -r '.body // ""' pr.json > notes.md
+          fi
+          if [[ ! "$version" =~ ^$VERSION_RE$ ]]; then
+            echo "'$version' doesn't match the project's version scheme ($VERSION_RE)."; exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/$version" >/dev/null; then
+            echo "Tag $version already exists; nothing to do."; exit 0
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "kind=$kind" >> "$GITHUB_OUTPUT"
+
+      - name: tag and release
+        if: steps.version.outputs.version != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          KIND: ${{ steps.version.outputs.kind }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$VERSION" -m "$KIND $VERSION" "$GITHUB_SHA"
+          git push origin "refs/tags/$VERSION"
+          if [ -s notes.md ]; then
+            gh release create "$VERSION" --verify-tag --title "$KIND $VERSION" --notes-file notes.md
+          else
+            gh release create "$VERSION" --verify-tag --title "$KIND $VERSION" --generate-notes
+          fi
