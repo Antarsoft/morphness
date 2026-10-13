@@ -16,6 +16,7 @@ environment: [claude-code-cli]
 branches:
   integration: dev        # feature branches start here and feature PRs target it
   production: main        # moves only through a release; set equal to integration for a single-branch flow
+  default: dev            # the code host's default branch (harness/RELEASE.md § Default branch); the owner sets it on the host
 
 # Shared environments, in the order code moves through them (harness/RELEASE.md § Environments).
 # Each one runs one branch: the first runs branches.integration, the last runs branches.production.

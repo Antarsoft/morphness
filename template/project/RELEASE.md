@@ -18,7 +18,7 @@ Everything a workflow does not do automatically is a step someone does. List eac
 
 | When | What to do | Who |
 |------|------------|-----|
-<!-- morph-init: fill. Examples: "| After merging a PR that adds a migration | run the migrations workflow on the integration branch and check it ran, not skipped | owner |", "| Release PR, before the merge | apply production migrations with the production workflow | owner |". When CI is not a gate (harness.config.yml → ci_gate: false), add: "| Before handoff to QA and again in QA | run every named check locally; `qa-result.md` is the gate | Full-stack, QA |". -->
+<!-- morph-init: fill. On install, when the host's default branch isn't `branches.default` in harness.config.yml, add first: "| Once | set the repository's default branch to `<branches.default>` (harness/RELEASE.md § Default branch) | owner |". Examples: "| After merging a PR that adds a migration | run the migrations workflow on the integration branch and check it ran, not skipped | owner |", "| Release PR, before the merge | apply production migrations with the production workflow | owner |". When CI is not a gate (harness.config.yml → ci_gate: false), add: "| Before handoff to QA and again in QA | run every named check locally; `qa-result.md` is the gate | Full-stack, QA |". -->
 
 ## Production migrations
 
