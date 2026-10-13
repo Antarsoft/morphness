@@ -53,7 +53,12 @@ jobs:
               exit 0
             fi
             kind="${BASH_REMATCH[1]}"; version="${BASH_REMATCH[2]}"
-            jq -r '.body // ""' pr.json > notes.md
+            # Only the PR's "## Release notes" section becomes the notes, without HTML comments or empty
+            # bullets. No section, or an empty one, falls back to the host's generated notes. The body is
+            # untrusted text, so it stays in files and pipes, never inside an Actions expression.
+            jq -r '.body // ""' pr.json | tr -d '\r' \
+              | awk '/^## /{insec = ($0 ~ /^## Release notes[[:space:]]*$/); next} insec' \
+              | perl -0pe 's/<!--.*?-->//gs' | grep -vE '^[[:space:]]*-?[[:space:]]*$' > notes.md || true
           fi
           if [[ ! "$version" =~ ^$VERSION_RE$ ]]; then
             echo "'$version' doesn't match the project's version scheme ($VERSION_RE)."; exit 1

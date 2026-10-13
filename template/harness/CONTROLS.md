@@ -107,7 +107,7 @@ This leaves the same gap a conflict-free PR has (the host merges it without test
 |-------|------|----------|
 | Steps file | `plan.md` **Steps file** names the steps file and that file has this feature's block, or says `none` | yes |
 | One next version (roadmap module) | The roadmap marks exactly one next version and its checklist exists ([modules/roadmap/](./modules/roadmap/README.md)) | yes, with the roadmap module |
-| PR description | Filled from the feature folder (`plan.md`, `qa-result.md`, the steps file) using the PR template, when `pr_host` is not `none` | yes |
+| PR description | Filled from the feature folder (`plan.md`, `qa-result.md`, the steps file) using the PR template, when `pr_host` is not `none`: Summary, Harness and Changes at draft, the rest at ready, as its comments say. **Merge after** names the PR to merge first, or `none` | yes |
 
 ## Notes
 
