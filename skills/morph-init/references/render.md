@@ -63,7 +63,7 @@ Then continue with step 3 below; most placeholders are filled from the old files
 Replace every `{{key}}` in the copied files with its answer. Keys: `project.name`, `project.description`,
 `human.name`, `human.github` (the owner), `branches.integration`, `branches.production`, `stack.summary`,
 `stack.package_manager`, `stack.toolchain_setup`, `stack.install_cmd`, `cmd.<check-name>`, `models.tl`,
-`models.fullstack`, `models.fullstack_medium`, `models.qa`, `models.qa_medium`, `models.legal`, `morphness.repo`, `morphness.commit`,
+`models.fullstack`, `models.fullstack_medium`, `models.qa`, `models.qa_medium`, `models.legal`, `morphness.repo`, `morphness.commit`, `morphness.release`,
 and in ci-cd workflow scaffolds `ci.docs_regex` (a regex for the documentation paths in `project/CONTROLS.md`).
 Model placeholders (`{{models.tl}}` etc.) take the model alias the user accepted. Check commands
 (`{{cmd.<name>}}`) take the command, or the text `none (add when the project has one)`.
@@ -74,7 +74,8 @@ In `scripts/session-start.sh` the commands sit inside single quotes: write an em
 scan, in the style of the surrounding file, then delete the comment. Where there's nothing to say
 yet, leave a one-line "Not set yet: <what goes here>" so a later retro can fill it.
 
-Fill `installed_from` in `harness.config.yml` with the source repo URL and commit.
+Fill `installed_from` in `harness.config.yml` with the source repo URL, commit and release, and leave
+`updates` empty: every update note up to that commit is already in the template.
 
 ## 3b. Config values
 

@@ -13,7 +13,7 @@ body:
     id: where
     attributes:
       label: Where
-      options: [/morph-init, /morph-doctor, /morph-share, install.sh, a template file, a lesson or profile, other]
+      options: [/morph-init, /morph-update, /morph-doctor, /morph-share, install.sh, a template file, a lesson or profile, other]
     validations:
       required: true
   - type: input

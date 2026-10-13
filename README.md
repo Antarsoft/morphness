@@ -50,7 +50,7 @@ your stack starts with them.
 
 | Reason | What that means |
 |--------|-----------------|
-| 🌍 **Improved by the community** | Every lesson in the catalog comes from a rule that ran in a real project, with its evidence recorded. `/morph-doctor` offers the ones that match your stack; `/morph-share` sends yours back. |
+| 🌍 **Improved by the community** | Every lesson in the catalog comes from a rule that ran in a real project, with its evidence recorded. `/morph-update` offers the ones that match your stack; `/morph-share` sends yours back. |
 | 🧭 **Plan first, then build** | A Technical Lead writes a plan with testable acceptance criteria and waits for your approval before any code is written. |
 | ✅ **QA is never skipped** | Every feature gets a separate QA agent that runs your checks and records the evidence, so "done" means verified, not claimed. |
 | 🔁 **Learns from its own mistakes** | Retros turn failures into rules, and prunes delete rules that never fire, so the instructions your agents read stay short and earned. |
@@ -144,7 +144,8 @@ These are defaults; change any of them (see [Make it yours](#-make-it-yours)).
 | Skill | Use |
 |-------|-----|
 | `/morph-init` | Install and set up the harness. |
-| `/morph-doctor` | Check wiring, flag a due prune or stuck features, and list matching new lessons. |
+| `/morph-update` | Review what changed upstream (kit updates and lessons) and bring in what you accept, merged with your edits. |
+| `/morph-doctor` | Check wiring, flag a due prune or stuck features, and count upstream updates waiting. |
 | `/morph-share` | Turn rules that fired into a PR to the lessons catalog. |
 
 Morphness runs in plain Claude Code (CLI, desktop, web). If you use a **Claude Project** with a
@@ -206,8 +207,7 @@ Beyond the config, everything is a file in your repo that you own:
 
 ## 🦋 How it morphs
 
-There is no version to upgrade. Once installed, the harness belongs to your repo, and the loop is
-what changes it:
+Once installed, the harness belongs to your repo, and the loop is what changes it:
 
 1. 🔁 **Retro** after each feature: up to three action items, which the Technical Lead approves,
    defers or skips.
@@ -217,6 +217,20 @@ what changes it:
    check, a model) are decided by their KPIs.
 
 See [template/harness/MORPHING.md](template/harness/MORPHING.md).
+
+### 🔄 Staying up to date
+
+Upstream keeps improving too: new modules, sharper process rules, fixes. Nothing upstream ever
+overwrites your copy. Instead:
+
+- `/morph-update` lists what changed in Morphness since your copy last synced and fits your project,
+  says why each item matters, and applies only what you accept. A file you never edited takes the
+  new version; a file you edited gets a merge that keeps your rules, shown before it's written.
+- Every prune runs the same check read-only, so a harness that falls behind gets noticed.
+- No plugin? Tell your agent: *"Follow https://github.com/antarsoft/morphness/blob/main/UPDATE.md"*.
+
+Each kit change ships with a short note in [`updates/`](updates/), and releases are dated
+([CHANGELOG.md](CHANGELOG.md)).
 
 ## 🌍 Community lessons
 
@@ -236,7 +250,7 @@ second project in it**.
 flowchart TB
     A["🧪 Your project: a rule fires"] -->|/morph-share| B["📤 PR with a portable lesson"]
     B -->|maintainer review| C[("📚 Community catalog")]
-    C -->|/morph-doctor| D["🧩 Other projects on your stack"]
+    C -->|/morph-update| D["🧩 Other projects on your stack"]
     D -.->|their rules fire too| C
 ```
 
@@ -254,7 +268,7 @@ The rest are the kit's built-in rules, kept in the catalog so other projects can
    project-specific, and drafts a PR to [lessons/](lessons/).
 2. 🔍 **Review.** A maintainer checks the lesson is new, portable and backed by evidence. Lessons
    are amended, never replaced: your report strengthens an existing lesson when one matches.
-3. 📥 **Spread.** Everyone running `/morph-doctor` sees the new lesson if it matches their stack,
+3. 📥 **Spread.** Everyone running `/morph-update` sees the new lesson if it matches their stack,
    and picks whether to take it.
 
 A new lesson needs evidence (a `fired` count from a prune audit) to get in. See [CONTRIBUTING.md](CONTRIBUTING.md) and [lessons/README.md](lessons/README.md).

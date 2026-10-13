@@ -2,7 +2,7 @@
 
 This harness was installed from Morphness, and from that moment it is **this repository's own**. Nothing upstream overwrites it. Every retro may change it and every prune audits it, so after a few dozen features it fits this project better than the copy it started from. That is the point: the rules that stay are the ones this project's failures earned.
 
-There is no harness version and no upgrade step. Morphness never pushes changes into an installed harness. New ideas from other projects arrive only as single **lessons** that the owner chooses to adopt (§ Health check and upstream lessons).
+Morphness never pushes changes into an installed harness, and nothing upstream overwrites a rule this project wrote. Upstream ideas arrive in two forms, each offered one at a time for the owner's yes: **lessons**, single rules from other projects, and **kit updates**, changes to the kit itself such as a new module or a corrected process rule (§ Health check and upstream updates).
 
 ## Where a lesson lands
 
@@ -70,10 +70,17 @@ Morphness keeps a community catalog of lessons (`lessons/` in the Morphness repo
 - **How:** run `/morph-share` with the rule. It drafts the lesson file: a neutral rule text with project names, feature slugs, people and private paths removed; the target file in an installed harness; tags (stack, service, area); and evidence from the prune audits. It shows the draft and asks the owner.
 - **Only with the owner's yes.** Sharing is optional and nothing leaves the repository without that yes. The owner may edit the draft, or decline and keep the lesson local.
 
-## Health check and upstream lessons
+## Health check and upstream updates
 
-`/morph-doctor` checks that the installed harness is still wired and consistent, and lists upstream lessons this project might want:
+`/morph-doctor` checks that the installed harness is still wired and consistent:
 
 - **Health:** `harness.config.yml` parses; every named check has a command in `project/CONTROLS.md`; every enabled module has its files; no unfilled render placeholder or `morph-init: fill` comment is left in rendered files; rule owner links resolve; the prune counter and open action items are reported.
-- **Upstream lessons:** `harness.config.yml` → `installed_from` records the Morphness commit the harness was installed from. The doctor lists the lessons added upstream since then whose tags match this project (its stack, services and enabled modules) and that are not already here (matched by `(lesson: <id>)` provenance). It only lists; it changes nothing.
-- **Adopting one:** the owner picks a lesson; the TL applies it as a light-mode docs change to the lesson's target file (or this project's better owner, § Where a lesson lands), ending the rule with `(lesson: <id>)`. The next prune audits it like any other rule.
+- **Upstream:** it counts the kit updates and matching lessons this project hasn't seen and says to run `/morph-update`. It changes nothing.
+
+`/morph-update` (or, for an agent without the plugin, `UPDATE.md` in the Morphness repository) brings upstream changes in:
+
+- **What it reads:** `harness.config.yml` → `installed_from` records the Morphness commit this copy was last synced to and the update notes already applied, declined or put off. It lists the kit update notes added upstream since then that fit this project (its modules; a new module is offered as an opt-in), and the lessons added since then whose tags match and that are not already here (matched by `(lesson: <id>)` provenance). Fixes to a wrong or unsafe kit instruction come first.
+- **Adopting one:** the owner picks per item: apply, decline (never offered again) or later. Kit updates are merged file by file against the template this copy started from: a file this project never edited takes the new version; an edited one gets a merge that keeps this project's rules, shown before it is written. Lessons land in their target file (or this project's better owner, § Where a lesson lands), ending with `(lesson: <id>)`. Everything goes on a branch as a light-mode docs change, and the next prune audits adopted rules like any other.
+- **When:** whenever the owner asks, and at every prune: the Technical Lead runs the read-only check and lists what's pending in the prune proposal ([SETUP.md](./SETUP.md) § Prune), so a copy that falls behind upstream gets noticed.
+
+Kit updates never replace this project's own direction: a declined update is recorded as declined, and a rule this project changed on purpose stays changed. When an update contradicts a local rule, the owner decides which wins.

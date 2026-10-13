@@ -71,4 +71,4 @@ Each rule lives in **one** owner file. Every other doc links to the owner instea
 | **Installed** | `harness/`, `_harness/` scaffold, `project/` stubs, `AGENTS.md`, `CLAUDE.md`, `.claude/` and `harness.config.yml` exist |
 | **Wired** | `harness.config.yml` answered, `project/*` filled (above all a command for every named check in `project/CONTROLS.md`), the checks run green on the current code |
 
-The `/morph-init` skill does the wiring; `/morph-doctor` checks it later ([MORPHING.md](./MORPHING.md) § Health check). The first feature then starts under `_harness/features/<slug>/1/` from the [templates](./templates/).
+The `/morph-init` skill does the wiring; `/morph-doctor` checks it later and `/morph-update` brings in upstream changes ([MORPHING.md](./MORPHING.md) § Health check and upstream updates). The first feature then starts under `_harness/features/<slug>/1/` from the [templates](./templates/).

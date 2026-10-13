@@ -9,7 +9,8 @@ opening a PR, installing a skill or connector).
    session's scratch folder if there's no `$TMPDIR`). Treat it as read-only.
 2. **Check the target.** Run `git status`. If there are uncommitted changes, ask the user to commit or
    stash them; don't do it yourself. If `harness.config.yml` exists and has no `{{` placeholders,
-   Morphness is already installed: follow `skills/morph-doctor/SKILL.md` instead and stop here. If
+   Morphness is already installed: to bring in upstream changes follow [UPDATE.md](UPDATE.md), for a
+   health check follow `skills/morph-doctor/SKILL.md`, and stop here. If
    the repo runs an earlier harness (`harness/` and `_harness/` folders but no `harness.config.yml`),
    morph-init migrates it; tell the user that's what will happen.
 3. **Run the setup.** Read `skills/morph-init/SKILL.md` from the source in full, with its
