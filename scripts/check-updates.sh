@@ -14,6 +14,19 @@ if args:
         print("usage: scripts/check-updates.sh [--since <git-ref>]"); sys.exit(2)
     since = args[1]
 kinds = {"module", "rule", "template", "config", "fix"}
+# Release names: the date, then .2, .3 ... for later releases the same day.
+RELEASE = re.compile(r"(\d{4})-(\d{2})-(\d{2})(?:\.([2-9]|[1-9]\d+))?")
+# The first two releases used the dotted date as the plugin version; later ones use YYYYMMDD.N.0.
+LEGACY_VERSIONS = {"2026-10-12": "2026.10.12", "2026-10-13": "2026.10.13"}
+
+def release_key(name):
+    m = RELEASE.fullmatch(name)
+    return (int(m.group(1) + m.group(2) + m.group(3)), int(m.group(4) or 1))
+
+def plugin_version(name):
+    if name in LEGACY_VERSIONS: return LEGACY_VERSIONS[name]
+    date, n = release_key(name)
+    return f"{date}.{n}.0"
 errors, notes = [], {}
 
 def parse(text):
@@ -49,8 +62,8 @@ for f in sorted(glob.glob(os.path.join(root, "updates", "*.md"))):
     k = fm.get("kind")
     if k and k not in kinds: errors.append(f"{rel}: unknown kind '{k}'")
     r = fm.get("release", "")
-    if r and r != "unreleased" and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", r):
-        errors.append(f"{rel}: release must be YYYY-MM-DD or unreleased")
+    if r and r != "unreleased" and not RELEASE.fullmatch(r):
+        errors.append(f"{rel}: release must be YYYY-MM-DD, YYYY-MM-DD.N (N >= 2) or unreleased")
     if k == "module":
         mod = fm.get("offer_module")
         if not mod: errors.append(f"{rel}: kind module needs offer_module")
@@ -70,13 +83,20 @@ for f in sorted(glob.glob(os.path.join(root, "updates", "*.md"))):
 
 # Releases: every dated release a note names has a CHANGELOG heading, and plugin.json carries the newest.
 changelog = open(os.path.join(root, "CHANGELOG.md"), encoding="utf-8").read()
-dated = re.findall(r"^## (\d{4}-\d{2}-\d{2})\s*$", changelog, re.M)
+dated = re.findall(r"^## (\d{4}-\d{2}-\d{2}(?:\.\d+)?)\s*$", changelog, re.M)
+for h in dated:
+    if not RELEASE.fullmatch(h): errors.append(f"CHANGELOG.md: heading '## {h}' isn't a release name (YYYY-MM-DD or YYYY-MM-DD.N, N >= 2)")
+dated = [h for h in dated if RELEASE.fullmatch(h)]
+if dated != sorted(dated, key=release_key, reverse=True):
+    errors.append("CHANGELOG.md: release headings must be newest first")
+if len(set(dated)) != len(dated):
+    errors.append("CHANGELOG.md: a release heading appears twice")
 for i, (rel, fm) in notes.items():
     r = fm.get("release")
     if r and r != "unreleased" and r not in dated:
         errors.append(f"{rel}: release {r} has no '## {r}' heading in CHANGELOG.md")
 if dated:
-    want = dated[0].replace("-", ".")
+    want = plugin_version(dated[0])
     version = json.load(open(os.path.join(root, ".claude-plugin", "plugin.json")))["version"]
     if version != want:
         errors.append(f".claude-plugin/plugin.json: version {version} doesn't match the newest release {dated[0]} (expected {want})")

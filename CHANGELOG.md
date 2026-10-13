@@ -6,6 +6,10 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Releases can now go out more than once a day: a later one adds its number to the date
+  (`2026-10-14.2`), and the plugin version becomes `YYYYMMDD.N.0` so Claude Code sees every release as
+  newer. `/morph-update` orders release tags by date, then number. Rules: CONTRIBUTING.md § Releases.
+
 - The PR template says what to fill when a draft opens and what waits for ready, and gains a
   **Merge after** line, a **Release notes** section and a **Hotfix** section. The ci-cd tag workflow
   publishes only the Release notes section instead of the whole PR body. On GitLab, `/morph-init`

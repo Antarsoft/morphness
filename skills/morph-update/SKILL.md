@@ -41,7 +41,9 @@ asks "what's new?"), do § 1 and § 2 and stop: change nothing, write nothing.
 4. **Resolve the base** (`BASE`, the commit whose `template/` this copy was last synced to):
    - `installed_from.commit` when it exists in `SRC` (`git -C "$SRC" cat-file -e <commit>^{commit}`).
    - Else the tag named by `installed_from.release`, when it exists.
-   - Else the oldest release tag (the first public release). This covers copies installed from a
+   - Else the oldest release tag (the first public release). Release tags are `YYYY-MM-DD`, and a later
+     release the same day adds `.N` (`2026-10-14.2`); order them by date, then by that number (none
+     counts as 1), not as plain strings. This covers copies installed from a
      staging or forked repository whose commits aren't upstream. Say which base you used and why.
 
 ## 2. List what's pending
@@ -128,7 +130,8 @@ project file's content beyond the change being applied.
 
 1. **Update `harness.config.yml` → `installed_from`**, converting the one-line form to the block
    form in `SRC/template/harness.config.yml` when needed:
-   - `commit`: `HEAD`. `release`: the newest dated heading in `SRC/CHANGELOG.md`.
+   - `commit`: `HEAD`. `release`: the newest release heading in `SRC/CHANGELOG.md` (the first `## YYYY-MM-DD` or
+     `## YYYY-MM-DD.N` heading below `## Unreleased`).
    - `updates.applied` and `updates.declined`: append this run's ids (and the "already here" ones
      to `applied`).
    - `updates.deferred`: set to the notes answered **later**, each as `{ id, base }` where `base` is
