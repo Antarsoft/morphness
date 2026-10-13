@@ -6,6 +6,10 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- The PR template says what to fill when a draft opens and what waits for ready, and gains a
+  **Merge after** line, a **Release notes** section and a **Hotfix** section. The ci-cd tag workflow
+  publishes only the Release notes section instead of the whole PR body. On GitLab, `/morph-init`
+  writes the template as the default merge request template.
 - Feature PRs now open as a draft at the feature branch's first push and are marked ready once QA
   passes (back to draft if QA fails later); release and hotfix PRs do the same. With the
   `ci-cd` module, CI skips drafts unless `ci_cd.on_drafts` is `true`, runs when a PR is marked

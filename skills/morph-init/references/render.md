@@ -18,7 +18,7 @@ Copy every file under `SRC/template/` to the same path in `T`, skipping any file
 | `CLAUDE.md` | Keep the user's content. Append the template's `CLAUDE.md` body under a `## Morphness` heading, or add the line `@AGENTS.md` if the template's AGENTS.md was copied. |
 | `AGENTS.md` | Keep it. Append the template's golden rules and harness table under `## Morphness`, without duplicating rules it already has. |
 | `.claude/settings.json` | Merge: union `permissions.allow`, `deny`, `ask`; add the SessionStart hook if absent; keep every existing key. Show the diff. |
-| `.github/pull_request_template.md` | Keep the user's. Mention the template's sections in the hand-off. |
+| `.github/pull_request_template.md` (GitLab: `.gitlab/merge_request_templates/Default.md`) | Keep the user's. Mention the template's sections in the hand-off, and that the tag workflow reads a `## Release notes` section. |
 | `.mcp.json` | Merge `mcpServers`; never remove one. |
 | Anything else | Keep the user's file; list it in the hand-off. |
 
@@ -101,6 +101,11 @@ host, or `enabled: false`) delete the file and its link in `harness/RELEASE.md` 
 List importing the ruleset (or setting GitLab's protected branches) in `project/RELEASE.md` § Manual
 steps and in the hand-off. In `.claude/settings.json`, add the same four `git push` deny lines the
 template has for the integration branch for every other environment branch (a middle branch).
+
+`pr_host`: on GitLab, move `.github/pull_request_template.md` to
+`.gitlab/merge_request_templates/Default.md` (the default merge request template) and, when nothing
+else is left in `.github/`, delete that folder; with `none`, delete the template. Kit text that names
+`.github/pull_request_template.md` then means that file.
 
 A named check the project doesn't have: delete its row from `project/CONTROLS.md` § Named checks and
 its name from `checks.*`, rather than writing a placeholder command. Agents then record it as
