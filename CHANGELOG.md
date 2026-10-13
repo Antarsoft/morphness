@@ -6,12 +6,11 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+## 2026-10-13
+
 - Plugin icon (`.claude-plugin/icon.png`) for the Claude plugin directory listing.
 - `/morph-init` no longer downloads the Morphness source itself: it uses its own plugin folder or a
   clone the user names. `/morph-share` asks for the showcase handle instead of reading it with `gh`.
-
-## 2026-10-13
-
 - New `/morph-update` skill, and [UPDATE.md](UPDATE.md) for agents without the plugin. It lists the
   kit updates and community lessons added upstream since a copy last synced, explains why each fits,
   and applies only what the owner accepts, merging with local edits instead of overwriting them.
@@ -20,6 +19,8 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 - Every prune checks upstream read-only and lists pending updates in the proposal (`SETUP.md` § Prune,
   `templates/prune.md` § 3c). `harness.config.yml` → `installed_from` gains `release` and `updates`.
 - `/morph-doctor` now only counts pending upstream items and points to `/morph-update`.
+- `/morph-update` works from a Morphness clone the user or their agent makes (UPDATE.md step 2) and
+  never downloads the source itself, like `/morph-init`.
 - New optional `ci-cd` module. `/morph-init` can now set up pipelines (CI that runs the named checks
   on pull requests, an owner-run deploy workflow, and the migrations workflow the data-access module
   refers to), each one offered separately and written only when you say yes. Agents write pipeline
