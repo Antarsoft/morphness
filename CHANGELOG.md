@@ -12,6 +12,9 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
   branch with promotion PRs) or fewer (production only, or none). Release QA runs on the
   environment just before production, the ci-cd deploy and migrations workflows offer exactly the
   listed environments, and `/morph-doctor` reports what is out of step after you change the list.
+- Branch protection on the host: `branch_protection` in `harness.config.yml` (on by default) and a
+  GitHub ruleset to import that makes every environment branch PR-only, with no force-push or
+  deletion. `/morph-init` asks for it and the number of approvals; `/morph-doctor` checks it.
 - Release tags are now optional (`release_tags` in `harness.config.yml`, default on), and the
   `ci-cd` module can add a tag workflow that tags each merge to the production branch from the PR
   title (`Release vX.Y.Z`, `Hotfix vX.Y.Z`) and creates its release, so nobody pushes tags by hand.

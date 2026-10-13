@@ -101,6 +101,12 @@ can change later: edit `harness.config.yml` → `environments` and run `/morph-d
 `ci_gate: true` only when CI runs the full checks; otherwise QA's record on the final commit is the
 gate. → `pr_host`, `ci_gate`
 
+Follow-up, skipped when `pr_host` is `none`: "Protect the environment branches (`<branches from
+Q6b>`) on the host: changes only through a PR, no force-push, no deletion? I'll write a ruleset you
+import; agents can't set it." Default yes. Then: "How many approvals before a merge?" Suggest 0
+with one human (GitHub doesn't let you approve your own PR) and 1 with more. When the scan or `gh`
+shows protection already on, say so and suggest keeping it. → `branch_protection.*`
+
 ## Q8. Roadmap
 
 "Do you plan in versions with a roadmap doc?" Default yes for products, no for libraries and internal
@@ -196,6 +202,7 @@ environments:   # in the order code moves through them; [] when nothing is deplo
 release: { prod_steps_by: owner }
 pr_host: github
 ci_gate: false
+branch_protection: { enabled: true, required_approvals: 0 }
 release_tags: true
 ci_cd: { ci: none, deploy: host, migrations: none, tags: none, docs_regex: "" }   # ci-cd module; paths of accepted workflows
 roadmap: { enabled: true, file: docs/ROADMAP.md, versions_dir: docs/versions, first_version: { id: v1, goal: "" } }

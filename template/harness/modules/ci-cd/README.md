@@ -32,7 +32,7 @@ Agents can't do these; they go in `project/RELEASE.md` § Manual steps, and morp
 
 - [ ] Create one host environment per entry in `harness.config.yml` → `environments`, with the same names, and set yourself as a required reviewer on every entry with `real_data: true` (production always).
 - [ ] Add the deploy and migration secrets as environment secrets, never repository secrets.
-- [ ] After CI has passed once on the integration branch, require its `checks` job before merging into the integration and production branches, then set `ci_gate: true`.
+- [ ] After CI has passed once on the integration branch, add its `checks` job as a required status check to the environment-branches ruleset (`harness/RELEASE.md` § Branch protection), then set `ci_gate: true`.
 - [ ] When the deploy workflow replaces the host's own deploy on push, turn the host's automatic deploys off (or the two will race).
 - [ ] With the tag workflow: if a ruleset protects version tags, let GitHub Actions bypass it for creation. Tags it pushes don't start other workflows (a GitHub rule for its built-in token), so a deploy that should run on a new tag keys on the push to the production branch instead.
 

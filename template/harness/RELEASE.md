@@ -27,6 +27,15 @@ Feature PRs target the integration branch, always opened with an explicit base: 
 
 No agent writes to any of them (`AGENTS.md` § Shared remote environments), whatever the list says.
 
+## Branch protection
+
+Every branch in `environments` (always the integration and production branches) changes only through a merged PR: no direct pushes, no force-pushes, no deletion. Two layers hold this:
+
+- **On the host (the real guard),** with `harness.config.yml` → `branch_protection.enabled: true`. On GitHub the human imports [.github/rulesets/environment-branches.json](../.github/rulesets/environment-branches.json) (Settings → Rules → Rulesets → New ruleset → Import a ruleset); it requires a PR with `required_approvals` approvals and blocks force-pushes and deletion. With `ci_gate: true` it also requires the CI check. On GitLab the human sets each branch as protected, with "Allowed to push" set to no one and force-push off. Merge style is not restricted, because the release PR uses a merge commit (§ Merge style).
+- **For agents,** `.claude/settings.json` denies `git push` to each of those branches and every force-push. A deny matches command text, so it only catches mistakes.
+
+When `environments` changes, the human updates the ruleset's branch list in the same change (`/morph-doctor` reports a branch that isn't covered). Agents never create or edit rulesets or protection settings.
+
 ## When a release happens
 
 Only when the human says **"release"**. Never automatic, never as a side effect of merging a feature into the integration branch.

@@ -30,6 +30,15 @@ environments:
 
 pr_host: github           # github | gitlab | none
 
+# Host-side protection on every branch in `environments` (harness/RELEASE.md § Branch protection):
+# changes only through a PR, no force-push, no deletion. Agents can't set it; the owner imports
+# .github/rulesets/environment-branches.json (GitHub) or sets protected branches (GitLab), and
+# /morph-doctor checks it. required_approvals: 0 for a solo owner (GitHub doesn't let you approve
+# your own PR), 1 or more with a team. With ci_gate: true the CI check is required too.
+branch_protection:
+  enabled: true
+  required_approvals: 0
+
 # true: every merge to the production branch gets a version tag (harness/RELEASE.md § Versions), from
 # the tag workflow when ci_cd.tags has one, else from the command the Technical Lead hands the owner.
 # false: no tags; the release PR title and _harness/releases/<version>/ are the record.

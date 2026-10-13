@@ -27,6 +27,11 @@ fill comments left, JSON parses, relative links resolve, agent frontmatter, ever
   environments, reviewers and secrets can't be read from here: remind the owner to create or rename
   them to match, with required reviewers on every `real_data: true` entry. A copy without the key
   (installed before it existed): point to `/morph-update`.
+- `branch_protection.enabled: true`: every environment branch is in the ruleset file's `include` list
+  and has `git push` denies in `.claude/settings.json`. When `gh` can read it, check each branch's
+  live rules (`gh api repos/<owner>/<repo>/rules/branches/<branch>`) for `pull_request`,
+  `non_fast_forward` and `deletion`, and with `ci_gate: true` the CI check. Report each missing rule
+  as the owner's step (agents never change rulesets); if the rules can't be read, ask the owner.
 - With the ci-cd module: every path in `ci_cd` exists; the CI workflow has one step per `before_qa`
   check whose command matches `project/CONTROLS.md` (report each missing or differing step); no runner
   image ends in `-latest`; the CI workflow uses `pull_request`, not `pull_request_target`, and reads no

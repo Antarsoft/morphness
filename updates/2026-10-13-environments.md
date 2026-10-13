@@ -1,11 +1,12 @@
 ---
 id: 2026-10-13-environments
-title: Shared environments as a configurable list
+title: Shared environments as a configurable list, with branch protection
 kind: config
 release: unreleased
 applies_to: { modules: [] }
 files:
   - harness.config.yml
+  - .github/rulesets/environment-branches.json
   - harness/RELEASE.md
   - harness/templates/release-qa-result.md
   - project/RELEASE.md
@@ -23,13 +24,16 @@ through them, each with its branch, how it deploys and whether it holds real dat
 two, `dev` on the integration branch and `production` on the production branch. A project can add a
 middle one (`staging`, `uat`) on the integration branch or on its own branch with promotion PRs, or
 keep fewer. Release QA now runs on the environment just before production, and the ci-cd deploy and
-migrations workflows offer exactly the listed environments, each only from its own branch.
+migrations workflows offer exactly the listed environments, each only from its own branch. A new
+`branch_protection` key and a GitHub ruleset to import protect every environment branch on the host:
+changes only through a PR, no force-push, no deletion.
 
 ## Why
 
 The kit assumed one environment per branch and hardcoded `staging` and `production` in the
 workflows, so a dev, staging and production setup couldn't be described, and nothing checked that the
-environments the owner named matched the workflows and `project/RELEASE.md`.
+environments the owner named matched the workflows and `project/RELEASE.md`. Branch protection was
+only an agent-side deny list for two branches; the host itself never required a PR.
 
 ## How to apply
 
@@ -47,7 +51,13 @@ environments the owner named matched the workflows and `project/RELEASE.md`.
    names and replace its branch guard with the template's `case` guard, one line per environment.
    Keep the project's own deploy and migrate steps. Then run morph-init's render.md § Self-checks
    items 7 and 8.
-5. Remind the owner to create or rename the host's environments to match, with required reviewers on
+5. Ask: "Protect the environment branches on the host (PR only, no force-push, no deletion)? How many
+   approvals?" (0 for a solo owner). Add `branch_protection` after `pr_host` with the template's
+   comment. On GitHub with a yes, copy `.github/rulesets/environment-branches.json`, fill it per
+   morph-init's render.md § 3b, and add importing it to `project/RELEASE.md` § Manual steps. Add the
+   `git push` denies for any middle branch to `.claude/settings.json`. If the repo already has
+   protection the owner likes, record `enabled: true` and skip the file.
+6. Remind the owner to create or rename the host's environments to match, with required reviewers on
    every `real_data: true` entry.
 
 ## Skip if
