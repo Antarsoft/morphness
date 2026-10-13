@@ -60,10 +60,16 @@ your stack starts with them.
 
 ## 🚀 Install
 
-**🤖 Ask your agent** (any Claude Code session in your repo):
+**🤖 Ask your agent.** Copy this into any Claude Code session inside your repo. It works for a new
+or an existing project:
 
 ```text
-Install Morphness from https://github.com/antarsoft/morphness in this repo. Follow its INSTALL.md.
+Set up the Morphness agent harness in this repo by following
+https://github.com/antarsoft/morphness/blob/main/INSTALL.md step by step.
+Scan the repo first, then ask me the setup questions one at a time with your suggested answer.
+Keep my existing files, install skills or connectors only after I say yes, and put every change
+on a new branch for me to review.
+If Morphness is already installed here, follow its UPDATE.md instead and show me what changed upstream.
 ```
 
 **🔌 Or as a plugin:**
