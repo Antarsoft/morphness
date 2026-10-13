@@ -1,0 +1,42 @@
+# Database migrations (Morphness ci-cd module). The workflow the data-access module and
+# project/RELEASE.md refer to. Only the owner starts it; agents never start, re-run or approve it.
+# The database URL is an environment secret on environments that require the owner's approval.
+name: migrations
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Which database to migrate
+        type: choice
+        options: [staging, production]
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    runs-on: ubuntu-24.04   # pinned: bump it in its own PR
+    environment: ${{ inputs.environment }}
+    concurrency:
+      group: migrations-${{ inputs.environment }}
+      cancel-in-progress: false
+    steps:
+      # Migrations run from the integration branch: production gets them from the release being
+      # reviewed, before its PR merges (harness/RELEASE.md step 4).
+      - name: branch guard
+        if: ${{ github.ref_name != '{{branches.integration}}' }}
+        run: |
+          echo "Migrations run from {{branches.integration}}; this run is on ${{ github.ref_name }}."
+          exit 1
+
+      - uses: actions/checkout@v4
+
+      # morph-init: fill the toolchain setup and install, using the commands in project/CONTROLS.md.
+
+      # morph-init: fill the commands that list pending migrations, apply them, and list them again so the
+      # log shows nothing is left pending (project/RELEASE.md § Production migrations). Example:
+      #   - name: migrate
+      #     env:
+      #       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      #     run: <migrate command> status && <migrate command> up && <migrate command> status

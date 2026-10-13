@@ -3,6 +3,14 @@
 Dated releases, newest first. Installed copies see new matching lessons through `/morph-doctor`;
 this file covers everything else that changed.
 
+## Unreleased
+
+- New optional `ci-cd` module. `/morph-init` can now set up pipelines (CI that runs the named checks
+  on pull requests, an owner-run deploy workflow, and the migrations workflow the data-access module
+  refers to), each one offered separately and written only when you say yes. Agents write pipeline
+  files but never run deploys or migrations. `/morph-doctor` reports CI that has drifted from
+  `project/CONTROLS.md`.
+
 ## 2026-10-12
 
 First public release.
