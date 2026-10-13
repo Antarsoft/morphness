@@ -1,6 +1,6 @@
 # Suggestion catalog
 
-morph-init and morph-doctor suggest only from this file, the source's `lessons/` and `profiles/`,
+morph-init and morph-update suggest only from this file, the source's `lessons/` and `profiles/`,
 or what the user names. Each entry says when to suggest it and why. Nothing installs without the
 user's yes. Before suggesting a skill, check it isn't already in `.agents/skills/`, `.claude/skills/`
 or `skills-lock.json`; before suggesting a connector, check `.mcp.json` and ask whether the user

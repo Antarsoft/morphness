@@ -46,6 +46,12 @@ than one project. Open an issue first describing the problem it solved for you. 
 roles and lifecycle intact: Technical Lead plans and delegates, Full-stack implements, QA validates,
 legal-writer drafts legal wording, and the retro and prune loop changes the harness.
 
+Installed harnesses only hear about a kit change through an **update note**: add one to
+[updates/](updates/README.md) in the same PR, listing every `template/` file you changed and how to
+apply the change to a copy that has morphed. Add a line under **Unreleased** in
+[CHANGELOG.md](CHANGELOG.md) for any change to `template/` or `skills/`. Check both with
+`scripts/check-updates.sh --since origin/main`.
+
 ## Catalog entries
 
 Skills and connectors suggested by morph-init live in `skills/morph-init/references/catalog.md`.
@@ -70,9 +76,27 @@ any time. Lessons you contribute stay anonymous whether or not you're listed.
 
 ## Releases
 
-There's no version to bump. Maintainers tag dated releases (`2026-10-12`) with a changelog of
-new lessons and kit changes in [CHANGELOG.md](CHANGELOG.md). Installed copies see new matching
-lessons through `/morph-doctor`.
+Releases are dated: the release name, its tag and its `CHANGELOG.md` heading are the date
+(`2026-10-13`), and `.claude-plugin/plugin.json` → `version` is the same date with dots
+(`2026.10.13`). Claude Code only offers a plugin update when that version changes, so every release
+bumps it. Installs don't carry a version: they record the commit they last synced to, and
+`/morph-update` works out what changed from there.
+
+**When to cut one**
+
+- When **Unreleased** has at least one change to `template/` or `skills/`, batched about weekly.
+- The same day for a `kind: fix` update note (a kit instruction that was wrong or unsafe), or a
+  skill bug that breaks an install or update.
+- At most one release a day. Lessons, profiles, catalog entries and docs alone don't need one:
+  `/morph-update` reads lessons from `main`; they go into the next release's notes.
+
+**How**
+
+1. A PR moves the **Unreleased** entries under `## <date>`, sets each update note's `release` from
+   `unreleased` to that date, and bumps `plugin.json` → `version`. `scripts/check-updates.sh` checks
+   that the three agree.
+2. After it merges, a maintainer creates the GitHub release with tag `<date>` on the merge commit,
+   using the changelog section as the release notes.
 
 By taking part you agree to the [Code of Conduct](CODE_OF_CONDUCT.md). Security issues go through
 [SECURITY.md](SECURITY.md), not public issues.

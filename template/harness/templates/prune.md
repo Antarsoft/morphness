@@ -42,9 +42,17 @@ Rules marked `fired` or `insurance` here that are not specific to this project. 
 |-------------|--------------------------|
 | | |
 
+## 3c. Upstream updates
+
+From `/morph-update`'s read-only listing (`harness/MORPHING.md` § Health check and upstream updates): kit updates and matching lessons this project hasn't seen, fixes first. The human decides each row; applied and declined rows are recorded by `/morph-update`. With no network: "not checked".
+
+| Item (update note or lesson id) | Kind | Why it fits this project | Local files it touches (edited here?) | Proposal |
+|---------------------------------|------|--------------------------|---------------------------------------|----------|
+| | fix · module · rule · template · config · lesson | | | apply · decline · later |
+
 ## 4. Decision
 
-Rule rows (§ 2) and trial rows (§ 1b): the human approves or rejects each; default is no change. Leftovers (§ 3): the TL decides (`harness/SETUP.md` § Retrospective → Per-feature review).
+Rule rows (§ 2), trial rows (§ 1b) and upstream rows (§ 3c): the human approves or rejects each; default is no change. Leftovers (§ 3): the TL decides (`harness/SETUP.md` § Retrospective → Per-feature review).
 
 | Row | Decision | Note |
 |-----|----------|------|
@@ -52,4 +60,4 @@ Rule rows (§ 2) and trial rows (§ 1b): the human approves or rejects each; def
 
 ## 5. Applied
 
-Docs change / commit: … · `_harness/learnings/` files folded into `LEARNINGS.md` and deleted: yes | no · Steps files folded into the next version's checklist (roadmap module): yes | no | n/a · Last prune and Counting from updated: yes | no
+Docs change / commit: … · Upstream rows applied with `/morph-update`: yes | none approved | not checked · `_harness/learnings/` files folded into `LEARNINGS.md` and deleted: yes | no · Steps files folded into the next version's checklist (roadmap module): yes | no | n/a · Last prune and Counting from updated: yes | no

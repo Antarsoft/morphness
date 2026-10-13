@@ -1,6 +1,6 @@
 # Morphness configuration: structural facts the harness reads.
 # Prose (stack, commands, risk notes) lives in project/*.md. /morph-init writes this file;
-# edit it by hand any time, then run /morph-doctor.
+# edit it by hand any time, then run /morph-doctor. /morph-update brings in upstream changes.
 
 project:
   name: "{{project.name}}"
@@ -65,6 +65,13 @@ loop:
   prune_every: 10         # learnings files between prunes
   qa_max_rounds: 2        # QA rework rounds before escalating to the owner
 
-# Written by /morph-init: the upstream Morphness commit this copy started from.
-# /morph-doctor uses it to list new upstream lessons. It is not a version; nothing upgrades.
-installed_from: { repo: "{{morphness.repo}}", commit: "{{morphness.commit}}" }
+# Where this copy came from upstream. Written by /morph-init, updated by /morph-update.
+# commit: the Morphness commit the kit was last synced to (the base for merging kit updates).
+# release: the Morphness release that commit belongs to. updates: kit update notes (updates/ in
+# Morphness) this project applied, declined or put off; deferred ones keep their own base commit.
+# Nothing upstream changes this copy on its own: /morph-update offers each update for your yes.
+installed_from:
+  repo: "{{morphness.repo}}"
+  commit: "{{morphness.commit}}"
+  release: "{{morphness.release}}"
+  updates: { applied: [], declined: [], deferred: [] }   # deferred entries: { id: <note id>, base: <commit> }
