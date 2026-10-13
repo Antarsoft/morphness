@@ -8,7 +8,7 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## 2026-10-13
 
-- Plugin icon (`.claude-plugin/icon.png`) for the Claude plugin directory listing.
+- Plugin icon for the Claude plugin directory listing.
 - `/morph-init` no longer downloads the Morphness source itself: it uses its own plugin folder or a
   clone the user names. `/morph-share` asks for the showcase handle instead of reading it with `gh`.
 - New `/morph-update` skill, and [UPDATE.md](UPDATE.md) for agents without the plugin. It lists the
