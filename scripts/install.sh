@@ -20,7 +20,7 @@ if [ -f "$TARGET/harness.config.yml" ] && grep -q '{{' "$TARGET/harness.config.y
   exit 1
 fi
 if [ -f "$TARGET/harness.config.yml" ]; then
-  echo "Morphness is already installed in $TARGET (harness.config.yml exists). Run /morph-doctor there instead." >&2
+  echo "Morphness is already installed in $TARGET (harness.config.yml exists). Run /morph-update there for upstream changes, or /morph-doctor for a health check." >&2
   exit 1
 fi
 

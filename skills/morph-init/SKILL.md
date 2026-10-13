@@ -9,7 +9,8 @@ You are installing Morphness into the repository in the current working director
 multi-agent harness: a Technical Lead in the main chat plans and delegates, a Full-stack subagent
 implements, a QA subagent validates, a legal-writer subagent drafts legal wording, and a retro and prune
 loop changes the harness itself as the project goes. After install, the copy belongs to the project and
-is expected to change. There is no version and no upgrade.
+is expected to change. Nothing upstream overwrites it: `/morph-update` later offers upstream kit
+updates and lessons one at a time, merged with the project's own edits.
 
 Work through the phases below in order. Ask **one question at a time**, always with a suggested answer
 the user can accept with "yes" or Enter. Skip any question whose answer you already know from the repo,
@@ -21,12 +22,13 @@ two, with options on short lines and your suggestion marked.
 1. **Locate the Morphness source.** In order: this skill's own plugin folder (`template/` two levels up
    from this file), a local clone the user names, or a fresh shallow clone of the Morphness repo into
    a temporary folder outside the target (the URL in INSTALL.md). Record the source repo URL and commit (`git rev-parse HEAD`)
-   for `installed_from`.
+   for `installed_from`, and the release: the newest dated heading in the source's `CHANGELOG.md`.
 2. **Check the target.** `git status` must be clean, apart from files `scripts/install.sh` just copied
    (ask the user to commit or stash anything else; never do it yourself). If `harness.config.yml`
    exists and still has `{{` placeholders, the files were copied by `scripts/install.sh`: carry on and
-   skip the copy step in render.md. If it exists and is filled in, stop and suggest `/morph-doctor`
-   instead: morph-init never overwrites an installed harness.
+   skip the copy step in render.md. If it exists and is filled in, stop and suggest `/morph-update`
+   (upstream changes) or `/morph-doctor` (health check) instead: morph-init never overwrites an
+   installed harness.
    If there is no `harness.config.yml` but the repo already runs an earlier harness of this shape
    (a `harness/` folder with `SETUP.md` or `PLAN_CHECKLIST.md`, a `_harness/` folder, or a
    `HARNESS_VERSION` file), this is a **migration**: say so, and follow `references/render.md`
@@ -98,7 +100,8 @@ Tell the user, in a few lines:
   `harness/modules/claude-projects/README.md` to paste into the project instructions. These are advice;
   the user may change any of them.
 - How to start the first feature: "Ask the Technical Lead: plan <feature>."
-- That the harness will change itself through retros and prunes (`harness/MORPHING.md`), and that
+- That the harness will change itself through retros and prunes (`harness/MORPHING.md`), that
+  `/morph-update` (also run at every prune) offers upstream kit updates and lessons, and that
   `/morph-share` can send lessons that worked back to the community catalog.
 
 Delete `morph-answers.yml` from the target only if the user says so; otherwise move it to

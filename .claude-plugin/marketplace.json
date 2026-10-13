@@ -10,7 +10,7 @@
     {
       "name": "morphness",
       "source": "./",
-      "description": "Self-improving multi-agent harness for Claude Code (plan, build, QA, retro). Install and grow it with /morph-init, /morph-doctor and /morph-share."
+      "description": "Self-improving multi-agent harness for Claude Code (plan, build, QA, retro). Install and grow it with /morph-init, /morph-update, /morph-doctor and /morph-share."
     }
   ]
 }

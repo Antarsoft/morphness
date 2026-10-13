@@ -1,10 +1,21 @@
 # Changelog
 
-Dated releases, newest first. Installed copies see new matching lessons through `/morph-doctor`;
-this file covers everything else that changed.
+Dated releases, newest first. Installed copies pick up kit changes (each with a note in
+[updates/](updates/)) and new matching lessons through `/morph-update`; this file lists every change.
+When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+## 2026-10-13
+
+- New `/morph-update` skill, and [UPDATE.md](UPDATE.md) for agents without the plugin. It lists the
+  kit updates and community lessons added upstream since a copy last synced, explains why each fits,
+  and applies only what the owner accepts, merging with local edits instead of overwriting them.
+  Declined updates are never offered again; deferred ones come back next time.
+- Kit changes now ship with an update note in `updates/`, checked by `scripts/check-updates.sh`.
+- Every prune checks upstream read-only and lists pending updates in the proposal (`SETUP.md` § Prune,
+  `templates/prune.md` § 3c). `harness.config.yml` → `installed_from` gains `release` and `updates`.
+- `/morph-doctor` now only counts pending upstream items and points to `/morph-update`.
 - New optional `ci-cd` module. `/morph-init` can now set up pipelines (CI that runs the named checks
   on pull requests, an owner-run deploy workflow, and the migrations workflow the data-access module
   refers to), each one offered separately and written only when you say yes. Agents write pipeline

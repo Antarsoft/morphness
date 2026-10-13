@@ -17,7 +17,9 @@ Input: a PR number or URL.
 
 1. **Read the PR.** List changed files. Anything outside `lessons/`, `profiles/` and
    `skills/morph-init/references/catalog.md` is a kit change: check there's a linked issue
-   (CONTRIBUTING.md § The kit itself) and review it separately with the maintainer.
+   (CONTRIBUTING.md § The kit itself), that `scripts/check-updates.sh --since origin/main` passes (an
+   update note for every changed `template/` file, readable by a project owner, with § How to apply
+   steps that work on a morphed copy), and review it separately with the maintainer.
 2. **Run the check.** `scripts/check-lessons.sh` on the changed lesson files. Report every failure.
 3. **Classify each lesson** against the whole catalog (same failure and same fix = same rule),
    following `lessons/README.md` § When a lesson already exists:
