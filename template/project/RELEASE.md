@@ -4,12 +4,11 @@ The process is in [harness/RELEASE.md](../harness/RELEASE.md). This file holds w
 
 ## Where things deploy
 
-| Branch | Hosting environment | Database or backing services |
-|--------|---------------------|------------------------------|
-| `{{branches.integration}}` | <!-- morph-init: fill, e.g. "Staging (automatic on push)" --> | <!-- morph-init: fill, e.g. "staging database" --> |
-| `{{branches.production}}` | <!-- morph-init: fill, e.g. "Production" --> | <!-- morph-init: fill, e.g. "production database" --> |
+| Environment | Branch | Hosting | Database or backing services | Deploys by |
+|-------------|--------|---------|------------------------------|------------|
+<!-- morph-init: fill one row per entry in harness.config.yml → environments, in the same order, e.g. "| dev | `dev` | Dev deploy (automatic on push) | dev database | host |" and "| production | `main` | Production | production database | host, after the release PR merges |". With no shared environments, write one line saying nothing is deployed and release QA runs locally. -->
 
-Release QA ([harness/RELEASE.md](../harness/RELEASE.md) step 3) runs against <!-- morph-init: fill where, e.g. "the integration branch's staging deploy" -->. QA stays read-only there, as everywhere.
+Release QA ([harness/RELEASE.md](../harness/RELEASE.md) step 3) runs on the release QA environment, the row just before production: <!-- morph-init: fill which one and its URL, e.g. "dev, https://dev.example.com", or "a local build" when production is the only row -->. QA stays read-only there, as everywhere.
 
 <!-- morph-init: with a single-branch flow (integration equal to production), say so here and that a release is a tag on that branch. -->
 
@@ -39,7 +38,7 @@ Everything a workflow does not do automatically is a step someone does. List eac
 
 ## Smoke checklist
 
-Release QA (on the integration environment) and the owner's live check (on production) use the steps that apply to the release:
+Release QA (on the release QA environment) and the owner's live check (on production) use the steps that apply to the release:
 
 <!-- morph-init: fill 3 to 6 checkbox steps covering the core journey. Example:
 - [ ] Sign up with a real email, confirm it, log in.

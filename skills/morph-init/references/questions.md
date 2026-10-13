@@ -15,7 +15,7 @@ Read, without running project code:
 - `git branch -r` and the default branch; recent `git log --oneline -20`; contributors.
 - An earlier harness, if any: `.claude/agents/*.md` (model and effort per agent, extra variants),
   `.claude/rules/*.md`, `project/*.md`, the agent table and trials in its agents doc, and its
-  checklists. Its values are the suggestions for Q5, Q6, Q9 to Q13, including defaults that differ
+  checklists. Its values are the suggestions for Q5, Q6, Q6b, Q9 to Q13, including defaults that differ
   from the advised ones (for example QA at `medium` by default).
 
 Look for manifests in workspace packages too (`apps/*/`, `packages/*/`, or the globs in
@@ -77,6 +77,24 @@ yes; for an ongoing project, suggest whatever its existing tags show (`git tag -
 head`), and note any other version scheme for `project/RELEASE.md`. → `branches.*`,
 `release.prod_steps_by`, `release_tags`
 
+## Q6b. Environments
+
+"Which shared environments does the code go through? I'd keep two: `dev`, running `<integration>`,
+and `production`, running `<production>`. Want more or fewer?" Say what the scan found first (host
+config files such as `vercel.json`, `netlify.toml`, `fly.toml` or `render.yaml`, `environment:` keys in
+workflows, a `staging` or `uat` branch, env files named after environments), and suggest that set
+instead of the default when it differs.
+- Keep two: `dev` and `production` (default with two branches)
+- More: add one between them (for example `staging` or `uat`). Follow-up: "Does it run `<integration>`
+  too, or its own branch that a promotion PR moves code into?" (default: `<integration>`)
+- Fewer: production only (default with a single-branch flow), or none when nothing is deployed (a
+  library, a CLI tool)
+
+Then, for each environment, one line: "How does `<name>` get deployed (the host on push / a workflow /
+by hand), and does it hold real people's data?" Suggest `host` when the scan found a host that
+deploys on push, `real_data: true` for production and `false` for the rest. Say plainly that the list
+can change later: edit `harness.config.yml` → `environments` and run `/morph-doctor`. → `environments`
+
 ## Q7. Code host and CI
 
 "Where's the code hosted, and should CI on the PR be a required gate?" Suggest GitHub; suggest
@@ -94,8 +112,8 @@ for an ongoing project, the next release the README or tags point to). → `road
 
 Skip when the stack has no database. "Agents never write to shared remote databases. Do you want the
 data-access module (local-stack tests for migrations and access rules, remote checks read-only)?"
-Default yes when there's a migrations folder. Follow-up: "Name of the remote environments (e.g.
-staging, production) and how migrations reach them (CI workflow, manual)." → `modules`, `data.*`
+Default yes when there's a migrations folder. Follow-up: "How do migrations reach the environments
+from Q6b (a CI workflow, or you by hand)?" → `modules`, `data.*`
 
 ## Q9b. Pipelines (CI and deploys)
 
@@ -105,9 +123,9 @@ the pipelines you don't have yet. Each one only on your yes:"
 
 1. **CI on pull requests**, running the `before_qa` checks with the commands from Q5. Suggest yes
    when there's no CI. When CI exists, offer only to keep it in step with `project/CONTROLS.md`.
-2. **Deploy workflow.** First ask "How does code reach staging and production?" (the host deploys on
-   push (default when Vercel, Netlify, Render, Fly or similar is in the scan) / a workflow / by hand).
-   Offer the workflow only for "a workflow" with none in the repo; "host" and "by hand" add no file.
+2. **Deploy workflow.** Only when an environment from Q6b deploys by `workflow` and the repo has no
+   deploy workflow. It offers exactly the Q6b environments, each deployable only from its own branch;
+   `host` and `manual` environments add no file.
 3. **Migrations workflow**, only with the data-access module and when Q9's answer was "CI
    workflow" with none in the repo.
 4. **Tag workflow**, only with `release_tags: true` and on GitHub or GitLab. Suggest yes: it tags each
@@ -172,6 +190,9 @@ stack: { summary: "", package_manager: "", toolchain_setup: "", install_cmd: "" 
 cmd: { install: "", typecheck: "", lint: "", unit: "", build: "", e2e-targeted: "", e2e-full: "", e2e-repeat: "" }  # plus any extra named checks
 checks: { before_qa: [], before_signoff: [] }
 branches: { integration: dev, production: main }
+environments:   # in the order code moves through them; [] when nothing is deployed
+  - { name: dev, branch: dev, deploy: host, real_data: false }
+  - { name: production, branch: main, deploy: host, real_data: true }
 release: { prod_steps_by: owner }
 pr_host: github
 ci_gate: false
@@ -179,7 +200,7 @@ release_tags: true
 ci_cd: { ci: none, deploy: host, migrations: none, tags: none, docs_regex: "" }   # ci-cd module; paths of accepted workflows
 roadmap: { enabled: true, file: docs/ROADMAP.md, versions_dir: docs/versions, first_version: { id: v1, goal: "" } }
 modules: []
-data: { environments: [], migrations_reach_remote_by: "" }
+data: { migrations_reach_remote_by: "" }
 legal: { sources: [docs/LEGAL.md] }
 risk_areas: []
 agents: { technical_lead: { model: opus, effort: high },

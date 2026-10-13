@@ -9,8 +9,8 @@ on:
       environment:
         description: Where to deploy
         type: choice
-        options: [staging, production]
-  # morph-init: fill, or delete these two lines: automatic staging deploys on each push to the integration branch.
+        options: [{{environments.names}}]
+  # morph-init: fill, or delete these two lines: automatic deploys of the integration environment on each push to its branch.
   push:
     branches: ["{{branches.integration}}"]
 
@@ -20,17 +20,25 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-24.04   # pinned: bump it in its own PR
-    environment: ${{ inputs.environment || 'staging' }}
+    environment: ${{ inputs.environment || '{{environments.first}}' }}
     concurrency:
-      group: deploy-${{ inputs.environment || 'staging' }}
+      group: deploy-${{ inputs.environment || '{{environments.first}}' }}
       cancel-in-progress: false
     steps:
-      # Production deploys only from the production branch (harness/RELEASE.md).
+      # Each environment deploys only from its own branch (harness.config.yml → environments).
       - name: branch guard
-        if: ${{ (inputs.environment || 'staging') == 'production' && github.ref_name != '{{branches.production}}' }}
+        env:
+          TARGET: ${{ inputs.environment || '{{environments.first}}' }}
+          REF: ${{ github.ref_name }}
         run: |
-          echo "Production deploys only from {{branches.production}}; this run is on ${{ github.ref_name }}."
-          exit 1
+          case "$TARGET" in
+            # morph-init: fill one line per entry in harness.config.yml → environments: <name>) want=<branch> ;;
+            *) echo "Unknown environment: $TARGET"; exit 1 ;;
+          esac
+          if [ "$REF" != "$want" ]; then
+            echo "$TARGET deploys only from $want; this run is on $REF."
+            exit 1
+          fi
 
       - uses: actions/checkout@v4
 

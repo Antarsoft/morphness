@@ -167,7 +167,7 @@ and advised settings (coordinator opus · medium, feature threads opus · high).
 | 🗺️ `harness/` | The process: lifecycle, handoffs, checks, modes, release, the plan checklist, and how it morphs. |
 | 🧩 `harness/modules/` | Optional: Claude Projects, data access (local-first, remote read-only), browser e2e, legal wording, roadmap, CI/CD pipelines. |
 | 🏷️ `project/` | Your project's facts: stack, the commands behind each check, risk areas, effort per area. |
-| 🎛️ `harness.config.yml` | Branches, modules, named checks, CI gate, risk areas, models and effort, loop limits. |
+| 🎛️ `harness.config.yml` | Branches, environments, modules, named checks, CI gate, risk areas, models and effort, loop limits. |
 | 🗂️ `_harness/` | Runtime: feature folders, learnings, prunes, releases. |
 | 🧬 `profiles/` | Optional starting points for known stacks: detect rules, check commands, permissions and matching lessons. The first one is Next.js + Supabase. |
 
@@ -180,6 +180,10 @@ Run `/morph-doctor` afterwards to check the wiring. An abridged example:
 branches:
   integration: dev          # feature branches start here and PRs target it
   production: main          # moves only through a release
+
+environments:               # in the order code moves through them; add staging, or keep one
+  - { name: dev, branch: dev, deploy: host, real_data: false }
+  - { name: production, branch: main, deploy: host, real_data: true }
 
 modules: [roadmap, data-access, browser-e2e]
 

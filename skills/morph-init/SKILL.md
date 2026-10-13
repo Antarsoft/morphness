@@ -75,7 +75,7 @@ carry on; don't try another download route.
 
 ## Phase 3: Summary and confirm
 
-Print a summary: project, owner, environment, branches, modules, named checks with their commands, risk
+Print a summary: project, owner, environment, branches, shared environments, modules, named checks with their commands, risk
 areas, model and effort per agent, Claude Projects advice (if used), the pipelines accepted (ci-cd
 module) with their owner steps, accepted skills, connectors and lessons, and the list of files that
 will be created. Ask for a final yes. Nothing is written to the target before this yes, except

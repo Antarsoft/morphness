@@ -64,7 +64,9 @@ Replace every `{{key}}` in the copied files with its answer. Keys: `project.name
 `human.name`, `human.github` (the owner), `branches.integration`, `branches.production`, `stack.summary`,
 `stack.package_manager`, `stack.toolchain_setup`, `stack.install_cmd`, `cmd.<check-name>`, `models.tl`,
 `models.fullstack`, `models.fullstack_medium`, `models.qa`, `models.qa_medium`, `models.legal`, `morphness.repo`, `morphness.commit`, `morphness.release`,
-and in ci-cd workflow scaffolds `ci.docs_regex` (a regex for the documentation paths in `project/CONTROLS.md`).
+and in ci-cd workflow scaffolds `ci.docs_regex` (a regex for the documentation paths in `project/CONTROLS.md`),
+`environments.names` (the names in `environments`, comma-separated, in order) and `environments.first`
+(the first name).
 Model placeholders (`{{models.tl}}` etc.) take the model alias the user accepted. Check commands
 (`{{cmd.<name>}}`) take the command, or the text `none (add when the project has one)`.
 In `scripts/session-start.sh` the commands sit inside single quotes: write an empty string for
@@ -80,10 +82,15 @@ Fill `installed_from` in `harness.config.yml` with the source repo URL, commit a
 ## 3b. Config values
 
 Write the answers into `harness.config.yml`, replacing the defaults that aren't placeholders:
-`environment`, `branches`, `pr_host`, `roadmap`, `modules`, `checks.before_qa`,
+`environment`, `branches`, `environments`, `pr_host`, `roadmap`, `modules`, `checks.before_qa`,
 `checks.before_signoff` (plus any extra named checks the user added), `ci_gate`, `release_tags`, `ci_cd` (delete the
 block without the ci-cd module), `risk_areas`,
 `agents`, `claude_projects` (delete the block when Claude Projects isn't used) and `loop`.
+
+`environments`: the first entry's branch is `branches.integration` and the last one's is
+`branches.production`; with a single-branch flow and one environment, both are that branch. Write
+`environments: []` when nothing is deployed. `project/RELEASE.md` § Where things deploy gets one row
+per entry, in the same order.
 
 A named check the project doesn't have: delete its row from `project/CONTROLS.md` § Named checks and
 its name from `checks.*`, rather than writing a placeholder command. Agents then record it as
@@ -141,7 +148,11 @@ All must pass before committing; fix and re-run on failure.
 7. With the ci-cd module, each workflow it wrote parses as YAML, has no `# morph-init: fill` line
    left (`grep -rn 'morph-init: fill' .github/workflows`), and passes `actionlint` when it is installed.
    Its CI steps run the `before_qa` commands exactly as `project/CONTROLS.md` writes them.
-8. `scripts/session-start.sh` is executable and parses (`bash -n scripts/session-start.sh`). Don't
+8. `environments` matches the branches (first entry on `branches.integration`, last on
+   `branches.production`, names unique), and `project/RELEASE.md` § Where things deploy has one row
+   per entry. With the ci-cd module, the deploy and migrations workflows offer exactly those names
+   and their branch guards have one `case` line per name.
+9. `scripts/session-start.sh` is executable and parses (`bash -n scripts/session-start.sh`). Don't
    run it here: it installs dependencies.
 
 ## 8. Commit and PR
