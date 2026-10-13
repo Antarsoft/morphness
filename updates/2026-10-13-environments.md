@@ -2,7 +2,7 @@
 id: 2026-10-13-environments
 title: Shared environments as a configurable list, with branch protection
 kind: config
-release: unreleased
+release: 2026-10-13.2
 applies_to: { modules: [] }
 files:
   - harness.config.yml
