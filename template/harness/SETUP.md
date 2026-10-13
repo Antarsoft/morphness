@@ -192,7 +192,7 @@ Technical Lead:
    - **Roadmap module on:** `<roadmap.versions_dir>/<id>/steps/<slug>.md`, next to the next version's checklist, never into the checklist itself, so parallel feature branches don't conflict. Finding the next version, creating a missing version doc or checklist, and items that belong to a later version: [modules/roadmap/](./modules/roadmap/README.md). The release and the prune fold these files into the checklist.
 
    In the same commit set `plan.md` **Status** to `passed` and **Steps file** to the path or `none`. Commit it on the feature branch so it merges with the PR. With nothing for the human (**Steps file:** `none`) set `passed` at once and don't wait. Then run the retrospective (§ Retrospective).
-5. Open the PR into the integration branch (`branches.integration`, passing the base explicitly) or merge only when the human asks, per the commit policy in `.claude/rules/technical-lead.md`. Shipping to the production branch is a release: [RELEASE.md](./RELEASE.md).
+5. Push, then mark the feature's draft PR into the integration branch **ready** (open it, ready, if it doesn't exist yet), per the PR states in `.claude/rules/technical-lead.md` § Commits and branches. Merge only when the human asks. Shipping to the production branch is a release: [RELEASE.md](./RELEASE.md).
 
 ---
 

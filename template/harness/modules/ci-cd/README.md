@@ -6,7 +6,7 @@ The module covers four pipelines. `/morph-init` offers each one on its own and w
 
 | Pipeline | What it does | Who starts it | Scaffold (GitHub Actions) |
 |----------|--------------|---------------|---------------------------|
-| **CI** | Runs the `before_qa` named checks on every pull request into the integration or production branch | Every PR, automatically | [github/ci.yml](./github/ci.yml) |
+| **CI** | Runs the `before_qa` named checks on every pull request into the integration or production branch, and in a merge queue when there is one. Draft PRs skip it unless `ci_cd.on_drafts: true` | Every ready PR (and draft, with `on_drafts`), automatically | [github/ci.yml](./github/ci.yml) |
 | **Deploy** | Deploys a branch to one of the `environments` in `harness.config.yml`, each only from its own branch, for hosts that don't deploy on push themselves | The owner (manual run), or a push to the integration branch for the integration environment | [github/deploy.yml](./github/deploy.yml) |
 | **Migrations** | Applies database migrations to a shared environment, the workflow the `data-access` module and `project/RELEASE.md` refer to | The owner (manual run) only | [github/migrations.yml](./github/migrations.yml) |
 | **Tags** | Tags each merge to the production branch with the version from the merged PR's title (`Release vX.Y.Z` or `Hotfix vX.Y.Z`) and creates its release, using the PR body as the notes. Only with `release_tags: true` | A push to the production branch; the owner (manual run with a version) for a single-branch release or a missed tag | [github/tag.yml](./github/tag.yml) |
@@ -21,6 +21,8 @@ On GitLab, morph-init writes the same jobs into `.gitlab-ci.yml`: CI as a merge-
 - **CI uses the commands in `project/CONTROLS.md`, word for word.** One step per `before_qa` check, in the same order. When a command changes there, the same PR changes CI (plan checklist item 6, every affected file). `/morph-doctor` reports CI that has drifted.
 - **CI runs on `pull_request`, never `pull_request_target`,** with `permissions: contents: read`. A PR from a fork then runs with no secrets and a read-only token.
 - **A docs-only PR still gets a green check.** The CI job works out from the changed files whether only documentation changed (`project/CONTROLS.md` § Documentation paths) and then skips its steps and succeeds. Don't use workflow-level `paths-ignore`: a required check that never starts blocks the merge.
+- **Drafts are skipped with a job-level `if`, and marking ready runs CI.** The workflow lists `ready_for_review` in its `types`. A skipped job reports success, which satisfies a required check; that's safe because a draft can't merge. `ci_cd.on_drafts: true` runs CI on every push to a draft too.
+- **PR checks and merge checks are the same job.** CI's `checks` job is the required check on the PR and, with a merge queue, in the queue (`merge_group`), where it runs every step on the PR combined with the latest base. The heavier `before_signoff` checks stay QA's recorded run (`harness/CONTROLS.md` § Merge gate) unless a plan adds them to CI.
 - **Pin the runner image** (for example `ubuntu-24.04`, not `ubuntu-latest`) and each action to a major version. Bump either in its own PR.
 - **Cost before adding a step.** A plan that adds a CI job or a long step times it locally and states the billed minutes (plan checklist item 37). Public repositories on GitHub run Actions for free; private ones use the account's minutes, and when those run out jobs don't start. With `ci_gate: false`, QA's local record stays the gate, so a stalled CI doesn't block work.
 - **`ci_gate: true` only once CI is a real gate:** CI runs every `before_qa` check, has passed on the integration branch at least once, and the owner has made it a required status check (GitHub: a ruleset or branch protection on the integration and production branches). Until then keep `ci_gate: false`.
@@ -33,6 +35,7 @@ Agents can't do these; they go in `project/RELEASE.md` § Manual steps, and morp
 - [ ] Create one host environment per entry in `harness.config.yml` → `environments`, with the same names, and set yourself as a required reviewer on every entry with `real_data: true` (production always).
 - [ ] Add the deploy and migration secrets as environment secrets, never repository secrets.
 - [ ] After CI has passed once on the integration branch, add its `checks` job as a required status check to the environment-branches ruleset (`harness/RELEASE.md` § Branch protection), then set `ci_gate: true`.
+- [ ] Optional: to use a merge queue (GitHub offers it on public organization repos and on Enterprise Cloud), turn it on in the environment-branches ruleset. The `checks` job already runs in the queue.
 - [ ] When the deploy workflow replaces the host's own deploy on push, turn the host's automatic deploys off (or the two will race).
 - [ ] With the tag workflow: if a ruleset protects version tags, let GitHub Actions bypass it for creation. Tags it pushes don't start other workflows (a GitHub rule for its built-in token), so a deploy that should run on a new tag keys on the push to the production branch instead.
 

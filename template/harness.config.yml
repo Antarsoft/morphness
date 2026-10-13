@@ -63,9 +63,12 @@ ci_gate: false
 # ci-cd module: the pipelines the harness set up and checks. A workflow path, or none.
 # deploy can also be `host` (the hosting platform deploys on push) or `manual`.
 # tags: the workflow that tags merges to the production branch (only with release_tags: true).
+# on_drafts: false skips CI on draft PRs (it runs when the PR is marked ready), saving Actions minutes
+# on private repos; true runs it on every push to a draft too (free on public repos).
 # Agents edit these files in a planned feature; only the owner runs deploys and migrations.
 ci_cd:
   ci: none
+  on_drafts: false
   deploy: host
   migrations: none
   tags: none
