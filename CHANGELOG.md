@@ -6,6 +6,11 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Release tags are now optional (`release_tags` in `harness.config.yml`, default on), and the
+  `ci-cd` module can add a tag workflow that tags each merge to the production branch from the PR
+  title (`Release vX.Y.Z`, `Hotfix vX.Y.Z`) and creates its release, so nobody pushes tags by hand.
+  `/morph-init` asks about both.
+
 ## 2026-10-13
 
 - Plugin icon for the Claude plugin directory listing.

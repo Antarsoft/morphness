@@ -21,7 +21,8 @@ fill comments left, JSON parses, relative links resolve, agent frontmatter, ever
 - With the ci-cd module: every path in `ci_cd` exists; the CI workflow has one step per `before_qa`
   check whose command matches `project/CONTROLS.md` (report each missing or differing step); no runner
   image ends in `-latest`; the CI workflow uses `pull_request`, not `pull_request_target`, and reads no
-  `secrets.` other than `GITHUB_TOKEN`; deploy and migrations jobs name an `environment`.
+  `secrets.` other than `GITHUB_TOKEN`; deploy and migrations jobs name an `environment`; a tag
+  workflow exists only with `release_tags: true`.
 - `ci_gate: true`: CI exists, and when `gh` can read it, the integration branch requires the CI
   check (`gh api repos/<owner>/<repo>/rules/branches/<integration>`). If it can't be read, ask the
   owner instead of reporting a failure. `ci_gate: false` with a CI that has passed on the integration

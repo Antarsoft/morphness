@@ -43,7 +43,7 @@ Switched on in `harness.config.yml` → `modules`. A module that is off is ignor
 | `data-access` | QA stages for database schema and access-control features: stage A local, stage B read-only on the integration environment ([modules/data-access/](./modules/data-access/README.md)) |
 | `browser-e2e` | Browser end-to-end and accessibility test rules, targeted vs full suite ([modules/browser-e2e/](./modules/browser-e2e/README.md)) |
 | `legal` | The legal-writer flow for legal pages, consent lines and data-handling promises ([modules/legal/](./modules/legal/README.md)) |
-| `ci-cd` | Pipelines the harness sets up and checks: CI running the named checks on PRs, and owner-run deploy and migrations workflows ([modules/ci-cd/](./modules/ci-cd/README.md)) |
+| `ci-cd` | Pipelines the harness sets up and checks: CI running the named checks on PRs, owner-run deploy and migrations workflows, and release tags from the PR title ([modules/ci-cd/](./modules/ci-cd/README.md)) |
 | `claude-projects` | Running the harness in Claude projects: coordinator, one feature per thread, thread effort ([modules/claude-projects/](./modules/claude-projects/)) |
 
 ## Rule owners
