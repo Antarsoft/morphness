@@ -269,9 +269,14 @@ footer p { margin: 6px 0; }
     <div class="install">
       <div class="card">
         <h3>Ask your agent</h3>
-        <p>Paste this in any Claude Code session inside your repo:</p>
+        <p>Paste this in any Claude Code session inside your repo, new or existing:</p>
         <button class="copy" type="button" data-copy="a1" aria-label="Copy the install prompt">Copy</button>
-        <pre id="a1">Install Morphness from https://github.com/antarsoft/morphness in this repo. Follow its INSTALL.md.</pre>
+        <pre id="a1">Set up the Morphness agent harness in this repo by following
+https://github.com/antarsoft/morphness/blob/main/INSTALL.md step by step.
+Scan the repo first, then ask me the setup questions one at a time with your suggested answer.
+Keep my existing files, install skills or connectors only after I say yes, and put every change
+on a new branch for me to review.
+If Morphness is already installed here, follow its UPDATE.md instead and show me what changed upstream.</pre>
       </div>
       <div class="card">
         <h3>Or as a plugin</h3>
