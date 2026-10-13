@@ -70,7 +70,7 @@ Lessons stay anonymous. Separately, ask once whether the user wants their projec
 | Link | none | Ask: a public site or repo URL, or none (optional) |
 | What it is | `project.description`, cut to one line | Confirm or edit |
 | Stack | `project/STACK.md`, the main two or three | Confirm or edit |
-| By | `gh api user --jq .login` | Confirm |
+| By | none | Ask: the GitHub handle or name to show |
 
 Open it as its own PR (branch `showcase/<project>`), never in the lessons PR, so the lessons can't be
 traced back to the project. Row format and rules: `CONTRIBUTING.md` § Showcase.
