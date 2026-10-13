@@ -6,6 +6,11 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- The code host's default branch is now a choice: `branches.default` in `harness.config.yml`,
+  recommended to be the integration branch when it is separate (so new PRs, dependency bots and
+  clones land there, and issues close when a feature merges), or production for a public library.
+  `/morph-init` asks, `harness/RELEASE.md` § Default branch lists the trade-offs, and `/morph-doctor`
+  checks the host matches.
 - Who merges PRs is now a setting: `merge_by_agent` (`never` by default, or `integration` to let the
   Technical Lead merge ready feature PRs into the integration branch once the merge gate holds).
   The rule spells out what counts as the human asking, production merges stay the human's, and

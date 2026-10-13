@@ -95,6 +95,8 @@ block without the ci-cd module), `risk_areas`,
 `environments: []` when nothing is deployed. `project/RELEASE.md` § Where things deploy gets one row
 per entry, in the same order.
 
+`branches.default`: when the host's current default branch differs (the scan, or `git remote show origin`), add the owner step from `project/RELEASE.md`'s fill comment to § Manual steps and to the hand-off. For dependency bots already configured (`.github/dependabot.yml`, `renovate.json`) with a default branch that isn't the integration branch, set their target branch to the integration branch.
+
 `branch_protection`: with `enabled: true` on GitHub, keep `.github/rulesets/environment-branches.json`;
 with `ci_gate: true`, add a `required_status_checks` rule naming the CI job. Otherwise (GitLab, no
 host, or `enabled: false`) delete the file and its link in `harness/RELEASE.md` § Branch protection.

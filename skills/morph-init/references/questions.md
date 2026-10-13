@@ -70,12 +70,12 @@ security scan)?" and add each as a named check. Follow-up: "Which must pass befo
 - Integration + production (e.g. `dev` → `main`, releases move production) (default when both exist)
 - Single branch (feature PRs go straight to `main`)
 
-Follow-up for two branches: names. Follow-up for both: "Who runs production steps (deploys, prod
+Follow-up for two branches: names, then "Make `<integration>` the repository's default branch? New PRs, dependency bots and clones then land there, and issues close when a feature merges; visitors see unreleased work in its README." Default yes; suggest the production branch instead for a public library or tool whose visitors should see what shipped. Say what the scan found (the current default branch) and that only the owner can change it on the host. A single-branch flow: that branch, no question. Follow-up for both: "Who runs production steps (deploys, prod
 migrations)?" (default: the owner only). Then: "Tag each release with its version (`v1.4.0`)? Tags
 mark what shipped and help with rollbacks and hotfixes; nothing in the harness needs them." Default
 yes; for an ongoing project, suggest whatever its existing tags show (`git tag --sort=-creatordate |
 head`), and note any other version scheme for `project/RELEASE.md`. → `branches.*`,
-`release.prod_steps_by`, `release_tags`
+`release.prod_steps_by`, `release_tags`, `branches.default`
 
 ## Q6b. Environments
 
@@ -204,7 +204,7 @@ environment: [claude-code-cli]
 stack: { summary: "", package_manager: "", toolchain_setup: "", install_cmd: "" }
 cmd: { install: "", typecheck: "", lint: "", unit: "", build: "", e2e-targeted: "", e2e-full: "", e2e-repeat: "" }  # plus any extra named checks
 checks: { before_qa: [], before_signoff: [] }
-branches: { integration: dev, production: main }
+branches: { integration: dev, production: main, default: dev }
 environments:   # in the order code moves through them; [] when nothing is deployed
   - { name: dev, branch: dev, deploy: host, real_data: false }
   - { name: production, branch: main, deploy: host, real_data: true }

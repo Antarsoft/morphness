@@ -27,6 +27,7 @@ fill comments left, JSON parses, relative links resolve, agent frontmatter, ever
   environments, reviewers and secrets can't be read from here: remind the owner to create or rename
   them to match, with required reviewers on every `real_data: true` entry. A copy without the key
   (installed before it existed): point to `/morph-update`.
+- `branches.default` matches the host's default branch (`git remote show origin | sed -n 's/.*HEAD branch: //p'`, or `gh repo view --json defaultBranchRef`). A mismatch is the owner's step (harness/RELEASE.md § Default branch). A copy without the key: point to `/morph-update`.
 - `branch_protection.enabled: true`: every environment branch is in the ruleset file's `include` list
   and has `git push` denies in `.claude/settings.json`. When `gh` can read it, check each branch's
   live rules (`gh api repos/<owner>/<repo>/rules/branches/<branch>`) for `pull_request`,

@@ -10,9 +10,19 @@ Project specifics (production database, hosting, smoke checklist, environment va
 | integration branch | Every feature that passed QA and was merged by the human (or by the Technical Lead with `merge_by_agent: integration`) | The integration environment (the first entry in `environments`), if the project has one |
 | production branch | What is live. Moves only through a release PR or a hotfix | Production |
 
-Feature PRs target the integration branch, always opened with an explicit base: the repository's default branch may be the production branch. When a PR is opened as a draft and marked ready: `.claude/rules/technical-lead.md` § Commits and branches. Release and hotfix PRs follow the same states: a draft until their QA passes, then ready for the human. Release, promotion and hotfix PRs are merged by the human only: no agent merges into a branch after the integration branch, whatever `merge_by_agent` says or a message asks.
+Feature PRs target the integration branch, always opened with an explicit base, whatever the default branch is (§ Default branch). When a PR is opened as a draft and marked ready: `.claude/rules/technical-lead.md` § Commits and branches. Release and hotfix PRs follow the same states: a draft until their QA passes, then ready for the human. Release, promotion and hotfix PRs are merged by the human only: no agent merges into a branch after the integration branch, whatever `merge_by_agent` says or a message asks.
 
 **Single-branch flow.** When `branches.integration` equals `branches.production`, there is no release PR: feature PRs merge straight to production, so the release steps below shrink to release QA on that branch before the human's go, the production prerequisites, the tag and the record. Feature PR titles don't name a version, so the tag workflow (if any) tags a release only when the human runs it by hand with the version. Hotfixes are ordinary feature branches.
+
+## Default branch
+
+`branches.default` in `harness.config.yml` is the code host's default branch. It is the integration branch unless the project chose otherwise:
+
+- **Integration branch (the default).** New PRs, `gh pr create` without `--base`, Dependabot and Renovate PRs and fresh clones (cloud sessions included) all land where feature work belongs, and "Fixes #N" closes the issue when the feature merges, not at the next release. The cost: visitors see the integration branch's README and files, which may describe unreleased work; scheduled workflows and the "Run workflow" button default to it, so the human picks the production branch in that menu for a production deploy or a manual tag (the deploy and tag workflows refuse the wrong branch); CodeQL default setup and code search follow it.
+- **Production branch.** For a public library or tool whose visitors should see what shipped. Feature PRs then rely on the explicit base, and dependency bots need `target-branch` set to the integration branch.
+- **Single-branch flow:** that branch.
+
+Only the human changes it on the host (GitHub: Settings → General → Default branch; GitLab: Settings → Repository → Branch defaults). `/morph-doctor` checks it matches.
 
 ## Environments
 
