@@ -27,12 +27,14 @@ asks "what's new?"), do § 1 and § 2 and stop: change nothing, write nothing.
 1. **Check the target.** `harness.config.yml` must exist with no `{{` placeholders; otherwise this
    isn't an installed harness: suggest `/morph-init` and stop. For a full run (not a listing),
    `git status` must be clean; ask the user to commit or stash, never do it yourself.
-2. **Fetch the latest source.** Always the newest upstream, never a plugin's cached copy: clone the
-   repo in `installed_from.repo` (default `https://github.com/antarsoft/morphness`) into a temporary
-   folder outside the target, with full history (blobs fetched on demand):
-   `git clone --filter=blob:none <repo> "$TMP/morphness"` (the session's scratch folder if there's
-   no `$TMP`).
-   Call it `SRC`, and `HEAD` its newest commit on the default branch. With no network, say so and stop.
+2. **Find the source.** You need a clone of the Morphness repo with its history, up to date with
+   its default branch: a folder the user names, or the one [UPDATE.md](../../UPDATE.md) step 2 had
+   them or their agent make. Never download it yourself. When there's none, give the user the
+   command and wait: `git clone --filter=blob:none <repo> <folder outside this repo>`, with `<repo>`
+   from `installed_from.repo` (default `https://github.com/antarsoft/morphness`). For a clone that
+   already exists, ask before `git -C <folder> pull`. A shallow clone won't do: the merge base is an
+   older commit (`git -C <folder> rev-parse --is-shallow-repository` must print `false`).
+   Call it `SRC`, and `HEAD` its newest commit on the default branch.
 3. **Read where this copy stands** from `harness.config.yml` → `installed_from`: `commit`, `release`
    and `updates` (`applied`, `declined`, `deferred`). An older install has only `repo` and `commit`;
    treat the missing lists as empty.
@@ -138,7 +140,7 @@ project file's content beyond the change being applied.
 3. **Commit** the record with the last change and, on the owner's yes, push and open a PR to the
    integration branch. The PR body lists each applied note and lesson with one line, each declined
    or deferred one, and every file that needed a merge, with how conflicts were resolved.
-4. **Clean up** the temporary clone.
+4. **Leave the clone** where it is: the user or their agent made it and decides when it goes.
 
 ## 5. Report
 
