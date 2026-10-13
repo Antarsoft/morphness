@@ -1,0 +1,43 @@
+# Deploy (Morphness ci-cd module). Only for hosts that don't deploy on push themselves.
+# Agents never start, re-run or approve this workflow. Credentials are environment secrets on
+# environments that require the owner's approval, never repository secrets.
+name: deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Where to deploy
+        type: choice
+        options: [staging, production]
+  # morph-init: fill, or delete these two lines: automatic staging deploys on each push to the integration branch.
+  push:
+    branches: ["{{branches.integration}}"]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04   # pinned: bump it in its own PR
+    environment: ${{ inputs.environment || 'staging' }}
+    concurrency:
+      group: deploy-${{ inputs.environment || 'staging' }}
+      cancel-in-progress: false
+    steps:
+      # Production deploys only from the production branch (harness/RELEASE.md).
+      - name: branch guard
+        if: ${{ (inputs.environment || 'staging') == 'production' && github.ref_name != '{{branches.production}}' }}
+        run: |
+          echo "Production deploys only from {{branches.production}}; this run is on ${{ github.ref_name }}."
+          exit 1
+
+      - uses: actions/checkout@v4
+
+      # morph-init: fill the toolchain setup and the build, using the commands in project/CONTROLS.md.
+
+      # morph-init: fill the deploy command for the host, reading its token from an environment secret. Example:
+      #   - name: deploy
+      #     env:
+      #       DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+      #     run: <host CLI> deploy --token "$DEPLOY_TOKEN"

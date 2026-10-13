@@ -158,7 +158,7 @@ and advised settings (coordinator opus · medium, feature threads opus · high).
 | 📄 `AGENTS.md`, `CLAUDE.md`, `.claude/rules/` | The rules every session loads: the Technical Lead plans and delegates and never codes; QA is never skipped. |
 | 🤖 `.claude/agents/` | Full-stack (medium, high, xhigh effort), QA (medium, high) and legal-writer subagents. |
 | 🗺️ `harness/` | The process: lifecycle, handoffs, checks, modes, release, the plan checklist, and how it morphs. |
-| 🧩 `harness/modules/` | Optional: Claude Projects, data access (local-first, remote read-only), browser e2e, legal wording, roadmap. |
+| 🧩 `harness/modules/` | Optional: Claude Projects, data access (local-first, remote read-only), browser e2e, legal wording, roadmap, CI/CD pipelines. |
 | 🏷️ `project/` | Your project's facts: stack, the commands behind each check, risk areas, effort per area. |
 | 🎛️ `harness.config.yml` | Branches, modules, named checks, CI gate, risk areas, models and effort, loop limits. |
 | 🗂️ `_harness/` | Runtime: feature folders, learnings, prunes, releases. |

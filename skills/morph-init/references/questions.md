@@ -93,6 +93,26 @@ data-access module (local-stack tests for migrations and access rules, remote ch
 Default yes when there's a migrations folder. Follow-up: "Name of the remote environments (e.g.
 staging, production) and how migrations reach them (CI workflow, manual)." → `modules`, `data.*`
 
+## Q9b. Pipelines (CI and deploys)
+
+Skip when `pr_host` is `none`. Say what the scan found first ("I found `.github/workflows/ci.yml`
+running lint and unit; no deploy or migrations workflow"). Then: "Want the ci-cd module? I can add
+the pipelines you don't have yet. Each one only on your yes:"
+
+1. **CI on pull requests**, running the `before_qa` checks with the commands from Q5. Suggest yes
+   when there's no CI. When CI exists, offer only to keep it in step with `project/CONTROLS.md`.
+2. **Deploy workflow.** First ask "How does code reach staging and production?" (the host deploys on
+   push (default when Vercel, Netlify, Render, Fly or similar is in the scan) / a workflow / by hand).
+   Offer the workflow only for "a workflow" with none in the repo; "host" and "by hand" add no file.
+3. **Migrations workflow**, only with the data-access module and when Q9's answer was "CI
+   workflow" with none in the repo.
+
+Say plainly: agents write these files but never run deploys or migrations; the owner sets the
+secrets, the protected environments and the required check (the module's § Owner steps). For each
+new pipeline, time its main command locally and say the estimated minutes per run; mention that
+public repos run GitHub Actions for free. Suggest keeping `ci_gate: false` until CI has passed once
+and is a required check. No to all: drop the module; nothing is written. → `modules`, `ci_cd.*`
+
 ## Q10. Browser tests
 
 Skip when there's no UI. "Use the browser-e2e module (e2e and accessibility rules for new pages)?"
@@ -148,6 +168,7 @@ branches: { integration: dev, production: main }
 release: { prod_steps_by: owner }
 pr_host: github
 ci_gate: false
+ci_cd: { ci: none, deploy: host, migrations: none, docs_regex: "" }   # ci-cd module; paths of accepted workflows
 roadmap: { enabled: true, file: docs/ROADMAP.md, versions_dir: docs/versions, first_version: { id: v1, goal: "" } }
 modules: []
 data: { environments: [], migrations_reach_remote_by: "" }

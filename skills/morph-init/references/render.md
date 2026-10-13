@@ -63,7 +63,8 @@ Then continue with step 3 below; most placeholders are filled from the old files
 Replace every `{{key}}` in the copied files with its answer. Keys: `project.name`, `project.description`,
 `human.name`, `human.github` (the owner), `branches.integration`, `branches.production`, `stack.summary`,
 `stack.package_manager`, `stack.toolchain_setup`, `stack.install_cmd`, `cmd.<check-name>`, `models.tl`,
-`models.fullstack`, `models.fullstack_medium`, `models.qa`, `models.qa_medium`, `models.legal`, `morphness.repo`, `morphness.commit`.
+`models.fullstack`, `models.fullstack_medium`, `models.qa`, `models.qa_medium`, `models.legal`, `morphness.repo`, `morphness.commit`,
+and in ci-cd workflow scaffolds `ci.docs_regex` (a regex for the documentation paths in `project/CONTROLS.md`).
 Model placeholders (`{{models.tl}}` etc.) take the model alias the user accepted. Check commands
 (`{{cmd.<name>}}`) take the command, or the text `none (add when the project has one)`.
 In `scripts/session-start.sh` the commands sit inside single quotes: write an empty string for
@@ -79,7 +80,8 @@ Fill `installed_from` in `harness.config.yml` with the source repo URL and commi
 
 Write the answers into `harness.config.yml`, replacing the defaults that aren't placeholders:
 `environment`, `branches`, `pr_host`, `roadmap`, `modules`, `checks.before_qa`,
-`checks.before_signoff` (plus any extra named checks the user added), `ci_gate`, `risk_areas`,
+`checks.before_signoff` (plus any extra named checks the user added), `ci_gate`, `ci_cd` (delete the
+block without the ci-cd module), `risk_areas`,
 `agents`, `claude_projects` (delete the block when Claude Projects isn't used) and `loop`.
 
 A named check the project doesn't have: delete its row from `project/CONTROLS.md` § Named checks and
@@ -99,6 +101,8 @@ apply.
 - `data-access`: add `deny` rules in `.claude/settings.json` for the write tools of any accepted
   database connector, and the project's remote-write CLI commands (`ask` for read-only ones the user
   wants to approve case by case).
+- `ci-cd`: copy only the accepted scaffolds from `harness/modules/ci-cd/github/` to `.github/workflows/`
+  (GitLab: write the same jobs into `.gitlab-ci.yml`), never over an existing file, and fill them.
 - `browser-e2e`, `legal`, `roadmap`: follow their On install sections.
 
 Without the roadmap module, steps files live at `_harness/features/<slug>/<version>/steps.md`.
@@ -133,7 +137,10 @@ All must pass before committing; fix and re-run on failure.
    resolves to a file that exists. Links to docs a module creates (the roadmap) count once that module's On install ran.
 5. `.claude/agents/*.md` frontmatter has `name`, `description` and `model`.
 6. Each named check in `checks.before_qa` has a command or "none" in `project/CONTROLS.md`.
-7. `scripts/session-start.sh` is executable and parses (`bash -n scripts/session-start.sh`). Don't
+7. With the ci-cd module, each workflow it wrote parses as YAML, has no `# morph-init: fill` line
+   left (`grep -rn 'morph-init: fill' .github/workflows`), and passes `actionlint` when it is installed.
+   Its CI steps run the `before_qa` commands exactly as `project/CONTROLS.md` writes them.
+8. `scripts/session-start.sh` is executable and parses (`bash -n scripts/session-start.sh`). Don't
    run it here: it installs dependencies.
 
 ## 8. Commit and PR

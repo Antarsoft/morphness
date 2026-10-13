@@ -61,7 +61,7 @@ A diff that touches only these paths lets QA reuse an earlier full-suite result 
 
 | Item | Location |
 |------|----------|
-<!-- morph-init: fill the pipeline file, its triggers, what each job runs, and whether it is a required gate (harness.config.yml → ci_gate). Example: "| Pipeline | `.github/workflows/ci.yml`: on pull requests to the integration branch; jobs `checks` (typecheck, lint, unit, build) and `e2e` |". With `ci_gate: false`, say that QA's local run is the gate. -->
+<!-- morph-init: fill the pipeline file, its triggers, what each job runs, and whether it is a required gate (harness.config.yml → ci_gate). Example: "| Pipeline | `.github/workflows/ci.yml`: on pull requests to the integration branch; jobs `checks` (typecheck, lint, unit, build) and `e2e` |". With `ci_gate: false`, say that QA's local run is the gate. With the `ci-cd` module, also list the deploy and migrations workflows and who starts them. With no pipeline at all, write "None: QA's local run is the gate". -->
 
 ## Before the feature PR (Technical Lead)
 

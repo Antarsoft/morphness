@@ -1,0 +1,47 @@
+# CI for pull requests (Morphness ci-cd module). Runs the before_qa named checks with the exact
+# commands in project/CONTROLS.md. Change a command there and here in the same PR.
+name: ci
+
+on:
+  pull_request:
+    branches: ["{{branches.integration}}", "{{branches.production}}"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-24.04   # pinned: bump it in its own PR
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # A docs-only PR skips the steps below and still succeeds, so a required check never hangs.
+      # DOCS is a regex for the documentation paths in project/CONTROLS.md; empty means always run.
+      - name: scope
+        id: scope
+        env:
+          BASE: origin/${{ github.base_ref }}
+          DOCS: '{{ci.docs_regex}}'
+        run: |
+          code=true
+          if [ -n "$DOCS" ] && ! git diff --name-only "$BASE...HEAD" | grep -vE "$DOCS" | grep -q .; then
+            code=false; echo "Docs-only change: skipping the checks"
+          fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
+      # morph-init: fill the toolchain setup (for example actions/setup-node@v4 with the pinned version and
+      # the package manager cache), each step with `if: steps.scope.outputs.code == 'true'`.
+
+      # morph-init: fill one step per check in harness.config.yml → checks.before_qa, in order, named after
+      # the check and running its command from project/CONTROLS.md. Leave out e2e checks unless the plan
+      # that adds CI times them (plan checklist item 37). Example:
+      #   - name: lint
+      #     if: steps.scope.outputs.code == 'true'
+      #     run: {{cmd.lint}}
