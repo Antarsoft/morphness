@@ -26,7 +26,13 @@
       "Bash(git push* -f *)",
       "Bash(git push* -f)"
     ],
-    "ask": []
+    "ask": [
+      "Bash(gh pr merge*)",
+      "Bash(glab mr merge*)",
+      "Bash(gh api*/merge*)",
+      "mcp__github__merge_pull_request",
+      "mcp__github__enable_pr_auto_merge"
+    ]
   },
   "hooks": {
     "SessionStart": [

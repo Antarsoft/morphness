@@ -107,6 +107,11 @@ import; agents can't set it." Default yes. Then: "How many approvals before a me
 with one human (GitHub doesn't let you approve your own PR) and 1 with more. When the scan or `gh`
 shows protection already on, say so and suggest keeping it. → `branch_protection.*`
 
+Then: "Who merges PRs? By default you do, or I merge one when you ask for it by name. Or I can merge
+a feature PR into `<integration branch>` by myself once QA and CI pass. Merges into production are
+always yours." Suggest `never`; offer `integration` only when the integration branch differs from
+the production branch. → `merge_by_agent`
+
 ## Q8. Roadmap
 
 "Do you plan in versions with a roadmap doc?" Default yes for products, no for libraries and internal
@@ -206,6 +211,7 @@ environments:   # in the order code moves through them; [] when nothing is deplo
 release: { prod_steps_by: owner }
 pr_host: github
 ci_gate: false
+merge_by_agent: never
 branch_protection: { enabled: true, required_approvals: 0 }
 release_tags: true
 ci_cd: { ci: none, on_drafts: false, deploy: host, migrations: none, tags: none, docs_regex: "" }   # ci-cd module; paths of accepted workflows

@@ -27,7 +27,7 @@ Status: draft | awaiting-approval | approved | passed | failed-escalated
 | `draft` | Technical Lead completes the plan |
 | `awaiting-approval` | Human |
 | `approved` | Full-stack engineer, then (code review if `xhigh`) QA engineer |
-| `passed` | Human: PR or merge into the integration branch per project rules |
+| `passed` | Human merges the ready PR into the integration branch (or the Technical Lead, with `merge_by_agent: integration`) |
 | Release | Separate step, not per feature: integration branch → production branch when the human says "release" ([RELEASE.md](./RELEASE.md)) |
 | `failed-escalated` | Human chooses a new version or direction |
 
@@ -148,7 +148,7 @@ Deferred ACs go into the feature's steps file ([HANDOFFS.md](./HANDOFFS.md) § S
 5. QA: `qa-result.md` → pass or fail (within `loop.qa_max_rounds`).
 6. Pass: Technical Lead writes the steps file (or none) → `passed`. Last allowed fail: `failed-escalated`.
 7. Technical Lead: `Plan/retro.md` and the feature's `_harness/learnings/` file (§ Retrospective).
-8. Human: PR or merge into the integration branch per project policy. Production comes later, in a release ([RELEASE.md](./RELEASE.md)).
+8. Human merges the ready PR into the integration branch (or the Technical Lead, per `merge_by_agent`). Production comes later, in a release ([RELEASE.md](./RELEASE.md)).
 
 ---
 
