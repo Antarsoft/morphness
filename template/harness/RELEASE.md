@@ -37,6 +37,14 @@ Only the human changes it on the host (GitHub: Settings → General → Default 
 
 No agent writes to any of them (`AGENTS.md` § Shared remote environments), whatever the list says.
 
+## Apps
+
+In a monorepo, `harness.config.yml` → `apps` lists the apps and packages that are built, tested or deployed on their own. It is optional: with `apps: []` the whole repo is one app and nothing below applies.
+
+- **Each app deploys on its own.** Its `deploy` map says, per environment name, how it gets there (`host`, `workflow`, `manual` or `none`), so a web app on one host and an API on another share the same environments and branches. `project/RELEASE.md` § Where things deploy has a row per environment and app.
+- **Plans name the apps they touch** (`plan.md` § QA scope → **Apps touched**). The browser specs, the steps file and the human's deploy steps follow that list.
+- **The release ships every app together.** The release PR lists which apps changed since the last release, so the human knows which deploys to watch. Apps that release on their own schedule are not modelled yet; keep one release train or record their versions in `project/RELEASE.md`.
+
 ## Branch protection
 
 Every branch in `environments` (always the integration and production branches) changes only through a merged PR: no direct pushes, no force-pushes, no deletion. Two layers hold this:

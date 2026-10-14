@@ -9,6 +9,10 @@ The commands behind each named check are in [CONTROLS.md](./CONTROLS.md); this f
 | Package manager | {{stack.package_manager}} |
 <!-- morph-init: fill one row per layer with the pinned version and where it is pinned. Example rows: "| Runtime | Python 3.12 (pinned in `.python-version`) |", "| CI | GitHub Actions, `.github/workflows/ci.yml` (jobs and what they run) |", "| Hosting | <provider>: integration branch → staging, production branch → production |". -->
 
+## Apps
+
+<!-- morph-init: fill only when harness.config.yml → apps lists entries: one row per app with its folder, stack, the commands that differ from the repo root's (dev server, its own test or build script), and what it depends on in the repo ("| `api` | `apps/api` | Go 1.23 | `go test ./...` in `apps/api` | `packages/proto` |"). Delete the section when `apps` is empty. -->
+
 ## Prerequisites
 
 <!-- morph-init: fill what a fresh machine or cloud session needs before the first install: toolchain, container runtime for a local stack, CLIs, accounts (sandbox accounts only for agents). Example: "- Docker, for the local database stack only". -->

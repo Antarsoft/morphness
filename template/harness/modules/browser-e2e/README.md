@@ -9,6 +9,7 @@ Optional. Enable it in `harness.config.yml` → `modules` when the project has p
 - A long full run goes in the background with a limit above its duration, writes `$?` to a file, and the agent waits for that file in the same turn. A log that ends in "passed" is not a recorded exit code (learned: a default background limit killed a run and QA reported a partial log).
 - **Timing-sensitive tests** (a fake clock, hover or focus timing): run each new or changed one five times (`--repeat-each=5` in Playwright) and record the pass count (learned: a carousel test passed once at handoff and failed 8 of 11 repeats).
 - Before the first run, check that nothing is listening on the app's port: a leftover server from a screenshot or QA build makes the suite test the old app.
+- **Several apps** (`harness.config.yml` → `apps`): each app's `e2e` folder holds its specs. Targeted specs come from the apps the plan lists under **Apps touched**, and `e2e-full` runs every app's suite (one command, or one per app, in `project/CONTROLS.md`).
 - Browser tests run only against a local build. The config refuses a remote base URL, so the suite never runs against a staging deploy or a shared database.
 
 ## Rules for specs

@@ -29,6 +29,15 @@ environments:
   - { name: dev, branch: dev, deploy: host, real_data: false }
   - { name: production, branch: main, deploy: host, real_data: true }
 
+# Apps in a monorepo (optional). [] for a single-app repo: the stack, checks and environments then
+# apply to the whole repo, as before. One entry per app or package that is built, tested or deployed on
+# its own (harness/RELEASE.md § Apps). path: its folder. stack: one line, when it differs from the
+# repo's. e2e: its browser-test spec folder (browser-e2e module), or none. deploy: for each name in
+# `environments`, how this app gets there (host | workflow | manual | none); a name left out is none.
+apps: []
+#  - { name: web, path: apps/web, stack: "Next.js", e2e: apps/web/e2e, deploy: { dev: host, production: host } }
+#  - { name: api, path: apps/api, stack: "Go 1.23", e2e: none, deploy: { dev: workflow, production: workflow } }
+
 pr_host: github           # github | gitlab | none
 
 # Host-side protection on every branch in `environments` (harness/RELEASE.md § Branch protection):

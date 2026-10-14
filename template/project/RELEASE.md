@@ -6,7 +6,7 @@ The process is in [harness/RELEASE.md](../harness/RELEASE.md). This file holds w
 
 | Environment | Branch | Hosting | Database or backing services | Deploys by |
 |-------------|--------|---------|------------------------------|------------|
-<!-- morph-init: fill one row per entry in harness.config.yml → environments, in the same order, e.g. "| dev | `dev` | Dev deploy (automatic on push) | dev database | host |" and "| production | `main` | Production | production database | host, after the release PR merges |". With no shared environments, write one line saying nothing is deployed and release QA runs locally. -->
+<!-- morph-init: fill one row per entry in harness.config.yml → environments, in the same order, e.g. "| dev | `dev` | Dev deploy (automatic on push) | dev database | host |" and "| production | `main` | Production | production database | host, after the release PR merges |". With no shared environments, write one line saying nothing is deployed and release QA runs locally. With `apps` in harness.config.yml, add an App column and one row per environment and app that deploys there, e.g. "| production | `main` | web on Vercel | production database | host |" and "| production | `main` | api on Fly | production database | workflow |". -->
 
 Release QA ([harness/RELEASE.md](../harness/RELEASE.md) step 3) runs on the release QA environment, the row just before production: <!-- morph-init: fill which one and its URL, e.g. "dev, https://dev.example.com", or "a local build" when production is the only row -->. QA stays read-only there, as everywhere.
 
