@@ -45,7 +45,7 @@ When the plan or your diff alters, adds or removes anything a user sees (pages, 
 
 ## Before handoff (required)
 
-Run every `before_qa` check in [harness/CONTROLS.md](../CONTROLS.md) § Before Full-stack → QA handoff (commands: `project/CONTROLS.md`) from repo root, and record each **exit code** in `progress.md` § **Validation (required before handoff)**. Send each command's output to a log file and print only the exit code and the tail (CONTROLS.md § Command output).
+Run every `before_qa` check in [harness/CONTROLS.md](../CONTROLS.md) § Before Full-stack → QA handoff (commands: `project/CONTROLS.md`) from repo root, and record each **exit code** in `progress.md` § **Validation (required before handoff)**. Narrow each check to what the branch changed, or run it in full, by CONTROLS.md § Scoping by what changed, and record the scope next to the exit code. Send each command's output to a log file and print only the exit code and the tail (CONTROLS.md § Command output).
 
 Browser tests: run only the targeted specs when CONTROLS.md requires browser tests (the plan's **Targeted e2e specs** plus the smoke and accessibility specs when the project has them and every spec you add or edit), or the full suite when the plan says `full` or your diff touches a cross-cutting path ([harness/CONTROLS.md](../CONTROLS.md) § Cross-cutting paths). Record which specs ran. QA runs the full suite (`project/HARNESS_AGENTS.md` § Browser tests).
 

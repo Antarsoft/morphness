@@ -104,7 +104,7 @@ Add or update meaningful automated tests for new behavior (.claude/rules/testing
 Update only: <abs-path>/Development/progress.md
 Include Started and Ended in progress.md when handing off.
 Do not edit plan.md, feature.md, qa-result.md, the steps file or Legal/legal-copy.md.
-Run every before_qa check in harness/CONTROLS.md § Before Full-stack → QA handoff (commands: project/CONTROLS.md); record each check and exit code in progress.md § Validation (required before handoff).
+Run every before_qa check in harness/CONTROLS.md § Before Full-stack → QA handoff (commands: project/CONTROLS.md), scoped by § Scoping by what changed; record each check, its scope and exit code in progress.md § Validation (required before handoff).
 Do not mark Ready for QA until validation is recorded.
 Run long checks to completion before handing back. A check longer than the shell's foreground limit runs as a background command with a long enough time limit, and you wait for it to finish in the same turn. A job that outlives your turn is not allowed.
 Write logs and scratch files under the session scratchpad directory, never / or the repo root.

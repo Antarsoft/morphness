@@ -40,6 +40,21 @@ The Full-stack engineer **must** run every check in `checks.before_qa` from the 
 
 Any check the project marks as by hand only (for example a performance audit) is not a handoff check; run it only when a plan asks.
 
+### Scoping by what changed
+
+Full-stack's `before_qa` run may be narrowed to what the branch changed, so a small change doesn't pay for the whole repo on every handoff. QA's `before_signoff` run is never narrowed (§ Before QA pass → human handoff): it runs each check's full command on the final commit, so scoping speeds up the build loop without weakening the merge gate.
+
+1. **The diff:** `git diff --name-only $(git merge-base origin/<integration> HEAD)` (it includes uncommitted changes) plus untracked files from `git status --porcelain`. Paste the command into `progress.md`.
+2. **Full when in doubt.** Run every `before_qa` check with its full command when the diff touches a path in § Cross-cutting paths or a dependency manifest or lockfile, when the plan says **Checks: full**, when the merge base can't be found, or when a scoped command fails before any test runs (it can't work out what is affected).
+3. **Documentation only:** when every path in the diff is documentation (§ Documentation paths), record each `before_qa` check as `skipped: docs only` and stop. CI and QA treat the same diff the same way.
+4. **Otherwise, per check,** follow its row in `project/CONTROLS.md` § Check scope:
+   - `full` (or no row): the full command.
+   - `affected`: the scoped command there (the tool's own affected or related-tests mode, for example a monorepo filter on the merge base or a test runner's changed-files option).
+   - `paths`: the full command when the diff touches one of the listed paths; otherwise record `skipped: no listed path changed`.
+5. **Record the scope** of each check in `progress.md` § Validation: `full`, `affected` or `skipped: <reason>`. A skipped check is never written as passed.
+
+`install` keeps its own rule (when dependencies changed), and `e2e-targeted` / `e2e-full` keep the browser rule in the table above; § Check scope doesn't list them.
+
 ### Command output
 
 Every check writes its full output to a log file and prints only the exit code and the end of the log. Everything a command prints stays in the agent's context and is re-read on every later turn, so one full test or build log costs far more than the run itself.
@@ -79,7 +94,7 @@ A `git grep` quoted as acceptance-criterion evidence must run with `--untracked`
 
 ## Before QA pass → human handoff
 
-QA runs every check in `checks.before_signoff` on the final commit.
+QA runs every check in `checks.before_signoff` on the final commit, each with its full command: § Scoping by what changed never applies here.
 
 | Check | Required |
 |-------|----------|

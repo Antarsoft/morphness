@@ -6,6 +6,12 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Full-stack can narrow its pre-QA checks to what the branch changed: a docs-only diff skips them,
+  and each check can run its tool's affected mode (`pnpm --filter '...[origin/dev]'`,
+  `vitest --changed`, `jest --changedSince`) or only when listed paths change
+  (`project/CONTROLS.md` § Check scope). Cross-cutting paths and dependency changes still run
+  everything, and QA's sign-off run and CI always run the full commands. `/morph-init` suggests
+  the scopes from the stack.
 - The prune counter is now a script: `scripts/prune-counter.sh` prints the `Prune counter: N/<prune_every>`
   line (and `Prune is DUE`) that ends every feature hand-off, counting the integration branch's
   learnings files too. With the `claude-projects` module the thread's closing reply carries it and the

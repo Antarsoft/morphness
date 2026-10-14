@@ -44,6 +44,14 @@ checks:
   before_qa: [install, typecheck, lint, unit, build, e2e-targeted]
   before_signoff: [install, typecheck, lint, unit, build, integration, e2e-full]
 
+# How Full-stack narrows before_qa checks to what the branch changed (project/CONTROLS.md § Check scope).
+# QA's sign-off run always uses the full commands. `dev` is the integration branch; morph-init renames it.
+check_scope:
+  unit: { scope: affected, cmd: "pnpm --filter '...[origin/dev]' test" }    # changed packages and their dependents
+  lint: { scope: affected, cmd: "pnpm --filter '...[origin/dev]' lint" }
+  typecheck: { scope: full }   # next typegen + tsc on the app; cheap enough, and importers can break
+  build: { scope: full }
+
 ci_gate: false        # Twinpage ran with CI manual-only; QA's recorded local run was the gate
 
 # Paths whose change gets the full e2e suite from Full-stack and a full QA round.
