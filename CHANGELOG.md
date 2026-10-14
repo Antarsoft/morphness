@@ -6,6 +6,8 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+## 2026-10-14.2
+
 - `/morph-init` and `/morph-doctor` can apply the branch-protection ruleset with `gh api` on the
   owner's yes (and read it back), falling back to the file, import steps and command for the owner.
   New `branch_protection.delete_merged_branches` (on by default with protection) turns on automatic

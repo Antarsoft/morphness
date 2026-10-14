@@ -2,7 +2,7 @@
 id: 2026-10-14-apply-branch-protection
 title: Apply branch protection for the owner, and delete merged branches
 kind: config
-release: unreleased
+release: 2026-10-14.2
 applies_to: { modules: [] }
 files:
   - harness.config.yml
