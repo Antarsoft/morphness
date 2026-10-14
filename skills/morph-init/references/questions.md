@@ -64,6 +64,15 @@ feature should add them. Also ask: "Any other checks agents should run (a migrat
 security scan)?" and add each as a named check. Follow-up: "Which must pass before QA, and which before sign-off?" Suggest
 `before_qa`: everything but e2e; `before_signoff`: everything. → `cmd.*`, `checks.*`
 
+Follow-up when the stack has a tool that can narrow a check to what changed (a monorepo runner such as
+Turborepo, Nx or pnpm filters; a test runner's changed-files mode such as `vitest --changed`,
+`jest --changedSince` or `pytest --testmon`): "Before QA, Full-stack can run only what the branch
+affects; QA still runs everything at sign-off. Use these?" then one line per check with the suggested
+scope (`affected` with the command on the integration branch, `paths` with globs, or `full`). Suggest
+`affected` for `unit` and `lint` when the tool supports it, and keep `typecheck` and `build` at `full`
+unless a monorepo runner computes affected packages. Skip the question when nothing in the stack can
+narrow a check. → `project/CONTROLS.md` § Check scope
+
 ## Q6. Branches and release
 
 "How do branches work?"

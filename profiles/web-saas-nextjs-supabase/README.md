@@ -40,6 +40,8 @@ The kit names checks; `project/CONTROLS.md` maps them to commands. For a monorep
 | `integration` (extra) | `pnpm test:integration` | API role grants, RLS on every public table, billing; against the local stack |
 | `e2e-repeat` (extra) | `pnpm test:e2e <spec> -g "<test>" --repeat-each=5` | each new fake-clock, hover or focus-timing test |
 
+Before QA, Full-stack narrows `unit` and `lint` to the changed packages and their dependents with `pnpm --filter '...[origin/dev]' <script>`; `typecheck` and `build` stay full. A cross-cutting path runs everything in full, and QA's sign-off run is always full (`profile.yml` → `check_scope`).
+
 The `qa:*` scripts start a disposable local Supabase stack in Docker (Postgres, Auth, REST, Mailpit), apply Drizzle migrations then the Supabase RLS migrations, seed fixed QA data, and build the app against it. If your repo has no such scripts, morph-init writes "not configured" for the e2e checks and adds a backlog item to create them; the `data-access` module explains the stage A (local) and stage B (remote, read-only) split they support.
 
 ## Cross-cutting paths

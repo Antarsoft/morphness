@@ -24,9 +24,11 @@ Include a final plan step **Validation** (or track below); it must be `done` bef
 
 Run every `before_qa` check in `harness/CONTROLS.md` § Before Full-stack → QA handoff from the **repo root** after the implementation steps (commands: `project/CONTROLS.md`). Record each check and its **exit code** (0 = pass), one row per check CONTROLS.md requires for this feature. Do not hand to the Technical Lead until all required checks pass.
 
-| Check (command) | Exit code | When run |
-|-----------------|-----------|----------|
-| <each required check> (record `git rev-parse --short HEAD` once) | | |
+Scope each check by the diff (`harness/CONTROLS.md` § Scoping by what changed). Diff command: <paste it>
+
+| Check (command) | Scope (full / affected / skipped: reason) | Exit code | When run |
+|-----------------|-------------------------------------------|-----------|----------|
+| <each required check> (record `git rev-parse --short HEAD` once) | | | |
 
 ## Screenshots (UI changes only)
 

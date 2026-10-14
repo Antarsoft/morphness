@@ -16,6 +16,14 @@ The handoff rules (who runs which checks, when, and how the output is logged) ar
 | `e2e-repeat` | `{{cmd.e2e-repeat}}` | yes, when a new or changed browser test uses a fake clock, hover or focus timing: five runs, record the pass count |
 <!-- morph-init: fill extra named checks the project adds (also add the name to harness.config.yml → checks). Example: "| `integration` | `make test-integration` | yes, for database features |". A check with no command in this project: write "not configured" in the Command column; agents then record it as **not run**. -->
 
+## Check scope
+
+How Full-stack narrows each `before_qa` check to what the branch changed ([harness/CONTROLS.md](../harness/CONTROLS.md) § Scoping by what changed). QA's sign-off run always uses the full commands above. A check with no row runs in full.
+
+| Check | Scope | Scoped command, or the paths that trigger it |
+|-------|-------|----------------------------------------------|
+<!-- morph-init: fill one row per check that can be narrowed, from the stack's own tooling. Scope is `full`, `affected` (a scoped command) or `paths` (globs; the check runs in full only when the diff touches one). Examples: "| `unit` | `affected` | `pnpm --filter '...[origin/dev]' test` |", "| `unit` | `affected` | `npx vitest run --changed origin/dev` |", "| `unit` | `affected` | `npx jest --changedSince=origin/dev` |", "| `typecheck` | `affected` | `npx turbo run typecheck --filter=...[origin/dev]` |", "| `integration` | `paths` | `src/api/`, `db/` |". Keep `typecheck` and `build` at `full` unless the tool computes affected packages itself (a file's change can break its importers). With no tool that scopes, write "None: every check runs in full." -->
+
 ## Command output
 
 Log location for every check (the discipline itself is in [harness/CONTROLS.md](../harness/CONTROLS.md) § Command output):
