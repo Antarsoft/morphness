@@ -27,6 +27,12 @@ fill comments left, JSON parses, relative links resolve, agent frontmatter, ever
   environments, reviewers and secrets can't be read from here: remind the owner to create or rename
   them to match, with required reviewers on every `real_data: true` entry. A copy without the key
   (installed before it existed): point to `/morph-update`.
+- `apps` (when non-empty): every `path` exists; names are unique; every `deploy` key is a name in
+  `environments` and every value is `host`, `workflow`, `manual` or `none`; `project/STACK.md` § Apps
+  has a row per app; with the ci-cd module, the deploy workflow has a job for each app that has
+  `workflow` for some environment. A workspace package with its own deploy config that isn't in
+  `apps`: mention it once. A copy without the key behaves as `apps: []`; point to `/morph-update`
+  only if the owner wants per-app tracking.
 - `branches.default` matches the host's default branch (`git remote show origin | sed -n 's/.*HEAD branch: //p'`, or `gh repo view --json defaultBranchRef`). A mismatch is the owner's step (harness/RELEASE.md § Default branch). A copy without the key: point to `/morph-update`.
 - `branch_protection.enabled: true`: every environment branch is in the ruleset file's `include` list
   and has `git push` denies in `.claude/settings.json`. When `gh` can read it, check each branch's
