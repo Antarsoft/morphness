@@ -175,7 +175,8 @@ All must pass before committing; fix and re-run on failure.
    per entry. With the ci-cd module, the deploy and migrations workflows offer exactly those names
    and their branch guards have one `case` line per name.
 9. `scripts/session-start.sh` is executable and parses (`bash -n scripts/session-start.sh`). Don't
-   run it here: it installs dependencies.
+   run it here: it installs dependencies. `scripts/prune-counter.sh` runs and prints
+   `Prune counter: 0/<loop.prune_every>`.
 
 ## 8. Commit and PR
 

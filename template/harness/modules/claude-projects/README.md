@@ -35,12 +35,16 @@ Coordinator:
 - Brief a new thread with the owner's message and only what memory adds: the repo, the integration
   branch, decisions already made. Don't add deliverables the owner didn't ask for.
 - Answer status questions from memory and the thread list; don't message a thread just to ask.
+- When a feature thread's closing reply says "Prune is DUE", post one line in the project chat
+  linking that thread, so the owner sees it without opening the thread. Don't start the prune.
 - Recurring checks (is the preview ready, did the nightly run pass) get a new short thread each time.
 - Keep in memory: the repository, harness.config.yml basics, owner preferences about how much to
   hear, and open decisions. Don't copy plans or results into memory; they live in the repo.
 
 Feature threads (Technical Lead):
 - One feature, one PR per thread. When the PR merges, resolve the thread.
+- The reply that hands the feature over (QA passed, PR ready) ends with the line from
+  `bash scripts/prune-counter.sh` (`Prune counter: N/<prune_every>`, plus "Prune is DUE" when due).
 - Every decision the owner makes in chat goes into plan.md § Decisions in the same turn.
 - After two QA rework rounds, the thread may hand over to a fresh thread at a natural break
   (QA pass, PR marked ready). The closing reply lists open decisions and links the new thread.

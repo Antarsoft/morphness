@@ -6,6 +6,10 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- The prune counter is now a script: `scripts/prune-counter.sh` prints the `Prune counter: N/<prune_every>`
+  line (and `Prune is DUE`) that ends every feature hand-off, counting the integration branch's
+  learnings files too. With the `claude-projects` module the thread's closing reply carries it and the
+  coordinator posts once in the project chat when a prune is due. `/morph-doctor` uses the script.
 - The code host's default branch is now a choice: `branches.default` in `harness.config.yml`,
   recommended to be the integration branch when it is separate (so new PRs, dependency bots and
   clones land there, and issues close when a feature merges), or production for a public library.
