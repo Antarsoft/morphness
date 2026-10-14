@@ -52,8 +52,9 @@ fill comments left, JSON parses, relative links resolve, agent frontmatter, ever
 
 From `_harness/`:
 
-- **Prune due:** count files in `_harness/learnings/` since the last file in `_harness/prunes/`. At or
-  above `loop.prune_every`, say "Prune due" and point to `harness/SETUP.md` § Prune.
+- **Prune due:** run `bash scripts/prune-counter.sh` (when the copy lacks it, count the `*-v*.md` files
+  in `_harness/learnings/`). When it prints `Prune is DUE`, say "Prune due" and point to
+  `harness/SETUP.md` § Prune. A missing script is drift worth naming: `/morph-update` adds it.
 - **Open action items:** retro items in `_harness/LEARNINGS.md` still `open` or `approved` but not
   `applied` for more than two features.
 - **Trials:** trials in `_harness/LEARNINGS.md` § Trials with no decision past their end condition.
