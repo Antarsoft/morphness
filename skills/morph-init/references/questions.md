@@ -126,10 +126,14 @@ push / workflow / by hand / not deployed there)?" Suggest from each app's own ho
 gate. → `pr_host`, `ci_gate`
 
 Follow-up, skipped when `pr_host` is `none`: "Protect the environment branches (`<branches from
-Q6b>`) on the host: changes only through a PR, no force-push, no deletion? I'll write a ruleset you
-import; agents can't set it." Default yes. Then: "How many approvals before a merge?" Suggest 0
-with one human (GitHub doesn't let you approve your own PR) and 1 with more. When the scan or `gh`
-shows protection already on, say so and suggest keeping it. → `branch_protection.*`
+Q6b>`) on the host: changes only through a PR, no force-push, no deletion? I'll write the ruleset and
+can apply it for you at the end if you have admin rights, or you import it." Default yes. Then:
+"How many approvals before a merge?" Suggest 0 with one human (GitHub doesn't let you approve your
+own PR) and 1 with more. When the scan or `gh` shows protection already on, say so and suggest
+keeping it. With protection on: "Delete a PR's branch automatically once it merges? Environment
+branches are protected, so they're never deleted." Default yes; say what the host has now
+(`gh repo view --json deleteBranchOnMerge`). With protection off, don't ask and record `false`.
+→ `branch_protection.*`
 
 Then: "Who merges PRs? By default you do, or I merge one when you ask for it by name. Or I can merge
 a feature PR into `<integration branch>` by myself once QA and CI pass. Merges into production are
@@ -236,7 +240,7 @@ release: { prod_steps_by: owner }
 pr_host: github
 ci_gate: false
 merge_by_agent: never
-branch_protection: { enabled: true, required_approvals: 0 }
+branch_protection: { enabled: true, required_approvals: 0, delete_merged_branches: true }
 release_tags: true                # true | false | per-package
 ci_cd: { ci: none, on_drafts: false, deploy: host, migrations: none, tags: none, docs_regex: "" }   # ci-cd module; paths of accepted workflows
 roadmap: { enabled: true, file: docs/ROADMAP.md, versions_dir: docs/versions, first_version: { id: v1, goal: "" } }
