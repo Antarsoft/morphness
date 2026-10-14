@@ -54,6 +54,13 @@ language/framework, the database (or none), hosting, and package manager, one li
 profile when one matches. → `stack.summary`, `stack.package_manager`, `stack.toolchain_setup`
 (e.g. a version manager line), `stack.install_cmd`
 
+Follow-up only when the scan found more than one app (several workspace packages with their own
+start, build or deploy config, such as `apps/web` and `apps/api`): "This looks like a monorepo with
+these apps: <name, folder, stack, one line each>. Track them as separate apps, so plans name the apps
+they touch and each app can deploy its own way?" Default yes. Shared libraries (`packages/*` that
+nothing deploys) are not apps; they stay cross-cutting paths. A single app, or no: `apps: []` and
+nothing else changes. → `apps` (name, path, stack; `e2e` from the browser-e2e scan; `deploy` from Q6b)
+
 ## Q5. Checks
 
 "These are the checks agents run before QA and before sign-off. I've filled the commands I could find:"
@@ -107,6 +114,10 @@ Then, for each environment, one line: "How does `<name>` get deployed (the host 
 by hand), and does it hold real people's data?" Suggest `host` when the scan found a host that
 deploys on push, `real_data: true` for production and `false` for the rest. Say plainly that the list
 can change later: edit `harness.config.yml` → `environments` and run `/morph-doctor`. → `environments`
+
+With `apps`, ask the deploy line per app instead: "How does `<app>` reach each environment (host on
+push / workflow / by hand / not deployed there)?" Suggest from each app's own host config
+(`apps/web/vercel.json`, `apps/api/fly.toml`). → `apps[].deploy`
 
 ## Q7. Code host and CI
 

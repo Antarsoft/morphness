@@ -43,6 +43,9 @@ jobs:
       - uses: actions/checkout@v4
 
       # morph-init: fill the toolchain setup and the build, using the commands in project/CONTROLS.md.
+      # morph-init: fill, or delete these three lines without apps: copy this job once per app whose deploy map says `workflow`
+      # (job id = app name), build and deploy only that app's path, and add
+      # `if: contains(fromJSON('["<envs where this app is workflow>"]'), inputs.environment || '{{environments.first}}')`.
 
       # morph-init: fill the deploy command for the host, reading its token from an environment secret. Example:
       #   - name: deploy

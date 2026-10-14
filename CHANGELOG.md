@@ -9,6 +9,10 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 - `release_tags: per-package` for monorepos whose packages have their own versions (Changesets, Nx
   release, release-please): features add the tool's change files, releases are named by date, and
   the tool writes the `<package>@x.y.z` tags. `/morph-init` suggests it when it finds such a tool.
+- Monorepos can list their apps in `harness.config.yml` → `apps` (folder, stack, browser spec
+  folder, and how each app deploys to each environment). Plans name the apps they touch, targeted
+  browser specs follow them, and the ci-cd deploy workflow gets a job per app. `/morph-init` asks when
+  it finds more than one app; with `apps: []` nothing changes.
 - Full-stack can narrow its pre-QA checks to what the branch changed: a docs-only diff skips them,
   and each check can run its tool's affected mode (`pnpm --filter '...[origin/dev]'`,
   `vitest --changed`, `jest --changedSince`) or only when listed paths change

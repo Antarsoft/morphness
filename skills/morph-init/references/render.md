@@ -86,7 +86,7 @@ Fill `installed_from` in `harness.config.yml` with the source repo URL, commit a
 
 Write the answers into `harness.config.yml`, replacing the defaults that aren't placeholders:
 `environment`, `branches`, `environments`, `pr_host`, `roadmap`, `modules`, `checks.before_qa`,
-`checks.before_signoff` (plus any extra named checks the user added), `ci_gate`, `merge_by_agent`, `branch_protection`, `release_tags`, `ci_cd` (delete the
+`checks.before_signoff` (plus any extra named checks the user added), `apps`, `ci_gate`, `merge_by_agent`, `branch_protection`, `release_tags`, `ci_cd` (delete the
 block without the ci-cd module), `risk_areas`,
 `agents`, `claude_projects` (delete the block when Claude Projects isn't used) and `loop`.
 
@@ -94,6 +94,12 @@ block without the ci-cd module), `risk_areas`,
 `branches.production`; with a single-branch flow and one environment, both are that branch. Write
 `environments: []` when nothing is deployed. `project/RELEASE.md` § Where things deploy gets one row
 per entry, in the same order.
+
+`apps`: write `apps: []` when the user kept one app (or the scan found one). Otherwise one entry per
+accepted app; each `deploy` key is an `environments` name. Fill `project/STACK.md` § Apps, add the
+App column to `project/RELEASE.md` § Where things deploy, and add each shared package folder the apps
+depend on to `project/CONTROLS.md` § Cross-cutting paths. With the ci-cd module, write one deploy job
+per app that has `workflow` for some environment (the deploy scaffold's fill comment).
 
 `branches.default`: when the host's current default branch differs (the scan, or `git remote show origin`), add the owner step from `project/RELEASE.md`'s fill comment to § Manual steps and to the hand-off. For dependency bots already configured (`.github/dependabot.yml`, `renovate.json`) with a default branch that isn't the integration branch, set their target branch to the integration branch.
 
@@ -178,6 +184,7 @@ All must pass before committing; fix and re-run on failure.
    `branches.production`, names unique), and `project/RELEASE.md` § Where things deploy has one row
    per entry. With the ci-cd module, the deploy and migrations workflows offer exactly those names
    and their branch guards have one `case` line per name.
+   Each `apps` entry's `path` exists, and its `deploy` keys are names in `environments`.
 9. `scripts/session-start.sh` is executable and parses (`bash -n scripts/session-start.sh`). Don't
    run it here: it installs dependencies. `scripts/prune-counter.sh` runs and prints
    `Prune counter: 0/<loop.prune_every>`.
