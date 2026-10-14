@@ -2,7 +2,7 @@
 id: 2026-10-14-check-scope
 title: Full-stack narrows its checks to what the branch changed
 kind: rule
-release: unreleased
+release: 2026-10-14
 applies_to: { modules: [] }
 files:
   - harness/CONTROLS.md

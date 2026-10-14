@@ -2,7 +2,7 @@
 id: 2026-10-14-per-package-versions
 title: Per-package versions for monorepos
 kind: config
-release: unreleased
+release: 2026-10-14
 applies_to: { modules: [] }
 files:
   - harness.config.yml

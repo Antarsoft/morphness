@@ -2,7 +2,7 @@
 id: 2026-10-14-monorepo-apps
 title: Optional apps list for monorepos
 kind: config
-release: unreleased
+release: 2026-10-14
 applies_to: { modules: [] }
 files:
   - harness.config.yml
