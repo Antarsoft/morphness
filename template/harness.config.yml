@@ -59,6 +59,9 @@ merge_by_agent: never
 # true: every merge to the production branch gets a version tag (harness/RELEASE.md § Versions), from
 # the tag workflow when ci_cd.tags has one, else from the command the Technical Lead hands the owner.
 # false: no tags; the release PR title and _harness/releases/<version>/ are the record.
+# per-package: a monorepo whose packages carry their own versions; the repo's versioning tool
+# (Changesets, Nx release, release-please) bumps them and writes `<package>@x.y.z` tags, and
+# releases are named by date (harness/RELEASE.md § Per-package versions).
 release_tags: true
 
 roadmap:

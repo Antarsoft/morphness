@@ -49,7 +49,7 @@ Agents can't do these; they go in `project/RELEASE.md` § Manual steps, and morp
 
 ## On install
 
-- The tag workflow is offered only with `release_tags: true`. With a single-branch flow, say that feature PR titles don't name a version, so the owner tags a release by running the workflow by hand with the version.
+- The tag workflow is offered only with `release_tags: true`. With `per-package`, the versioning tool's own release workflow tags packages; morph-init keeps one the repo already has and writes none. With a single-branch flow, say that feature PR titles don't name a version, so the owner tags a release by running the workflow by hand with the version.
 - The deploy workflow is offered when an entry in `environments` has `deploy: workflow` and the repo has none. In the deploy and migrations scaffolds, `{{environments.names}}` is the comma-separated names in order, `{{environments.first}}` the first name, and the branch guard gets one `case` line per environment.
 - Copy the accepted scaffolds to `.github/workflows/` without overwriting (a project's existing workflow is kept and described instead), fill their `{{…}}` keys and `# morph-init: fill` lines, and record the paths in `harness.config.yml` → `ci_cd`. A pipeline the owner declined is `none` there and has no file.
 - Fill [project/CONTROLS.md](../../../project/CONTROLS.md) § CI (each workflow, its trigger, its jobs, and whether it is a required gate) and [project/RELEASE.md](../../../project/RELEASE.md) § Where things deploy, § Manual steps (the owner steps above), § Production migrations and § Rollback from the chosen pipelines.

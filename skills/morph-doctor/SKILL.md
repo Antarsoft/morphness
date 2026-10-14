@@ -46,6 +46,10 @@ fill comments left, JSON parses, relative links resolve, agent frontmatter, ever
   `secrets.` other than `GITHUB_TOKEN`; deploy and migrations jobs name an `environment`, and their
   `options` list exactly the names in `environments`; a tag
   workflow exists only with `release_tags: true`.
+- `release_tags: per-package`: the versioning tool named in `project/RELEASE.md` § Versions has its
+  config in the repo (`.changeset/config.json`, `nx.json` → `release`, `release-please-config.json`,
+  `lerna.json`), and no Morphness tag workflow is in `ci_cd.tags`. Any other value than `true`,
+  `false` or `per-package` is reported.
 - `merge_by_agent`: `never` has the merge `ask` rules in `.claude/settings.json` (`gh pr merge`,
   the code host's merge tools); `integration` with `branches.integration` equal to
   `branches.production` is reported, because it acts as `never` there.

@@ -65,6 +65,7 @@ Merge after: none <!-- or #N, when the merge-order check found an open PR that s
 
 <!-- Release PRs only (release branch → `{{branches.production}}`, title `Release vX.Y.Z`; process: harness/RELEASE.md, project/RELEASE.md). Delete this section on a feature or hotfix PR. A promotion PR (`Promote vX.Y.Z to <environment>`, harness/RELEASE.md § Environments) keeps the Features list and drops the release QA, migration and env var lines. Merge with a merge commit, not squash. -->
 
+- Package versions (only with `release_tags: per-package`; from the versioning tool's dry run): `<package>`: `x.y.z` → `x.y.z`
 - Features (each with its `QA/qa-result.md`):
   - `<slug>`: `_harness/features/<slug>/<version>/QA/qa-result.md`
 - Release QA: `_harness/releases/<version>/qa-result.md`, **pass** on the release QA environment
@@ -80,5 +81,5 @@ Merge after: none <!-- or #N, when the merge-order check found an open PR that s
 <!-- Hotfix PRs only (branch from `{{branches.production}}` → `{{branches.production}}`, title `Hotfix vX.Y.Z`, the next patch version; harness/RELEASE.md § Hotfix). Delete this section otherwise. -->
 
 - Bug and its QA record: `_harness/features/<slug>/<version>/QA/qa-result.md`, **pass**
-- [ ] Tag `vX.Y.Z` on the merge commit (the tag workflow, or the command the Technical Lead hands the owner; skip with `release_tags: false`)
+- [ ] Tag `vX.Y.Z` on the merge commit (the tag workflow, or the command the Technical Lead hands the owner; skip with `release_tags: false`; with `per-package`, the versioning tool's tags for the patched packages)
 - [ ] Merge-back PR from `{{branches.production}}` into `{{branches.integration}}` (and each middle environment's branch): #N

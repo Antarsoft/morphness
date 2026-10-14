@@ -110,6 +110,10 @@ List importing the ruleset (or setting GitLab's protected branches) in `project/
 steps and in the hand-off. In `.claude/settings.json`, add the same four `git push` deny lines the
 template has for the integration branch for every other environment branch (a middle branch).
 
+`release_tags: per-package`: fill `project/RELEASE.md` § Versions from the tool's config, and in the
+PR template replace `vX.Y.Z` in the Release and Hotfix comments with `YYYY-MM-DD` (a date). With
+`true` or `false`, keep the package-versions line out of the PR template.
+
 `pr_host`: on GitLab, move `.github/pull_request_template.md` to
 `.gitlab/merge_request_templates/Default.md` (the default merge request template) and, when nothing
 else is left in `.github/`, delete that folder; with `none`, delete the template. Kit text that names
