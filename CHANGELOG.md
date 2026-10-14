@@ -6,6 +6,9 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- `release_tags: per-package` for monorepos whose packages have their own versions (Changesets, Nx
+  release, release-please): features add the tool's change files, releases are named by date, and
+  the tool writes the `<package>@x.y.z` tags. `/morph-init` suggests it when it finds such a tool.
 - Full-stack can narrow its pre-QA checks to what the branch changed: a docs-only diff skips them,
   and each check can run its tool's affected mode (`pnpm --filter '...[origin/dev]'`,
   `vitest --changed`, `jest --changedSince`) or only when listed paths change

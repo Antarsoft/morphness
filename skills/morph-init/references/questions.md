@@ -83,7 +83,11 @@ Follow-up for two branches: names, then "Make `<integration>` the repository's d
 migrations)?" (default: the owner only). Then: "Tag each release with its version (`v1.4.0`)? Tags
 mark what shipped and help with rollbacks and hotfixes; nothing in the harness needs them." Default
 yes; for an ongoing project, suggest whatever its existing tags show (`git tag --sort=-creatordate |
-head`), and note any other version scheme for `project/RELEASE.md`. → `branches.*`,
+head`), and note any other version scheme for `project/RELEASE.md`. When the scan finds a per-package
+versioning tool (`.changeset/`, `release` in `nx.json`, `release-please-config.json`, `lerna.json`) or
+tags like `<name>@1.2.0`, suggest `per-package` instead: "Your packages carry their own versions
+through <tool>. Keep that: each feature adds a change file, releases are named by date, and <tool>
+writes the tags?" → `branches.*`,
 `release.prod_steps_by`, `release_tags`, `branches.default`
 
 ## Q6b. Environments
@@ -152,7 +156,7 @@ the pipelines you don't have yet. Each one only on your yes:"
    `host` and `manual` environments add no file.
 3. **Migrations workflow**, only with the data-access module and when Q9's answer was "CI
    workflow" with none in the repo.
-4. **Tag workflow**, only with `release_tags: true` and on GitHub or GitLab. Suggest yes: it tags each
+4. **Tag workflow**, only with `release_tags: true` (not `per-package`) and on GitHub or GitLab. Suggest yes: it tags each
    merge to the production branch from the PR title, so nobody pushes tags by hand (cloud sessions
    can't). With a single-branch flow, say the owner runs it by hand with the version for a release.
 
@@ -222,7 +226,7 @@ pr_host: github
 ci_gate: false
 merge_by_agent: never
 branch_protection: { enabled: true, required_approvals: 0 }
-release_tags: true
+release_tags: true                # true | false | per-package
 ci_cd: { ci: none, on_drafts: false, deploy: host, migrations: none, tags: none, docs_regex: "" }   # ci-cd module; paths of accepted workflows
 roadmap: { enabled: true, file: docs/ROADMAP.md, versions_dir: docs/versions, first_version: { id: v1, goal: "" } }
 modules: []

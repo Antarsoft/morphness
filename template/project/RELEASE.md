@@ -46,6 +46,10 @@ Release QA (on the release QA environment) and the owner's live check (on produc
 - [ ] Billing releases only: upgrade with a test card, then cancel.
 -->
 
+## Versions
+
+<!-- morph-init: fill the version scheme when it isn't the kit's `vX.Y.Z` (harness/RELEASE.md § Versions). With `release_tags: per-package`: the versioning tool, its config file, which packages it versions (and which it ignores), the change-file command Full-stack runs (e.g. `pnpm changeset`), the dry-run command that lists the next versions (e.g. `pnpm changeset status --verbose`), and what runs the version and publish step after a release merges (its workflow, or the owner's command). Delete the section with the default scheme. -->
+
 ## Rollback
 
 <!-- morph-init: fill how to put the previous production deploy back (for example "promote the previous deployment in the hosting dashboard"). The database is not rolled back; fix forward ([harness/RELEASE.md](../harness/RELEASE.md) § Rollback). -->
