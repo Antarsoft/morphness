@@ -2,7 +2,7 @@
 id: 2026-10-13-default-branch
 title: Choose the code host's default branch
 kind: config
-release: unreleased
+release: 2026-10-14
 applies_to: { modules: [] }
 files:
   - harness.config.yml

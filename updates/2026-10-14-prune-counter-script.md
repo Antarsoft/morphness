@@ -2,7 +2,7 @@
 id: 2026-10-14-prune-counter-script
 title: A script prints the prune counter for every hand-off
 kind: rule
-release: unreleased
+release: 2026-10-14
 applies_to: { modules: [] }
 files:
   - scripts/prune-counter.sh

@@ -2,7 +2,7 @@
 id: 2026-10-13-merge-by-agent
 title: Who merges PRs, with a merge_by_agent setting
 kind: rule
-release: unreleased
+release: 2026-10-14
 applies_to: { modules: [] }
 files:
   - .claude/rules/technical-lead.md
