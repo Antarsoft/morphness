@@ -106,8 +106,8 @@ per app that has `workflow` for some environment (the deploy scaffold's fill com
 `branch_protection`: with `enabled: true` on GitHub, keep `.github/rulesets/environment-branches.json`;
 with `ci_gate: true`, add a `required_status_checks` rule naming the CI job. Otherwise (GitLab, no
 host, or `enabled: false`) delete the file and its link in `harness/RELEASE.md` § Branch protection.
-List importing the ruleset (or setting GitLab's protected branches) in `project/RELEASE.md` § Manual
-steps and in the hand-off. In `.claude/settings.json`, add the same four `git push` deny lines the
+Whatever § 7b can't apply goes in `project/RELEASE.md` § Manual steps and the hand-off: importing the
+ruleset (or setting GitLab's protected branches) and turning on branch deletion after merge. In `.claude/settings.json`, add the same four `git push` deny lines the
 template has for the integration branch for every other environment branch (a middle branch).
 
 `release_tags: per-package`: fill `project/RELEASE.md` § Versions from the tool's config, and in the
@@ -188,6 +188,26 @@ All must pass before committing; fix and re-run on failure.
 9. `scripts/session-start.sh` is executable and parses (`bash -n scripts/session-start.sh`). Don't
    run it here: it installs dependencies. `scripts/prune-counter.sh` runs and prints
    `Prune counter: 0/<loop.prune_every>`.
+
+## 7b. Apply host settings (owner's yes)
+
+Skip on GitLab without `glab`, on `pr_host: none`, and when `branch_protection.enabled` is `false`.
+Otherwise ask once: "Apply the branch protection now with `gh api`? It needs admin rights on the
+repo." Only on a yes, for this repo (`<owner>/<repo>` from `gh repo view --json nameWithOwner`):
+
+1. **Ruleset.** `gh api repos/<owner>/<repo>/rulesets` and look for one named like the file's
+   `name`. None: `gh api -X POST repos/<owner>/<repo>/rulesets --input .github/rulesets/environment-branches.json`.
+   One: show the owner how it differs, and on a yes `gh api -X PUT repos/<owner>/<repo>/rulesets/<id> --input <the file>`.
+2. **Branch deletion** with `delete_merged_branches: true`:
+   `gh api -X PATCH repos/<owner>/<repo> -F delete_branch_on_merge=true`.
+3. **Read back:** `gh api repos/<owner>/<repo>/rules/branches/<branch>` for each environment branch
+   shows `pull_request`, `non_fast_forward` and `deletion`; `gh repo view --json deleteBranchOnMerge`
+   shows `true`.
+
+On any failure (403 or 404 without admin rights, no `gh`, a denied command, a proxy refusal), stop,
+don't retry another way, and list the step in § Manual steps and the hand-off with the file, the
+import path and the exact command for the owner to run with Claude Code's `!` prefix or in a
+terminal. Say which steps were applied and which are the owner's.
 
 ## 8. Commit and PR
 

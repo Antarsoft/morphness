@@ -38,7 +38,12 @@ fill comments left, JSON parses, relative links resolve, agent frontmatter, ever
   and has `git push` denies in `.claude/settings.json`. When `gh` can read it, check each branch's
   live rules (`gh api repos/<owner>/<repo>/rules/branches/<branch>`) for `pull_request`,
   `non_fast_forward` and `deletion`, and with `ci_gate: true` the CI check. Report each missing rule
-  as the owner's step (agents never change rulesets); if the rules can't be read, ask the owner.
+  as a fix you can apply: on the owner's yes, run morph-init's render.md § 7b (it hands the owner
+  the file and command when it can't apply). If the rules can't be read, ask the owner.
+- `branch_protection.delete_merged_branches` matches the host (`gh repo view --json
+  deleteBranchOnMerge`); offer render.md § 7b step 2 when it doesn't. Flag
+  `delete_merged_branches: true` with `enabled: false`: an unprotected environment branch would be
+  deleted when a release PR from it merges.
 - With the ci-cd module: every path in `ci_cd` exists; the CI workflow has one step per `before_qa`
   check whose command matches `project/CONTROLS.md` (report each missing or differing step); no runner
   image ends in `-latest`; the CI workflow uses `pull_request`, not `pull_request_target`, lists `ready_for_review` in its

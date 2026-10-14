@@ -6,6 +6,11 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- `/morph-init` and `/morph-doctor` can apply the branch-protection ruleset with `gh api` on the
+  owner's yes (and read it back), falling back to the file, import steps and command for the owner.
+  New `branch_protection.delete_merged_branches` (on by default with protection) turns on automatic
+  deletion of a PR's branch after it merges; `/morph-doctor` checks both.
+
 ## 2026-10-14
 
 - `release_tags: per-package` for monorepos whose packages have their own versions (Changesets, Nx
