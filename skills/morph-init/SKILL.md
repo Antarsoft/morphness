@@ -43,6 +43,10 @@ with real values filled in (repository, branch, file, folder), never a bare comm
    `HARNESS_VERSION` file), this is a **migration**: say so, and follow `references/render.md`
    § Migrating an earlier harness instead of the plain copy. A no-clobber copy would skip every kit
    file and change nothing.
+   **Not a git repository yet, or no commits** (`git rev-parse --git-dir` fails, or `git rev-parse
+   HEAD` does): say so in plain words ("this folder isn't tracked by git yet; I'll set that up as part
+   of the install") and carry on. The files already in the folder are the project, not changes to
+   commit or stash. Nothing is written before the final yes; render.md § 1 starts the repository.
 3. **Pick the input mode.** Ask once:
    - Interview (recommended): you ask, with suggestions.
    - From a file: the user points at a context file (a README, a brief, a filled `morph-answers.yml`
@@ -86,8 +90,9 @@ carry on; don't try another download route.
 
 Print a summary: project, owner, environment, branches, shared environments, modules, named checks with their commands, risk
 areas, model and effort per agent, Claude Projects advice (if used), the pipelines accepted (ci-cd
-module) with their owner steps, accepted skills, connectors and lessons, and the list of files that
-will be created. Ask for a final yes. Nothing is written to the target before this yes, except
+module) with their owner steps, accepted skills, connectors and lessons, the list of files that
+will be created, and, when they apply, the first commit of the existing files and the repository to
+create online (render.md § 1). Ask for a final yes. Nothing is written to the target before this yes, except
 `morph-answers.yml`.
 
 ## Phase 4: Render

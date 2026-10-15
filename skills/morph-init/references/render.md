@@ -6,7 +6,26 @@ Run these steps only after the user's final yes in Phase 3. `SRC` is the Morphne
 ## 1. Branch
 
 Create `morph/install` from the integration branch (or the only branch). If the branch exists, ask
-before reusing it. Never commit to the integration or production branch directly.
+before reusing it. Never commit to the integration or production branch directly, apart from the first
+commit below.
+
+**No repository or no commits yet.** Without a repository, run `git init -b <integration>`. With no
+commits, first save the folder as it is, so the install PR shows only the harness:
+1. If there's no `.gitignore`, write one for the stack (dependencies, build output, `.env*` and other
+   secret files, OS files). Never stage a file that looks like it holds secrets.
+2. Show the owner the list of files about to be saved, and on their yes commit them on the integration
+   branch as `chore: start repository` (authored as the owner, from `git config`).
+3. With two branches, create the production branch from that same commit (`git branch <production>`).
+
+**No remote yet, and the owner asked to create it** (`create_remote`). Do it now, before any harness
+file exists, so the agents' push rules don't apply yet: `gh repo create <owner>/<name> --private
+--source . --remote origin` (`--public` if they chose it; GitLab: `glab repo create`), then
+`git push -u origin <integration>` and the production branch. If `gh` is missing, not signed in or
+refused, don't try another way: give the owner the plain steps (on github.com: the **+** menu → **New
+repository**, the name, **Private**, leave every "Initialize" box unticked, **Create repository**; then
+in a terminal opened in the project folder, `git remote add origin <the URL GitHub shows>` and
+`git push -u origin <integration> <production>`), and carry on with the install locally; § 8 then ends
+without a push, and `/morph-doctor` finishes the setup once the project is online.
 
 ## 2. Copy without overwriting
 
@@ -192,7 +211,8 @@ All must pass before committing; fix and re-run on failure.
 
 ## 7b. Apply host settings (owner's yes)
 
-Skip on GitLab without `glab`, on `pr_host: none`, and when `branch_protection.enabled` is `false`.
+Skip on GitLab without `glab`, on `pr_host: none`, with no remote (the owner creates it later and
+`/morph-doctor` applies this then), and when `branch_protection.enabled` is `false`.
 Otherwise ask once: "Apply the branch protection now with `gh api`? It needs admin rights on the
 repo." Only on a yes, for this repo (`<owner>/<repo>` from `gh repo view --json nameWithOwner`):
 
@@ -219,6 +239,13 @@ to that section, and say which steps were applied and which are the owner's.
 ## 8. Commit and PR
 
 Stage only the files you created or changed, by path. Commit message:
-`chore: install Morphness harness`. Ask before pushing; then push and open a PR to the integration
-branch titled "Install Morphness harness", with a body listing the answers summary, accepted skills,
-connectors and lessons, and the skipped files. The PR is the user's to review and merge.
+`chore: install Morphness harness`. Then:
+
+- **With a remote:** ask before pushing; then push and open a PR to the integration branch titled
+  "Install Morphness harness", with a body listing the answers summary, accepted skills, connectors
+  and lessons, and the skipped files. The PR is the user's to review and merge.
+- **No remote:** nothing is pushed. Tell the owner the harness is on the `morph/install` branch on
+  this computer, and offer to merge it into the integration branch on their yes
+  (`git switch <integration> && git merge --no-ff morph/install`). Say that until the project is
+  online, the agents work and merge on this computer, and that `/morph-doctor` finishes the code host
+  setup (pull requests, CI, branch protection) once it is.

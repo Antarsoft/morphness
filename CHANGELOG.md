@@ -6,6 +6,11 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Projects that aren't online yet: `/morph-init` starts the git repository and the first commit when
+  the folder has none, and creates the GitHub repository on the owner's yes (with plain website
+  steps when it can't). Until a remote exists, agents use the local branches and merge on the
+  owner's computer, and `/morph-doctor` offers to finish the code host setup once the project is
+  online.
 - `/morph-init` speaks plainly to owners who aren't developers: each technical term gets a few words
   of explanation the first time it comes up, and the code host and CI question is split into two
   questions in everyday words. It also warns early that GitHub's free plan can't protect branches on

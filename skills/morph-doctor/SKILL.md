@@ -17,6 +17,17 @@ fill comments left, JSON parses, relative links resolve, agent frontmatter, ever
 - Every module in `modules` has its folder; no folder under `harness/modules/` is missing from
   `modules` (stale rules agents would read).
 - Every agent file under `.claude/agents/` points at a body under `harness/agents/` that exists.
+- **No remote yet** (`git remote` prints nothing): skip every check here that reads the remote or the
+  code host, and say so once. With `pr_host` other than `none`, say the project isn't online yet and
+  offer to create it (morph-init render.md § 1, "No remote yet").
+- **Online since the install** (a remote exists but `pr_host: none`, or the install ran with no
+  remote): say it plainly ("Your project is online now. Want to finish the setup for that? I'll ask
+  the questions that were skipped at install.") and on a yes: push the integration and production
+  branches if the remote lacks them, set `pr_host` from the remote's host, ask morph-init's skipped
+  questions (questions.md Q7 from "Whether the automatic checks must pass", the merge question, Q9b),
+  copy back from the Morphness source what the install removed for `pr_host: none` (the PR template,
+  `.github/rulesets/environment-branches.json` and the `harness/RELEASE.md` sections that point to it),
+  render the matching parts of render.md § 3b and § 4, then offer § 7b.
 - The branches in `harness.config.yml` exist on the remote (`git ls-remote --heads origin <name>`).
 - `environments` (when the key exists): names are unique; the first entry runs `branches.integration`
   and the last runs `branches.production`; every entry's branch exists on the remote; `deploy` is one
