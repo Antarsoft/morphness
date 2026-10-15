@@ -24,11 +24,13 @@ One row per `_harness/LEARNINGS.md` § Trials entry: KPI numbers over this windo
 
 ## 1c. Research
 
-One row per research file added since the last prune. Leave the table empty when there were none.
+One row per research file added since the last prune, from its header and § How it went. Leave the table empty when there were none.
 
-| Research file | Researcher effort | Outcome | Used by |
-|---------------|-------------------|---------|---------|
-| | medium · high | planned · light-mode change · no action · undecided | feature slug, or none |
+| Research file | Researcher effort | Outcome | Check | Scope and effort | Used by |
+|---------------|-------------------|---------|-------|------------------|---------|
+| | medium · high | planned · light-mode change · no action · undecided | held · partly · overruled | right · too wide · too narrow · effort too low · effort too high | feature slug, or none |
+
+**Proposals:** a tweak per pattern the rows show (a default researcher effort for a kind of question, a scoping rule in `project/agents/researcher.md`), or "none". Decided with the rule rows.
 
 ## 2. Rule audit
 
