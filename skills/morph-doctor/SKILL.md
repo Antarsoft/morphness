@@ -81,6 +81,12 @@ From `_harness/`:
 - **Prune due:** run `bash scripts/prune-counter.sh` (when the copy lacks it, count the `*-v*.md` files
   in `_harness/learnings/`). When it prints `Prune is DUE`, say "Prune due" and point to
   `harness/SETUP.md` § Prune. A missing script is drift worth naming: `/morph-update` adds it.
+- **Feature cost:** with `cost.track` on (or no `cost:` key), `bash scripts/feature-cost.sh` runs and
+  prints a `Cost` line (in a fresh session it may say `not measured`, which is fine; a Python error
+  is not). Every model in `agents:` (`model`, `medium_model`, `high_model`), mapped to its current
+  `claude-…` id, has a row in the price table (`cost.prices`, default `harness/MODEL_PRICES.md`).
+  Report a missing row and a `Prices as of` date more than six months old. A missing script or table
+  is drift: `/morph-update` adds them.
 - **Open action items:** retro items in `_harness/LEARNINGS.md` still `open` or `approved` but not
   `applied` for more than two features.
 - **Trials:** trials in `_harness/LEARNINGS.md` § Trials with no decision past their end condition.

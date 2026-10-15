@@ -43,8 +43,9 @@ Coordinator:
 
 Feature threads (Technical Lead):
 - One feature, one PR per thread. When the PR merges, resolve the thread.
-- The reply that hands the feature over (QA passed, PR ready) ends with the line from
-  `bash scripts/prune-counter.sh` (`Prune counter: N/<prune_every>`, plus "Prune is DUE" when due).
+- The reply that hands the feature over (QA passed, PR ready) ends with the `Cost ≈ $…` line from
+  `bash scripts/feature-cost.sh` and the line from `bash scripts/prune-counter.sh`
+  (`Prune counter: N/<prune_every>`, plus "Prune is DUE" when due).
 - Every decision the owner makes in chat goes into plan.md § Decisions in the same turn.
 - After two QA rework rounds, the thread may hand over to a fresh thread at a natural break
   (QA pass, PR marked ready). The closing reply lists open decisions and links the new thread.

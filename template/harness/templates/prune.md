@@ -8,11 +8,13 @@ Process: `harness/SETUP.md` § Prune; why: `harness/MORPHING.md` § Pruning.
 
 ## 1. Window vs previous
 
-| Feature | QA rounds | Review round | Failure causes | Full-stack / QA model and effort | Retro run table |
-|---------|-----------|--------------|----------------|----------------------------------|-----------------|
-| | | | | | link |
+| Feature | QA rounds | Review round | Failure causes | Full-stack / QA model and effort | Est. cost | Retro run table |
+|---------|-----------|--------------|----------------|----------------------------------|-----------|-----------------|
+| | | | | | $… or not measured | link |
 
-**Trend:** one or two lines: did rework per feature fall, and why we think so.
+**Cost:** window total $… over N measured features, average $… per feature; previous window average $… (or "first window"). Estimates at API list prices (`harness/MODEL_PRICES.md`), so compare windows priced the same way.
+
+**Trend:** one or two lines: did rework and cost per feature fall, and why we think so.
 
 ## 1b. Trials
 

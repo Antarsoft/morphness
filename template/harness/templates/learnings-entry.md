@@ -7,7 +7,7 @@
 ### <feature-slug> v<version>, YYYY-MM-DD
 - **Verdict:** pass | failed-escalated; QA rounds: N; review round: yes | no
 - **Failure causes:** plan gap ×N, implementation ×N, environment ×N, process ×N (or none)
-- **Cost:** Full-stack <model> <effort> <duration> / <tokens> / <tool calls>; QA <model> <effort> <duration> / <tokens> / <tool calls>
+- **Cost:** ≈ $<total> (Technical Lead $…, Full-stack $…, QA $…, any other subagent $…), or `not measured (<reason>)`; Full-stack <model> <effort> <duration> / <tool calls>; QA <model> <effort> <duration> / <tool calls>
 - **Trial:** <trial name>: <KPI numbers> (only when this feature ran a trial variant; omit otherwise)
 - **Escaped:** <feature that passed QA with this bug, and the AC or check that missed it> (bug-fix features only; omit otherwise)
 - **Lessons:** 1 to 3 one-liners

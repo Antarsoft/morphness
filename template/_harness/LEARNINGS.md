@@ -20,7 +20,7 @@ The prune is `DUE` when `_harness/learnings/` holds Threshold feature files or m
 ### <feature-slug> v<version> (YYYY-MM-DD)
 - **Verdict:** pass | failed-escalated; QA rounds: N; review round: yes | no
 - **Failure causes:** plan gap ×N, implementation ×N, environment ×N, process ×N (or none)
-- **Cost:** Full-stack <model> <effort> <duration> / <tokens> / <tool calls>; QA <model> <effort> <duration> / <tokens> / <tool calls>
+- **Cost:** ≈ $<total> (Technical Lead $…, Full-stack $…, QA $…, any other subagent $…), or `not measured (<reason>)`; Full-stack <model> <effort> <duration> / <tool calls>; QA <model> <effort> <duration> / <tool calls>
 - **Escaped:** <feature that passed QA with this bug, and the AC or check that missed it> (bug-fix features only; omit otherwise)
 - **Lessons:** 1–3 one-liners
 - **Retro:** [retro.md](./features/<feature-slug>/<version>/Plan/retro.md)

@@ -115,6 +115,12 @@ claude_projects:
   feature_threads: { model: opus, effort: high }
   one_shot_threads: { model: opus, effort: medium }
 
+# What each feature's Claude Code work would cost at public API prices, for comparing features
+# (harness/SETUP.md § Retrospective → Feature cost). scripts/feature-cost.sh reads the session
+# transcripts and prices them from the table in `prices`; edit that table for your own rates.
+# An estimate even on a Pro or Max plan, where nothing is billed per call. track: false turns it off.
+cost: { track: true, prices: harness/MODEL_PRICES.md }
+
 loop:
   retro_max_items: 3      # action items per retrospective
   prune_every: 10         # learnings files between prunes

@@ -10,19 +10,21 @@ Process: `harness/SETUP.md` § Retrospective. Keep it to about 10 to 25 lines. N
 
 ## Agent runs
 
-One row per subagent completion notice, filled as each notice arrives. Agents' own Started and Ended are notes only; these numbers are the record.
+One row per subagent completion notice, filled as each notice arrives (Duration and Tool calls). Agents' own Started and Ended are notes only; these numbers are the record. **Est. $** comes from `bash scripts/feature-cost.sh` at the end (`harness/SETUP.md` § Retrospective → Feature cost), never from the notice's token figure: the script prints one row per subagent run in start order, so each round takes its own row's figure.
 
-| Run | subagent_type | Duration | Tokens | Tool calls |
-|-----|---------------|----------|--------|------------|
+| Run | subagent_type | Duration | Tool calls | Est. $ |
+|-----|---------------|----------|------------|--------|
 | Dev round 1 | | | | |
 | QA round 1 | | | | |
+| Technical Lead (main session) | | | | |
+| **Total** | | | | `Cost ≈ $…` line, or `not measured (reason)` |
 
 ## Answers
 
 One line each.
 
 - **Plan:** which deviations or QA findings trace back to a gap or error in the plan? Were effort levels right?
-- **Development:** what cost the most time or tokens, and was it necessary? Any rework and why?
+- **Development:** what cost the most time, tokens or dollars (the Est. $ column), and was it necessary? Any rework and why?
 - **QA:** did QA test the right things (ACs, deviations), anything duplicated or missed, any deferrals that could have been avoided?
 - **Handoff:** does the steps file hold only what agents can't do, and could QA have closed any deferred AC?
 - **Human touchpoints:** where did the human have to correct or unblock the TL or agents?
@@ -57,4 +59,4 @@ Routing:
 
 ---
 
-Summarised in `_harness/learnings/<feature-slug>-v<version>.md`: yes | no · Action items added to its § Action items: yes | none · Decisions listed in the hand-off: yes · Prune counter: N/<loop.prune_every> (DUE | ok)
+Summarised in `_harness/learnings/<feature-slug>-v<version>.md`: yes | no · Action items added to its § Action items: yes | none · Decisions listed in the hand-off: yes · Cost line in the hand-off: yes · Prune counter: N/<loop.prune_every> (DUE | ok)
