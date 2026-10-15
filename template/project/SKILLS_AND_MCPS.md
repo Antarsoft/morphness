@@ -22,7 +22,15 @@ Generic guidance (when to use a skill, an MCP or the repo's own docs): [harness/
 |-----|--------|---------|
 <!-- morph-init: fill each MCP: where it is configured (`.mcp.json` in the repo, or the person's own connector), and what agents use it for. For an account-wide connector, say which project or environment id agents must always target. Example: "| Docs lookup | `.mcp.json` | version-specific library docs |". -->
 
-**Remote environments:** no agent writes through an MCP (`AGENTS.md`): no migrations, DDL, data changes, deploys or settings changes. Read-only tools are fine; tools that can both read and write are `ask` in `.claude/settings.json`, tools that only write are `deny`.
+**Remote environments:** only the Technical Lead writes through a connector, and only after the owner approves that exact action ([harness/SKILLS_AND_MCPS.md](../harness/SKILLS_AND_MCPS.md) § Connector actions). Remote database migrations and data changes never go through an agent. Read-only tools are fine; tools that create, change or delete are `ask` in `.claude/settings.json`, tools that write a remote database are `deny`.
+
+## Service tools
+
+Every external service the project uses (hosting, database, auth, DNS, storage, email, app stores), and whether an official MCP can do its setup work. The Technical Lead reads this before writing any human step ([harness/SKILLS_AND_MCPS.md](../harness/SKILLS_AND_MCPS.md) § Connector actions). Re-check a row older than 90 days with the researcher before relying on it.
+
+| Service | Official MCP (source, date checked) | Connected as | Can do | Can't do |
+|---------|-------------------------------------|--------------|--------|----------|
+<!-- morph-init: fill one row per external service in the stack answers. Official MCP: the vendor's own docs page or GitHub org that publishes it, with the date read; "none found (<date>)" or "community only (<date>)" otherwise. Connected as: `.mcp.json`, user connector, plugin, or "not connected". Can do / Can't do: the setup work the human would otherwise do by hand (create a project, set a variable, add a domain or DNS record), from the server's tool list. Example: "| Hosting | <vendor docs URL> (<date>) | user connector | create project, env vars, domains | billing, team members |". -->
 
 ## Permission rules added for this project
 

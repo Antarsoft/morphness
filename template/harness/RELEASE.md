@@ -35,7 +35,7 @@ Only the human changes it on the host (GitHub: Settings → General → Default 
 - **`real_data: true`** means every deploy and migration there waits for the human's approval (the host's protected environment, `project/RELEASE.md`). Production always has it.
 - **Changing the list.** Add, rename or remove an entry in `harness.config.yml`, then run `/morph-doctor`. It reports what is out of step: the `project/RELEASE.md` table, the deploy and migrations workflow choices, the branches on the remote. The host's own environments and secrets are the human's to change.
 
-No agent writes to any of them (`AGENTS.md` § Shared remote environments), whatever the list says.
+No agent writes to any of them on its own (`AGENTS.md` § Shared remote environments), whatever the list says; the Technical Lead may through a connector, one approved action at a time ([SKILLS_AND_MCPS.md](./SKILLS_AND_MCPS.md) § Connector actions).
 
 ## Apps
 
@@ -103,7 +103,7 @@ All of the integration branch at the commit the release PR is opened from. Work 
 | QA engineer | Runs release QA on the release QA environment and writes `_harness/releases/<version>/qa-result.md` |
 | Human (owner) | Says "release", applies production migrations and environment variables, merges, checks the live product |
 
-Agents never touch remote databases or hosting settings: production migrations and environment variables are human steps (a project may apply migrations with a CI workflow that only the human runs; step 4).
+Agents never touch remote databases: production migrations are human steps (a project may apply migrations with a CI workflow that only the human runs; step 4). Hosting settings and non-secret environment variables are human steps too, unless a connected official MCP can set them: then the Technical Lead offers to, and does each one only after the human approves it in chat ([SKILLS_AND_MCPS.md](./SKILLS_AND_MCPS.md) § Connector actions). Secret values are always the human's.
 
 ## Release steps
 

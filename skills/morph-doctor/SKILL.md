@@ -74,6 +74,13 @@ fill comments left, JSON parses, relative links resolve, agent frontmatter, ever
   owner instead of reporting a failure. `ci_gate: false` with a CI that has passed on the integration
   branch: mention that the owner can make it required and set `ci_gate: true`.
 
+- **Service tools:** `project/SKILLS_AND_MCPS.md` § Service tools has a row for every external service
+  named in `project/STACK.md` and `project/RELEASE.md`. Compare each row's "Connected as" with the MCP
+  tools this session has, and report rows older than 90 days (offer a research-mode re-check, which
+  may find an official MCP that didn't exist before). Every connected write tool has an `ask` (or, for
+  a remote database, `deny`) rule in `.claude/settings.json`; report each one without. A copy without
+  the section: point to `/morph-update`.
+
 ## 2. Loop health
 
 From `_harness/`:
