@@ -105,7 +105,8 @@ per app that has `workflow` for some environment (the deploy scaffold's fill com
 
 `branch_protection`: with `enabled: true` on GitHub, keep `.github/rulesets/environment-branches.json`;
 with `ci_gate: true`, add a `required_status_checks` rule naming the CI job. Otherwise (GitLab, no
-host, or `enabled: false`) delete the file and its link in `harness/RELEASE.md` § Branch protection.
+host, or `enabled: false`) delete the file, its link in `harness/RELEASE.md` § Branch protection and
+that file's § Applying it yourself (GitLab: replace it with the protected-branch steps).
 Whatever § 7b can't apply goes in `project/RELEASE.md` § Manual steps and the hand-off: importing the
 ruleset (or setting GitLab's protected branches) and turning on branch deletion after merge. In `.claude/settings.json`, add the same four `git push` deny lines the
 template has for the integration branch for every other environment branch (a middle branch).
@@ -204,10 +205,16 @@ repo." Only on a yes, for this repo (`<owner>/<repo>` from `gh repo view --json 
    shows `pull_request`, `non_fast_forward` and `deletion`; `gh repo view --json deleteBranchOnMerge`
    shows `true`.
 
-On any failure (403 or 404 without admin rights, no `gh`, a denied command, a proxy refusal), stop,
-don't retry another way, and list the step in § Manual steps and the hand-off with the file, the
-import path and the exact command for the owner to run with Claude Code's `!` prefix or in a
-terminal. Say which steps were applied and which are the owner's.
+On any failure (403 or 404 without admin rights, no `gh`, a denied command, a proxy refusal), stop
+and don't retry another way. Hand the owner `harness/RELEASE.md` § Applying it yourself, with every
+placeholder filled in: `<owner>/<repo>`, the branch that holds the ruleset file (the install branch
+until its PR merges, then the integration branch) and the file's link on the host, and the project
+folder's path when this session runs on the owner's computer. Give both ways, website first, each step
+on its own line, never a bare command. When the error says the plan doesn't allow it (a 403 that
+mentions GitHub Pro or upgrading), lead with that in plain words: neither way works until the
+repository is public or on a paid plan, the agents' own rules keep them off those branches meanwhile,
+and `/morph-doctor` offers it again later. Add one row to `project/RELEASE.md` § Manual steps pointing
+to that section, and say which steps were applied and which are the owner's.
 
 ## 8. Commit and PR
 

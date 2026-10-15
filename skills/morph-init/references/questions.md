@@ -121,19 +121,33 @@ push / workflow / by hand / not deployed there)?" Suggest from each app's own ho
 
 ## Q7. Code host and CI
 
-"Where's the code hosted, and should CI on the PR be a required gate?" Suggest GitHub; suggest
-`ci_gate: true` only when CI runs the full checks; otherwise QA's record on the final commit is the
-gate. → `pr_host`, `ci_gate`
+Ask as two questions, in the owner's terms (SKILL.md § Plain language).
 
-Follow-up, skipped when `pr_host` is `none`: "Protect the environment branches (`<branches from
-Q6b>`) on the host: changes only through a PR, no force-push, no deletion? I'll write the ruleset and
-can apply it for you at the end if you have admin rights, or you import it." Default yes. Then:
-"How many approvals before a merge?" Suggest 0 with one human (GitHub doesn't let you approve your
-own PR) and 1 with more. When the scan or `gh` shows protection already on, say so and suggest
-keeping it. With protection on: "Delete a PR's branch automatically once it merges? Environment
-branches are protected, so they're never deleted." Default yes; say what the host has now
-(`gh repo view --json deleteBranchOnMerge`). With protection off, don't ask and record `false`.
-→ `branch_protection.*`
+**Where the code lives.** "Where should the code live online? That's the shared copy (a repository)
+that you and the agents both work from. I'd use GitHub, as a private repository under `<owner>`: only
+people you invite can see it." Options: GitHub (suggested), GitLab, or nowhere for now (it stays on
+this computer). When there's no remote yet, add: "I'll only create it after your final yes." → `pr_host`
+
+**Whether the automatic checks must pass.** Skipped when `pr_host` is `none`. "Should the automatic
+checks have to pass before a change can go in? CI is a robot on the code host that runs the tests on
+every proposed change (a pull request); required means the host blocks the change until it passes."
+Suggest yes only when CI runs the full checks. Otherwise suggest no, and say why: "There's no CI yet, so
+QA's check of the final version is the gate. You can turn this on once CI has passed once." → `ci_gate`
+
+Follow-up, skipped when `pr_host` is `none`: "Lock the main branches (`<branches from Q6b>`) so
+changes only get in through an approved pull request, never by pushing straight to them or deleting
+them? I'll write the rules, and at the end I can switch them on for you if your account is allowed to
+(it needs admin rights), or show you how." Default yes. When the repository is private (or will be) and
+the owner's GitHub plan is free (`gh api user --jq .plan.name`, or `gh api orgs/<org> --jq .plan.name`
+for an organization, when `gh` can read it), add: "GitHub only enforces these rules on private
+repositories with a paid plan (Pro, or Team for an organization). I'll still write them, so they're
+ready if you upgrade or make the repository public; the agents' own rules keep them off these branches
+meanwhile." Then: "How many people must approve a pull request before it goes in?" Suggest 0 with one
+human ("you can't approve your own pull request on GitHub") and 1 with more. When the scan or `gh`
+shows protection already on, say so and suggest keeping it. With protection on: "Tidy up
+automatically: delete a pull request's working branch once it's merged? The main branches are locked,
+so they're never deleted." Default yes; say what the host has now (`gh repo view --json
+deleteBranchOnMerge`). With protection off, don't ask and record `false`. → `branch_protection.*`
 
 Then: "Who merges PRs? By default you do, or I merge one when you ask for it by name. Or I can merge
 a feature PR into `<integration branch>` by myself once QA and CI pass. Merges into production are

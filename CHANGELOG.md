@@ -6,6 +6,14 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- `/morph-init` speaks plainly to owners who aren't developers: each technical term gets a few words
+  of explanation the first time it comes up, and the code host and CI question is split into two
+  questions in everyday words. It also warns early that GitHub's free plan can't protect branches on
+  private repositories.
+- When the branch protection can't be applied for the owner, they now get numbered steps for the
+  GitHub website and for a terminal (including going into the project folder, or cloning it first)
+  with the real names filled in, from the new `harness/RELEASE.md` § Applying it yourself.
+
 ## 2026-10-14.2
 
 - `/morph-init` and `/morph-doctor` can apply the branch-protection ruleset with `gh api` on the
