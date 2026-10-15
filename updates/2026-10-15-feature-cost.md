@@ -2,7 +2,7 @@
 id: 2026-10-15-feature-cost
 title: An estimated dollar cost for every feature, from Claude Code's own transcripts
 kind: template
-release: unreleased
+release: 2026-10-15.2
 applies_to: { modules: [] }
 files:
   - scripts/feature-cost.sh
