@@ -6,6 +6,11 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Research files get a short look-back instead of a retro: when the Technical Lead records the
+  decision it adds three lines (did its check confirm the findings, were the scope and researcher
+  effort right, did the answer get used). The prune reads them and suggests tweaks, such as a
+  default researcher effort for a kind of question. Research still never counts toward the prune.
+
 ## 2026-10-15
 
 - Research mode: when you want an answer rather than a change (how something works, why a bug

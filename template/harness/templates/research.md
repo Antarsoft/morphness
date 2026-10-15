@@ -61,3 +61,11 @@ The Technical Lead re-opened the sources behind the findings the recommendation 
 ## Decision
 
 The Technical Lead's call, with the date: `planned` (link the feature folder), `no action` (one line why), or another research round (link it). A decision that changes product behaviour, adds a step for the human or costs money is the human's: record their answer here.
+
+## How it went
+
+Three lines the Technical Lead fills with § Decision. They are research's whole look-back (no retro, and research doesn't count toward the prune); the prune reads them to tune how questions are scoped and which researcher variant they get.
+
+- **Check:** held · partly held (which rows were wrong) · overruled (what the researcher missed)
+- **Scope and effort:** right · too wide · too narrow; `medium` was enough · should have been `high` · `high` was more than needed
+- **Used:** yes (where: the plan, the fix, the choice) · not yet · no (why). Update this line if the answer gets used later.
