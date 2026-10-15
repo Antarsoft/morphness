@@ -207,7 +207,8 @@ All must pass before committing; fix and re-run on failure.
    Each `apps` entry's `path` exists, and its `deploy` keys are names in `environments`.
 9. `scripts/session-start.sh` is executable and parses (`bash -n scripts/session-start.sh`). Don't
    run it here: it installs dependencies. `scripts/prune-counter.sh` runs and prints
-   `Prune counter: 0/<loop.prune_every>`.
+   `Prune counter: 0/<loop.prune_every>`. `scripts/feature-cost.sh` is executable and runs without a
+   Python error (it may print `Cost: not measured`, or this session's cost).
 
 ## 7b. Apply host settings (owner's yes)
 

@@ -6,6 +6,13 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Every feature now records an estimated dollar cost: `scripts/feature-cost.sh` reads Claude Code's
+  own session transcripts and prices every API call at public API prices (table in
+  `harness/MODEL_PRICES.md`, editable for your own rates), split by the Technical Lead and each
+  subagent. The `Cost ≈ $…` line goes in the retro's run table, the learnings file and the end of
+  every hand-off, light-mode tasks and research files included; the prune shows each feature's cost
+  and the window's average next to the previous one. Useful on a Pro or Max plan too, as an estimate.
+  `/morph-doctor` checks the script and that the price table covers your agents' models.
 - Research files get a short look-back instead of a retro: when the Technical Lead records the
   decision it adds three lines (did its check confirm the findings, were the scope and researcher
   effort right, did the answer get used). The prune reads them and suggests tweaks, such as a

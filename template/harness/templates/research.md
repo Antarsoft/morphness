@@ -4,7 +4,8 @@
 **Date:**  
 **Asked by:** <the human who asked>  
 **Researcher effort:** medium | high (one line why)  
-**Status:** open | answered | planned (`<feature-slug>`) | no action
+**Status:** open | answered | planned (`<feature-slug>`) | no action  
+**Cost:** `Cost ≈ $…` line from `bash scripts/feature-cost.sh`, filled with the decision (or `not measured (<reason>)`)
 
 Process: `harness/MODES.md` § Research mode. The Technical Lead writes the sections down to the line; the researcher writes the sections below it; the Technical Lead closes the file.
 
