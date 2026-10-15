@@ -49,14 +49,43 @@ In a monorepo, `harness.config.yml` → `apps` lists the apps and packages that 
 
 Every branch in `environments` (always the integration and production branches) changes only through a merged PR: no direct pushes, no force-pushes, no deletion. Two layers hold this:
 
-- **On the host (the real guard),** with `harness.config.yml` → `branch_protection.enabled: true`. On GitHub the ruleset is [.github/rulesets/environment-branches.json](../.github/rulesets/environment-branches.json): `/morph-init` or `/morph-doctor` applies it with `gh api` when the human says yes and the session has admin rights, else the human imports it (Settings → Rules → Rulesets → New ruleset → Import a ruleset). It requires a PR with `required_approvals` approvals and blocks force-pushes and deletion. With `ci_gate: true` it also requires the CI check. On GitLab the human sets each branch as protected, with "Allowed to push" set to no one and force-push off. Merge style is not restricted, because the release PR uses a merge commit (§ Merge style).
+- **On the host (the real guard),** with `harness.config.yml` → `branch_protection.enabled: true`. On GitHub the ruleset is [.github/rulesets/environment-branches.json](../.github/rulesets/environment-branches.json): `/morph-init` or `/morph-doctor` applies it with `gh api` when the human says yes and the session has admin rights, else the human applies it (§ Applying it yourself). It requires a PR with `required_approvals` approvals and blocks force-pushes and deletion. With `ci_gate: true` it also requires the CI check. On GitLab the human sets each branch as protected, with "Allowed to push" set to no one and force-push off. Merge style is not restricted, because the release PR uses a merge commit (§ Merge style).
 - **For agents,** `.claude/settings.json` denies `git push` to each of those branches and every force-push. A deny matches command text, so it only catches mistakes.
 
 When `environments` changes, the ruleset file's branch list changes in the same PR, and `/morph-doctor` reports a live ruleset that doesn't match and offers to apply the file.
 
 **Delete merged branches** (`branch_protection.delete_merged_branches: true`, the default with protection on): the host deletes a feature or hotfix branch once its PR merges (GitHub: Settings → General → Pull Requests → Automatically delete head branches; GitLab: Settings → Merge requests → Enable "Delete source branch" option by default). Release and promotion PRs merge *from* environment branches; the host never deletes a protected or default branch, which is why this needs protection on. A PR stacked on a deleted branch is retargeted to its base by GitHub.
 
-**Who changes these settings.** Only `/morph-init` and `/morph-doctor`, and only after the human says yes to that exact change in the same conversation. They apply the files above with `gh api` (or `glab api`), read the result back, and on any failure (no CLI, no admin rights, a denied command, a cloud session's proxy) hand the human the file, the import steps and the command to run themselves (with Claude Code's `!` prefix or in a terminal), never working around a deny rule. No other agent, and no feature work, creates, edits or deletes rulesets, protection or repository settings.
+**Who changes these settings.** Only `/morph-init` and `/morph-doctor`, and only after the human says yes to that exact change in the same conversation. They apply the files above with `gh api` (or `glab api`), read the result back, and on any failure (no CLI, no admin rights, a denied command, a cloud session's proxy) hand the human the steps in § Applying it yourself with the real names filled in, never working around a deny rule. No other agent, and no feature work, creates, edits or deletes rulesets, protection or repository settings.
+
+### Applying it yourself
+
+When `/morph-init` or `/morph-doctor` couldn't switch the protection on, the owner does it one of two ways. Both need admin rights on the repository, which its owner has. `<owner>/<repo>` is the repository's name on GitHub, and `<branch>` is the branch that has `.github/rulesets/environment-branches.json` (the integration branch once the install PR is merged, before that the install PR's branch).
+
+**Check the plan first.** On GitHub's free plan these rules only work on public repositories. A private repository needs GitHub Pro (personal account) or GitHub Team (organization); until then GitHub answers "Upgrade to GitHub Pro or make this repository public" and neither way below works. Nothing else breaks meanwhile: the agents' own rules (above) still keep them off these branches, and `/morph-doctor` offers it again later.
+
+**Way 1: on the GitHub website (no terminal needed)**
+
+1. Download the rules file: open the repository on github.com, pick `<branch>` in the branch menu at the top left, open the `.github` folder, then `rulesets`, then `environment-branches.json`, and click **Download raw file** (the download arrow above the file's text).
+2. Open the repository's **Settings** tab (at the top of the repository page; it only shows for admins).
+3. In the left sidebar, under **Code and automation**, click **Rules**, then **Rulesets**.
+4. Click **New ruleset**, choose **Import a ruleset**, and pick the file you downloaded.
+5. Check that **Target branches** lists the environment branches, then click **Create** at the bottom of the page.
+6. To delete merged branches automatically: **Settings** → **General**, scroll down to **Pull Requests**, and tick **Automatically delete head branches**. It saves by itself.
+
+**Way 2: from a terminal on your computer**
+
+This needs the GitHub command-line tool, `gh` (install it from https://cli.github.com, then run `gh auth login` once and follow its prompts).
+
+1. Open a terminal: **Terminal** on macOS (search for it with Cmd+Space), **PowerShell** on Windows.
+2. Go into the project's folder: type `cd `, a space, then the folder's path, and press Enter. On macOS you can type `cd ` and drag the folder from Finder into the window to fill in its path. The command in step 4 only works from inside this folder, because it reads the rules file from there.
+   No copy of the project on this computer yet? Make one first, then go into it:
+   `gh repo clone <owner>/<repo>` and then `cd <repo>`.
+3. Get the branch that has the file: `git fetch origin`, then `git switch <branch>`.
+4. Switch the protection on: `gh api -X POST repos/<owner>/<repo>/rulesets --input .github/rulesets/environment-branches.json`. A reply that starts with `{"id":` means it worked.
+5. To delete merged branches automatically: `gh api -X PATCH repos/<owner>/<repo> -F delete_branch_on_merge=true`.
+
+If you run Claude Code on your own computer, already opened in the project folder, you can skip steps 1 and 2: type `!` followed by the command in the chat and it runs there. In a cloud session that doesn't work, because the command runs in the cloud copy, so use one of the ways above.
 
 ## When a release happens
 

@@ -17,6 +17,14 @@ the user can accept with "yes" or Enter. Skip any question whose answer you alre
 an answers file or an earlier answer, and say what you inferred instead. Keep each question to a line or
 two, with options on short lines and your suggestion marked.
 
+**Plain language.** Write every question, summary and hand-off for someone who has never used git:
+the owner may be a designer or a founder, not a developer. The first time a term like repository,
+branch, pull request, CI, ruleset or deploy comes up, say in a few words what it is or does
+("CI, a robot on GitHub that runs the tests on every proposed change"). Lead with what the choice
+means for the owner, then the setting. When the owner clearly works with these terms (they use them
+in their answers), drop the explanations. Anything the owner has to do by hand gets numbered steps
+with real values filled in (repository, branch, file, folder), never a bare command.
+
 ## Phase 0: Find the source and the mode
 
 1. **Locate the Morphness source.** In order: this skill's own plugin folder (`template/` two levels up
