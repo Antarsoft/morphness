@@ -2,7 +2,7 @@
 id: 2026-10-15-plain-protection-steps
 title: Step-by-step ways to switch branch protection on yourself
 kind: rule
-release: unreleased
+release: 2026-10-15
 applies_to: { modules: [] }
 files:
   - harness/RELEASE.md

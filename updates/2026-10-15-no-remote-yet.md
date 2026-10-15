@@ -2,7 +2,7 @@
 id: 2026-10-15-no-remote-yet
 title: Agents work on local branches until the project is online
 kind: rule
-release: unreleased
+release: 2026-10-15
 applies_to: { modules: [] }
 files:
   - AGENTS.md
