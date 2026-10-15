@@ -6,6 +6,13 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+## 2026-10-15.2
+
+- Retro action items have a soft limit: `loop.retro_max_items` is the usual number, not a cap. A
+  retro has only the items its findings call for (none is normal) and may go over when each extra
+  item answers a different finding, with a line saying why. Every item gets a **Why raised** column
+  (the finding it answers and its evidence), and the prune uses it to check whether the problem came
+  back after the item landed.
 - Setup work through connectors: before handing you a console chore (create a hosting project, set a
   variable, add a domain or DNS record), the Technical Lead checks whether a connected official MCP,
   connector or plugin can do it, and if so offers to, running each action only after you approve it

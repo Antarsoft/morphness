@@ -2,7 +2,7 @@
 id: 2026-10-15-research-look-back
 title: A short look-back on each research file, read by the prune
 kind: template
-release: unreleased
+release: 2026-10-15.2
 applies_to: { modules: [] }
 files:
   - harness/templates/research.md

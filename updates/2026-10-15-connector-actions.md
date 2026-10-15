@@ -2,7 +2,7 @@
 id: 2026-10-15-connector-actions
 title: Setup work through connectors, each action approved first
 kind: rule
-release: unreleased
+release: 2026-10-15.2
 applies_to: { modules: [] }
 files:
   - AGENTS.md

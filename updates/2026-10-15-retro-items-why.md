@@ -2,7 +2,7 @@
 id: 2026-10-15-retro-items-why
 title: Retro action items get a soft limit and a recorded reason
 kind: rule
-release: unreleased
+release: 2026-10-15.2
 applies_to: { modules: [] }
 files:
   - harness/SETUP.md
