@@ -44,7 +44,7 @@ starting point. Profiles suggest; morph-init still asks every question.
 Changes to `template/` change what every new install starts with, so they need a reason from more
 than one project. Open an issue first describing the problem it solved for you. Keep the process
 roles and lifecycle intact: Technical Lead plans and delegates, Full-stack implements, QA validates,
-legal-writer drafts legal wording, and the retro and prune loop changes the harness.
+the researcher answers questions read-only, legal-writer drafts legal wording, and the retro and prune loop changes the harness.
 
 Installed harnesses only hear about a kit change through an **update note**: add one to
 [updates/](updates/README.md) in the same PR, listing every `template/` file you changed and how to

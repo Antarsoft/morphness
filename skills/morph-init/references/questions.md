@@ -221,6 +221,7 @@ the agents might change?" Yes unlocks the legal module and the legal-writer agen
 | Technical Lead (main chat) | opus | high |
 | Full-stack | opus (sonnet for the medium variant) | high by default; medium for small low-risk work; xhigh for risky cores |
 | QA | sonnet | high by default; medium for small low-risk work |
+| Researcher (read-only, research mode) | sonnet (opus for the high variant) | medium by default; high for architecture or risk areas |
 | Legal writer | fable (opus if fable isn't available) | high |
 
 12a. "Which areas are risky enough to never get medium effort?" Suggest from the scan (auth, payments,
@@ -272,6 +273,7 @@ risk_areas: []
 agents: { technical_lead: { model: opus, effort: high },
           fullstack: { model: opus, medium_model: sonnet, default: high },
           qa: { model: sonnet, medium_model: sonnet, default: high },
+          researcher: { model: sonnet, high_model: opus, default: medium },
           legal_writer: { model: fable, effort: high } }
 claude_projects: { coordinator: { model: opus, effort: medium }, feature_threads: { model: opus, effort: high },
                    one_shot_threads: { model: opus, effort: medium } }

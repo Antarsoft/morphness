@@ -73,6 +73,7 @@ See [MODES.md](./MODES.md). Summary:
 |------|------------------------------|--------------|
 | **Full** | Yes | Yes |
 | **Light** | No | Optional single agent (never the TL writing app code) |
+| **Research** | `_harness/research/` only | Researcher only; no code, no QA, no retro |
 
 ---
 
@@ -84,6 +85,7 @@ See [MODES.md](./MODES.md). Summary:
 | Full-stack engineer | Agent tool subagent with the path to `plan.md`; implements in the codebase; edits only `Development/progress.md` under that feature |
 | QA engineer | Agent tool subagent; reads `plan.md` and `progress.md`; runs the checks in [CONTROLS.md](./CONTROLS.md); edits only `QA/qa-result.md` |
 | Legal writer | Agent tool subagent (legal module); edits only `Legal/legal-copy.md` |
+| Researcher | Agent tool subagent with the absolute path of its research file; read-only; edits only that file below its first line ([MODES.md](./MODES.md) § Research mode) |
 | Model and effort | Set in `.claude/agents/*.md`; the plan's **Agent effort** picks the variant (`project/HARNESS_AGENTS.md`) |
 
 Always pass **absolute paths** to the feature version directory in subagent prompts. Pick the subagent variant the plan names; never rely on the session's default model or effort.
@@ -98,6 +100,9 @@ Each `plan.md` has an **Agent effort** section naming the Full-stack and QA leve
 |------|-----|---------|-----|----------|
 | Full-stack | `medium` | `high` | `xhigh` | `low` (too careless for shipped code), `max` (slow and costly; little gain over `xhigh` at normal feature sizes) |
 | QA | `medium` | the project's `agents.qa.default` | `high` | `low`; `xhigh` and above (QA works through a fixed AC list, so extra depth pays off less) |
+| Researcher | `medium` | `medium` | `high` | `low` (misses what it isn't pointed at); `xhigh` and above (breadth matters more than depth, and the TL checks the key findings) |
+
+The researcher's level goes in the research file's **Researcher effort** line, not in a plan: `high` when the question is about architecture, touches a risk area, or decides a feature that will run at `xhigh`; `medium` otherwise.
 
 ### Choosing a level
 
@@ -114,6 +119,8 @@ When a feature has both an `xhigh` core (access guards, money, concurrency, a pu
 ### Model of the Technical Lead
 
 The Technical Lead runs rarely (plans, reviews, retro decisions) but a miss there costs a rework round, so it runs on the strongest model at `high` effort (`agents.technical_lead` in `harness.config.yml`). It is the session's model, not a file in `.claude/agents/`; where it is set is in `project/HARNESS_AGENTS.md`. A cheaper model is acceptable only on small, low-risk features and never for work in a risk area.
+
+Delegating research to the researcher doesn't lower the Technical Lead's level: it still frames the question, checks the findings and decides, and it still reads the code its plans change. It saves tokens (the search stays in the researcher's context), not judgement.
 
 Model or effort changes are tried as **trials** before they become the rule ([MORPHING.md](./MORPHING.md) § Trials).
 
@@ -225,7 +232,7 @@ A prune is a review of the harness itself: which rules earn their cost. It is du
 
 **Steps**
 
-1. **Tabulate.** From the entries since the last prune (the files in `_harness/learnings/`), one row per feature: QA rounds, review round, failure causes, Full-stack and QA model and effort. Link each retro's run table for cost instead of copying token figures. Compare with the previous window: did QA rounds or rework causes per feature fall? Then, for each row in `_harness/LEARNINGS.md` § Trials, tabulate its KPI over the window's features and propose `keep` (the trial becomes the rule) or `revert`, with the numbers; the human decides it with the rule rows in step 5. When the project tracks plan usage, ask the owner for the usage reading on the prune day and record it next to the previous prune's, as the one number that shows whether the window's model and effort changes paid off.
+1. **Tabulate.** From the entries since the last prune (the files in `_harness/learnings/`), one row per feature: QA rounds, review round, failure causes, Full-stack and QA model and effort. Link each retro's run table for cost instead of copying token figures. Compare with the previous window: did QA rounds or rework causes per feature fall? Then, for each row in `_harness/LEARNINGS.md` § Trials, tabulate its KPI over the window's features and propose `keep` (the trial becomes the rule) or `revert`, with the numbers; the human decides it with the rule rows in step 5. Also list the research files added since the last prune (`_harness/research/` and features' `Research/` folders) with what came of each (planned, light-mode change, no action, or never decided); research that keeps ending undecided means the questions are too wide or nobody needed the answer. When the project tracks plan usage, ask the owner for the usage reading on the prune day and record it next to the previous prune's, as the one number that shows whether the window's model and effort changes paid off.
 2. **Audit each rule.** For every rule or checklist item added or touched by a retro action item (§ Action items → Applied) plus any the TL suspects is dead, cite evidence: the retro where it caught something (`fired`) or `never fired` (no failure cause or retro mention since it landed). A rule that landed within the last 3 features is `too new to judge`, never `never fired`. A rule that prevents a costly failure but rarely triggers is `insurance`, not dead; say what the failure costs. A rule's provenance (the feature in brackets at its end, [MORPHING.md](./MORPHING.md) § Rule provenance) is where to look for when it landed.
 3. **Propose.** For each row: `keep`, `merge` (into what), `shorten`, `move to on-demand` (a rule that never fired in two windows goes to a file read only when needed), or `remove`, with one line of why. Also list the leftovers, action items that stayed `open`, `deferred` or `approved` without landing across the window, as `still wanted` or `close as skipped`. Items are decided per feature (§ Retrospective → Per-feature review); the prune only sweeps what was left, and the TL decides the leftovers under the same rule. Then check upstream: run `/morph-update`'s read-only listing (or follow `UPDATE.md` in the Morphness repository up to its listing step) and list each pending kit update and matching lesson with one line on why it fits this project, fixes first; with no network, write "not checked" (learned: a copy that only changes through its own retros never hears about fixes made upstream).
 4. **Write** the proposal to `_harness/prunes/<YYYY-MM-DD>.md` from [templates/prune.md](./templates/prune.md).

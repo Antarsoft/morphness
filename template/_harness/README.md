@@ -13,12 +13,15 @@ features/
         plan.md
         review.md      # TL: code review findings (Full-stack xhigh only)
         retro.md       # TL: retrospective (after QA pass or escalation)
+      Research/
+        <topic>.md     # researcher: optional research before the plan
       Legal/
         legal-copy.md  # legal writer (legal module, Legal wording: yes only)
       Development/
         progress.md
       QA/
         qa-result.md
+research/              # research mode: <YYYY-MM-DD>-<slug>.md, one question each
 learnings/             # one learnings file per feature until the next prune
 prunes/                # one prune proposal per prune: <YYYY-MM-DD>.md
 releases/

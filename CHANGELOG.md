@@ -6,6 +6,12 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Research mode: when you want an answer rather than a change (how something works, why a bug
+  happens, which library fits), the Technical Lead writes the question in `_harness/research/`, a
+  new read-only **researcher** subagent answers it with cited sources, and the Technical Lead checks
+  it and records the decision. The researcher can also run before a plan for a wide search. Two
+  variants: `researcher` (sonnet, medium) and `researcher-high` (opus, high). `/morph-init` offers it
+  with the other agents.
 - Projects that aren't online yet: `/morph-init` starts the git repository and the first commit when
   the folder has none, and creates the GitHub repository on the owner's yes (with plain website
   steps when it can't). Until a remote exists, agents use the local branches and merge on the

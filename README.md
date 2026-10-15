@@ -143,6 +143,7 @@ flowchart TB
 | 🧭 **Technical Lead** | Your session. Plans, delegates, never codes | opus · high |
 | 🛠️ **Full-stack** | Builds the approved plan and its tests | opus · high (xhigh for risky cores; sonnet · medium for pattern-copy work) |
 | ✅ **QA** | Runs the checks, validates every criterion | sonnet · high (medium for small work) |
+| 🔎 **Researcher** | Answers a question about your code or the web with cited sources, read-only. For when you want an answer, not a change | sonnet · medium (opus · high for architecture) |
 | ⚖️ **Legal writer** | Writes wording that makes a legal promise | fable or opus · high |
 
 These are defaults; change any of them (see [Make it yours](#-make-it-yours)).
@@ -163,8 +164,8 @@ and advised settings (coordinator opus · medium, feature threads opus · high).
 | Piece | What it does |
 |-------|--------------|
 | 📄 `AGENTS.md`, `CLAUDE.md`, `.claude/rules/` | The rules every session loads: the Technical Lead plans and delegates and never codes; QA is never skipped. |
-| 🤖 `.claude/agents/` | Full-stack (medium, high, xhigh effort), QA (medium, high) and legal-writer subagents. |
-| 🗺️ `harness/` | The process: lifecycle, handoffs, checks, modes, release, the plan checklist, and how it morphs. |
+| 🤖 `.claude/agents/` | Full-stack (medium, high, xhigh effort), QA (medium, high), researcher (medium, high) and legal-writer subagents. |
+| 🗺️ `harness/` | The process: lifecycle, handoffs, checks, modes (full, light, research), release, the plan checklist, and how it morphs. |
 | 🧩 `harness/modules/` | Optional: Claude Projects, data access (local-first, remote read-only), browser e2e, legal wording, roadmap, CI/CD pipelines. |
 | 🏷️ `project/` | Your project's facts: stack, the commands behind each check, risk areas, effort per area. |
 | 🎛️ `harness.config.yml` | Branches, environments, modules, named checks, CI gate, risk areas, models and effort, loop limits. |

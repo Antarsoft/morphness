@@ -7,7 +7,7 @@ description: Install and set up the Morphness harness in the current repository,
 
 You are installing Morphness into the repository in the current working directory. Morphness is a
 multi-agent harness: a Technical Lead in the main chat plans and delegates, a Full-stack subagent
-implements, a QA subagent validates, a legal-writer subagent drafts legal wording, and a retro and prune
+implements, a QA subagent validates, a read-only researcher subagent answers questions about the code or the web, a legal-writer subagent drafts legal wording, and a retro and prune
 loop changes the harness itself as the project goes. After install, the copy belongs to the project and
 is expected to change. Nothing upstream overwrites it: `/morph-update` later offers upstream kit
 updates and lessons one at a time, merged with the project's own edits.

@@ -105,6 +105,7 @@ agents:
   # Advised defaults (they worked on the project Morphness came from); change any of them.
   fullstack: { model: opus, medium_model: sonnet, default: high, variants: [medium, high, xhigh] }
   qa: { model: sonnet, medium_model: sonnet, default: high, variants: [medium, high] }
+  researcher: { model: sonnet, high_model: opus, default: medium, variants: [medium, high] }   # read-only; research mode and research before a plan
   legal_writer: { model: fable, effort: high }   # use opus if fable isn't available to you
 
 # Advisory only: Claude Projects settings can't be set from a repo.
