@@ -2,7 +2,7 @@
 id: 2026-10-15-research-mode
 title: Research mode and a read-only researcher subagent
 kind: rule
-release: unreleased
+release: 2026-10-15
 applies_to: { modules: [] }
 files:
   - harness/MODES.md

@@ -6,6 +6,8 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+## 2026-10-15
+
 - Research mode: when you want an answer rather than a change (how something works, why a bug
   happens, which library fits), the Technical Lead writes the question in `_harness/research/`, a
   new read-only **researcher** subagent answers it with cited sources, and the Technical Lead checks
