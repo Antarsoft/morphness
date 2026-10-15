@@ -126,7 +126,13 @@ Ask as two questions, in the owner's terms (SKILL.md § Plain language).
 **Where the code lives.** "Where should the code live online? That's the shared copy (a repository)
 that you and the agents both work from. I'd use GitHub, as a private repository under `<owner>`: only
 people you invite can see it." Options: GitHub (suggested), GitLab, or nowhere for now (it stays on
-this computer). When there's no remote yet, add: "I'll only create it after your final yes." → `pr_host`
+this computer). → `pr_host`
+
+When there's no remote yet (`git remote` prints nothing), ask one more: "The project isn't online yet.
+Want me to create the repository on GitHub as part of the install (private, under `<owner>`)? Or you
+can do it later; everything works on this computer meanwhile, and `/morph-doctor` finishes the setup
+once it's online." Suggest creating it. Yes → `create_remote` (`owner/name`, private or public); later
+→ `pr_host: none` for now, and say the code host questions below are skipped until then.
 
 **Whether the automatic checks must pass.** Skipped when `pr_host` is `none`. "Should the automatic
 checks have to pass before a change can go in? CI is a robot on the code host that runs the tests on
@@ -252,6 +258,7 @@ environments:   # in the order code moves through them; [] when nothing is deplo
   - { name: production, branch: main, deploy: host, real_data: true }
 release: { prod_steps_by: owner }
 pr_host: github
+create_remote: { repo: "", visibility: private }   # only when there's no remote yet and the owner said create it
 ci_gate: false
 merge_by_agent: never
 branch_protection: { enabled: true, required_approvals: 0, delete_merged_branches: true }
