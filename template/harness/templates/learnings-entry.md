@@ -15,8 +15,8 @@
 
 ## Action items
 
-Status: `open` | `approved` | `deferred` (note the feature) | `applied` (Note names the feature or file) | `skipped` (Note says why). The TL's decision, or the human's for an item that adds a human step, changes product behaviour or customer-facing copy, or costs money. Write "None" when the retro has no items.
+Status: `open` | `approved` | `deferred` (note the feature) | `applied` (Note names the feature or file) | `skipped` (Note says why). The TL's decision, or the human's for an item that adds a human step, changes product behaviour or customer-facing copy, or costs money. Write "None" when the retro has no items. **Why raised** is copied from the retro: the finding the item answers and its evidence.
 
-| From retro | # | Type | Action | Status | Note |
-|---|---|---|---|---|---|
-| <feature-slug> v<version> | 1 | Code / Doc / Harness / Process | | open | lands in: <file> |
+| From retro | # | Type | Action | Why raised | Status | Note |
+|---|---|---|---|---|---|---|
+| <feature-slug> v<version> | 1 | Code / Doc / Harness / Process | | What to improve #N: <evidence> | open | lands in: <file> |

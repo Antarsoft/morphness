@@ -200,7 +200,7 @@ agents:
   qa: { model: sonnet, default: high, variants: [medium, high] }
 
 loop:
-  retro_max_items: 3        # action items per retrospective
+  retro_max_items: 3        # usual action items per retro (soft limit)
   prune_every: 10           # features between prunes
   qa_max_rounds: 2          # QA rework rounds before asking you
 ```
@@ -220,8 +220,9 @@ Beyond the config, everything is a file in your repo that you own:
 
 Once installed, the harness belongs to your repo, and the loop is what changes it:
 
-1. 🔁 **Retro** after each feature: up to three action items, which the Technical Lead approves,
-   defers or skips.
+1. 🔁 **Retro** after each feature: only the action items its findings call for (usually up to
+   three, none is fine), each with why it was raised, which the Technical Lead approves, defers or
+   skips.
 2. 📝 **Learnings** file per feature.
 3. ✂️ **Prune** every ten learnings files. The rule audit sorts rules into *fired*, *never fired*,
    *insurance* and *too new*. Rules that earn nothing get cut, and trials (an effort level, a new

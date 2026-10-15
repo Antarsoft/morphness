@@ -40,13 +40,15 @@ Tag each finding with its cause: `plan gap` | `implementation` | `environment` |
 
 1. (cause: …)
 
-## Action items (at most `loop.retro_max_items`; decided by the TL)
+## Action items (usually up to `loop.retro_max_items`; decided by the TL)
+
+Only as many as the findings call for: "None" is a normal answer, and items are never padded to reach a number. More than `loop.retro_max_items` is fine when each extra item comes from a different finding; add one line under the table saying why this feature needed more (`harness/SETUP.md` § Retrospective → How many items). **Why raised** names the finding the item answers (`What to improve #N`, or an Answers line) and its evidence (a QA round, a human correction, a cost figure, a file). No finding, no item.
 
 The TL proposes and decides each item (`harness/SETUP.md` § Retrospective → Per-feature review). An item that adds a step for the human, changes product behaviour or customer-facing copy, or costs money still goes to the human. Where each lands: `harness/MORPHING.md` § Where a lesson lands.
 
-| # | Type (Code/Doc/Harness/Process) | Action | Lands in | Decision |
-|---|------|--------|----------|----------|
-| 1 | | | | approve · skip (why) · defer |
+| # | Type (Code/Doc/Harness/Process) | Action | Why raised | Lands in | Decision |
+|---|------|--------|------------|----------|----------|
+| 1 | | | What to improve #N: <evidence> | | approve · skip (why) · defer |
 
 Routing:
 

@@ -37,7 +37,7 @@ Model or effort changes under trial ([project/HARNESS_AGENTS.md](../project/HARN
 
 ## Action items
 
-Every action item from a retro, split by state so open work isn't buried. A new retro's items go in the feature's own file, `_harness/learnings/<feature-slug>-v<version>.md` § Action items (same columns as **Open**), and the decision is recorded there ([harness/SETUP.md](../harness/SETUP.md) § Retrospective); the prune moves them into the tables below. Open work is therefore the **Open** table plus the § Action items of every file in `_harness/learnings/`. Here, when the state changes, **move the row** to the matching table; never edit a status in place.
+Every action item from a retro, split by state so open work isn't buried. A new retro's items go in the feature's own file, `_harness/learnings/<feature-slug>-v<version>.md` § Action items (same columns as **Open**), and the decision is recorded there ([harness/SETUP.md](../harness/SETUP.md) § Retrospective); the prune moves them into the tables below. Open work is therefore the **Open** table plus the § Action items of every file in `_harness/learnings/`. Here, when the state changes, **move the row** to the matching table; never edit a status in place. **Why raised** (the finding the item answers and its evidence) moves with the row, so the prune can check whether the problem came back after the item landed.
 
 | State | Meaning | Table |
 |-------|---------|-------|
@@ -45,24 +45,24 @@ Every action item from a retro, split by state so open work isn't buried. A new 
 | `approved` | The Technical Lead (or the owner) said yes, not done yet | Open |
 | `deferred` | Reviewed and postponed; note the feature. Deferred at two consecutive retros must be approved or skipped | Open |
 | `applied` | Landed; "Where" names the feature or file | Applied |
-| `skipped` | The Technical Lead (or the owner) said no; "Why" says why | Skipped |
+| `skipped` | The Technical Lead (or the owner) said no; "Why skipped" says why | Skipped |
 
 A new state gets its own table under this heading, with a row added to the list above.
 
 ### Open
 
-| From retro | # | Type | Action | Status | Note |
-|---|---|---|---|---|---|
+| From retro | # | Type | Action | Why raised | Status | Note |
+|---|---|---|---|---|---|---|
 
 ### Applied
 
-| From retro | # | Type | Action | Where |
-|---|---|---|---|---|
+| From retro | # | Type | Action | Why raised | Where |
+|---|---|---|---|---|---|
 
 ### Skipped
 
-| From retro | # | Type | Action | Why |
-|---|---|---|---|---|
+| From retro | # | Type | Action | Why raised | Why skipped |
+|---|---|---|---|---|---|
 
 ## Entries
 
