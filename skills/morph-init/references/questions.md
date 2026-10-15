@@ -239,8 +239,9 @@ names. → `agents.*`
 
 ## Q13. Loop settings
 
-"The harness improves itself: a retro after each feature (up to 3 action items), and a prune every 10
-learnings files. QA gets 2 rework rounds before it escalates to you. Keep these?" → `loop.*`
+"The harness improves itself: a retro after each feature (usually up to 3 action items, more only
+with a reason), and a prune every 10 learnings files. QA gets 2 rework rounds before it escalates
+to you. Keep these?" → `loop.*`
 
 ## Answers file
 

@@ -122,7 +122,7 @@ claude_projects:
 cost: { track: true, prices: harness/MODEL_PRICES.md }
 
 loop:
-  retro_max_items: 3      # action items per retrospective
+  retro_max_items: 3      # usual action items per retro (soft: more with one line why, none is fine)
   prune_every: 10         # learnings files between prunes
   qa_max_rounds: 2        # QA rework rounds before escalating to the owner
 
