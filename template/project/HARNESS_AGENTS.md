@@ -1,6 +1,6 @@
 # Harness subagents: {{project.name}}
 
-The Technical Lead delegates the **Full-stack engineer**, the **QA engineer** and, for legal wording, the **legal writer** with Claude Code's **Agent** tool. This file is the single place that states which agent, model and effort each piece of work gets.
+The Technical Lead delegates the **Full-stack engineer**, the **QA engineer**, the **researcher** (research mode) and, for legal wording, the **legal writer** with Claude Code's **Agent** tool. This file is the single place that states which agent, model and effort each piece of work gets.
 
 ## Agents
 
@@ -13,9 +13,11 @@ Subagents are defined in `.claude/agents/`. Each file sets only `model` and `eff
 | Full-stack engineer | `fullstack-engineer-xhigh` | `{{models.fullstack}}` | `xhigh` |
 | QA engineer | `qa-engineer-medium` | `{{models.qa_medium}}` | `medium` |
 | QA engineer | `qa-engineer` (default) | `{{models.qa}}` | `high` |
+| Researcher | `researcher` (default) | `{{models.researcher}}` | `medium` |
+| Researcher | `researcher-high` | `{{models.researcher_high}}` | `high` |
 | Legal writer | `legal-writer` | `{{models.legal}}` | `high` |
 
-<!-- morph-init: fill the default marks from harness.config.yml → agents. Advised models: Technical Lead `opus` at `high`; Full-stack `opus` (the medium variant `sonnet`); QA `sonnet`; legal writer `fable` (fallback `opus`). Change a row and its `.claude/agents/*.md` file together. Drop the legal writer row when the legal module is off. -->
+<!-- morph-init: fill the default marks from harness.config.yml → agents. Advised models: Technical Lead `opus` at `high`; Full-stack `opus` (the medium variant `sonnet`); QA `sonnet`; researcher `sonnet` (the high variant `opus`); legal writer `fable` (fallback `opus`). Change a row and its `.claude/agents/*.md` file together. Drop the legal writer row when the legal module is off. -->
 
 Pass the absolute feature folder path (and the `plan.md` / `progress.md` paths) in the prompt. QA-fail rework goes to the same Full-stack variant as the first round.
 
@@ -23,7 +25,7 @@ Pass the absolute feature folder path (and the `plan.md` / `progress.md` paths) 
 
 The Technical Lead runs in the main chat, so its model is the session's, not a file in `.claude/agents/`. `.claude/settings.json` sets `{{models.tl}}` as the project default; a person can still override it with `/model`.
 
-**Effort:** the Technical Lead runs at `high` effort by default: it plans, reviews and decides retro items, where a miss costs a rework round. Effort is the session's (`/effort high` in a local session; the project default in a hosted one). If usage gets tight, dropping the Technical Lead to `medium` on one-shot threads (a status check, a docs-only PR) is the first saving; feature threads stay at `high`.
+**Effort:** the Technical Lead runs at `high` effort by default: it plans, reviews and decides retro items, where a miss costs a rework round. Effort is the session's (`/effort high` in a local session; the project default in a hosted one). Handing research to the researcher doesn't change this level: the Technical Lead still frames the question, checks the findings and decides. If usage gets tight, dropping the Technical Lead to `medium` on one-shot threads (a status check, a docs-only PR) is the first saving; feature threads stay at `high`.
 
 **Rule of thumb:** the Technical Lead runs rarely, but a miss there is expensive, so it uses the strongest model. A smaller model is acceptable for the Technical Lead only on small, low-risk features, and never for work in a risk area (§ Effort per feature). When in doubt, the strongest model.
 
@@ -35,6 +37,7 @@ Each `plan.md` has an **Agent effort** section naming the Full-stack and QA leve
 |------|-----|---------|-----|----------|
 | Full-stack | `medium` | `high` | `xhigh` | `low` (too careless for shipped code), `max` (slow and costly; little gain over `xhigh` at normal feature sizes) |
 | QA | `medium` | `high` | `high` | `low`; `xhigh` and above (QA works through a fixed AC list, so extra depth pays off less) |
+| Researcher | `medium` | `medium` | `high` | `low`; `xhigh` and above. Set on the research file's **Researcher effort** line, not in a plan |
 
 <!-- morph-init: fill the defaults from harness.config.yml → agents.fullstack.default and agents.qa.default if they differ from the table. -->
 
@@ -44,6 +47,7 @@ Each `plan.md` has an **Agent effort** section naming the Full-stack and QA leve
 - **`high`** (default otherwise): normal feature work with new logic, such as a new flow, a new route or data path, or a page that doesn't follow a single existing pattern.
 - **`xhigh`** (Full-stack only): security, money, tenancy and access control, concurrency, public APIs, new architecture. The Technical Lead runs the read-only code review before QA ([harness/SETUP.md](../harness/SETUP.md) § Code review before QA).
 - **Never `medium` for Full-stack** when the plan touches a risk area below, even when it copies a pattern.
+- **Researcher `high`** when the question is about architecture, touches a risk area, or decides a feature that will run at `xhigh`; `medium` otherwise.
 - **QA is `high`** whenever the plan touches a risk area or says **Data-access feature: yes**, even if Full-stack is `medium`.
 
 **Risk areas (never `medium`):**

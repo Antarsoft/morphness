@@ -22,6 +22,14 @@ One row per `_harness/LEARNINGS.md` § Trials entry: KPI numbers over this windo
 |-------|--------------|-------------|----------|
 | | | | keep · revert · carry on |
 
+## 1c. Research
+
+One row per research file added since the last prune. Leave the table empty when there were none.
+
+| Research file | Researcher effort | Outcome | Used by |
+|---------------|-------------------|---------|---------|
+| | medium · high | planned · light-mode change · no action · undecided | feature slug, or none |
+
 ## 2. Rule audit
 
 | Rule / item (file) | Added by (provenance) | Evidence | Verdict |

@@ -19,6 +19,11 @@
 - Uses skills and MCPs for implementation when listed in `project/SKILLS_AND_MCPS.md`.
 - Never uses an MCP to write to a shared remote environment (integration or production).
 
+## Researcher
+
+- Uses skills, doc MCPs and web search read-only to answer the question in its research file; prefers the sources in `project/agents/researcher.md`.
+- Cites each source (`file:line`, or URL and the date read); never uses a tool that writes, locally or on a remote environment.
+
 ## QA engineer
 
 - Uses skills and MCPs to **run** or **observe** the system when the plan requires it.

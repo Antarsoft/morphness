@@ -251,6 +251,7 @@ footer p { margin: 6px 0; }
       <div class="card"><h3>Technical Lead</h3><p>Your session. Plans each feature, gets your approval, delegates and keeps the rules current.</p><div class="meta">Default: opus, high effort</div></div>
       <div class="card"><h3>Full-stack</h3><p>Builds the approved plan and its tests. Sonnet at medium effort for pattern-copy work.</p><div class="meta">Default: opus, high effort</div></div>
       <div class="card"><h3>QA</h3><p>Runs the checks and validates every acceptance criterion, with the evidence recorded.</p><div class="meta">Default: sonnet, high effort</div></div>
+      <div class="card"><h3>Researcher</h3><p>Answers a question about your code or the web with cited sources, read-only, when you want an answer and not a change.</p><div class="meta">Default: sonnet, medium effort</div></div>
       <div class="card"><h3>Legal writer</h3><p>Writes wording that makes a legal promise, when a feature needs it.</p><div class="meta">Default: fable or opus, high effort</div></div>
     </div>
     <div class="skills">
@@ -300,7 +301,7 @@ If Morphness is already installed here, follow its UPDATE.md instead and show me
     <h3 class="sect">What lands in your repo</h3>
     <dl class="files">
       <div><dt><code>AGENTS.md</code>, <code>CLAUDE.md</code>, <code>.claude/rules/</code></dt><dd>The rules every session loads.</dd></div>
-      <div><dt><code>.claude/agents/</code></dt><dd>Full-stack, QA and legal-writer subagents at several effort levels.</dd></div>
+      <div><dt><code>.claude/agents/</code></dt><dd>Full-stack, QA, researcher and legal-writer subagents at several effort levels.</dd></div>
       <div><dt><code>harness/</code></dt><dd>The process: lifecycle, handoffs, checks, release, the plan checklist, and how it morphs. Optional modules for Claude Projects, data access, browser e2e, legal wording and a roadmap.</dd></div>
       <div><dt><code>project/</code></dt><dd>Your project's facts: stack, the commands behind each check, risk areas, effort per area.</dd></div>
       <div><dt><code>harness.config.yml</code></dt><dd>Branches, modules, named checks, CI gate, risk areas, models and effort, loop limits.</dd></div>

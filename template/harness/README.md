@@ -1,6 +1,6 @@
 # Agent harness (kit)
 
-A **plan → build → QA** workflow for multi-agent development in Claude Code. The Technical Lead plans and delegates in the main chat; a Full-stack subagent builds; a QA subagent validates against testable acceptance criteria; the human approves plans, decides merges and runs releases.
+A **plan → build → QA** workflow for multi-agent development in Claude Code. The Technical Lead plans and delegates in the main chat; a Full-stack subagent builds; a QA subagent validates against testable acceptance criteria; a read-only researcher subagent answers questions about the code or the web when that's all the human wants, or before a plan; the human approves plans, decides merges and runs releases.
 
 This folder is the **kit**. It was installed from Morphness, but it now belongs to this repository and is expected to change: retros and prunes edit it as the project learns ([MORPHING.md](./MORPHING.md)).
 
@@ -10,15 +10,15 @@ This folder is the **kit**. It was installed from Morphness, but it now belongs 
 |----------|---------|
 | [SETUP.md](./SETUP.md) | Runbook: lifecycle, QA rounds, code review, after QA pass, retrospective, prune, effort per feature, where QA can run |
 | [STRATEGY.md](./STRATEGY.md) | Agent roles, rules, responsibilities, folder layout |
-| [MODES.md](./MODES.md) | Full harness vs light mode |
+| [MODES.md](./MODES.md) | Full harness, light mode and research mode |
 | [HANDOFFS.md](./HANDOFFS.md) | Document ownership, minimum sections, steps file, prompt blocks |
 | [CONTROLS.md](./CONTROLS.md) | When each named check runs, command output discipline, cross-cutting paths, the merge gate |
 | [RELEASE.md](./RELEASE.md) | Release from the integration branch to the production branch: steps, roles, rollback, hotfix |
 | [MORPHING.md](./MORPHING.md) | How this harness changes itself: where lessons land, trials, pruning, sharing upstream |
 | [SKILLS_AND_MCPS.md](./SKILLS_AND_MCPS.md) | When to use skills and MCPs (project details in `project/SKILLS_AND_MCPS.md`) |
 | [PLAN_CHECKLIST.md](./PLAN_CHECKLIST.md) | The Technical Lead's checklist before asking for plan approval |
-| [templates/](./templates/) | `feature.md`, `plan.md`, `progress.md`, `qa-result.md`, `retro.md`, `prune.md`, `release-qa-result.md`, `version.md`, `version-checklist.md`, `learnings-entry.md`, `steps.md` |
-| [agents/](./agents/) | Generic role bodies for the Full-stack, QA and legal-writer subagents (project addenda in `project/agents/`) |
+| [templates/](./templates/) | `feature.md`, `plan.md`, `progress.md`, `qa-result.md`, `retro.md`, `prune.md`, `research.md`, `release-qa-result.md`, `version.md`, `version-checklist.md`, `learnings-entry.md`, `steps.md` |
+| [agents/](./agents/) | Generic role bodies for the Full-stack, QA, researcher and legal-writer subagents (project addenda in `project/agents/`) |
 | [modules/](./modules/) | Optional parts, switched on in `harness.config.yml` → `modules` |
 
 ## Layers
@@ -30,7 +30,7 @@ This folder is the **kit**. It was installed from Morphness, but it now belongs 
 | `project/` | **This project's facts**: stack, commands for each named check, cross-cutting paths, effort mapping, project-only checklist items, release specifics |
 | `_harness/features/` | **Runtime**: one folder per feature and version |
 | `_harness/LEARNINGS.md`, `_harness/learnings/` | **Runtime**: one learnings file per feature until the prune folds it into `LEARNINGS.md` ([SETUP.md § Retrospective](./SETUP.md#retrospective)) |
-| `_harness/prunes/`, `_harness/releases/` | **Runtime**: prune proposals and release QA records |
+| `_harness/prunes/`, `_harness/releases/`, `_harness/research/` | **Runtime**: prune proposals, release QA records and research files |
 | `AGENTS.md`, `CLAUDE.md` | **Entry points**: agents read these first |
 
 ## Modules

@@ -32,6 +32,25 @@
 - No `_harness/` feature folder required, no retro.
 - Still run the applicable named checks if the change touches code ([CONTROLS.md](./CONTROLS.md)).
 
+## Research mode
+
+**Use when**
+
+- The human wants an answer, not a change: how something in the repo works, why a bug happens, which library or service fits, what a new API version changes, how others solve a problem
+- A question has to be settled before a feature can be planned, and finding the answer means reading a lot of code or the web
+
+**Process**
+
+1. The Technical Lead creates `_harness/research/<YYYY-MM-DD>-<slug>.md` from [templates/research.md](./templates/research.md) and writes § Question, § Scope and § Context, and the researcher effort (`project/HARNESS_AGENTS.md` § Effort per feature).
+2. The Technical Lead launches the **researcher** subagent (Agent tool, the variant for that effort) with the file's absolute path. Two independent questions (for example one about the repo and one on the web) can go to two researchers at once, each with its own file.
+3. The researcher, read-only, fills the findings, recommendation and sources, and hands back.
+4. The Technical Lead re-opens the sources behind the findings the recommendation depends on (§ Check), then records § Decision: a feature to plan (in full mode, with the research file linked from `plan.md` § References), a light-mode change, or no action. Decisions that change product behaviour, add a step for the human or cost money are the human's.
+5. The research file is committed like a light-mode docs change, or on the feature branch when it leads to a plan. Files that end in `no action` are kept: they record what was checked.
+
+No application code changes, no QA, no retro. The prune counts research files and what came of them ([SETUP.md](./SETUP.md) § Prune).
+
+**Research before a plan.** In full mode the Technical Lead may launch the researcher before planning, for a large codebase sweep or an unfamiliar API; the file then lives at `<feature>/<version>/Research/<topic>.md` and `plan.md` § References links it. It is optional: small features don't wait on it. The Technical Lead still reads the exact files and functions the plan changes itself, because the plan's detail is what prevents rework.
+
 **Default:** if unsure, use the **full harness**. Light mode is the exception.
 
 ## Choosing mode (Technical Lead)
@@ -43,3 +62,5 @@
 | One file, obvious diff, human says "quick fix" | Light |
 | Needs acceptance criteria for sign-off | Full |
 | Harness or project docs only | Light |
+| Human asks a question ("how does", "why does", "which should we use", "research", "compare") and no change yet | Research |
+| A plan can't be written until a question is answered | Research first (or research before the plan), then Full |

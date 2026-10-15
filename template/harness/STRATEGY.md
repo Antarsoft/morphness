@@ -1,6 +1,6 @@
 # Harness strategy: agents and folders
 
-The harness uses **three agents** with fixed responsibilities, an optional **legal writer**, and a **versioned folder** per feature.
+The harness uses **three agents** with fixed responsibilities, a read-only **researcher**, an optional **legal writer**, and a **versioned folder** per feature.
 
 ## Agents (high level)
 
@@ -9,6 +9,7 @@ The harness uses **three agents** with fixed responsibilities, an optional **leg
 | Main chat | **Technical Lead** | Orchestrator; plans; no product code, no QA |
 | Subagent | **Full-stack engineer** | Implements from `plan.md`; updates `progress.md` |
 | Subagent | **QA engineer** | Validates against acceptance criteria; updates `qa-result.md` |
+| Subagent | **Researcher** | Answers one question about the code or the web with cited evidence; updates its research file ([MODES.md](./MODES.md) § Research mode) |
 | Subagent | **Legal writer** (legal module) | Writes the exact legal sentences a plan needs; updates `Legal/legal-copy.md` ([modules/legal/](./modules/legal/README.md)) |
 
 Role bodies: [agents/](./agents/) (generic) plus `project/agents/` (this project's addenda). Subagent names, models and effort: `project/HARNESS_AGENTS.md`.
@@ -29,6 +30,8 @@ _harness/
           plan.md         # Tech Lead; requires human approval before dev
           review.md       # Tech Lead; pre-QA code review findings (xhigh Full-stack only)
           retro.md        # Tech Lead; retrospective after pass or escalation
+        Research/
+          <topic>.md      # Researcher; optional research before the plan
         Legal/
           legal-copy.md   # Legal writer only; when the plan says Legal wording: yes
         Development/
@@ -36,6 +39,8 @@ _harness/
         QA/
           qa-result.md    # QA engineer only
         steps.md          # Tech Lead; the human's steps, only when the roadmap module is off
+  research/
+    <YYYY-MM-DD>-<slug>.md  # research mode: Tech Lead asks and decides, researcher answers
   learnings/
     <slug>-v<version>.md  # Tech Lead; one per feature until the prune folds it
   LEARNINGS.md            # trends, trials, action items (folded by the prune)
@@ -60,7 +65,7 @@ With the roadmap module on, the steps file lives next to the version checklist i
 
 - Answer general questions from the human.
 - Ensure the human's request is captured in `Plan/feature.md` (the human may draft; the Tech Lead may help before planning).
-- Research implementation (skills, docs, web when needed) and write `Plan/plan.md`.
+- Research implementation (skills, docs, web when needed) and write `Plan/plan.md`. A question that needs a wide search goes to the researcher ([MODES.md](./MODES.md) § Research mode); the TL frames it, checks the findings the answer rests on, and decides.
 - Include in `plan.md`: title, dates, version, summary, implementation steps (phased if needed), references, **acceptance criteria**, QA scope, agent effort, open questions (with suggested defaults), approval state.
 - Set lifecycle **status** ([SETUP.md](./SETUP.md) § Lifecycle status).
 - Run [PLAN_CHECKLIST.md](./PLAN_CHECKLIST.md) and seek **human approval** on `plan.md` before delegating to the Full-stack engineer.
@@ -116,6 +121,10 @@ With the roadmap module on, the steps file lives next to the version checklist i
 ## Agent 4: Legal writer (legal module only)
 
 Writes `Legal/legal-copy.md` for the legal portion of a plan, before approval, and nothing else. The flow, what counts as legal wording, and the checks: [modules/legal/](./modules/legal/README.md). Subagents can't start subagents, so only the Technical Lead launches it.
+
+## Agent 5: Researcher
+
+Answers one question per research file, read-only, with every claim cited (`file:line` or a URL with the date read), and writes only the sections of that file below its first line. It never edits code, plans or other harness files, never writes to a remote environment, and never decides: the Technical Lead checks its findings and records the decision. Role body: [agents/researcher.md](./agents/researcher.md). Subagents can't start subagents, so only the Technical Lead launches it.
 
 ## Skills, MCPs, guides, rules
 

@@ -23,7 +23,7 @@ Read this file first. The **harness is generic** (the kit in `harness/`, which t
 | [harness/STRATEGY.md](harness/STRATEGY.md) | Roles and folder layout |
 | [harness/HANDOFFS.md](harness/HANDOFFS.md) | Templates and ownership |
 | [harness/CONTROLS.md](harness/CONTROLS.md) | Checks before handover (commands: [project/CONTROLS.md](project/CONTROLS.md)) |
-| [harness/MODES.md](harness/MODES.md) | Full vs light mode |
+| [harness/MODES.md](harness/MODES.md) | Full, light and research modes |
 | [harness/RELEASE.md](harness/RELEASE.md) | Release integration → production (project specifics: [project/RELEASE.md](project/RELEASE.md)) |
 | [harness/MORPHING.md](harness/MORPHING.md) | How the harness changes itself (retros, prunes, where a lesson lands) |
 | `harness/modules/` | Optional modules enabled in `harness.config.yml` → `modules` |
@@ -32,7 +32,7 @@ Read this file first. The **harness is generic** (the kit in `harness/`, which t
 
 Per feature, what the human has to do after QA pass is in the steps file (with the `roadmap` module: **`docs/versions/<id>/steps/<slug>.md`**; none when nothing needs them); **`QA/qa-result.md`** is the formal QA record.
 
-**You are usually:** Technical Lead in the main chat. **Plan and delegate only**; never edit application code or `qa-result.md`. Delegate implementation and QA with the Agent tool per [harness/HANDOFFS.md](harness/HANDOFFS.md). Subagents, models and per-feature effort: [project/HARNESS_AGENTS.md](project/HARNESS_AGENTS.md). Hard rules: [.claude/rules/technical-lead.md](.claude/rules/technical-lead.md).
+**You are usually:** Technical Lead in the main chat. **Plan and delegate only**; never edit application code or `qa-result.md`. Delegate implementation, QA and research with the Agent tool per [harness/HANDOFFS.md](harness/HANDOFFS.md). Subagents, models and per-feature effort: [project/HARNESS_AGENTS.md](project/HARNESS_AGENTS.md). Hard rules: [.claude/rules/technical-lead.md](.claude/rules/technical-lead.md).
 
 ## Project (what we build)
 
