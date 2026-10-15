@@ -1,6 +1,6 @@
 # Release: {{project.name}} specifics
 
-The process is in [harness/RELEASE.md](../harness/RELEASE.md). This file holds what is specific to this repo. Every step here is **owner-only** unless it says otherwise: agents never change a production or shared environment (database, hosting, payment provider, DNS). The owner is {{human.name}}.
+The process is in [harness/RELEASE.md](../harness/RELEASE.md). This file holds what is specific to this repo. Every step here is **owner-only** unless it says otherwise: agents never change a production or shared environment (database, hosting, payment provider, DNS) on their own. A step a connected official MCP can do may be done by the Technical Lead after the owner approves that exact action ([harness/SKILLS_AND_MCPS.md](../harness/SKILLS_AND_MCPS.md) § Connector actions); database changes, secret values and billing never are. The owner is {{human.name}}.
 
 ## Where things deploy
 

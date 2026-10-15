@@ -6,6 +6,14 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Setup work through connectors: before handing you a console chore (create a hosting project, set a
+  variable, add a domain or DNS record), the Technical Lead checks whether a connected official MCP,
+  connector or plugin can do it, and if so offers to, running each action only after you approve it
+  in chat. Nothing a connector writes runs automatically, and remote database changes, secret values,
+  billing and people's access never go through an agent. What stays yours says why (no official MCP,
+  one exists but isn't connected, or it has no tool for this). A new Service tools table records each
+  service's official MCP, checked by the researcher; `/morph-init` suggests only official connectors
+  and fills the table, and `/morph-doctor` keeps it current.
 - Every feature now records an estimated dollar cost: `scripts/feature-cost.sh` reads Claude Code's
   own session transcripts and prices every API call at public API prices (table in
   `harness/MODEL_PRICES.md`, editable for your own rates), split by the Technical Lead and each

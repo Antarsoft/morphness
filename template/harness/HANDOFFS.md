@@ -28,7 +28,7 @@
 5. Implementation steps (phases optional)
 6. References (links, paths; **Greps** from the TL's pre-approval checklist)
 7. Acceptance criteria (numbered, testable)
-7a. QA scope: **UI change**, **Legal wording**, **Data-access feature**, **Needs live app/services** (which ACs need the running app to reach its database or other services), **Login needed**, **Build-time env**, **Human steps**
+7a. QA scope: **UI change**, **Legal wording**, **Data-access feature**, **Needs live app/services** (which ACs need the running app to reach its database or other services), **Login needed**, **Build-time env**, **By connector**, **Human steps**
 7b. Agent effort: Full-stack and QA level with a reason, and **Code review before QA**
 8. Open questions (suggested defaults)
 9. Approval: `pending` | `approved`, date, approver
@@ -38,9 +38,10 @@ Copy from [templates/plan.md](./templates/plan.md).
 
 ## Steps file (human hand-off)
 
-The only hand-off record for the **human**, written by the Technical Lead at QA pass from [templates/steps.md](./templates/steps.md). Where it lives: `_harness/features/<slug>/<version>/steps.md`, or with the roadmap module on, `<roadmap.versions_dir>/<id>/steps/<slug>.md` ([modules/roadmap/](./modules/roadmap/README.md)). **Rule: the human does only what agents can't.** Anything QA can test belongs in the plan's acceptance criteria, not in the steps file.
+The only hand-off record for the **human**, written by the Technical Lead at QA pass from [templates/steps.md](./templates/steps.md). Where it lives: `_harness/features/<slug>/<version>/steps.md`, or with the roadmap module on, `<roadmap.versions_dir>/<id>/steps/<slug>.md` ([modules/roadmap/](./modules/roadmap/README.md)). **Rule: the human does only what agents can't.** Anything QA can test belongs in the plan's acceptance criteria, not in the steps file. Before writing an item about an external service, the TL runs the connector check ([SKILLS_AND_MCPS.md](./SKILLS_AND_MCPS.md) § Connector actions): what a connected tool can do, the TL offers to do there, on the human's approval.
 
-1. **Needs you**: only (a) actions in accounts no agent can reach (hosting, cloud environment settings, repository settings, vendor dashboards), (b) changes to the integration or production environment, (c) judgement calls. Each item says what to do and what the human should see.
+0. **Done for you**: each action the TL took through a connector after the human approved it, with the tool used and what it now shows.
+1. **Needs you**: only (a) actions no connected tool can do (hosting, cloud environment settings, repository settings, vendor dashboards), (b) changes to the integration or production environment that no connector covers or that never go through an agent, (c) actions the TL offered through a connector that the human declined or hasn't answered, (d) judgement calls. Each item says what to do and what the human should see, and for (a) why no tool did it: no official MCP (date checked), an official one not connected (its link), or no tool for this in the connected one.
 2. **Deferred from QA**: every AC `qa-result.md` marks `deferred: local`, with where to check it.
 3. **Apply to the integration environment** (data-access features): the migrations to apply after the merge, files in order from `progress.md`, then the TL asks QA for stage B ([modules/data-access/](./modules/data-access/README.md)).
 

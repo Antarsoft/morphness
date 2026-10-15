@@ -183,6 +183,15 @@ Run the accepted install commands from `catalog.md`. Create `.claude/skills` as 
 MCP servers to `.mcp.json`. List the accepted user connectors in `project/SKILLS_AND_MCPS.md` with
 the reason, so a teammate knows to add them.
 
+Fill `project/SKILLS_AND_MCPS.md` § Service tools: one row per external service in the answers, with
+the official MCP found in Phase 2 (source and date) or "none found (<date>)", how it's connected (or
+"not connected" when declined), and what setup work it can and can't do, from its tool list when the
+session has it, else from the vendor's page. For every accepted connector that can write, add `ask`
+rules in `.claude/settings.json` for each tool that creates, changes or deletes something (by name,
+for example `mcp__<server>__create_project`), and `deny` for tools that write a remote database
+(migrations, SQL that writes, database branches). List them in § Permission rules added for this
+project.
+
 ## 7. Self-checks
 
 All must pass before committing; fix and re-run on failure.

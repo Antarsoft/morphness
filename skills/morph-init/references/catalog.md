@@ -39,14 +39,22 @@ it after install rather than guessing a repo name.
 | `pr_host: github` | GitHub | user connector | PRs, CI status and review comments for the TL and QA. |
 | Supabase | Supabase | user connector | Read-only checks on remote (list tables, advisors, logs) in data-access stage B. Account-wide: record the project ref to target in `project/STACK.md`. |
 | Error tracking in use (Sentry, PostHog, etc.) | That vendor's connector | user connector | Lets the TL and QA read real errors when planning a fix. |
-| Hosting with an MCP (Vercel, Cloudflare, etc.) | That vendor's connector | user connector | Read deploy status and logs. Agents still never deploy or change production settings. |
+| Hosting, DNS, storage or app builds with an official MCP (Vercel, Cloudflare, Expo, etc.) | That vendor's connector | user connector | Read deploy status and logs, and let the Technical Lead do setup work (create a project, set a non-secret variable, add a domain) instead of handing it to you. Every write is asked in chat first, one approved action at a time. |
 | Issue tracker (Linear, Jira, GitHub Issues) | That vendor's connector | user connector | Lets the TL pull the ask and acceptance notes straight into `feature.md`. |
 
 User connectors are added by the user (Claude Code: `/mcp` or `claude mcp add`; claude.ai:
 Settings > Connectors). morph-init writes project-scoped ones to `.mcp.json` only on yes.
 
-When a connector can write to a shared environment, render.md adds `ask` or `deny` permission rules
-for its write tools in `.claude/settings.json` (data-access module). Say so when suggesting it.
+**Official only.** Suggest a connector for a service only when the vendor publishes it (its own docs
+domain or GitHub organisation, or a connector directory listing that names the vendor as publisher).
+For a service in the stack that isn't in this table, check that first: look it up on the vendor's own
+docs (a doc MCP or web search, read-only) and suggest it only when you find the vendor's page; say
+"no official MCP found" otherwise, and never suggest a community server as the vendor's. Every
+service, with or without an MCP, gets a row in `project/SKILLS_AND_MCPS.md` § Service tools.
+
+When a connector can write, render.md adds `ask` rules for its write tools in `.claude/settings.json`
+(and `deny` for tools that write a remote database). Say so when suggesting it: nothing it writes runs
+without the owner's yes in chat (`harness/SKILLS_AND_MCPS.md` § Connector actions).
 
 ## Profiles
 

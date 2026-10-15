@@ -74,8 +74,10 @@ Save answers as you go to `morph-answers.yml` at the target root, so an interrup
 Using `references/catalog.md`, build three short lists from the answers:
 
 1. **Skills** that fit the stack and process, each with a one-line reason.
-2. **Connectors and MCP servers** (GitHub, the database, error tracking, docs lookup and so on), each
-   with a one-line reason and whether it is project-scoped (`.mcp.json`) or a user connector.
+2. **Connectors and MCP servers** (GitHub, the database, hosting, DNS, error tracking, docs lookup and
+   so on), each with a one-line reason and whether it is project-scoped (`.mcp.json`) or a user
+   connector. Only official ones: for a service in the stack that the catalog doesn't cover, check the
+   vendor's own docs first (catalog.md § Connectors, "Official only").
 3. **Community lessons** from the source's `lessons/` folder whose tags match the stack, services and
    areas, each with its title and evidence line.
    Leave out a lesson whose `evidence.source` (or a `reports` entry) names this project: it came from

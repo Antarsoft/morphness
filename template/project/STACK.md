@@ -53,4 +53,4 @@ The commands behind each named check are in [CONTROLS.md](./CONTROLS.md); this f
 
 ## Hosting and deploys
 
-<!-- morph-init: fill which branch deploys where and who triggers a deploy. Agents never deploy. Example: "Integration branch → staging (automatic on push); production branch → production." -->
+<!-- morph-init: fill which branch deploys where and who triggers a deploy. Agents never deploy on their own (`harness/SKILLS_AND_MCPS.md` § Connector actions). Example: "Integration branch → staging (automatic on push); production branch → production." -->

@@ -55,7 +55,8 @@ Each framework or library behaviour the plan depends on, with the source that co
 - **Login needed:** none | AC #s and which user (default: the seeded local user in `project/STACK.md`; never a user on a shared remote environment).
 - **Build-time env:** none | variables that must be set when QA builds the app, and whether QA must rebuild.
 - **Third-party console:** none | each console screen the human must use and its precondition, listed in the human steps.
-- **Human steps:** none | each step only a human can do (account no agent can reach, change to the integration or production environment, judgement call), with the expected result. The TL copies them to the steps file at QA pass.
+- **By connector:** none | each setup action the TL will do through a connected MCP, connector or plugin, with the tool, the target and when (before dev, before QA, after the merge). Each one is still asked in chat right before it runs; approving the plan doesn't approve them (`harness/SKILLS_AND_MCPS.md` § Connector actions).
+- **Human steps:** none | each step only a human can do (no connected tool can do it, it never goes through an agent, or a judgement call), with the expected result and why no connector did it. The TL copies them to the steps file at QA pass.
 
 ## Agent effort
 
