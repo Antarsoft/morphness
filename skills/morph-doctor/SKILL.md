@@ -61,7 +61,9 @@ fill comments left, JSON parses, relative links resolve, agent frontmatter, ever
   `types` and has a `merge_group` trigger, skips drafts exactly when `ci_cd.on_drafts` is false, and reads no
   `secrets.` other than `GITHUB_TOKEN`; deploy and migrations jobs name an `environment`, and their
   `options` list exactly the names in `environments`; a tag
-  workflow exists only with `release_tags: true`.
+  workflow exists only with `release_tags: true`. `Bash(gh api*rulesets*)` and `Bash(gh api*protection*)`
+  are `ask` rules in `.claude/settings.json`, not `deny`: a deny blocks render.md § 7b. Offer to move
+  them (update note `2026-10-16-ci-cd-ruleset-ask`).
 - `release_tags: per-package`: the versioning tool named in `project/RELEASE.md` § Versions has its
   config in the repo (`.changeset/config.json`, `nx.json` → `release`, `release-please-config.json`,
   `lerna.json`), and no Morphness tag workflow is in `ci_cd.tags`. Any other value than `true`,
