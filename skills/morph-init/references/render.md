@@ -224,7 +224,9 @@ All must pass before committing; fix and re-run on failure.
 Skip on GitLab without `glab`, on `pr_host: none`, with no remote (the owner creates it later and
 `/morph-doctor` applies this then), and when `branch_protection.enabled` is `false`.
 Otherwise ask once: "Apply the branch protection now with `gh api`? It needs admin rights on the
-repo." Only on a yes, for this repo (`<owner>/<repo>` from `gh repo view --json nameWithOwner`):
+repo." Only on a yes, for this repo (`<owner>/<repo>` from `gh repo view --json nameWithOwner`).
+With the ci-cd module, `gh api` calls on rulesets and protection are `ask` rules, so each one shows
+a permission prompt: tell the owner to allow it there.
 
 1. **Ruleset.** `gh api repos/<owner>/<repo>/rulesets` and look for one named like the file's
    `name`. None: `gh api -X POST repos/<owner>/<repo>/rulesets --input .github/rulesets/environment-branches.json`.
