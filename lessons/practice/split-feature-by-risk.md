@@ -2,7 +2,7 @@
 id: split-feature-by-risk
 title: Split a large feature by risk
 kind: rule
-target: .claude/rules/technical-lead.md
+target: harness/SETUP.md
 in_template: true
 tags: { stack: [], service: [], area: [planning, effort] }
 evidence: { fired: 1, features: 153, source: "Twinpage prune audits" }

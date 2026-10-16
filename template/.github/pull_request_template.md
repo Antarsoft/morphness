@@ -5,7 +5,7 @@ Never paste secrets, keys, connection strings or env file values here.
 Agents fill these sections from the feature folder (plan.md, qa-result.md, the steps file).
 When: Summary, Harness and Changes when the draft opens (kept current as the feature goes);
 Verification, Needs the owner and Risk when the PR is marked ready, after QA pass. A draft never
-shows a QA box ticked. (.claude/rules/technical-lead.md § Commits and branches)
+shows a QA box ticked. (harness/RELEASE.md § Feature PRs)
 -->
 
 ## Summary

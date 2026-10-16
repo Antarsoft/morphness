@@ -53,7 +53,7 @@ Feature threads (Technical Lead):
   judgement calls. Put those in the steps file.
 ```
 
-## Thread rules (also in `.claude/rules/technical-lead.md` § One feature per thread)
+## Thread rules (in full: `harness/HANDOFFS.md` § Threads)
 
 - **Every message wakes the whole thread.** A thread re-reads its history on each message, so send
   nothing into a thread that needs no action. An "ok" or "thanks" costs a full turn.
@@ -73,7 +73,7 @@ Feature threads (Technical Lead):
 
 ## On remove
 
-When the project doesn't run the harness from a Claude Project, morph-init deletes this folder and the items below. The thread rules in `.claude/rules/technical-lead.md` § One feature per thread stay: in a plain CLI session a thread is one session, and the sentences about a coordinator or the project chat say "when there is one" or "with the `claude-projects` module".
+When the project doesn't run the harness from a Claude Project, morph-init deletes this folder and the items below. The thread rules in `.claude/rules/technical-lead.md` § One feature per thread and `harness/HANDOFFS.md` § Threads stay: in a plain CLI session a thread is one session, and the sentences about a coordinator or the project chat say "when there is one" or "with the `claude-projects` module".
 
 **Delete these files:** none outside this folder.
 

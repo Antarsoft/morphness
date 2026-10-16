@@ -32,7 +32,7 @@
 7b. Agent effort: Full-stack and QA level with a reason, and **Code review before QA**
 8. Open questions (suggested defaults)
 9. Approval: `pending` | `approved`, date, approver
-10. Decisions: one dated line per decision the human makes in chat after approval, written the same turn (`.claude/rules/technical-lead.md` § One feature per thread)
+10. Decisions: one dated line per decision the human makes in chat after approval, written the same turn (§ Threads)
 
 Copy from [templates/plan.md](./templates/plan.md).
 
@@ -93,6 +93,26 @@ When two plans are built at the same time:
 - Each plan's § Out of scope names the shared files (and functions) the other plan owns; neither agent edits the other's files. A change the owner's file needs goes to the owner, or waits until both have merged (learned: naming the other plan's functions kept a parallel merge to one docs conflict).
 - The second builder works in a git worktree, and the TL merges the branches after both pass QA, then runs the full `before_signoff` suite on the merge.
 - Shared local resources (a local service stack, a fixed port, a browser test server) are serialized: every delegation prompt says to wrap each command that starts or uses them in the lock command from `project/CONTROLS.md` § Shared resources, and to stop any server before releasing the lock.
+
+## Background agents
+
+After launching a background agent, the Technical Lead checks for signs of life every 10 minutes (each check is a full turn over the thread's context) with one shell command (`git status --short` plus the modified time of `Development/progress.md`; don't re-read files), and relaunches one that has gone silent; it doesn't wait for the completion notice. Schedule that check (a cron job or the environment's scheduler) in the same turn the agent launches, and delete it at hand-back (learned: a stalled agent went unnoticed until the human asked). While a long run (the full browser suite, a build) is in flight, say so in the status checklist, so a quiet agent doesn't read as stalled. Start the relaunch prompt with: "Resume from `Development/progress.md` and the last `WIP(<slug>): phase N` commit; do not redo finished phases."
+
+The agents' own local phase checkpoints are separate from the TL's `WIP` commits: [agents/fullstack-engineer.md](./agents/fullstack-engineer.md).
+
+## Threads
+
+Every message a thread handles re-reads its whole history, so a long thread costs more for every step (learned: threads with several PRs or QA rounds cost several times more per step than a fresh thread, and a status-check thread kept open for days paid far more per check than a new one would).
+
+- **One feature, one PR per thread.** When the PR merges, resolve the thread. A new ask, even a related one, goes to a new thread, started with a short brief (by the coordinator, when there is one).
+- **Recurring checks get a new thread each time** (for example "is the preview deploy ready?"). Don't keep a thread open for days to run them.
+- **No cut-off mid-feature.** After two or more QA rework rounds, the TL may hand over to a new thread once QA passes, at a natural break (QA pass, PR marked ready).
+- **Decisions go in the file when they're made.** When the human decides something in chat (an answer, a default, a scope change), add one line to `plan.md` § Decisions in the same turn, with the date. A thread that gets handed over must leave nothing in chat that the files don't hold.
+- **Shared lines between threads:** when two threads must split who edits a shared file or line (a design-doc rule, a checklist row), the thread whose plan was approved first (else the older thread) owns it; the other plans around it and never counter-proposes, so peer messages can't cross (learned: crossed messages left the same line edited on both branches).
+- **Nothing into a thread that needs no action.** Every message in a thread, an "ok" or a "thanks" included, wakes its Claude to re-read the whole thread, at full price once the cache has expired after an idle gap. Answer all of a thread's questions in one message, ask for status outside the thread (with the `claude-projects` module, in the project chat, where the coordinator answers from memory), and send nothing into a thread that needs no action.
+- **Hand-over:** the closing reply lists any open decisions and links the new thread. The new thread's brief links the old thread (it stays readable, so check it when the files don't settle a question). The new thread's first reply lists the decisions it inherited in one or two lines, so the human can catch a gap at once.
+
+Where threads and a coordinator exist depends on the environment (`environment` in `harness.config.yml`; the `claude-projects` module covers project chats). In a plain CLI session, "thread" means one session.
 
 ## Subagent prompt blocks (customize paths)
 
