@@ -1,12 +1,12 @@
 # Harness subagents: {{project.name}}
 
-The Technical Lead delegates the **Full-stack engineer**, the **QA engineer**, the **researcher** (research mode) and, for legal wording, the **legal writer** with Claude Code's **Agent** tool. This file is the single place that states which agent, model and effort each piece of work gets.
+The Technical Lead delegates the **Full-stack engineer**, the **QA engineer**<!-- module:legal -->, the **legal writer** (legal wording)<!-- /module:legal --> and the **researcher** (research mode) with Claude Code's **Agent** tool. This file is the single place that states which agent, model and effort each piece of work gets.
 
 ## Agents
 
 Subagents are defined in `.claude/agents/`. Each file sets only `model`, `effort` and, for the read-mostly roles, tool limits; the instructions are the generic role bodies in `harness/agents/` plus this project's addenda in `project/agents/`, so edit those, not the variant files. The Technical Lead never passes a model or effort: it picks the `subagent_type`.
 
-**Tool limits.** The researcher files set `disallowedTools: Write, NotebookEdit` (it edits only the research file the Technical Lead created) and the legal writer's sets `tools: Read, Grep, Glob, Edit, Write` (no shell, web or MCP tools). Claude Code can't limit Edit to one path or Bash to read-only commands, so which file each may edit, and the researcher's read-only shell, stay rules in their role bodies. Full-stack and QA keep every tool: QA needs the shell and scratch edits for its checks. Keep these lines when adding a variant (`harness/MORPHING.md` § Trials).
+**Tool limits.** The researcher files set `disallowedTools: Write, NotebookEdit` (it edits only the research file the Technical Lead created)<!-- module:legal --> and the legal writer's sets `tools: Read, Grep, Glob, Edit, Write` (no shell, web or MCP tools)<!-- /module:legal -->. Claude Code can't limit Edit to one path or Bash to read-only commands, so which file each may edit, and the researcher's read-only shell, stay rules in their role bodies. Full-stack and QA keep every tool: QA needs the shell and scratch edits for its checks. Keep these lines when adding a variant (`harness/MORPHING.md` § Trials).
 
 | Role | `subagent_type` | Model | Effort |
 |------|-----------------|-------|--------|
@@ -17,7 +17,7 @@ Subagents are defined in `.claude/agents/`. Each file sets only `model`, `effort
 | QA engineer | `qa-engineer` (default) | `{{models.qa}}` | `high` |
 | Researcher | `researcher` (default) | `{{models.researcher}}` | `medium` |
 | Researcher | `researcher-high` | `{{models.researcher_high}}` | `high` |
-| Legal writer | `legal-writer` | `{{models.legal}}` | `high` |
+| Legal writer | `legal-writer` | `{{models.legal}}` | `high` | <!-- module:legal -->
 
 <!-- morph-init: fill the default marks from harness.config.yml → agents. Advised models: Technical Lead `opus` at `high`; Full-stack `opus` (the medium variant `sonnet`); QA `sonnet`; researcher `sonnet` (the high variant `opus`); legal writer `fable` (fallback `opus`). Change a row and its `.claude/agents/*.md` file together. Drop the legal writer row when the legal module is off. -->
 
@@ -52,6 +52,7 @@ Write each trial as one bullet: what changes, who started it, the features it co
 
 <!-- morph-init: no trials at install. Leave this comment; the first retro or prune that starts a trial adds the bullet. -->
 
+<!-- module:legal -->
 ## Legal wording
 
 <!-- morph-init: with the legal module, keep this paragraph and fill what counts as legal wording in this project (the legal pages and their source files, consent and fine-print lines, any file that mirrors a legal page). Without it, delete the section. -->
@@ -61,13 +62,16 @@ Process: [harness/modules/legal/README.md](../harness/modules/legal/README.md). 
 - <!-- morph-init: fill, e.g. "Any text on `/terms` and `/privacy` (`src/pages/legal/`) and the values in `src/legal.ts`." -->
 
 When unsure, the Technical Lead treats a sentence as legal.
+<!-- /module:legal -->
 
+<!-- module:browser-e2e -->
 ## Browser tests
 
 - **Full-stack runs targeted specs** before handoff (the `e2e-targeted` check in [CONTROLS.md](./CONTROLS.md)): the plan's **Targeted e2e specs**, plus the smoke and accessibility specs and every spec the diff adds or edits. It records the specs and the exit code. When the plan says `full`, or the diff touches a cross-cutting path ([CONTROLS.md](./CONTROLS.md) § Cross-cutting paths), it runs `e2e-full`.
 - **QA runs the full suite once** on the final commit, and on a failure re-runs it once to tell a flaky test from a real failure (a second failure is real). A plan's "passes twice in a row" check is QA's: QA runs that spec twice.
 
 <!-- morph-init: delete this section when the project has no browser tests. -->
+<!-- /module:browser-e2e -->
 
 ## Where QA can run
 
@@ -79,6 +83,8 @@ The process (local stack first, `deferred: local` only as the fallback, no QA wr
 
 <!-- morph-init: fill the seeded data QA may rely on (logins, fixtures, a second account for isolation checks) and the reset and stop commands. -->
 
+<!-- module:data-access -->
 ## QA and the database
 
 When `plan.md` marks **Data-access feature: yes** and the `data-access` module is enabled, the Technical Lead includes in the QA prompt: follow [harness/modules/data-access/README.md](../harness/modules/data-access/README.md). If the read-only remote check it needs can't authenticate, QA records it as **not run** and the feature stays not done: no pass on code review alone.
+<!-- /module:data-access -->

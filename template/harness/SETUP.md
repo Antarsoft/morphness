@@ -51,7 +51,7 @@ A different limit in `harness.config.yml` changes only the count; the last allow
 
 Only when the plan's **Agent effort → Full-stack** is `xhigh` (the plan says **Code review before QA: yes**). QA tests the acceptance criteria; this review looks for bugs outside them (for example a missing ownership filter on a route no AC names). It is read-only, it is not QA, and it doesn't replace QA.
 
-1. After dev completes and before QA, the Technical Lead runs `/code-review high` on the feature diff, with no `--fix` and no `--comment`. The Technical Lead runs the `code-review` skill itself on the first pass (a subagent that doesn't have the skill, or reviews by hand, doesn't count). A second-round reviewer gets the dismissed list from `Plan/review.md` so it doesn't re-report settled items.
+1. After dev completes and before QA, the Technical Lead runs `/code-review high` on the feature diff, with no `--fix` and no `--comment`. The Technical Lead runs the `code-review` skill itself on the first pass (a subagent that doesn't have the skill, or reviews by hand, doesn't count). A second-round reviewer gets the dismissed list from `Plan/review.md` so it doesn't re-report settled items. When the environment has no `code-review` or `security-review` skill, the TL launches a read-only subagent with the same scope and brief instead, and `Plan/review.md` opens with `Review by: subagent (<skill> not available)`; the review is never skipped.
 2. When the plan touches a risk area (`risk_areas` in `harness.config.yml`, for example auth, tenancy or access control, a public API, money), the Technical Lead also runs `/security-review`. It needs `origin/HEAD`, which cloud checkouts may not have: run `git remote set-head origin <default-branch>` first if `git rev-parse origin/HEAD` fails. The TL's brief names the files the review must read in full: the changed server-side handlers, the auth or ownership check they rely on, any vendor client wrapper, and their tests. The review lists the files it read in full and takes at least 15 tool calls; a pass below that doesn't count and is rerun. Before moving on, the TL pastes the reported tool-call count into `Plan/review.md` as one line (`Security review: N tool calls`) with the files read in full, and sends a review under 15 back to run again before QA (learned: thin security passes of 5 to 12 calls missed issues and left no record). After the review fixes, it runs again on the final code.
 3. The Technical Lead writes the findings to `Plan/review.md`: the verbatim list, each item marked `fix` or `dismissed: <reason>`.
 4. `fix` items go back to the **same Full-stack variant** as a review round. A review round doesn't count as a QA round.
@@ -84,7 +84,7 @@ See [MODES.md](./MODES.md). Summary:
 | Technical Lead | Main session; follows `AGENTS.md` and this folder |
 | Full-stack engineer | Agent tool subagent with the path to `plan.md`; implements in the codebase; edits only `Development/progress.md` under that feature |
 | QA engineer | Agent tool subagent; reads `plan.md` and `progress.md`; runs the checks in [CONTROLS.md](./CONTROLS.md); edits only `QA/qa-result.md` |
-| Legal writer | Agent tool subagent (legal module); edits only `Legal/legal-copy.md` |
+| Legal writer | Agent tool subagent (legal module); edits only `Legal/legal-copy.md` | <!-- module:legal -->
 | Researcher | Agent tool subagent with the absolute path of its research file; read-only; edits only that file between its two lines ([MODES.md](./MODES.md) § Research mode) |
 | Model and effort | Set in `.claude/agents/*.md`; the plan's **Agent effort** picks the variant (`project/HARNESS_AGENTS.md`) |
 
@@ -110,7 +110,7 @@ The researcher's level goes in the research file's **Researcher effort** line, n
 - **`high`** (default otherwise): normal feature work with new logic, such as a new flow, a new route or data path, or a screen that doesn't follow a single existing pattern.
 - **`xhigh`** (Full-stack only): security, money, tenancy or access control, concurrency, public APIs, new architecture. Brings the code review before QA.
 - **Never `medium` for Full-stack** when the plan touches a risk area (`risk_areas` in `harness.config.yml`), even when it copies a pattern.
-- **QA is `high`** whenever the plan is a data-access feature or touches a risk area, even if Full-stack is `medium`. Otherwise the project's QA default.
+- **QA is `high`** whenever the plan touches a risk area<!-- module:data-access --> or is a data-access feature<!-- /module:data-access -->, even if Full-stack is `medium`. Otherwise the project's QA default.
 
 ### Split large features by risk
 

@@ -17,8 +17,8 @@ This folder is the **kit**. It was installed from Morphness, but it now belongs 
 | [MORPHING.md](./MORPHING.md) | How this harness changes itself: where lessons land, trials, pruning, sharing upstream |
 | [SKILLS_AND_MCPS.md](./SKILLS_AND_MCPS.md) | When to use skills and MCPs (project details in `project/SKILLS_AND_MCPS.md`) |
 | [PLAN_CHECKLIST.md](./PLAN_CHECKLIST.md) | The Technical Lead's checklist before asking for plan approval |
-| [templates/](./templates/) | `feature.md`, `plan.md`, `progress.md`, `qa-result.md`, `retro.md`, `prune.md`, `research.md`, `release-qa-result.md`, `version.md`, `version-checklist.md`, `learnings-entry.md`, `steps.md` |
-| [agents/](./agents/) | Generic role bodies for the Full-stack, QA, researcher and legal-writer subagents (project addenda in `project/agents/`) |
+| [templates/](./templates/) | `feature.md`, `plan.md`, `progress.md`, `qa-result.md`, `retro.md`, `prune.md`, `research.md`, `release-qa-result.md`,<!-- module:roadmap --> `version.md`, `version-checklist.md`,<!-- /module:roadmap --> `learnings-entry.md`, `steps.md` |
+| [agents/](./agents/) | Generic role bodies for the Full-stack, QA<!-- module:legal -->, legal-writer<!-- /module:legal --> and researcher subagents (project addenda in `project/agents/`) |
 | [modules/](./modules/) | Optional parts, switched on in `harness.config.yml` → `modules` |
 
 ## Layers
@@ -39,12 +39,20 @@ Switched on in `harness.config.yml` → `modules`. A module that is off is ignor
 
 | Module | Adds |
 |--------|------|
-| `roadmap` | A roadmap file and per-version docs and checklists; steps files live under the version ([modules/roadmap/](./modules/roadmap/README.md)) |
-| `data-access` | QA stages for database schema and access-control features: stage A local, stage B read-only on the integration environment ([modules/data-access/](./modules/data-access/README.md)) |
-| `browser-e2e` | Browser end-to-end and accessibility test rules, targeted vs full suite ([modules/browser-e2e/](./modules/browser-e2e/README.md)) |
-| `legal` | The legal-writer flow for legal pages, consent lines and data-handling promises ([modules/legal/](./modules/legal/README.md)) |
-| `ci-cd` | Pipelines the harness sets up and checks: CI running the named checks on PRs, owner-run deploy and migrations workflows, and release tags from the PR title ([modules/ci-cd/](./modules/ci-cd/README.md)) |
-| `claude-projects` | Running the harness in Claude projects: coordinator, one feature per thread, thread effort ([modules/claude-projects/](./modules/claude-projects/)) |
+| `roadmap` | A roadmap file and per-version docs and checklists; steps files live under the version ([modules/roadmap/](./modules/roadmap/README.md)) | <!-- module:roadmap -->
+| `data-access` | QA stages for database schema and access-control features: stage A local, stage B read-only on the integration environment ([modules/data-access/](./modules/data-access/README.md)) | <!-- module:data-access -->
+| `browser-e2e` | Browser end-to-end and accessibility test rules, targeted vs full suite ([modules/browser-e2e/](./modules/browser-e2e/README.md)) | <!-- module:browser-e2e -->
+| `legal` | The legal-writer flow for legal pages, consent lines and data-handling promises ([modules/legal/](./modules/legal/README.md)) | <!-- module:legal -->
+| `ci-cd` | Pipelines the harness sets up and checks: CI running the named checks on PRs, owner-run deploy and migrations workflows, and release tags from the PR title ([modules/ci-cd/](./modules/ci-cd/README.md)) | <!-- module:ci-cd -->
+| `claude-projects` | Running the harness in Claude projects: coordinator, one feature per thread, thread effort ([modules/claude-projects/](./modules/claude-projects/)) | <!-- module:claude-projects -->
+
+**Module markers.** Text in the kit that exists only for one module is marked, so adding or removing a module is mechanical: a block between `<!-- module:<name> -->` and `<!-- /module:<name> -->` lines, the same pair inside a line for part of a sentence, or a line (a table row, a list item) ending in `<!-- module:<name> -->`. To remove a module, delete every marked span and line for it:
+
+```bash
+m=legal; perl -0pi -e "s/^<!-- module:$m -->\n.*?^<!-- \/module:$m -->\n\n?//msg; s/<!-- module:$m -->[^\n]*?<!-- \/module:$m -->//g; s/^[^\n]*<!-- module:$m -->\n//mg" $(grep -rl "module:$m -->" --include='*.md' harness project .github .gitlab 2>/dev/null)
+```
+
+To add one later, copy each marked span for it from the kit's copy of the same file to the same place. Markers of modules that stay are kept. Always-loaded files (`AGENTS.md`, `CLAUDE.md`, `.claude/rules/`), `harness.config.yml` and code blocks carry no markers; each module's § On remove lists their lines.
 
 ## Rule owners
 

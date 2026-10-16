@@ -8,13 +8,22 @@ description: Turn rules that proved useful in this project's Morphness harness i
 Contributing is optional and always the user's call. You draft; the user approves every lesson and
 the PR.
 
+## 0. Find the source
+
+You need a clone of the Morphness repo (`SRC`) to compare against and to check the drafts: the
+same one `/morph-update` uses (its § 1 step 2: a folder the user names, else `~/.cache/morphness`).
+Never download it yourself; when there's none, give the user the clone command from that step and
+wait. Ask before `git -C "$SRC" pull --ff-only`, so the duplicate check below sees the current catalog.
+
 ## 1. Find candidates
 
 Read the latest prune records in `_harness/prunes/` and their rule audits. A candidate is a rule that:
 
 - **fired** at least once (it caught a real problem in a feature), and
-- is not already in the Morphness catalog in substance (check the source's `lessons/` and
-  `template/harness/PLAN_CHECKLIST.md`), and
+- is not already in the Morphness catalog in substance: check `SRC/lessons/` (including lessons
+  with `in_template: true`, whose rule the kit already ships, and `status: superseded` ones, whose
+  replacement may cover it) and the kit itself (`SRC/template/`, starting with
+  `harness/PLAN_CHECKLIST.md` and the file the rule would land in), and
 - would help a project that shares a stack, a service or a practice with this one.
 
 Also offer rules the user names. Skip rules marked "too new" or "never fired" unless the user insists,
@@ -51,13 +60,21 @@ domain and any id from `project/STACK.md`; there must be none.
 
 Only on the user's yes:
 
-1. Fork or clone the Morphness repo to a temp folder outside this repo.
+1. Fork or clone the Morphness repo to a temp folder outside this repo (not the shared `SRC` clone).
 2. Create a branch `lessons/<project-agnostic-topic>`, add the files, commit with a message listing
    the lesson ids.
 3. Push to the user's fork and open a PR to Morphness `main` using its PR template, with the evidence
    table in the body.
 
 Then tell the user the PR link and that maintainers may edit wording or tags before merging.
+
+**Without `gh`** (not installed, or `gh auth status` fails) or when the push is refused: don't try
+another route. Write the PR body and each lesson file to a folder in the session scratchpad, and give
+the user a pre-filled issue link instead:
+`https://github.com/antarsoft/morphness/issues/new?title=<url-encoded title>&body=<url-encoded body>`,
+with the lesson files pasted in the body as fenced blocks (keep it under about 6,000 characters; past
+that, link the folder and say to attach the files). Tell the user it opens a lesson proposal a
+maintainer turns into a PR.
 
 ## 6. Offer a showcase listing (optional)
 

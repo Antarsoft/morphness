@@ -73,11 +73,11 @@ When the project doesn't choose this module, morph-init deletes this folder and 
 - `harness/templates/version.md`
 - `harness/templates/version-checklist.md`
 
-**Delete or reword these lines:**
+**Delete the marked text:** every span and line marked `module:roadmap`, with the command in [harness/README.md](../../README.md) § Modules → **Module markers**.
+
+**Delete or reword these lines** (unmarked: always-loaded, config or code-block text):
 
 - `harness.config.yml`: set `roadmap.enabled: false` and remove `roadmap` from `modules`.
 - `AGENTS.md` § Product docs: replace the paragraph that says `docs/ROADMAP.md` "is the source of truth for versions and scope" with where scope is decided in this project (an issue tracker, a product doc), or delete it.
-- `project/CONTROLS.md`: delete § Before the feature PR (Technical Lead) (its rows are the roadmap checks; the steps-file check stays in `harness/CONTROLS.md`).
-- `harness/README.md`: in the table of folders, drop `version.md` and `version-checklist.md` from the `templates/` row; in § Modules, the `roadmap` row.
 
 **Unlink:** every Markdown link left pointing into `harness/modules/roadmap/` becomes plain text, or goes with its line (`/morph-doctor` fails on a broken link). Find them with `grep -rn 'modules/roadmap' --include='*.md' . | grep -v '^./harness/modules/'`.

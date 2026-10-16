@@ -62,9 +62,10 @@ When the project doesn't choose this module, morph-init deletes this folder and 
 
 **Delete these files:** none outside this folder.
 
-**Delete or reword these lines:**
+**Delete the marked text:** every span and line marked `module:ci-cd`, with the command in [harness/README.md](../../README.md) § Modules → **Module markers**.
+
+**Delete or reword these lines** (unmarked: always-loaded, config or code-block text):
 
 - `harness.config.yml`: the `ci_cd` block and its comment.
-- `harness/README.md` § Modules: the `ci-cd` row.
 
 **Unlink:** every Markdown link left pointing into `harness/modules/ci-cd/` becomes plain text, or goes with its line (`/morph-doctor` fails on a broken link). Find them with `grep -rn 'modules/ci-cd' --include='*.md' . | grep -v '^./harness/modules/'`.

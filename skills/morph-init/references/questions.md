@@ -78,7 +78,7 @@ affects; QA still runs everything at sign-off. Use these?" then one line per che
 scope (`affected` with the command on the integration branch, `paths` with globs, or `full`). Suggest
 `affected` for `unit` and `lint` when the tool supports it, and keep `typecheck` and `build` at `full`
 unless a monorepo runner computes affected packages. Skip the question when nothing in the stack can
-narrow a check. → `project/CONTROLS.md` § Check scope
+narrow a check. → `check_scope`, rendered into `project/CONTROLS.md` § Check scope
 
 ## Q6. Branches and release
 
@@ -254,6 +254,10 @@ environment: [claude-code-cli]
 stack: { summary: "", package_manager: "", toolchain_setup: "", install_cmd: "" }
 cmd: { install: "", typecheck: "", lint: "", unit: "", build: "", e2e-targeted: "", e2e-full: "", e2e-repeat: "" }  # plus any extra named checks
 checks: { before_qa: [], before_signoff: [] }
+check_scope:   # Q5 follow-up; one entry per check Full-stack may narrow; [] = every check runs in full
+  - { check: unit, scope: affected, command: "" }   # scope: full | affected (command) | paths (paths: [globs])
+apps: []        # Q4 follow-up, monorepos only; deploy keys are environment names (Q6b)
+#  - { name: web, path: apps/web, stack: "", e2e: none, deploy: { dev: host, production: host } }
 branches: { integration: dev, production: main, default: dev }
 environments:   # in the order code moves through them; [] when nothing is deployed
   - { name: dev, branch: dev, deploy: host, real_data: false }

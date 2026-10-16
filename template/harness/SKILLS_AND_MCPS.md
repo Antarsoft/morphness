@@ -27,7 +27,7 @@
 ## QA engineer
 
 - Uses skills and MCPs to **run** or **observe** the system when the plan requires it.
-- **Data-access features** (plan flag **yes**): **required** validation per [modules/data-access/](./modules/data-access/README.md): stage A on the local stack, then stage B (read-only) on the integration environment after the migrations reach it. Not optional.
+- **Data-access features** (plan flag **yes**): **required** validation per [modules/data-access/](./modules/data-access/README.md): stage A on the local stack, then stage B (read-only) on the integration environment after the migrations reach it. Not optional. <!-- module:data-access -->
 - Browser automation when end-to-end or UI ACs need it ([modules/browser-e2e/](./modules/browser-e2e/README.md)); no scope creep into implementation.
 
 ## Connector actions

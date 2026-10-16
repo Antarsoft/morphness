@@ -42,16 +42,12 @@ When the project doesn't choose this module, morph-init deletes this folder and 
 
 **Delete these files:** none outside this folder.
 
-**Delete or reword these lines:**
+**Delete the marked text:** every span and line marked `module:browser-e2e`, with the command in [harness/README.md](../../README.md) § Modules → **Module markers**.
+
+**Delete or reword these lines** (unmarked: always-loaded, config or code-block text):
 
 - `harness.config.yml` → `checks`: remove `e2e-full` (and `e2e-targeted` and `e2e-repeat`, if listed) from `before_qa` and `before_signoff`.
-- `project/CONTROLS.md` § Named checks: the `e2e-targeted`, `e2e-full` and `e2e-repeat` rows. § Cross-cutting paths: the browser-test fixtures and config, if listed.
-- `project/STACK.md` § Commands: the two **Browser tests** rows; delete § Browser tests.
-- `project/HARNESS_AGENTS.md`: § Browser tests.
-- `project/agents/fullstack-engineer.md` § Read before you start: drop "and § Browser tests" (read § Commands, § Database and § Local stack (QA)).
-- `project/TESTING.md`: drop the sentence "With the `browser-e2e` module, the browser-test rules are in …", and the browser row of § Where tests live if one was filled.
+- `project/CONTROLS.md` § Cross-cutting paths and `project/TESTING.md` § Where tests live: the browser-test lines morph-init filled, if any.
 - `.claude/rules/testing.md` § Where tests live: "commands behind the `unit`, `e2e-targeted` and `e2e-full` checks" becomes "commands behind the `unit` check"; drop the sentence "Browser end-to-end rules, when the `browser-e2e` module is enabled, are in …".
-- The PR template (`.github/pull_request_template.md`, or `.gitlab/merge_request_templates/Default.md` on GitLab) § Verification: the **Full browser suite on the final commit** line.
-- `harness/README.md` § Modules: the `browser-e2e` row.
 
 **Unlink:** every Markdown link left pointing into `harness/modules/browser-e2e/` becomes plain text, or goes with its line (`/morph-doctor` fails on a broken link). Find them with `grep -rn 'modules/browser-e2e' --include='*.md' . | grep -v '^./harness/modules/'`.

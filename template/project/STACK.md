@@ -33,8 +33,8 @@ The commands behind each named check are in [CONTROLS.md](./CONTROLS.md); this f
 | Lint | `{{cmd.lint}}` |
 | Unit tests | `{{cmd.unit}}` |
 | Build | `{{cmd.build}}` |
-| Browser tests (targeted) | `{{cmd.e2e-targeted}}` |
-| Browser tests (full) | `{{cmd.e2e-full}}` |
+| Browser tests (targeted) | `{{cmd.e2e-targeted}}` | <!-- module:browser-e2e -->
+| Browser tests (full) | `{{cmd.e2e-full}}` | <!-- module:browser-e2e -->
 <!-- morph-init: fill extra rows: development server and its URL, local stack start/reset/stop, build-and-start against the local stack. -->
 
 <!-- morph-init: fill the gotchas that cost a past run time (a generated file a typecheck needs, a lockfile to review after adding a dependency). Delete this comment when there are none yet. -->
@@ -47,9 +47,11 @@ The commands behind each named check are in [CONTROLS.md](./CONTROLS.md); this f
 
 <!-- morph-init: fill only when QA needs the running app to reach a database or service. The command that starts it, resets it to the seed, and stops it; the seeded logins and fixtures; what a cloud session needs (container runtime, cached images). Example: "`make stack` starts Postgres in Docker, migrates and seeds; login `qa@example.test` / `qa-password`." -->
 
+<!-- module:browser-e2e -->
 ## Browser tests
 
 <!-- morph-init: fill only with the browser-e2e module. Where the specs live, the config file, what the shared fixture fails on, where credentials come from, which browser binary a cloud session uses. Rules: [harness/modules/browser-e2e/README.md](../harness/modules/browser-e2e/README.md). -->
+<!-- /module:browser-e2e -->
 
 ## Hosting and deploys
 

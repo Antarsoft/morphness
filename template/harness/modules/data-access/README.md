@@ -126,16 +126,10 @@ When the project doesn't choose this module, morph-init deletes this folder and 
 
 **Delete these files:** none outside this folder.
 
-**Delete or reword these lines:**
+**Delete the marked text:** every span and line marked `module:data-access`, with the command in [harness/README.md](../../README.md) § Modules → **Module markers**.
 
-- `harness/templates/qa-result.md`: the **Data-access feature (from plan)** line under § Environment, and § Data-access validation with its § Data-access validation: post-apply.
-- `harness/HANDOFFS.md` § `qa-result.md` minimum sections: item 5 (**Data-access validation**). § Mandatory flow, item 5: rename **Data-access features:** to **Features with migrations:**, keep the three sentences on the steps file, how migrations reach the integration environment and that agents never apply them, and drop the last two (stage B).
-- `harness/CONTROLS.md`: the subsection § Data-access features (its heading, the two stage bullets and the "Record results" line). Keep § Grep as evidence below it.
-- `harness/SKILLS_AND_MCPS.md` § QA engineer: the **Data-access features** bullet.
-- `harness/README.md` § Modules: the `data-access` row.
-- `project/HARNESS_AGENTS.md`: § QA and the database; in § Effort per feature, "or says **Data-access feature: yes**" in the QA bullet.
-- `harness/SETUP.md` § Effort per feature → Choosing a level: "the plan is a data-access feature or" in the QA bullet.
-- `project/agents/qa-engineer.md`: § Remote read-only checks.
+**Delete or reword these lines** (unmarked: always-loaded, config or code-block text):
+
 - `AGENTS.md` § Golden rules → **Shared remote environments**: drop the sentence "Details, when the `data-access` module is enabled: …".
 
 **Unlink:** every Markdown link left pointing into `harness/modules/data-access/` becomes plain text, or goes with its line (`/morph-doctor` fails on a broken link). Find them with `grep -rn 'modules/data-access' --include='*.md' . | grep -v '^./harness/modules/'`.
