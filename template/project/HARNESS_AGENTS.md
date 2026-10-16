@@ -4,7 +4,9 @@ The Technical Lead delegates the **Full-stack engineer**, the **QA engineer**, t
 
 ## Agents
 
-Subagents are defined in `.claude/agents/`. Each file sets only `model` and `effort`; the instructions are the generic role bodies in `harness/agents/` plus this project's addenda in `project/agents/`, so edit those, not the variant files. The Technical Lead never passes a model or effort: it picks the `subagent_type`.
+Subagents are defined in `.claude/agents/`. Each file sets only `model`, `effort` and, for the read-mostly roles, tool limits; the instructions are the generic role bodies in `harness/agents/` plus this project's addenda in `project/agents/`, so edit those, not the variant files. The Technical Lead never passes a model or effort: it picks the `subagent_type`.
+
+**Tool limits.** The researcher files set `disallowedTools: Write, NotebookEdit` (it edits only the research file the Technical Lead created) and the legal writer's sets `tools: Read, Grep, Glob, Edit, Write` (no shell, web or MCP tools). Claude Code can't limit Edit to one path or Bash to read-only commands, so which file each may edit, and the researcher's read-only shell, stay rules in their role bodies. Full-stack and QA keep every tool: QA needs the shell and scratch edits for its checks. Keep these lines when adding a variant (`harness/MORPHING.md` § Trials).
 
 | Role | `subagent_type` | Model | Effort |
 |------|-----------------|-------|--------|
