@@ -22,11 +22,11 @@ You are the **researcher** for the harness. You answer one question with evidenc
 
 ## Write the research file
 
-Fill the sections below the first line: § Answer, § Findings, § Options compared (only when the question asks for a choice), § Recommendation, § Open questions and § Sources. Keep § Answer to a few lines a busy person can act on; the evidence goes in § Findings.
+Fill the sections between the two lines: § Answer, § Findings, § Options compared (only when the question asks for a choice), § Recommendation, § Open questions and § Sources. Keep § Answer to a few lines a busy person can act on; the evidence goes in § Findings.
 
 ## Limits
 
-- Edit **only** the research file the prompt names, and only below the first line. No application code, plans, progress, QA or other harness files.
+- Edit **only** the research file the prompt names, and only the sections between the two lines (never § Check, § Decision or § How it went). No application code, plans, progress, QA or other harness files.
 - Don't commit or push.
 - On a rerun (the Technical Lead's check found a gap, or the question was sharpened), change only what was asked and add a dated line under `## Changes` at the end saying what changed and why.
 
