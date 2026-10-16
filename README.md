@@ -54,9 +54,10 @@ your stack starts with them.
 | 🧭 **Plan first, then build** | A Technical Lead writes a plan with testable acceptance criteria and waits for your approval before any code is written. |
 | ✅ **QA is never skipped** | Every feature gets a separate QA agent that runs your checks and records the evidence, so "done" means verified, not claimed. |
 | 🔁 **Learns from its own mistakes** | Retros turn failures into rules, and prunes delete rules that never fire, so the instructions your agents read stay short and earned. |
-| 🛡️ **Safe by default** | Secrets and pushes to protected branches are denied in `.claude/settings.json` from the first install; with the data-access module, your database and hosting write tools are denied too. Every agent also reads the rule: never write to a shared remote environment. |
-| 🧰 **Yours to configure** | Branches, checks, modules, risk areas, models, effort and loop limits all live in one `harness.config.yml`. Every rule and checklist is a plain Markdown file in your repo, so you can change anything. |
-| 🧩 **Works on any codebase** | New or existing repos, including ones that already have a `CLAUDE.md`, `AGENTS.md` or their own agent setup. Any language or framework. |
+| 🛡️ **Safe by default** | Secrets and pushes to protected branches are denied in `.claude/settings.json` from the first install, and every merge command asks you first. Environment branches get a host ruleset (PR-only, no force-push). With the data-access module, your database and hosting write tools are denied too. Anything a connector would change runs only after your yes in chat, and every agent reads the rule: never write to a shared remote environment. |
+| 💲 **Know what each feature costs** | Every feature records an estimated dollar cost from Claude Code's own transcripts, split by agent, so you can compare features and tune effort. Useful as an estimate on a Pro or Max plan too. |
+| 🧰 **Yours to configure** | Branches, environments, checks, modules, risk areas, models, effort and loop limits all live in one `harness.config.yml`. Every rule and checklist is a plain Markdown file in your repo, so you can change anything. |
+| 🧩 **Works on any codebase** | New or existing repos, including ones that already have a `CLAUDE.md`, `AGENTS.md` or their own agent setup, monorepos with several apps, and folders that aren't a git repo or online yet. Any language or framework. |
 
 ## 🚀 Install
 
@@ -94,10 +95,16 @@ git clone --depth 1 https://github.com/antarsoft/morphness /tmp/morphness
 </details>
 
 The setup (`/morph-init`, or your agent following `INSTALL.md`) works for new and ongoing
-projects. On an ongoing one, it scans the repo first and suggests answers. Then it asks a short series of questions, one at a time, each with a suggested
-answer: what you're building, who approves, where you run Claude, your stack, the commands behind
-each check, branches, and which optional modules you want. You can also point it at a brief or fill
-in an answers file instead.
+projects. On an ongoing one, it scans the repo first and suggests answers. Then it asks a short
+series of questions, one at a time, each with a suggested answer: what you're building, who
+approves, where you run Claude, your stack, the commands behind each check, branches and
+environments, who merges, and which optional modules you want. It explains each technical term the
+first time it comes up, so you don't need to be a developer to answer. You can also point it at a
+brief or fill in an answers file instead.
+
+If the folder isn't a git repository yet, the setup starts one, and it can create the GitHub
+repository on your yes. With your yes it also applies branch protection on the host, or gives you
+the steps to do it yourself.
 
 It suggests skills, connectors and community lessons that fit your stack, and installs only the ones
 you accept. Existing files such as your `CLAUDE.md` are kept, settings are merged with the diff
@@ -108,10 +115,13 @@ shown, and everything lands on a branch for you to review.
 
 - **Claude Code** with plugins, subagents (the Agent tool) and effort levels.
 - **Models:** opus and sonnet. The legal writer prefers fable and falls back to opus.
-- **Tools:** git and bash. `gh` for `/morph-share` to open its PR.
+- **Tools:** git and bash. `gh` for `/morph-share` to open its PR, and for applying branch
+  protection or creating the repository during setup (each has a manual fallback). python3 for the
+  feature cost estimate.
 - **Cost:** each feature is about three agent runs (plan, build, QA) plus a short retro, with the
-  Technical Lead and Full-stack on opus at high effort by default. Tune spend with the medium
-  variants and `project/HARNESS_AGENTS.md` § Effort per feature.
+  Technical Lead and Full-stack on opus at high effort by default. Every hand-off ends with a
+  `Cost ≈ $…` line priced at public API rates (`harness/MODEL_PRICES.md`, editable for your own).
+  Tune spend with the medium variants and `project/HARNESS_AGENTS.md` § Effort per feature.
 
 </details>
 
@@ -119,8 +129,15 @@ shown, and everything lands on a branch for you to review.
 
 1. Ask the Technical Lead: `plan <feature>`.
 2. Read the plan and its acceptance criteria, then approve it.
-3. It delegates the build to Full-stack, then QA checks every criterion.
-4. You get a steps file (anything only you can do) and a short retro.
+3. It opens a draft PR and delegates the build to Full-stack. QA checks every criterion, and the
+   PR is marked ready once it passes.
+4. You merge (or let the Technical Lead merge into the integration branch, with `merge_by_agent`).
+   You also get a short retro, the feature's cost, and a steps file for anything only you can do.
+   When a connected service's official connector can do a step, the Technical Lead offers to do it
+   instead, and runs each action only after your yes.
+
+For a small change, ask for **light mode** (no feature folder or retro). When you want an answer
+rather than a change, ask a question and the Technical Lead uses **research mode**.
 
 > [!TIP]
 > ⭐ If Morphness saves you a rework round, [star the repo](https://github.com/antarsoft/morphness) so more teams find it.
@@ -165,11 +182,14 @@ and advised settings (coordinator opus · medium, feature threads opus · high).
 |-------|--------------|
 | 📄 `AGENTS.md`, `CLAUDE.md`, `.claude/rules/` | The rules every session loads: the Technical Lead plans and delegates and never codes; QA is never skipped. |
 | 🤖 `.claude/agents/` | Full-stack (medium, high, xhigh effort), QA (medium, high), researcher (medium, high) and legal-writer subagents. |
-| 🗺️ `harness/` | The process: lifecycle, handoffs, checks, modes (full, light, research), release, the plan checklist, and how it morphs. |
+| 🛡️ `.claude/settings.json` | Deny rules for secrets and protected-branch pushes, ask rules on every merge command. |
+| 🗺️ `harness/` | The process: lifecycle, handoffs, checks, modes (full, light, research), release and environments, the plan checklist, model prices, and how it morphs. |
 | 🧩 `harness/modules/` | Optional: Claude Projects, data access (local-first, remote read-only), browser e2e, legal wording, roadmap, CI/CD pipelines. |
-| 🏷️ `project/` | Your project's facts: stack, the commands behind each check, risk areas, effort per area. |
-| 🎛️ `harness.config.yml` | Branches, environments, modules, named checks, CI gate, risk areas, models and effort, loop limits. |
-| 🗂️ `_harness/` | Runtime: feature folders, learnings, prunes, releases. |
+| 🏷️ `project/` | Your project's facts: stack, the commands behind each check and their scope, risk areas, effort per area, and the official connector for each service you use. |
+| 🎛️ `harness.config.yml` | Branches, environments, apps, branch protection, who merges, release tags, modules, named checks, CI gate, risk areas, models and effort, cost tracking, loop limits. |
+| 📜 `scripts/` | The prune counter and the feature cost estimate, run at the end of every hand-off. |
+| 🐙 `.github/` | A PR template for drafts, release notes and hotfixes, and the branch-protection ruleset. |
+| 🗂️ `_harness/` | Runtime: feature folders, learnings, research, prunes, releases. |
 | 🧬 `profiles/` | Optional starting points for known stacks: detect rules, check commands, permissions and matching lessons. The first one is Next.js + Supabase. |
 
 ## 🧰 Make it yours
@@ -181,10 +201,15 @@ Run `/morph-doctor` afterwards to check the wiring. An abridged example:
 branches:
   integration: dev          # feature branches start here and PRs target it
   production: main          # moves only through a release
+  default: dev              # the code host's default branch
 
 environments:               # in the order code moves through them; add staging, or keep one
   - { name: dev, branch: dev, deploy: host, real_data: false }
   - { name: production, branch: main, deploy: host, real_data: true }
+
+branch_protection: { enabled: true, required_approvals: 0, delete_merged_branches: true }
+merge_by_agent: never       # or integration: the Technical Lead merges ready feature PRs there
+release_tags: true          # tag every production merge; false, or per-package for monorepos
 
 modules: [roadmap, data-access, browser-e2e]
 
@@ -198,6 +223,9 @@ risk_areas: [auth, billing, migrations]   # never medium effort, always a carefu
 agents:
   fullstack: { model: opus, medium_model: sonnet, default: high, variants: [medium, high, xhigh] }
   qa: { model: sonnet, default: high, variants: [medium, high] }
+  researcher: { model: sonnet, high_model: opus, default: medium, variants: [medium, high] }
+
+cost: { track: true, prices: harness/MODEL_PRICES.md }   # estimated $ per feature
 
 loop:
   retro_max_items: 3        # usual action items per retro (soft limit)
@@ -209,7 +237,9 @@ Beyond the config, everything is a file in your repo that you own:
 
 | To change | Edit |
 |-----------|------|
-| Check commands, stack facts, test locations | `project/CONTROLS.md`, `project/STACK.md`, `project/TESTING.md` |
+| Check commands and when each runs, stack facts, test locations | `project/CONTROLS.md`, `project/STACK.md`, `project/TESTING.md` |
+| Skills, connectors and each service's official MCP | `project/SKILLS_AND_MCPS.md` |
+| Prices used for the cost estimate | `harness/MODEL_PRICES.md` |
 | Your own plan checklist items | `project/PLAN_CHECKLIST.md` |
 | Agent instructions for this project | `project/agents/<role>.md` (added on top of the generic roles) |
 | Model and effort per subagent | `.claude/agents/*.md` |
@@ -226,7 +256,10 @@ Once installed, the harness belongs to your repo, and the loop is what changes i
 2. 📝 **Learnings** file per feature.
 3. ✂️ **Prune** every ten learnings files. The rule audit sorts rules into *fired*, *never fired*,
    *insurance* and *too new*. Rules that earn nothing get cut, and trials (an effort level, a new
-   check, a model) are decided by their KPIs.
+   check, a model) are decided by their KPIs. It also shows each feature's cost against the last
+   window, checks whether the problem behind each retro item came back, and reads the short
+   look-back on research files. Every hand-off ends with a `Prune counter: N/10` line, so you see a
+   prune coming.
 
 See [template/harness/MORPHING.md](template/harness/MORPHING.md).
 
