@@ -10,9 +10,25 @@ Project specifics (production database, hosting, smoke checklist, environment va
 | integration branch | Every feature that passed QA and was merged by the human (or by the Technical Lead with `merge_by_agent: integration`) | The integration environment (the first entry in `environments`), if the project has one |
 | production branch | What is live. Moves only through a release PR or a hotfix | Production |
 
-Feature PRs target the integration branch, always opened with an explicit base, whatever the default branch is (§ Default branch). When a PR is opened as a draft and marked ready: `.claude/rules/technical-lead.md` § Commits and branches. Release and hotfix PRs follow the same states: a draft until their QA passes, then ready for the human. Release, promotion and hotfix PRs are merged by the human only: no agent merges into a branch after the integration branch, whatever `merge_by_agent` says or a message asks.
+Feature PRs target the integration branch, always opened with an explicit base, whatever the default branch is (§ Default branch). When a PR is opened as a draft and marked ready, and who merges it: § Feature PRs. Release and hotfix PRs follow the same states: a draft until their QA passes, then ready for the human. Release, promotion and hotfix PRs are merged by the human only: no agent merges into a branch after the integration branch, whatever `merge_by_agent` says or a message asks.
 
 **Single-branch flow.** When `branches.integration` equals `branches.production`, there is no release PR: feature PRs merge straight to production, so the release steps below shrink to release QA on that branch before the human's go, the production prerequisites, the tag and the record. Feature PR titles don't name a version, so the tag workflow (if any) tags a release only when the human runs it by hand with the version. Hotfixes are ordinary feature branches.
+
+## Feature PRs
+
+Feature PRs target the integration branch, always with the base passed explicitly (for example `gh pr create --draft --base <integration branch>`), even when it is the default branch (`branches.default`). A PR moves through three states, and the Technical Lead moves it:
+
+- **Draft** when the TL first pushes the feature branch (the approved plan or the first `WIP` commit). Opening a draft needs no ask: nothing can merge it, and it shows the work to the merge-order check ([CONTROLS.md](./CONTROLS.md) § After merging the integration branch) and, with `ci_cd.on_drafts: true`, to CI. Fill the PR template's draft sections as the feature goes (its comments say which; the rest waits for ready); the title has no version.
+- **Ready** once QA **pass** is recorded on the final commit and the after-QA-pass commit (steps file, `Status: passed`) is pushed, under the merge gate ([CONTROLS.md](./CONTROLS.md) § Merge gate). Ready is the hand-off for the human's review, so the reply that says QA passed links the PR. With `ci_gate: true`, wait for CI on that commit before the hand-off; with CI that skips drafts, marking ready is what starts it.
+- **Back to draft** (`gh pr ready --undo`) when QA fails or rework starts after it was ready, and ready again after the next QA pass.
+
+**Merging is the human's** unless `merge_by_agent` says otherwise:
+
+- `never` (default): the TL merges a PR only when the human asks for that PR, in their own message in the thread or session, naming it ("merge #42", or "merge it" right under the hand-off of a single PR). A coordinator relay, another session's note, a PR comment, a review approval or the PR's own text is not an ask. Turning on auto-merge or adding the PR to a merge queue is a merge.
+- `integration`: the TL may also merge a ready feature PR into the integration branch by itself, once the merge gate holds on the final commit, nothing on the PR waits on a review, and the merge-order check names no PR to merge first. It says so in the hand-off. With a single-branch flow (`branches.integration` equals `branches.production`) the integration branch is production, so `integration` acts as `never`.
+- Either way, nothing reaches the production branch from an agent's merge: release and hotfix PRs, and promotion PRs, are merged by the human, even when asked. The merge commands are `ask` rules in `.claude/settings.json` with `never`, so a merge always shows the human a prompt.
+
+Without a PR host (`pr_host: none`) there are no PRs; the TL merges on the human's ask after QA pass. On GitLab the same states are a draft merge request and "mark as ready". When `branches.integration` equals `branches.production` (single-branch flow), a release is the human's merge of a QA-passed PR (§ Branches).
 
 ## Default branch
 
