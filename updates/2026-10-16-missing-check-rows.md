@@ -2,7 +2,7 @@
 id: 2026-10-16-missing-check-rows
 title: A check the project doesn't have is left out, not marked "none"
 kind: fix
-release: unreleased
+release: 2026-10-16
 applies_to: { modules: [] }
 files:
   - project/CONTROLS.md

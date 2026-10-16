@@ -6,6 +6,8 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+## 2026-10-16
+
 - Script fixes: `prune-counter.sh` and `feature-cost.sh` read `harness.config.yml` in block or
   one-line style through one shared reader (`scripts/lib/config.sh`); `feature-cost.sh --since`
   without a zone means UTC, as documented; the prune counter no longer counts files a prune already
@@ -16,6 +18,35 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 - ci-cd module: an automatic deploy on push runs CI on that commit first and deploys only when it
   passes. The back-merge after a release is its own step in `harness/RELEASE.md`, with a box in the
   PR template.
+- Code review before QA never gets skipped: when the built-in `code-review` or `security-review`
+  skill is missing, the Technical Lead runs a read-only subagent with the same brief and
+  `Plan/review.md` says so. `/morph-init` and `/morph-doctor` check that both skills are present.
+- Light mode has a Full-stack brief in `harness/HANDOFFS.md`, and `harness/MODES.md` says what
+  record a light-mode change leaves: no QA agent, the checks it touches run scoped, and the PR (or
+  commit message) lists them with their exit codes under a **Light mode** line.
+- Module-only text in the kit is marked (`<!-- module:<name> -->`), so removing a module is one
+  command (`harness/README.md` § Modules). `/morph-update` copies a module's marked text when you
+  add it later, and `/morph-doctor` reports markers left for a module that isn't on.
+- One owner per rule: rules written out in several files now live in one owner file, with links
+  elsewhere (`harness/README.md` § Rule owners). `harness/CONTROLS.md` holds the only list of
+  documentation paths, and changes to `.claude/settings.json`, hooks and skill scripts no longer
+  count as documentation, so they get every check. Plans keep their state on the **Status** line.
+- Wider deny rules in `.claude/settings.json`: more `.env.*` names can't be read or edited,
+  `cat`/`head`/`tail`/`less`/`more` of any `.env*` path is denied, and pushes to an environment
+  branch are caught on any remote, with trailing flags and as a `+` force refspec. A bare
+  `git push` asks first.
+- The researcher and legal writer get real tool limits: the researcher can't create files (it edits
+  only the research file it's given, between its two `---` lines), and the legal writer only reads
+  and writes its legal copy, with no shell, web or MCP tools.
+- `/morph-doctor` checks `session-start.sh` with `bash -n` instead of running it.
+- A check the project doesn't have (no lint yet, no browser tests) is left out of
+  `project/CONTROLS.md`, `project/STACK.md` and `checks`, instead of marked "none".
+- The ci-cd module asks before `gh api` calls on rulesets and branch protection instead of denying
+  them, so `/morph-init` and `/morph-doctor` can apply protection once you allow the prompt.
+- The Technical Lead rule is about 40% shorter (19 KB to 11 KB): every hard rule stays as one line,
+  with the detail moved to the file that owns it (`harness/RELEASE.md` § Feature PRs,
+  `harness/HANDOFFS.md` § Threads and § Background agents, `harness/SETUP.md`). The process is
+  unchanged.
 
 ## 2026-10-15.2
 

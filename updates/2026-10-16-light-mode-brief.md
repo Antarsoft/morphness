@@ -2,7 +2,7 @@
 id: 2026-10-16-light-mode-brief
 title: A brief for light-mode code changes, and what record they leave
 kind: rule
-release: unreleased
+release: 2026-10-16
 applies_to: { modules: [] }
 files:
   - harness/MODES.md

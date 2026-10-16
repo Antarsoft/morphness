@@ -2,7 +2,7 @@
 id: 2026-10-16-script-fixes
 title: Scripts read the config in any style, count prunes right and skip unchanged installs
 kind: fix
-release: unreleased
+release: 2026-10-16
 applies_to: { modules: [] }
 files:
   - scripts/lib/config.sh

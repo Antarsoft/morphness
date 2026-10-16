@@ -2,7 +2,7 @@
 id: 2026-10-16-researcher-edit-boundary
 title: The researcher writes only between the two lines of its research file
 kind: fix
-release: unreleased
+release: 2026-10-16
 applies_to: { modules: [] }
 files:
   - .claude/rules/harness.md

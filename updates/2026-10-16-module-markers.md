@@ -2,7 +2,7 @@
 id: 2026-10-16-module-markers
 title: Module-only text is marked, so modules come and go mechanically
 kind: template
-release: unreleased
+release: 2026-10-16
 applies_to: { modules: [] }
 files:
   - harness/README.md

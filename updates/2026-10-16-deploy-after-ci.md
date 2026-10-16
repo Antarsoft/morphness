@@ -2,7 +2,7 @@
 id: 2026-10-16-deploy-after-ci
 title: Automatic deploys wait for CI, and the back-merge is its own release step
 kind: fix
-release: unreleased
+release: 2026-10-16
 applies_to: { modules: [] }
 files:
   - harness/modules/ci-cd/README.md
