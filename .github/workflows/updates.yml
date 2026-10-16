@@ -7,9 +7,9 @@ on:
     paths: ["template/**", "updates/**", "CHANGELOG.md", ".claude-plugin/plugin.json", "scripts/check-updates.sh"]
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04   # pinned: bump it in its own PR
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
         with:
           fetch-depth: 0
       - if: github.event_name == 'pull_request'

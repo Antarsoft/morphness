@@ -10,7 +10,7 @@ if not files:
     files = [f for f in glob.glob(os.path.join(root, "lessons", "**", "*.md"), recursive=True)
              if os.path.basename(f) != "README.md"]
 kinds = {"checklist-item", "rule", "testing-rule", "module-rule", "agent-rule"}
-targets_ok = lambda t: os.path.exists(os.path.join(root, "template", t)) or t.startswith("harness/modules/") or t.startswith("project/")
+targets_ok = lambda t: os.path.isfile(os.path.join(root, "template", t))
 secretish = re.compile(r"(sk_live_|sk_test_|ghp_[A-Za-z0-9]{20}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY|eyJhbGciOi|xox[bp]-)")
 deny = os.environ.get("DENY")
 deny_re = re.compile(deny, re.I) if deny else None
@@ -36,6 +36,7 @@ for f in sorted(files):
     k = field("kind")
     if k and k not in kinds: errors.append(f"{rel}: unknown kind '{k}'")
     t = field("target")
+    t = t and re.sub(r"\s+#.*$", "", t).strip('"')
     if t and not targets_ok(t): errors.append(f"{rel}: target '{t}' not found in template/")
     a = field("added")
     if a and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", a): errors.append(f"{rel}: added must be YYYY-MM-DD")

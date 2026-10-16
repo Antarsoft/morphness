@@ -18,7 +18,16 @@ permissions:
   contents: read
 
 jobs:
+  # An automatic deploy waits for CI on the pushed commit; a manual run is the owner's call.
+  # morph-init: fill, or without the push trigger or without ci.yml, delete this job and the deploy job's `needs` and `if` lines.
+  ci:
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/ci.yml
+
   deploy:
+    needs: ci
+    # Runs when CI passed, or was skipped because the owner started the run by hand.
+    if: ${{ !cancelled() && (needs.ci.result == 'success' || (github.event_name == 'workflow_dispatch' && needs.ci.result == 'skipped')) }}
     runs-on: ubuntu-24.04   # pinned: bump it in its own PR
     environment: ${{ inputs.environment || '{{environments.first}}' }}
     concurrency:

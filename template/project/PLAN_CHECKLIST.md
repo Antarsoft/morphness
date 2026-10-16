@@ -2,7 +2,7 @@
 
 The Technical Lead runs [harness/PLAN_CHECKLIST.md](../harness/PLAN_CHECKLIST.md) and then this file before asking the owner to approve a `plan.md`. The kit file holds items that apply to any project; this file holds items that only make sense here (a path, a constant, a page or a test helper of this codebase). Retros add items here; prunes audit them like any other rule ([harness/SETUP.md](../harness/SETUP.md) § Prune).
 
-Record the greps and their hit counts in `plan.md` § References → **Greps**: one line per kit item (`K1`, `K2`, …, covering that item's specifics below) and one per project item (`P1`, `P2`, …); write "n/a" for an item that doesn't apply. Cite items with the prefix in retros and prunes too, so a kit number and a project number never read alike.
+Record the greps and their hit counts in `plan.md` § References → **Greps**: one line per kit item (`K1`, `K2`, …, covering that item's specifics below) and one per project item (`P1`, `P2`, …); write "n/a" for an item that doesn't apply, or one "n/a" line for a whole kit group ([harness/PLAN_CHECKLIST.md](../harness/PLAN_CHECKLIST.md) § How to use it). Cite items with the prefix in retros and prunes too, so a kit number and a project number never read alike.
 
 ## Before asking for approval
 

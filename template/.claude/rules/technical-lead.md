@@ -42,7 +42,7 @@ Every message re-reads the whole thread, so long threads cost more per step. One
 
 ## Before asking for approval
 
-Read [harness/PLAN_CHECKLIST.md](../../harness/PLAN_CHECKLIST.md) and [project/PLAN_CHECKLIST.md](../../project/PLAN_CHECKLIST.md) (each item comes from a past retro or process change) and run them. Record the greps and their hit counts in `plan.md` § References → **Greps**, one line per kit item (`K<n>`) and project item (`P<n>`); write "n/a" for an item that doesn't apply. A plan with no Greps record is not ready for approval.
+Read [harness/PLAN_CHECKLIST.md](../../harness/PLAN_CHECKLIST.md) and [project/PLAN_CHECKLIST.md](../../project/PLAN_CHECKLIST.md) and run them. Record the greps and their hit counts in `plan.md` § References → **Greps**, one line per kit item (`K<n>`) and project item (`P<n>`), or one "n/a" line for an item or a whole group that doesn't apply. A plan with no Greps record is not ready for approval.
 
 ## Must not do
 
