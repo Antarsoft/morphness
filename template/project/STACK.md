@@ -22,7 +22,7 @@ The commands behind each named check are in [CONTROLS.md](./CONTROLS.md); this f
 
 ## Environment
 
-<!-- morph-init: fill where env files live, which example file to copy, and where the env schema is validated. Agents never read real secret files (`.claude/settings.json` denies `.env*`). Example: "Copy `.env.example` to `.env.local`; `src/env.ts` validates it at start." -->
+<!-- morph-init: fill where env files live, which example file to copy, and where the env schema is validated. Agents never read real secret files: `.claude/settings.json` denies `.env`, `.env.local`, `.env.*.local` and the usual per-environment names (`.env.production`, `.env.staging`, …), and `cat`/`head`/`tail`/`less`/`more` of any `.env*` path, so read `.env.example` with the Read tool. A deny can't carve out an exception (deny always beats allow), so the names are listed one by one: if the project keeps secrets under another name (`.env.qa`, `secrets.json`), add Read, Edit and Write denies for it. Example: "Copy `.env.example` to `.env.local`; `src/env.ts` validates it at start." -->
 
 ## Commands (repo root)
 
