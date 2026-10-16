@@ -42,7 +42,7 @@
 
 **Process**
 
-1. The Technical Lead creates `_harness/research/<YYYY-MM-DD>-<slug>.md` from [templates/research.md](./templates/research.md) and writes § Question, § Scope and § Context, and the researcher effort (`project/HARNESS_AGENTS.md` § Effort per feature).
+1. The Technical Lead creates `_harness/research/<YYYY-MM-DD>-<slug>.md` from [templates/research.md](./templates/research.md) and writes § Question, § Scope and § Context, and the researcher effort ([SETUP.md](./SETUP.md) § Effort per feature).
 2. The Technical Lead launches the **researcher** subagent (Agent tool, the variant for that effort) with the file's absolute path. Two independent questions (for example one about the repo and one on the web) can go to two researchers at once, each with its own file.
 3. The researcher, read-only, fills the findings, recommendation and sources, and hands back.
 4. The Technical Lead re-opens the sources behind the findings the recommendation depends on (§ Check), then records § Decision: a feature to plan (in full mode, with the research file linked from `plan.md` § References), a light-mode change, or no action. Decisions that change product behaviour, add a step for the human or cost money are the human's. With the decision it fills the three § How it went lines: whether the check held, whether the scope and researcher effort were right, and whether the answer got used, and the header's **Cost** line from `bash scripts/feature-cost.sh` (with `--since` when the session did other work first).

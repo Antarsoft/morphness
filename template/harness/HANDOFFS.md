@@ -31,7 +31,7 @@
 7a. QA scope: **UI change**, **Legal wording**, **Data-access feature**, **Needs live app/services** (which ACs need the running app to reach its database or other services), **Login needed**, **Build-time env**, **By connector**, **Human steps**
 7b. Agent effort: Full-stack and QA level with a reason, and **Code review before QA**
 8. Open questions (suggested defaults)
-9. Approval: `pending` | `approved`, date, approver
+9. Approval: approver and date (whether it is approved is the **Status** line)
 10. Decisions: one dated line per decision the human makes in chat after approval, written the same turn (§ Threads)
 
 Copy from [templates/plan.md](./templates/plan.md).

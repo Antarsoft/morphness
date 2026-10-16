@@ -79,7 +79,7 @@ Some paths can break pages or features they don't name: shared packages, the dat
 
 ### Documentation paths
 
-Several rules below treat a documentation-only change differently. Documentation means `_harness/`, `docs/`, `harness/`, `project/`, `.claude/`, `.agents/` the root `README`, `LICENSE` and any `*.md` outside CI configuration, unless `project/CONTROLS.md` § Documentation paths says otherwise. A path with a `..` segment never counts.
+Several rules below treat a documentation-only change differently, and CI skips its checks on one. This is the only list; `project/CONTROLS.md` § Documentation paths holds only this project's additions and removals. Documentation means `_harness/`, `docs/`, `harness/`, `project/`, `.claude/agents/`, `.claude/rules/`, the root `README` and `LICENSE`, and any `*.md` outside CI configuration. Files that run or set permissions are never documentation, even under those folders: `.claude/settings.json`, hook scripts, and skill scripts under `.claude/skills/` or `.agents/` (a change there gets every check). A path with a `..` segment never counts.
 
 ### Data-access features (`plan.md` → **Data-access feature: yes**)
 

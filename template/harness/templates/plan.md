@@ -62,8 +62,8 @@ Each framework or library behaviour the plan depends on, with the source that co
 
 Pick per feature; the human approves it with the plan. Levels and criteria: `harness/SETUP.md` § Effort per feature; subagent names: `project/HARNESS_AGENTS.md`.
 
-- **Full-stack:** medium | high | xhigh (or a trial variant from `_harness/LEARNINGS.md` § Trials): one-line reason. A pattern-copy plan is `medium` and names the file it copies, unless it touches a risk area (`risk_areas` in `harness.config.yml`). A large feature with an `xhigh` core and a sizeable ordinary part is split into two plans by risk.
-- **QA:** medium | high: one-line reason (`high` for a data-access feature or a risk area).
+- **Full-stack:** medium | high | xhigh (or a trial variant from `_harness/LEARNINGS.md` § Trials): one-line reason. A `medium` plan names the file it copies.
+- **QA:** medium | high: one-line reason.
 - **Code review before QA:** yes (Full-stack xhigh) | no. See `harness/SETUP.md` § Code review before QA.
 
 ## Acceptance criteria
@@ -92,7 +92,8 @@ Full-stack **must** pass the `before_qa` checks in `harness/CONTROLS.md` § Befo
 
 ## Approval
 
-- **State:** pending | approved
+The **Status** line at the top records whether the plan is approved; this section records who approved it and when.
+
 - **Approver:**
 - **Date:**
 
