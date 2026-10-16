@@ -59,11 +59,11 @@ Steps QA runs by hand when the UI changed, picking the ones that apply.
 
 ## Documentation paths
 
-A diff that touches only these paths lets QA reuse an earlier full-suite result ([harness/CONTROLS.md](../harness/CONTROLS.md)):
+The list is [harness/CONTROLS.md](../harness/CONTROLS.md) § Documentation paths. This project's changes to it:
 
-`_harness/`, `docs/`, `harness/`, `project/`, `.claude/`, `*.md` outside `.github/`.
+- None.
 
-<!-- morph-init: fill extra documentation-only paths, or remove one the project builds from (for example a docs site whose markdown is compiled into pages). -->
+<!-- morph-init: list extra documentation-only paths, or a path to remove from the kit's list because the project builds from it (for example a docs site whose markdown is compiled into pages). Leave "None." when there are none. -->
 
 ## CI
 

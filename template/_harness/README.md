@@ -21,6 +21,7 @@ features/
         progress.md
       QA/
         qa-result.md
+      steps.md         # TL: the human's steps at QA pass (roadmap module off; on, under docs/versions/)
 research/              # research mode: <YYYY-MM-DD>-<slug>.md, one question each
 learnings/             # one learnings file per feature until the next prune
 prunes/                # one prune proposal per prune: <YYYY-MM-DD>.md

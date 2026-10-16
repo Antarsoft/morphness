@@ -53,18 +53,9 @@ Feature threads (Technical Lead):
   judgement calls. Put those in the steps file.
 ```
 
-## Thread rules (in full: `harness/HANDOFFS.md` § Threads)
+## Thread rules
 
-- **Every message wakes the whole thread.** A thread re-reads its history on each message, so send
-  nothing into a thread that needs no action. An "ok" or "thanks" costs a full turn.
-- **Long threads cost more per step.** Hand over to a new thread after a natural break rather than
-  running several PRs in one.
-- **Decisions in files, not chat.** A handed-over thread must leave nothing in chat that the files
-  don't hold.
-- **Shared lines between threads.** When two threads would edit the same line of a shared file, the
-  thread whose plan was approved first owns it; the other plans around it.
-- **Background agents.** A thread that launches a background agent checks for signs of life on a
-  timer (one cheap shell command) and relaunches it if it has gone quiet.
+The thread rules (one feature and one PR per thread, nothing sent into a thread that needs no action, decisions in files, shared lines between threads, background agents) are in `harness/HANDOFFS.md` § Threads and § Background agents. The playbook above repeats the few a coordinator needs, because Project instructions are read before the repo.
 
 ## On install
 

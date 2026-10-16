@@ -89,6 +89,7 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
   Technical Lead merge ready feature PRs into the integration branch once the merge gate holds).
   The rule spells out what counts as the human asking, production merges stay the human's, and
   `.claude/settings.json` prompts on every merge command. `/morph-init` asks; `/morph-doctor` checks.
+
 ## 2026-10-13.2
 
 - Releases can now go out more than once a day: a later one adds its number to the date

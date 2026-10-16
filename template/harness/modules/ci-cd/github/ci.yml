@@ -31,7 +31,7 @@ jobs:
           fetch-depth: 0
 
       # A docs-only PR skips the steps below and still succeeds, so a required check never hangs.
-      # DOCS is a regex for the documentation paths in project/CONTROLS.md; empty means always run.
+      # DOCS is a regex for the documentation paths (harness/CONTROLS.md, plus project/CONTROLS.md changes); empty means always run.
       - name: scope
         id: scope
         env:

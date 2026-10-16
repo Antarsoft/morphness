@@ -33,24 +33,7 @@ The Technical Lead runs in the main chat, so its model is the session's, not a f
 
 ## Effort per feature
 
-Each `plan.md` has an **Agent effort** section naming the Full-stack and QA level, with a one-line reason. The owner approves it with the plan. Effort is set explicitly so runs don't depend on each person's session default.
-
-| Role | Min | Default | Max | Not used |
-|------|-----|---------|-----|----------|
-| Full-stack | `medium` | `high` | `xhigh` | `low` (too careless for shipped code), `max` (slow and costly; little gain over `xhigh` at normal feature sizes) |
-| QA | `medium` | `high` | `high` | `low`; `xhigh` and above (QA works through a fixed AC list, so extra depth pays off less) |
-| Researcher | `medium` | `medium` | `high` | `low`; `xhigh` and above. Set on the research file's **Researcher effort** line, not in a plan |
-
-<!-- morph-init: fill the defaults from harness.config.yml → agents.fullstack.default and agents.qa.default if they differ from the table. -->
-
-**Choosing a level**
-
-- **`medium`**: a **pattern-copy plan**, one that names an existing file or feature it copies (a page, form, settings field, spec or doc) and adds no logic beyond it. Also renames, config or version bumps, and doc-heavy changes.
-- **`high`** (default otherwise): normal feature work with new logic, such as a new flow, a new route or data path, or a page that doesn't follow a single existing pattern.
-- **`xhigh`** (Full-stack only): security, money, tenancy and access control, concurrency, public APIs, new architecture. The Technical Lead runs the read-only code review before QA ([harness/SETUP.md](../harness/SETUP.md) § Code review before QA).
-- **Never `medium` for Full-stack** when the plan touches a risk area below, even when it copies a pattern.
-- **Researcher `high`** when the question is about architecture, touches a risk area, or decides a feature that will run at `xhigh`; `medium` otherwise.
-- **QA is `high`** whenever the plan touches a risk area or says **Data-access feature: yes**, even if Full-stack is `medium`.
+Each `plan.md` has an **Agent effort** section naming the Full-stack and QA level, with a one-line reason; the owner approves it with the plan. The levels, how to pick one and when to split a feature by risk are in [harness/SETUP.md](../harness/SETUP.md) § Effort per feature. This project's defaults are the variants marked "(default)" in § Agents; its risk areas are below. A prune that tunes effort for this project (for example "architecture research defaults to `high`") adds a bullet here.
 
 **Risk areas (never `medium`):**
 
@@ -60,8 +43,6 @@ Each `plan.md` has an **Agent effort** section naming the Full-stack and QA leve
 - **Database:** migrations, access-control policies, tenancy tables.
 - **Public API:** `src/api/v1/`.
 -->
-
-**Split large features by risk.** When a feature has both an `xhigh` core (tenancy guards, money, concurrency, public API, numbers users act on) and a sizeable ordinary part (pages, forms, docs), plan it as two features. The first, at `xhigh`, delivers the risky core with its tests: data layer, server handlers, shared logic. The second, at `high`, builds the UI on top of it. Each gets its own plan, QA pass and steps file. Keep one feature when the ordinary part is small, since a second QA pass then costs more than it saves.
 
 ## Trials
 
@@ -90,27 +71,13 @@ When unsure, the Technical Lead treats a sentence as legal.
 
 ## Where QA can run
 
-Plans list the ACs that need the running app to reach its database under **QA scope → Needs live app/services** ([harness/templates/plan.md](../harness/templates/plan.md)).
-
-**Order for "Needs live app/services" ACs:**
-
-1. **Local stack first.** In any session that can run it, start the local stack ([STACK.md](./STACK.md) § Local stack (QA)), build and start the app against it, and test with the seeded login.
-2. **`deferred: local` only as the fallback**, when the stack can't start. Record the command, its exit code and the error in `qa-result.md` as the reason.
-
-No QA step writes to a shared remote environment: no test users, no seed data, no admin keys for a remote database.
-
-**Agents running at the same time:**
-
-- **One local stack per session.** Two agents that both start, stop or reset the same stack at once collide. Serialize them, or give one a scope that never touches the stack.
-- **A worktree agent starts from the repository's base commit, not the feature branch.** Plan docs and earlier unmerged work are missing from that tree. Pass plan and feature-folder paths as absolute paths in the primary checkout, tell the agent to leave its work uncommitted, and commit and merge its branch back before handing to QA. Work that builds on unmerged feature-branch code runs in the primary checkout instead, with no other agent editing.
+The process (local stack first, `deferred: local` only as the fallback, no QA writes to a shared remote environment, one local stack per session, worktree agents) is in [harness/SETUP.md](../harness/SETUP.md) § Where QA can run. The local stack's commands are in [STACK.md](./STACK.md) § Local stack (QA). This section holds what this project's environments can reach.
 
 | Where | Local stack | Remote app database | Remote APIs and MCPs | Run "Needs live app/services" ACs? |
 |-------|-------------|---------------------|----------------------|------------------------------|
 <!-- morph-init: fill one row per place agents run (harness.config.yml → environment): a local CLI session, a cloud session, a hosted project thread. Say whether each can start the local stack (container runtime available?), reach the remote database (cloud proxies often carry HTTPS only), and reach the remote APIs. Example: "| Claude Code on the web | Works (the start script launches the container daemon) | Not reachable (HTTPS-only proxy) | Works | Yes, on the local stack; else `deferred: local` |". -->
 
 <!-- morph-init: fill the seeded data QA may rely on (logins, fixtures, a second account for isolation checks) and the reset and stop commands. -->
-
-Deferred ACs go into the feature's steps file ([harness/HANDOFFS.md](../harness/HANDOFFS.md) § Steps file). The owner runs them, or asks the Technical Lead to run the QA agent from a local session.
 
 ## QA and the database
 

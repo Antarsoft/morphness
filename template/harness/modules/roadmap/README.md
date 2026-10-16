@@ -47,11 +47,11 @@ At each feature's QA pass the Technical Lead writes the feature's owner-only ste
 - **No row marked next, or more than one:** stop and ask the owner. With `planned` rows, recommend the first in order; with none, ask for the next version and its goal. Once decided, create the version doc and checklist, set the marker, then write the file. Until then the PR waits. With **Steps file:** `none`, set `passed` at once and don't wait.
 - **The next version has no checklist:** create it from the template in the same edit.
 - **An item belongs to a later version** (about that version's launch, not this feature): it goes to that version's doc, § Before launch.
-- **Ticked** in place by the owner when done. **Folded** into the checklist § Owner-only steps from features at each release ([harness/RELEASE.md](../../RELEASE.md)) and at each prune; the folded file is deleted. Until then, what is left for the owner is the checklist plus every file in `steps/`.
+- **Ticked** in place by the owner when done. **Folded** into the checklist § Human-only steps from features at each release ([harness/RELEASE.md](../../RELEASE.md)) and at each prune; the folded file is deleted. Until then, what is left for the owner is the checklist plus every file in `steps/`.
 
 ## Version checklist
 
-`checklist.md` lists what is left for the version: a short **Up next**, the code items grouped by theme, **Carried over** from earlier versions, and **Owner-only steps from features** (one block per folded steps file, heading `### <feature-slug> (<title>)` linking its `qa-result.md`).
+`checklist.md` ([harness/templates/version-checklist.md](../../templates/version-checklist.md)) lists what is left for the version: **Code items** (an optional ordered build list), **Human-only steps from features** (one block per folded steps file, heading `### <feature-slug> (<title>)` linking its `qa-result.md`), **Carried over** from earlier versions, and **Before launch** (launch-only checks no feature owns).
 
 ## Checks before the feature PR
 

@@ -83,7 +83,7 @@ Replace every `{{key}}` in the copied files with its answer. Keys: `project.name
 `human.name`, `human.github` (the owner), `branches.integration`, `branches.production`, `stack.summary`,
 `stack.package_manager`, `stack.toolchain_setup`, `stack.install_cmd`, `cmd.<check-name>`, `models.tl`,
 `models.fullstack`, `models.fullstack_medium`, `models.qa`, `models.qa_medium`, `models.researcher`, `models.researcher_high`, `models.legal`, `morphness.repo`, `morphness.commit`, `morphness.release`,
-and in ci-cd workflow scaffolds `ci.docs_regex` (a regex for the documentation paths in `project/CONTROLS.md`),
+and in ci-cd workflow scaffolds `ci.docs_regex` (a regex for the documentation paths in `harness/CONTROLS.md` § Documentation paths with `project/CONTROLS.md`'s changes; it must not match `.claude/settings.json`, hook or skill scripts),
 `ci.on_drafts` (`ci_cd.on_drafts`, `true` or `false`),
 `environments.names` (the names in `environments`, comma-separated, in order) and `environments.first`
 (the first name), and in `.github/rulesets/environment-branches.json` `branch_protection.refs` (each
@@ -176,7 +176,7 @@ Without the roadmap module, steps files live at `_harness/features/<slug>/<versi
 For each accepted lesson, add its `## Rule` text to its `target` file: in a numbered list (the plan
 checklists), as the next number at the end of the group its tags fit, else at the end; in a file of
 bullets, as a bullet at the end of the section that fits; with no fitting section, under a
-`## Adopted lessons` heading at the end of the file. End it ending with `(lesson: <id>)`. Skip one whose rule already exists in substance.
+`## Adopted lessons` heading at the end of the file. End it with `(lesson: <id>)`. Skip one whose rule already exists in substance.
 Never offer a lesson with `status: superseded` or `in_template: true` (already in the kit).
 Record accepted lesson ids in `_harness/morph-answers.yml` § accepted.
 
