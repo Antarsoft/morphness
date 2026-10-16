@@ -2,7 +2,7 @@
 id: 2026-10-16-ci-cd-ruleset-ask
 title: The ci-cd module no longer blocks applying branch protection
 kind: fix
-release: unreleased
+release: 2026-10-16
 applies_to: { modules: [ci-cd] }
 files:
   - harness/modules/ci-cd/README.md

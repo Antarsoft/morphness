@@ -2,7 +2,7 @@
 id: 2026-10-16-one-owner-per-rule
 title: One owner per rule, and settings and hooks are never "docs only"
 kind: rule
-release: unreleased
+release: 2026-10-16
 applies_to: { modules: [] }
 files:
   - harness/CONTROLS.md

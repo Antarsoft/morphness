@@ -2,7 +2,7 @@
 id: 2026-10-16-checklist-groups
 title: Plan checklist groups can be n/a in one line, and check rows follow the config
 kind: rule
-release: unreleased
+release: 2026-10-16
 applies_to: { modules: [] }
 files:
   - harness/PLAN_CHECKLIST.md

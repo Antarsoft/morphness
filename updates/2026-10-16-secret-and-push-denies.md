@@ -2,7 +2,7 @@
 id: 2026-10-16-secret-and-push-denies
 title: Wider deny rules for env files and pushes to environment branches
 kind: fix
-release: unreleased
+release: 2026-10-16
 applies_to: { modules: [] }
 files:
   - .claude/settings.json

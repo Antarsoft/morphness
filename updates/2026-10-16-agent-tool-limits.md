@@ -2,7 +2,7 @@
 id: 2026-10-16-agent-tool-limits
 title: Researcher and legal writer get real tool limits
 kind: fix
-release: unreleased
+release: 2026-10-16
 applies_to: { modules: [] }
 files:
   - .claude/agents/researcher.md

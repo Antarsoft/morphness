@@ -2,7 +2,7 @@
 id: 2026-10-16-review-skill-fallback
 title: Code review before QA still runs when the review skills are missing
 kind: rule
-release: unreleased
+release: 2026-10-16
 applies_to: { modules: [] }
 files:
   - harness/SETUP.md

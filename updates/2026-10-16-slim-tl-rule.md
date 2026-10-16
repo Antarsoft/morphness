@@ -2,7 +2,7 @@
 id: 2026-10-16-slim-tl-rule
 title: A shorter Technical Lead rule, with the detail in the files that own it
 kind: rule
-release: unreleased
+release: 2026-10-16
 applies_to: { modules: [] }
 files:
   - .claude/rules/technical-lead.md
