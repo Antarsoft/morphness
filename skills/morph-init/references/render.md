@@ -228,7 +228,9 @@ All must pass before committing; fix and re-run on failure.
 9. `scripts/session-start.sh` is executable and parses (`bash -n scripts/session-start.sh`). Don't
    run it here: it installs dependencies. `scripts/prune-counter.sh` runs and prints
    `Prune counter: 0/<loop.prune_every>`. `scripts/feature-cost.sh` is executable and runs without a
-   Python error (it may print `Cost: not measured`, or this session's cost).
+   Python error (it may print `Cost: not measured`, or this session's cost). Both read
+   `harness.config.yml` through `scripts/lib/config.sh`: `bash -c '. scripts/lib/config.sh;
+   config_get branches.integration'` prints the integration branch.
 
 ## 7b. Apply host settings (owner's yes)
 

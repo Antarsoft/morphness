@@ -39,7 +39,7 @@ Merge after: none <!-- or #N, when the merge-order check found an open PR that s
 
 <!-- At ready. What was run and the result. Link the QA record rather than repeating it. For a UI change, screenshots are linked from the thread reply and progress.md § Screenshots; add links here only if the reviewer won't see the thread. -->
 
-- [ ] Named checks before QA: typecheck · lint · unit · build (commands: project/CONTROLS.md)
+- [ ] Named checks before QA: each name in `harness.config.yml` → `checks.before_qa` (commands: project/CONTROLS.md)
 - [ ] Full browser suite on the final commit (when pages, auth or the public API change) <!-- module:browser-e2e -->
 - [ ] Recorded in `qa-result.md` on the final commit <!-- morph-init: fill "and CI passed on this PR" when harness.config.yml → ci_gate is true -->
 
@@ -75,6 +75,7 @@ Merge after: none <!-- or #N, when the merge-order check found an open PR that s
 - Env var changes (the owner sets them in production **before** merging):
   - [ ] `NAME`: new | changed | removed
 - Rollback: project/RELEASE.md § Rollback; database changes are fixed forward (migrations are additive)
+- [ ] Back-merge PR from `{{branches.production}}` into `{{branches.integration}}` (and each middle environment's branch) after the merge: #N (harness/RELEASE.md step 8)
 
 ## Hotfix
 

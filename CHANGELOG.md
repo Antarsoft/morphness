@@ -6,6 +6,17 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Script fixes: `prune-counter.sh` and `feature-cost.sh` read `harness.config.yml` in block or
+  one-line style through one shared reader (`scripts/lib/config.sh`); `feature-cost.sh --since`
+  without a zone means UTC, as documented; the prune counter no longer counts files a prune already
+  folded; `session-start.sh` skips the dependency install when the lockfiles haven't changed.
+- A plan checklist group that doesn't fit the project (UI for a CLI tool, Data for a plan that stores
+  nothing) is marked n/a in one Greps line. The release QA template and the PR template take their
+  check rows from `checks` instead of listing the default checks.
+- ci-cd module: an automatic deploy on push runs CI on that commit first and deploys only when it
+  passes. The back-merge after a release is its own step in `harness/RELEASE.md`, with a box in the
+  PR template.
+
 ## 2026-10-15.2
 
 - Retro action items have a soft limit: `loop.retro_max_items` is the usual number, not a cap. A

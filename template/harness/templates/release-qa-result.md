@@ -26,14 +26,11 @@ From `git log --oneline origin/<production>..origin/<integration>`.
 
 ## Checks ([CONTROLS.md](../../../harness/CONTROLS.md), the full `before_signoff` suite on the tested commit)
 
-| Check (command from `project/CONTROLS.md`) | Exit code | Notes |
-|--------------------------------------------|-----------|-------|
-| `install` | | |
-| `typecheck` | | |
-| `lint` | | |
-| `unit` | | |
-| `build` | | |
-| `e2e-full` (browser-e2e module) | | |
+One row per name in `harness.config.yml` → `checks.before_signoff`, in that order (commands: `project/CONTROLS.md`). A name with no command there is recorded as **not run**.
+
+| Check | Exit code | Notes |
+|-------|-----------|-------|
+| <each `before_signoff` check> | | |
 
 ## Smoke on the release QA environment
 

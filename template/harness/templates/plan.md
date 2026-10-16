@@ -40,7 +40,7 @@ Each framework or library behaviour the plan depends on, with the source that co
 
 ## References
 
-- **Greps:** the commands from the TL's pre-approval checklist (`harness/PLAN_CHECKLIST.md`, `project/PLAN_CHECKLIST.md`) with hit counts, or "n/a", one line per item (`K<n>` kit, `P<n>` project). A plan with no Greps record is not ready for approval.
+- **Greps:** the commands from the TL's pre-approval checklist (`harness/PLAN_CHECKLIST.md`, `project/PLAN_CHECKLIST.md`) with hit counts, or "n/a", one line per item (`K<n>` kit, `P<n>` project) or one "n/a" line for a group that doesn't apply (`K14–K20 n/a: <reason>`). A plan with no Greps record is not ready for approval.
 - Each reference as `file § section` or `file:line`, never a whole file: agents read what the plan names and carry it in their context for the whole run.
 
 ## QA scope

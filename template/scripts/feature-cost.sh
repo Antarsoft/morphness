@@ -10,13 +10,22 @@
 #
 # Usage: bash scripts/feature-cost.sh [--since <ISO time>] [--branch <name>] [--session <id>[,<id>]]
 #   (no option)  this session and its subagents (CLAUDE_CODE_SESSION_ID, else the newest transcript)
-#   --since      only API calls at or after this time (UTC, e.g. 2026-10-15T09:30); use it when the
-#                session did other work before this feature or task
+#   --since      only API calls at or after this time (UTC unless it names a zone, e.g. 2026-10-15T09:30
+#                or 2026-10-15T13:30+04:00); use it when the session did other work before this feature or task
 #   --branch     every session in this repo, counting only calls made on that git branch (a feature
 #                worked on across several sessions); calls made before the branch existed are missed
 #   --session    these sessions instead of the current one
 
+. "$(cd "$(dirname "$0")" && pwd)/lib/config.sh" || exit 0
 cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)" || exit 0
+
+# Config: cost.track (default true) and cost.prices (default harness/MODEL_PRICES.md).
+if [ "$(config_get cost.track | tr '[:upper:]' '[:lower:]')" = false ]; then
+  echo "Cost: not tracked (cost.track is false in harness.config.yml)"
+  exit 0
+fi
+COST_PRICES="$(config_get cost.prices)"
+export COST_PRICES="${COST_PRICES:-harness/MODEL_PRICES.md}"
 
 if ! command -v python3 >/dev/null 2>&1; then
   echo "Cost: not measured (python3 not found)"
@@ -25,7 +34,7 @@ fi
 
 python3 - "$@" <<'PY'
 import glob, json, os, re, sys
-from datetime import datetime
+from datetime import datetime, timezone
 
 args = sys.argv[1:]
 opts = {"since": None, "branch": None, "session": None}
@@ -37,24 +46,7 @@ while args:
         sys.exit(0)
     opts[key] = args.pop(0)
 
-# Config: cost: { track: true, prices: harness/MODEL_PRICES.md }
-track, prices_path = True, "harness/MODEL_PRICES.md"
-try:
-    for line in open("harness.config.yml", encoding="utf-8"):
-        m = re.match(r"\s*cost:\s*\{(.*)\}", line)
-        if m:
-            body = m.group(1)
-            t = re.search(r"track:\s*(\w+)", body)
-            p = re.search(r"prices:\s*([^,}\s]+)", body)
-            track = not (t and t.group(1).lower() == "false")
-            if p:
-                prices_path = p.group(1).strip("\"'")
-            break
-except OSError:
-    pass
-if not track:
-    print("Cost: not tracked (cost.track is false in harness.config.yml)")
-    sys.exit(0)
+prices_path = os.environ["COST_PRICES"]
 
 # Price table: markdown rows `| model | input | output | cache write 5m | cache write 1h | cache read |`
 # in $ per million tokens; a model cell like `claude-haiku-5-5 (prompt > 100000)` is the rate for
@@ -144,7 +136,7 @@ if opts["since"]:
     try:
         since = datetime.fromisoformat(opts["since"].replace("Z", "+00:00"))
         if since.tzinfo is None:
-            since = since.replace(tzinfo=datetime.now().astimezone().tzinfo).astimezone()
+            since = since.replace(tzinfo=timezone.utc)
     except ValueError:
         print(f"Cost: not measured (--since {opts['since']} is not an ISO time)")
         sys.exit(0)

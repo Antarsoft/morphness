@@ -10,6 +10,8 @@ on:
   # A merge queue runs the same required check on the PR combined with the latest base. Harmless
   # without a queue; without it, a queue that requires this check never finishes.
   merge_group:
+  # The deploy workflow calls this before an automatic deploy, so a push deploys only once CI passes.
+  workflow_call:
 
 permissions:
   contents: read
@@ -39,8 +41,8 @@ jobs:
           DOCS: '{{ci.docs_regex}}'
         run: |
           code=true
-          # A merge queue run always checks everything.
-          if [ "$GITHUB_EVENT_NAME" != merge_group ] && [ -n "$DOCS" ] && ! git diff --name-only "$BASE...HEAD" | grep -vE "$DOCS" | grep -q .; then
+          # Only a pull request can skip: a merge queue run or a pre-deploy call always checks everything.
+          if [ "$GITHUB_EVENT_NAME" = pull_request ] && [ -n "$DOCS" ] && ! git diff --name-only "$BASE...HEAD" | grep -vE "$DOCS" | grep -q .; then
             code=false; echo "Docs-only change: skipping the checks"
           fi
           echo "code=$code" >> "$GITHUB_OUTPUT"

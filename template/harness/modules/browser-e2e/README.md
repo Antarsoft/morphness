@@ -38,7 +38,7 @@ Any change a user can see needs screenshots as proof, listed in `progress.md` §
 
 ## On remove
 
-When the project doesn't choose this module, morph-init deletes this folder and the items below. Screenshots for a UI change stay: they are core (`harness/agents/fullstack-engineer.md` § UI screenshots, the Technical Lead's screenshot check, `project/agents/fullstack-engineer.md` § UI screenshots). Rows and sentences labelled "(browser-e2e module)", "with the `browser-e2e` module" or "when the project has one" (in `harness/CONTROLS.md`, the agent bodies, `.claude/rules/testing.md`, checklist item 19, the release QA template) and the plan template's `n/a (browser-e2e module off)` choice stay as they are; a named check with no command is recorded as **not run**.
+When the project doesn't choose this module, morph-init deletes this folder and the items below. Screenshots for a UI change stay: they are core (`harness/agents/fullstack-engineer.md` § UI screenshots, the Technical Lead's screenshot check, `project/agents/fullstack-engineer.md` § UI screenshots). Rows and sentences labelled "(browser-e2e module)", "with the `browser-e2e` module" or "when the project has one" (in `harness/CONTROLS.md`, the agent bodies, `.claude/rules/testing.md`, checklist item 19) and the plan template's `n/a (browser-e2e module off)` choice stay as they are; a named check with no command is recorded as **not run**.
 
 **Delete these files:** none outside this folder.
 
