@@ -12,7 +12,9 @@ branch, never on the integration or production branch.
 
 Run render.md § Self-checks from the morph-init skill against the current repo (placeholders left,
 fill comments left, JSON parses, relative links resolve, agent frontmatter, every named check in
-`harness.config.yml` § checks has a command in `project/CONTROLS.md`, session-start exits 0). Also:
+`harness.config.yml` § checks has a command in `project/CONTROLS.md`, `scripts/session-start.sh` is
+executable and parses with `bash -n`). Never run `scripts/session-start.sh` itself: it installs
+dependencies, so it is not a read-only check. Also:
 
 - Every module in `modules` has its folder; no folder under `harness/modules/` is missing from
   `modules` (stale rules agents would read).
