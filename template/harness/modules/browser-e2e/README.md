@@ -44,8 +44,8 @@ When the project doesn't choose this module, morph-init deletes this folder and 
 
 **Delete or reword these lines:**
 
-- `harness.config.yml` → `checks`: remove `e2e-full` (and `e2e-targeted`, if listed) from `before_qa` and `before_signoff`.
-- `project/CONTROLS.md` § Named checks: the `e2e-targeted` and `e2e-full` rows. § Cross-cutting paths: the browser-test fixtures and config, if listed.
+- `harness.config.yml` → `checks`: remove `e2e-full` (and `e2e-targeted` and `e2e-repeat`, if listed) from `before_qa` and `before_signoff`.
+- `project/CONTROLS.md` § Named checks: the `e2e-targeted`, `e2e-full` and `e2e-repeat` rows. § Cross-cutting paths: the browser-test fixtures and config, if listed.
 - `project/STACK.md` § Commands: the two **Browser tests** rows; delete § Browser tests.
 - `project/HARNESS_AGENTS.md`: § Browser tests.
 - `project/agents/fullstack-engineer.md` § Read before you start: drop "and § Browser tests" (read § Commands, § Database and § Local stack (QA)).

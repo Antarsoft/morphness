@@ -12,7 +12,9 @@ branch, never on the integration or production branch.
 
 Run render.md § Self-checks from the morph-init skill against the current repo (placeholders left,
 fill comments left, JSON parses, relative links resolve, agent frontmatter, every named check in
-`harness.config.yml` § checks has a command in `project/CONTROLS.md`, session-start exits 0). Also:
+`harness.config.yml` § checks has a command in `project/CONTROLS.md`, session-start exits 0). A row
+whose command is "none" or "not configured" (written by an older install): offer to delete it, its
+`project/STACK.md` row and its name from `checks`, as render.md § 3b now does. Also:
 
 - Every module in `modules` has its folder; no folder under `harness/modules/` is missing from
   `modules` (stale rules agents would read).

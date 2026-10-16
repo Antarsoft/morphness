@@ -66,7 +66,7 @@ nothing else changes. → `apps` (name, path, stack; `e2e` from the browser-e2e 
 "These are the checks agents run before QA and before sign-off. I've filled the commands I could find:"
 then a table of named checks (`install`, `typecheck`, `lint`, `unit`, `build`, `e2e-targeted`,
 `e2e-full`, `e2e-repeat`) with the suggested command or "none". Ask the user to correct or say "none" for a check the
-project doesn't have. A new project with no tooling yet gets "none" for all and a note that the first
+project doesn't have (render.md § 3b then leaves it out). A new project with no tooling yet gets "none" for all and a note that the first
 feature should add them. Also ask: "Any other checks agents should run (a migrations check, a
 security scan)?" and add each as a named check. Follow-up: "Which must pass before QA, and which before sign-off?" Suggest
 `before_qa`: everything but e2e; `before_signoff`: everything. → `cmd.*`, `checks.*`

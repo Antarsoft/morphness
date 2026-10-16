@@ -90,9 +90,10 @@ and in ci-cd workflow scaffolds `ci.docs_regex` (a regex for the documentation p
 distinct environment branch as `"refs/heads/<branch>"`, comma-separated) and
 `branch_protection.required_approvals` (a number).
 Model placeholders (`{{models.tl}}` etc.) take the model alias the user accepted. Check commands
-(`{{cmd.<name>}}`) take the command, or the text `none (add when the project has one)`.
-In `scripts/session-start.sh` the commands sit inside single quotes: write an empty string for
-"none", and escape any `'` in a command as `'\''`.
+(`{{cmd.<name>}}`) take the command. A check the project doesn't have gets no placeholder text: its
+rows go, per § 3b.
+In `scripts/session-start.sh` the commands sit inside single quotes: write an empty string when there
+is no toolchain setup or install command, and escape any `'` in a command as `'\''`.
 
 `<!-- morph-init: fill … -->` comments are prose to write: fill each from the answers and the repo
 scan, in the style of the surrounding file, then delete the comment. Where there's nothing to say
@@ -144,9 +145,12 @@ merge tool of any other code-host connector the project uses. With `integration`
 Technical Lead merges into the integration branch without a prompt) and say in the hand-off that
 production merges stay the owner's by rule and by branch protection.
 
-A named check the project doesn't have: delete its row from `project/CONTROLS.md` § Named checks and
-its name from `checks.*`, rather than writing a placeholder command. Agents then record it as
-**not run** wherever the kit names it. Write real commands inside the backticks, never prose.
+A named check the project doesn't have (the user said "none" in Q5): delete its row from
+`project/CONTROLS.md` § Named checks and § Check scope, its row from `project/STACK.md` § Commands,
+and its name from `checks.*`. Never write a placeholder such as "none" or "not configured" instead.
+Agents then record it as **not run** wherever the kit names it, and the feature that adds the check
+adds its row and name back. A new project with no tooling yet can end with empty `checks` lists.
+Write real commands inside the backticks, never prose.
 
 Add `.claude/settings.local.json` to `.gitignore` (create the file if missing).
 
@@ -205,7 +209,9 @@ All must pass before committing; fix and re-run on failure.
    links resolve where the template is copied), `project/**` and `.claude/**` (except `.claude/skills/`, which holds installed third-party skills)
    resolves to a file that exists. Links to docs a module creates (the roadmap) count once that module's On install ran.
 5. `.claude/agents/*.md` frontmatter has `name`, `description` and `model`.
-6. Each named check in `checks.before_qa` has a command or "none" in `project/CONTROLS.md`.
+6. Each named check in `checks.*` has a row with a real command in `project/CONTROLS.md` § Named
+   checks, and no row there names a check missing from `checks.*` or has "none" or "not configured"
+   as its command.
 7. With the ci-cd module, each workflow it wrote parses as YAML, has no `# morph-init: fill` line
    left (`grep -rn 'morph-init: fill' .github/workflows`), and passes `actionlint` when it is installed.
    Its CI steps run the `before_qa` commands exactly as `project/CONTROLS.md` writes them.
