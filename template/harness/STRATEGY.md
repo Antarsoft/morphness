@@ -124,7 +124,7 @@ Writes `Legal/legal-copy.md` for the legal portion of a plan, before approval, a
 
 ## Agent 5: Researcher
 
-Answers one question per research file, read-only, with every claim cited (`file:line` or a URL with the date read), and writes only the sections of that file below its first line. It never edits code, plans or other harness files, never writes to a remote environment, and never decides: the Technical Lead checks its findings and records the decision. Role body: [agents/researcher.md](./agents/researcher.md). Subagents can't start subagents, so only the Technical Lead launches it.
+Answers one question per research file, read-only, with every claim cited (`file:line` or a URL with the date read), and writes only the sections of that file between its two lines. It never edits code, plans or other harness files, never writes to a remote environment, and never decides: the Technical Lead checks its findings and records the decision. Role body: [agents/researcher.md](./agents/researcher.md). Subagents can't start subagents, so only the Technical Lead launches it.
 
 ## Skills, MCPs, guides, rules
 

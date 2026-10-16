@@ -85,7 +85,7 @@ See [MODES.md](./MODES.md). Summary:
 | Full-stack engineer | Agent tool subagent with the path to `plan.md`; implements in the codebase; edits only `Development/progress.md` under that feature |
 | QA engineer | Agent tool subagent; reads `plan.md` and `progress.md`; runs the checks in [CONTROLS.md](./CONTROLS.md); edits only `QA/qa-result.md` |
 | Legal writer | Agent tool subagent (legal module); edits only `Legal/legal-copy.md` |
-| Researcher | Agent tool subagent with the absolute path of its research file; read-only; edits only that file below its first line ([MODES.md](./MODES.md) § Research mode) |
+| Researcher | Agent tool subagent with the absolute path of its research file; read-only; edits only that file between its two lines ([MODES.md](./MODES.md) § Research mode) |
 | Model and effort | Set in `.claude/agents/*.md`; the plan's **Agent effort** picks the variant (`project/HARNESS_AGENTS.md`) |
 
 Always pass **absolute paths** to the feature version directory in subagent prompts. Pick the subagent variant the plan names; never rely on the session's default model or effort.

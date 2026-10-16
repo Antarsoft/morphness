@@ -7,7 +7,7 @@
 **Status:** open | answered | planned (`<feature-slug>`) | no action  
 **Cost:** `Cost ≈ $…` line from `bash scripts/feature-cost.sh`, filled with the decision (or `not measured (<reason>)`)
 
-Process: `harness/MODES.md` § Research mode. The Technical Lead writes the sections down to the line; the researcher writes the sections below it; the Technical Lead closes the file.
+Process: `harness/MODES.md` § Research mode. The Technical Lead writes the sections above the first line; the researcher writes only the sections between the two lines; the Technical Lead writes the sections below the second line and closes the file.
 
 ## Question
 

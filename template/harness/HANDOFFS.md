@@ -10,7 +10,7 @@
 | `Plan/review.md` | Technical Lead | Technical Lead only | Pre-QA code review findings, `xhigh` Full-stack only ([SETUP.md](./SETUP.md) § Code review before QA) |
 | `Plan/retro.md` | Technical Lead | Technical Lead only | Retrospective after pass or escalation ([templates/retro.md](./templates/retro.md), [SETUP.md](./SETUP.md) § Retrospective) |
 | `Legal/legal-copy.md` | Legal writer | Legal writer only | Exact legal sentences and their checks; only when the plan says **Legal wording: yes** ([modules/legal/](./modules/legal/README.md)) |
-| `_harness/research/<date>-<slug>.md`, `Research/<topic>.md` | Technical Lead | TL above the first line and § Check, § Decision; researcher only the sections between ([templates/research.md](./templates/research.md)) | One question with cited findings ([MODES.md](./MODES.md) § Research mode) |
+| `_harness/research/<date>-<slug>.md`, `Research/<topic>.md` | Technical Lead | TL above the first line and below the second (§ Check, § Decision, § How it went); researcher only the sections between the two lines ([templates/research.md](./templates/research.md)) | One question with cited findings ([MODES.md](./MODES.md) § Research mode) |
 | `Development/progress.md` | Full-stack engineer | Full-stack engineer only | Tracker and validation |
 | `QA/qa-result.md` | QA engineer | QA engineer only | Verdict and evidence |
 | `_harness/learnings/<slug>-v<version>.md` | Technical Lead | Technical Lead; the prune folds it | Retro entry and action items ([templates/learnings-entry.md](./templates/learnings-entry.md)) |
