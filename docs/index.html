@@ -228,9 +228,9 @@ footer p { margin: 6px 0; }
       <div class="card"><h3>Plan first, then build</h3><p>The Technical Lead writes a plan with testable acceptance criteria and waits for your approval before any code is written.</p></div>
       <div class="card"><h3>QA is never skipped</h3><p>A separate QA agent runs your checks and records evidence for every criterion, so "done" means verified, not claimed.</p></div>
       <div class="card"><h3>Learns from its mistakes</h3><p>After every feature, a short retro turns what went wrong into rules. Every ten features, a prune audits them: the ones that caught problems stay, the ones that never fired go.</p></div>
-      <div class="card"><h3>Works on any codebase</h3><p>New or existing repos, any language or framework. It keeps your <code>CLAUDE.md</code>, shows a diff for settings and lands everything on a branch you review.</p></div>
-      <div class="card"><h3>Safe by default</h3><p>Secrets and pushes to protected branches are denied from the first install. Every agent reads the rule: never write to a shared remote environment.</p></div>
-      <div class="card"><h3>Yours to configure</h3><p>Branches, checks, modules, risk areas, models and effort live in one <code>harness.config.yml</code>. Every rule and checklist is a Markdown file in your repo.</p></div>
+      <div class="card"><h3>Works on any codebase</h3><p>New or existing repos, monorepos with several apps, and folders that aren't a git repo or online yet. Any language or framework. It keeps your <code>CLAUDE.md</code>, shows a diff for settings and lands everything on a branch you review.</p></div>
+      <div class="card"><h3>Safe by default</h3><p>Secrets and pushes to protected branches are denied from the first install, and every merge command asks you first. Anything a connector would change runs only after your yes in chat, and every agent reads the rule: never write to a shared remote environment.</p></div>
+      <div class="card"><h3>Yours to configure</h3><p>Branches, environments, checks, modules, risk areas, models and effort live in one <code>harness.config.yml</code>. Every rule and checklist is a Markdown file in your repo.</p></div>
     </div>
   </div>
 </section>
@@ -241,9 +241,9 @@ footer p { margin: 6px 0; }
     <p class="sub">You talk to the Technical Lead in the main chat. It plans, delegates and never writes code itself.</p>
     <ol class="steps-strip">
       <li><b>Plan</b>The Technical Lead writes acceptance criteria. You approve.</li>
-      <li><b>Build</b>Full-stack builds the approved plan and its tests.</li>
-      <li><b>QA</b>QA runs your checks. A fail goes back to Full-stack.</li>
-      <li><b>Retro</b>Up to three action items become rules, with your say.</li>
+      <li><b>Build</b>Full-stack builds the approved plan and its tests on a draft PR.</li>
+      <li><b>QA</b>QA runs your checks. A pass marks the PR ready; a fail goes back to Full-stack.</li>
+      <li><b>Retro</b>Only the action items its findings call for, plus the feature's cost.</li>
       <li><b>Prune</b>Every ten features: rules that never fired get cut.</li>
       <li><b>Share</b>Rules that fired can become community lessons.</li>
     </ol>
@@ -266,7 +266,7 @@ footer p { margin: 6px 0; }
 <section id="install">
   <div class="wrap">
     <h2>Install</h2>
-    <p class="sub">The setup scans your repo, then asks a short series of questions, each with a suggested answer. It suggests skills, connectors and lessons that fit your stack, and installs only the ones you accept.</p>
+    <p class="sub">The setup scans your repo, then asks a short series of questions in plain words, each with a suggested answer. It suggests skills, connectors and lessons that fit your stack, and installs only the ones you accept. No git repo yet? It starts one, and can create the GitHub repository and its branch protection on your yes.</p>
     <div class="install">
       <div class="card">
         <h3>Ask your agent</h3>
@@ -288,24 +288,27 @@ If Morphness is already installed here, follow its UPDATE.md instead and show me
 /morph-init</pre>
       </div>
     </div>
-    <p class="note">Prefer to copy files yourself? <a href="https://github.com/antarsoft/morphness#-install">scripts/install.sh</a> copies and never overwrites. <b>Needs:</b> Claude Code with plugins, subagents and effort levels; the opus and sonnet models; git and bash. Each feature costs about three agent runs (plan, build, QA) plus a short retro.</p>
+    <p class="note">Prefer to copy files yourself? <a href="https://github.com/antarsoft/morphness#-install">scripts/install.sh</a> copies and never overwrites. <b>Needs:</b> Claude Code with plugins, subagents and effort levels; the opus and sonnet models; git and bash (<code>gh</code> and python3 help, each with a fallback). Each feature costs about three agent runs (plan, build, QA) plus a short retro, and every hand-off shows its estimated dollar cost.</p>
 
     <h3 class="sect">Your first feature</h3>
     <ol class="steps">
       <li>Ask the Technical Lead: <code>plan &lt;feature&gt;</code>.</li>
       <li>Read the plan and its acceptance criteria, then approve it.</li>
-      <li>Full-stack builds it, then QA checks every criterion.</li>
-      <li>You get a steps file (anything only you can do) and a short retro.</li>
+      <li>Full-stack builds it on a draft PR, then QA checks every criterion and the PR is marked ready.</li>
+      <li>You merge, and get a short retro, the feature's cost, and a steps file for anything only you can do. When a connected service can do a step, the Technical Lead offers to, and acts only after your yes.</li>
     </ol>
+    <p>For a small change, ask for light mode. When you want an answer rather than a change, ask a question and the Technical Lead uses research mode.</p>
 
     <h3 class="sect">What lands in your repo</h3>
     <dl class="files">
       <div><dt><code>AGENTS.md</code>, <code>CLAUDE.md</code>, <code>.claude/rules/</code></dt><dd>The rules every session loads.</dd></div>
       <div><dt><code>.claude/agents/</code></dt><dd>Full-stack, QA, researcher and legal-writer subagents at several effort levels.</dd></div>
-      <div><dt><code>harness/</code></dt><dd>The process: lifecycle, handoffs, checks, release, the plan checklist, and how it morphs. Optional modules for Claude Projects, data access, browser e2e, legal wording and a roadmap.</dd></div>
-      <div><dt><code>project/</code></dt><dd>Your project's facts: stack, the commands behind each check, risk areas, effort per area.</dd></div>
-      <div><dt><code>harness.config.yml</code></dt><dd>Branches, modules, named checks, CI gate, risk areas, models and effort, loop limits.</dd></div>
-      <div><dt><code>_harness/</code></dt><dd>Runtime: feature folders, learnings, prunes, releases.</dd></div>
+      <div><dt><code>.claude/settings.json</code></dt><dd>Deny rules for secrets and protected-branch pushes, ask rules on every merge command.</dd></div>
+      <div><dt><code>harness/</code></dt><dd>The process: lifecycle, handoffs, checks, modes (full, light, research), release and environments, the plan checklist, model prices, and how it morphs. Optional modules for Claude Projects, data access, browser e2e, legal wording, a roadmap and CI/CD pipelines.</dd></div>
+      <div><dt><code>project/</code></dt><dd>Your project's facts: stack, the commands behind each check and their scope, risk areas, effort per area, and the official connector for each service you use.</dd></div>
+      <div><dt><code>harness.config.yml</code></dt><dd>Branches, environments, apps, branch protection, who merges, release tags, modules, named checks, CI gate, risk areas, models and effort, cost tracking, loop limits.</dd></div>
+      <div><dt><code>scripts/</code> and <code>.github/</code></dt><dd>The prune counter and feature cost scripts, a PR template, and the branch-protection ruleset.</dd></div>
+      <div><dt><code>_harness/</code></dt><dd>Runtime: feature folders, learnings, research, prunes, releases.</dd></div>
     </dl>
   </div>
 </section>
