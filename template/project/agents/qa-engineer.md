@@ -21,9 +21,11 @@ Delete when no AC ever needs a live database. -->
 
 <!-- morph-init: fill how QA proves a script talks only to the local stack. Example: "Run every command through a wrapper that loads the local env file over the session env and exits unless the database URL points at localhost (a cloud session shell can carry remote values)." -->
 
+<!-- module:data-access -->
 ## Remote read-only checks
 
 <!-- morph-init: fill with the data-access module: the MCP or CLI for stage B, the tool prefix, the project or environment id to target, and that the owner approves each query. Delete otherwise. -->
+<!-- /module:data-access -->
 
 ## Project rules
 

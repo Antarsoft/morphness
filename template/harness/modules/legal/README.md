@@ -49,16 +49,12 @@ When the project doesn't choose this module, morph-init deletes this folder and 
 - `harness/agents/legal-writer.md`
 - `project/agents/legal-writer.md`
 
-**Delete or reword these lines:**
+**Delete the marked text:** every span and line marked `module:legal`, with the command in [harness/README.md](../../README.md) § Modules → **Module markers**.
+
+**Delete or reword these lines** (unmarked: always-loaded, config or code-block text):
 
 - `harness.config.yml` → `agents`: the `legal_writer` line.
 - `CLAUDE.md` § Claude Code notes → **Delegation**: drop ", and `legal-writer` for a plan's legal wording (when the `legal` module is enabled)".
-- `project/HARNESS_AGENTS.md`: in the first sentence drop "and, for legal wording, the **legal writer**" (keep "the **Full-stack engineer** and the **QA engineer**"); delete the `Legal writer` row of § Agents; delete § Legal wording.
-- `harness/STRATEGY.md`: in the first sentence drop ", an optional **legal writer**"; delete the `Legal writer` row of § Agents (high level), the `Legal/` and `legal-copy.md` lines of the folder tree, and § Agent 4: Legal writer.
-- `harness/SETUP.md` § Claude Code execution: the `Legal writer` row.
-- `harness/HANDOFFS.md` § Ownership: the `Legal/legal-copy.md` row.
-- `harness/README.md` § Modules: the `legal` row. In the table of folders, the `agents/` row becomes "Generic role bodies for the Full-stack and QA subagents (project addenda in `project/agents/`)".
-- `_harness/README.md`: the `Legal/` and `legal-copy.md` lines of the folder tree.
-- `harness/templates/qa-result.md`: the **Legal wording (from plan)** line under § Environment and § Legal wording.
+- `harness/STRATEGY.md` and `_harness/README.md`: the `Legal/` and `legal-copy.md` lines of the folder tree.
 
 **Unlink:** every Markdown link left pointing into `harness/modules/legal/` becomes plain text, or goes with its line (`/morph-doctor` fails on a broken link). Find them with `grep -rn 'modules/legal' --include='*.md' . | grep -v '^./harness/modules/'`.

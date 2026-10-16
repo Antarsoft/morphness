@@ -68,9 +68,10 @@ When the project doesn't run the harness from a Claude Project, morph-init delet
 
 **Delete these files:** none outside this folder.
 
-**Delete or reword these lines:**
+**Delete the marked text:** every span and line marked `module:claude-projects`, with the command in [harness/README.md](../../README.md) § Modules → **Module markers**.
+
+**Delete or reword these lines** (unmarked: always-loaded, config or code-block text):
 
 - `harness.config.yml`: delete the `claude_projects` block with its two comment lines above it, and remove `claude-projects` from `environment` and `modules`.
-- `harness/README.md` § Modules: the `claude-projects` row.
 
 **Unlink:** every Markdown link left pointing into `harness/modules/claude-projects/` becomes plain text, or goes with its line (`/morph-doctor` fails on a broken link). Find them with `grep -rn 'modules/claude-projects' --include='*.md' . | grep -v '^./harness/modules/'`.

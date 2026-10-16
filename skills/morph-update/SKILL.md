@@ -27,18 +27,29 @@ asks "what's new?"), do § 1 and § 2 and stop: change nothing, write nothing.
 1. **Check the target.** `harness.config.yml` must exist with no `{{` placeholders; otherwise this
    isn't an installed harness: suggest `/morph-init` and stop. For a full run (not a listing),
    `git status` must be clean; ask the user to commit or stash, never do it yourself.
-2. **Find the source.** You need a clone of the Morphness repo with its history, up to date with
-   its default branch: a folder the user names, or the one [UPDATE.md](../../UPDATE.md) step 2 had
-   them or their agent make. Never download it yourself. When there's none, give the user the
-   command and wait: `git clone --filter=blob:none <repo> <folder outside this repo>`, with `<repo>`
-   from `installed_from.repo` (default `https://github.com/antarsoft/morphness`). For a clone that
-   already exists, ask before `git -C <folder> pull`. A shallow clone won't do: the merge base is an
-   older commit (`git -C <folder> rev-parse --is-shallow-repository` must print `false`).
-   Call it `SRC`, and `HEAD` its newest commit on the default branch.
-3. **Read where this copy stands** from `harness.config.yml` → `installed_from`: `commit`, `release`
+2. **Find the source.** You need a clone of the Morphness repo with its history: a folder the user
+   names, else the shared cache `~/.cache/morphness` (the one [UPDATE.md](../../UPDATE.md) step 2
+   makes, reused by every later update, prune and doctor run on this machine). Never download it
+   yourself. When there's none, give the user the command once and wait:
+   `git clone --filter=blob:none <repo> ~/.cache/morphness`, with `<repo>` from
+   `installed_from.repo` (default `https://github.com/antarsoft/morphness`). A clone that exists:
+   ask once per run before `git -C <folder> pull --ff-only`; in listing mode, when the owner isn't
+   there to answer (a prune), list against the clone as it is, say the date of its newest commit
+   (`git -C <folder> log -1 --format=%cs`) and put the pull in the listing as a question. A shallow
+   clone won't do: the merge base is an older commit (`git -C <folder> rev-parse
+   --is-shallow-repository` must print `false`). Call it `SRC`, and `HEAD` its newest commit on the
+   default branch.
+3. **Check the skills are current.** This skill came from the Morphness plugin; its version is in
+   `.claude-plugin/plugin.json` two folders above this file. Compare it with
+   `SRC/.claude-plugin/plugin.json` → `version` (`YYYYMMDD.N.0`; a legacy `2026.10.12` counts as
+   `20261012.1.0`). When the plugin is older, the notes may expect steps these instructions don't
+   have: say "Update the Morphness plugin first (`/plugin`, then update Morphness) and run this
+   again", and stop a full run there; a listing goes on and ends with the same line. Without the
+   plugin (following UPDATE.md), the skill is read from `SRC`, so skip this step.
+4. **Read where this copy stands** from `harness.config.yml` → `installed_from`: `commit`, `release`
    and `updates` (`applied`, `declined`, `deferred`). An older install has only `repo` and `commit`;
    treat the missing lists as empty.
-4. **Resolve the base** (`BASE`, the commit whose `template/` this copy was last synced to):
+5. **Resolve the base** (`BASE`, the commit whose `template/` this copy was last synced to):
    - `installed_from.commit` when it exists in `SRC` (`git -C "$SRC" cat-file -e <commit>^{commit}`).
    - Else the tag named by `installed_from.release`, when it exists.
    - Else the oldest release tag (the first public release). Release tags are `YYYY-MM-DD`, and a later
@@ -115,7 +126,10 @@ For each accepted kit update:
      for a value you can't find. Show the diff before writing.
    - **New file, unedited file, removal:** as in the table.
 3. **Do the rest of § How to apply:** config keys, rows in `harness/README.md`, a module's
-   § On install, deny rules. A new config key goes into `harness.config.yml` with the template's
+   § On install, deny rules. Adding a module the project didn't install: also copy every span the
+   template marks `module:<name>` (`harness/README.md` § Modules → **Module markers**) into the
+   project's copy of the same file, at the place the template has it, and the unmarked lines its
+   § On remove lists. A new config key goes into `harness.config.yml` with the template's
    comment and the value the owner chose.
 
 For each accepted lesson, follow `skills/morph-init/references/render.md` § 5 (its target file, or
@@ -143,7 +157,7 @@ project file's content beyond the change being applied.
 3. **Commit** the record with the last change and, on the owner's yes, push and open a PR to the
    integration branch. The PR body lists each applied note and lesson with one line, each declined
    or deferred one, and every file that needed a merge, with how conflicts were resolved.
-4. **Leave the clone** where it is: the user or their agent made it and decides when it goes.
+4. **Leave the clone** where it is: the next update, prune or doctor run reuses it.
 
 ## 5. Report
 

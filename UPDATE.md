@@ -8,10 +8,11 @@ leaves the repo (pushing, opening a PR, installing a skill or connector).
 1. **Check the target.** `harness.config.yml` must exist and have no `{{` placeholders. If it's
    missing, Morphness isn't installed: follow [INSTALL.md](INSTALL.md) instead. If it has
    placeholders, the files were copied but never set up: follow INSTALL.md step 3.
-2. **Get the source.** Clone Morphness with its history into a temporary folder outside the target:
-   `git clone --filter=blob:none https://github.com/antarsoft/morphness "$TMPDIR/morphness"` (use the
-   session's scratch folder if there's no `$TMPDIR`; use `installed_from.repo` from
-   `harness.config.yml` if it names a fork). Treat it as read-only.
+2. **Get the source.** Reuse the cached clone at `~/.cache/morphness` when it exists
+   (`git -C ~/.cache/morphness pull --ff-only`). Otherwise clone Morphness with its history there:
+   `git clone --filter=blob:none https://github.com/antarsoft/morphness ~/.cache/morphness` (use
+   `installed_from.repo` from `harness.config.yml` if it names a fork; in a session that can't write
+   to `~`, use its scratch folder). Treat it as read-only.
 3. **Run the update.** Read `skills/morph-update/SKILL.md` from the source in full and follow it with
    the clone as `SRC` and the target root as `T`. It finds the commit this copy last synced to, lists
    the kit updates and community lessons added upstream since then that fit this project, explains
@@ -20,7 +21,8 @@ leaves the repo (pushing, opening a PR, installing a skill or connector).
      skill's § 2 listing. Change nothing.
 4. **Hand off.** End with the skill's § 5 report: what was applied, declined or put off, the branch
    or PR, and any steps only the user can do.
-5. **Clean up.** Delete the temporary clone.
+5. **Keep the clone.** Later updates, prunes and health checks reuse it; delete a clone made in a
+   scratch folder.
 
 The installed harness belongs to the project. Never overwrite a file the project edited without
 showing the merge and getting the user's yes, never touch `_harness/` history, and never install a

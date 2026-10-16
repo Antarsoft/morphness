@@ -1,6 +1,6 @@
 # Harness strategy: agents and folders
 
-The harness uses **three agents** with fixed responsibilities, a read-only **researcher**, an optional **legal writer**, and a **versioned folder** per feature.
+The harness uses **three agents** with fixed responsibilities, a read-only **researcher**<!-- module:legal -->, an optional **legal writer**<!-- /module:legal -->, and a **versioned folder** per feature.
 
 ## Agents (high level)
 
@@ -10,7 +10,7 @@ The harness uses **three agents** with fixed responsibilities, a read-only **res
 | Subagent | **Full-stack engineer** | Implements from `plan.md`; updates `progress.md` |
 | Subagent | **QA engineer** | Validates against acceptance criteria; updates `qa-result.md` |
 | Subagent | **Researcher** | Answers one question about the code or the web with cited evidence; updates its research file ([MODES.md](./MODES.md) § Research mode) |
-| Subagent | **Legal writer** (legal module) | Writes the exact legal sentences a plan needs; updates `Legal/legal-copy.md` ([modules/legal/](./modules/legal/README.md)) |
+| Subagent | **Legal writer** (legal module) | Writes the exact legal sentences a plan needs; updates `Legal/legal-copy.md` ([modules/legal/](./modules/legal/README.md)) | <!-- module:legal -->
 
 Role bodies: [agents/](./agents/) (generic) plus `project/agents/` (this project's addenda). Subagent names, models and effort: `project/HARNESS_AGENTS.md`.
 
@@ -118,9 +118,11 @@ With the roadmap module on, the steps file lives next to the version checklist i
 - Change `plan.md` acceptance criteria (note gaps in `qa-result.md` instead).
 - Write to a shared remote environment (integration or production): no test users, no seed data, no schema changes.
 
+<!-- module:legal -->
 ## Agent 4: Legal writer (legal module only)
 
 Writes `Legal/legal-copy.md` for the legal portion of a plan, before approval, and nothing else. The flow, what counts as legal wording, and the checks: [modules/legal/](./modules/legal/README.md). Subagents can't start subagents, so only the Technical Lead launches it.
+<!-- /module:legal -->
 
 ## Agent 5: Researcher
 

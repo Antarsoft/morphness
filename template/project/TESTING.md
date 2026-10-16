@@ -1,6 +1,6 @@
 # Testing: project specifics
 
-The general test rules (useful tests, not ceremony; regression tests for bug fixes; who adds what) are in [.claude/rules/testing.md](../.claude/rules/testing.md). With the `browser-e2e` module, the browser-test rules are in [harness/modules/browser-e2e/README.md](../harness/modules/browser-e2e/README.md). This file holds what is specific to this project.
+The general test rules (useful tests, not ceremony; regression tests for bug fixes; who adds what) are in [.claude/rules/testing.md](../.claude/rules/testing.md).<!-- module:browser-e2e --> With the `browser-e2e` module, the browser-test rules are in [harness/modules/browser-e2e/README.md](../harness/modules/browser-e2e/README.md).<!-- /module:browser-e2e --> This file holds what is specific to this project.
 
 ## Where tests live
 

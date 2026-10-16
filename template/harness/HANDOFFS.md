@@ -9,7 +9,7 @@
 | Steps file | Technical Lead | Technical Lead; the human ticks items | The human's steps after QA pass, or none (§ Steps file below; [SETUP.md](./SETUP.md) § After QA pass, step 4) |
 | `Plan/review.md` | Technical Lead | Technical Lead only | Pre-QA code review findings, `xhigh` Full-stack only ([SETUP.md](./SETUP.md) § Code review before QA) |
 | `Plan/retro.md` | Technical Lead | Technical Lead only | Retrospective after pass or escalation ([templates/retro.md](./templates/retro.md), [SETUP.md](./SETUP.md) § Retrospective) |
-| `Legal/legal-copy.md` | Legal writer | Legal writer only | Exact legal sentences and their checks; only when the plan says **Legal wording: yes** ([modules/legal/](./modules/legal/README.md)) |
+| `Legal/legal-copy.md` | Legal writer | Legal writer only | Exact legal sentences and their checks; only when the plan says **Legal wording: yes** ([modules/legal/](./modules/legal/README.md)) | <!-- module:legal -->
 | `_harness/research/<date>-<slug>.md`, `Research/<topic>.md` | Technical Lead | TL above the first line and below the second (§ Check, § Decision, § How it went); researcher only the sections between the two lines ([templates/research.md](./templates/research.md)) | One question with cited findings ([MODES.md](./MODES.md) § Research mode) |
 | `Development/progress.md` | Full-stack engineer | Full-stack engineer only | Tracker and validation |
 | `QA/qa-result.md` | QA engineer | QA engineer only | Verdict and evidence |
@@ -65,7 +65,7 @@ Copy from [templates/progress.md](./templates/progress.md).
 2. **Started**, **Ended** (the agent's note from `date`; separate times for Round 2 if used; the TL records real duration)
 3. Environment (branch, commit, OS, checks run, browser if UI)
 4. Test tracker: `| Test case (AC #) | Status | Notes |`
-5. **Data-access validation** when the plan says **Data-access feature: yes** ([modules/data-access/](./modules/data-access/README.md))
+5. **Data-access validation** when the plan says **Data-access feature: yes** ([modules/data-access/](./modules/data-access/README.md)) <!-- module:data-access -->
 6. Optional `## Round 2` for the second QA pass (scoped or full: [agents/qa-engineer.md](./agents/qa-engineer.md) § Round 2)
 7. **Verdict:** `pass` | `fail`, and deferred ACs
 8. Blocking issues (if fail)
@@ -82,7 +82,7 @@ Each project lists its subagents in **`project/HARNESS_AGENTS.md`**. Delegate wi
 2. Full-stack marks dev complete in `progress.md` → the Technical Lead checks it (for a UI change, `progress.md` § Screenshots lists the files and they exist; if not, back to Full-stack) → Agent **QA** (the variant for the plan's QA effort). **Never skip.** Full-stack `xhigh`: the read-only code review in [SETUP.md](./SETUP.md) § Code review before QA runs first.
 3. QA verdict **pass** → steps 4 and 5 below, then the human decides on the merge into the integration branch ([SETUP.md](./SETUP.md) § After QA pass); production ships later in a release ([RELEASE.md](./RELEASE.md)). **Fail** → Full-stack rework (at most `loop.qa_max_rounds` QA rounds per version).
 4. After QA **pass**, the Technical Lead writes the steps file (or none) and sets `plan.md` to `passed` with its **Steps file** line, then hands to the human; for a UI change the reply shows every screenshot. The retro follows without waiting for the human ([SETUP.md](./SETUP.md) § Retrospective).
-5. **Data-access features:** the steps file lists the migrations in order. They reach the integration environment after the feature PR merges, by the project's migration workflow or by the human (`project/RELEASE.md`). Agents never apply them. Once they are applied, the Technical Lead runs a QA stage B pass (read-only, [modules/data-access/](./modules/data-access/README.md)). The feature is done when it passes.
+5. **Features with migrations:** the steps file lists the migrations in order. They reach the integration environment after the feature PR merges, by the project's migration workflow or by the human (`project/RELEASE.md`). Agents never apply them.<!-- module:data-access --> Once they are applied, the Technical Lead runs a QA stage B pass (read-only, [modules/data-access/](./modules/data-access/README.md)). The feature is done when it passes.<!-- /module:data-access -->
 
 The Technical Lead must not implement or QA even if the human says "execute", "run", "develop" or "implement". See `.claude/rules/technical-lead.md`.
 
@@ -132,6 +132,19 @@ Run long checks to completion before handing back. A check longer than the shell
 Write logs and scratch files under the session scratchpad directory, never / or the repo root.
 For any UI change (altered or new UI): save screenshots per harness/agents/fullstack-engineer.md § UI screenshots and list them in progress.md § Screenshots.
 Hand back to the Technical Lead when done.
+```
+
+**Full-stack engineer, light mode** ([MODES.md](./MODES.md) § Light mode; this brief replaces `plan.md`)
+
+```text
+You are the Full-stack engineer for a light-mode change. There is no plan.md: this brief is the whole ask.
+Task: <one or two lines: what to change and why>
+Files: <the paths to change; touch nothing else>
+Out of scope: <anything nearby you must not change>
+Run the before_qa checks in harness/CONTROLS.md that the change touches (commands: project/CONTROLS.md), scoped by § Scoping by what changed.
+Do not create a feature folder or progress.md. Write logs under the session scratchpad directory.
+If the change turns out to need new behaviour, a test of its own, or files beyond the list, stop and hand back: it needs a full plan.
+Hand back to the Technical Lead with: files changed, each check with its scope and exit code, and anything you didn't do.
 ```
 
 **QA engineer**

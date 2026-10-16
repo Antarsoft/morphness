@@ -28,9 +28,9 @@
 
 **Process**
 
-- Single agent in the main session, explicitly assigned as implementer. The Technical Lead still never writes application code: a light-mode code change goes to the Full-stack subagent.
-- No `_harness/` feature folder required, no retro.
-- Still run the applicable named checks if the change touches code ([CONTROLS.md](./CONTROLS.md)).
+- Single agent in the main session, explicitly assigned as implementer. The Technical Lead still never writes application code: a light-mode code change goes to the Full-stack subagent with the light brief in [HANDOFFS.md](./HANDOFFS.md) § Subagent prompt blocks, which replaces `plan.md`.
+- No `_harness/` feature folder required, no QA agent, no retro.
+- Still run the applicable named checks if the change touches code ([CONTROLS.md](./CONTROLS.md)): the `before_qa` checks, scoped by what changed. The record is the PR (or the commit message with no PR): the checks run with their exit codes, under a **Light mode** line saying why the change qualified.
 - With `cost.track` on, the closing message ends with the `Cost ≈ $…` line from `bash scripts/feature-cost.sh` (with `--since <time the task started>` when the session did other work first). It goes in the message only; light mode writes no file for it.
 
 ## Research mode

@@ -16,9 +16,10 @@
 - **Branch:**
 - **Commit / PR:** (`git rev-parse HEAD`; the merge gate checks the final commit)
 - **Checks run:** one line per `before_signoff` check with its exit code (harness/CONTROLS.md § Before QA pass → human handoff), or the reuse record (§ After merging the integration branch)
-- **Data-access feature (from plan):** yes | no | n/a
-- **Legal wording (from plan):** yes | no | n/a
+- **Data-access feature (from plan):** yes | no | n/a <!-- module:data-access -->
+- **Legal wording (from plan):** yes | no | n/a <!-- module:legal -->
 
+<!-- module:data-access -->
 ## Data-access validation
 
 *With the `data-access` module, only when the plan says **Data-access feature: yes**. Copy the stage A table (local, part of this QA pass) from `harness/modules/data-access/README.md` and fill one row per check with its evidence. Delete this section otherwise.*
@@ -26,7 +27,9 @@
 ### Data-access validation: post-apply
 
 *Stage B, read-only on the integration environment, filled in a later short QA pass when the TL asks (after the migrations are applied there). Copy the stage B table from `harness/modules/data-access/README.md`; record the date, the environment id targeted and each query run. Until it runs, write `not run: waiting for the apply`.*
+<!-- /module:data-access -->
 
+<!-- module:legal -->
 ## Legal wording
 
 *With the `legal` module, only when the plan says **Legal wording: yes**. One row per sentence in `<feature>/Legal/legal-copy.md`. A missing or reworded sentence is a fail. Delete this section otherwise.*
@@ -34,6 +37,7 @@
 | # | Sentence (first words) | Where (`legal-copy.md` target) | Found word for word | Evidence |
 |---|------------------------|-------------------------------|---------------------|----------|
 | L1 | | | yes / no | |
+<!-- /module:legal -->
 
 ## Test cases (from acceptance criteria)
 

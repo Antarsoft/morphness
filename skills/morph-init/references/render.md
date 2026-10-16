@@ -121,6 +121,10 @@ App column to `project/RELEASE.md` § Where things deploy, and add each shared p
 depend on to `project/CONTROLS.md` § Cross-cutting paths. With the ci-cd module, write one deploy job
 per app that has `workflow` for some environment (the deploy scaffold's fill comment).
 
+`check_scope` (answers file only, not a config key): one row per entry in `project/CONTROLS.md`
+§ Check scope (`paths` entries list their globs in the last column); an empty list writes the "None:
+every check runs in full." line.
+
 `branches.default`: when the host's current default branch differs (the scan, or `git remote show origin`), add the owner step from `project/RELEASE.md`'s fill comment to § Manual steps and to the hand-off. For dependency bots already configured (`.github/dependabot.yml`, `renovate.json`) with a default branch that isn't the integration branch, set their target branch to the integration branch.
 
 `branch_protection`: with `enabled: true` on GitHub, keep `.github/rulesets/environment-branches.json`;
@@ -158,8 +162,9 @@ Add `.claude/settings.local.json` to `.gitignore` (create the file if missing).
 
 For each module in `modules`, keep `harness/modules/<name>/` and apply its "On install" section (each
 module README has one). For modules not chosen, follow that module's "On remove" section (the
-files to delete and the lines to drop), then delete its folder, so agents don't read rules that don't
-apply.
+files to delete, the marked text, the lines to drop), then delete its folder, so agents don't read
+rules that don't apply. Marked text goes with the command in `harness/README.md` § Modules → **Module
+markers**; markers of chosen modules stay, so a later removal is just as mechanical.
 
 - `claude-projects`: keep the playbook; the hand-off prints it.
 - `data-access`: add `deny` rules in `.claude/settings.json` for the write tools of any accepted

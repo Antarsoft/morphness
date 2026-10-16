@@ -28,6 +28,16 @@ and are recorded in `skills-lock.json`). Claude Code reads `.claude/skills/`; re
 | Drizzle ORM | `drizzle-orm-patterns` (`giuseppe-trisciuoglio/developer-kit`) | Schema and query patterns; there's no official Drizzle skill. |
 | Browser e2e with Playwright | `playwright-cli` (`microsoft/playwright-cli`) | Lets QA drive a real browser for checks and screenshots. |
 
+### Built-in skills the process uses
+
+Not installed by morph-init: Claude Code ships them. Check they are in this session's skill list and
+say which are missing.
+
+| Skill | Used by | Why | When it's missing |
+|-------|---------|-----|-------------------|
+| `code-review` | `harness/SETUP.md` § Code review before QA (`xhigh` Full-stack work) | Finds bugs outside the acceptance criteria before QA spends a round on them. | The TL runs the same read-only review as a subagent and marks it in `Plan/review.md` (SETUP § Code review before QA). Suggest updating Claude Code. |
+| `security-review` | Same section, when the plan touches a `risk_areas` entry | A deeper pass on auth, ownership and input handling. | Same fallback, briefed with the security files to read in full. |
+
 For any other stack, suggest `find-skills` and say there's no vetted entry yet; offer to search with
 it after install rather than guessing a repo name.
 

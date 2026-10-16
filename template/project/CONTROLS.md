@@ -11,9 +11,9 @@ The handoff rules (who runs which checks, when, and how the output is logged) ar
 | `lint` | `{{cmd.lint}}` | yes |
 | `unit` | `{{cmd.unit}}` | yes |
 | `build` | `{{cmd.build}}` | yes |
-| `e2e-targeted` | `{{cmd.e2e-targeted}}` followed by the specs: the plan's **Targeted e2e specs**, plus the smoke and accessibility specs and every spec the diff adds or edits | yes, for features touching pages, auth or the public API |
-| `e2e-full` | `{{cmd.e2e-full}}` | QA, once on the final commit; Full-stack when the plan says `full` or the diff touches a cross-cutting path |
-| `e2e-repeat` | `{{cmd.e2e-repeat}}` | yes, when a new or changed browser test uses a fake clock, hover or focus timing: five runs, record the pass count |
+| `e2e-targeted` | `{{cmd.e2e-targeted}}` followed by the specs: the plan's **Targeted e2e specs**, plus the smoke and accessibility specs and every spec the diff adds or edits | yes, for features touching pages, auth or the public API | <!-- module:browser-e2e -->
+| `e2e-full` | `{{cmd.e2e-full}}` | QA, once on the final commit; Full-stack when the plan says `full` or the diff touches a cross-cutting path | <!-- module:browser-e2e -->
+| `e2e-repeat` | `{{cmd.e2e-repeat}}` | yes, when a new or changed browser test uses a fake clock, hover or focus timing: five runs, record the pass count | <!-- module:browser-e2e -->
 <!-- morph-init: fill extra named checks the project adds (also add the name to harness.config.yml → checks). Example: "| `integration` | `make test-integration` | yes, for database features |". A check this project doesn't have gets no row here and no name in `checks` (never "none" or "not configured"); agents then record it as **not run** wherever the kit names it. -->
 
 ## Check scope
@@ -71,8 +71,10 @@ The list is [harness/CONTROLS.md](../harness/CONTROLS.md) § Documentation paths
 |------|----------|
 <!-- morph-init: fill the pipeline file, its triggers, what each job runs, and whether it is a required gate (harness.config.yml → ci_gate). Example: "| Pipeline | `.github/workflows/ci.yml`: on pull requests to the integration branch; jobs `checks` (typecheck, lint, unit, build) and `e2e` |". With `ci_gate: false`, say that QA's local run is the gate. With the `ci-cd` module, also list the deploy and migrations workflows and who starts them. With no pipeline at all, write "None: QA's local run is the gate". -->
 
+<!-- module:roadmap -->
 ## Before the feature PR (Technical Lead)
 
 | Check | Command | Required |
 |-------|---------|----------|
 <!-- morph-init: fill with the roadmap module: "| One next version | `grep -c '| **NEXT** |' docs/ROADMAP.md` prints `1`, and that version's checklist exists | yes |" and "| Human steps copied | `plan.md` **Steps file** names `docs/versions/<id>/steps/<slug>.md` with this feature's block, or says `none` | yes |". Without the module, delete this section. -->
+<!-- /module:roadmap -->

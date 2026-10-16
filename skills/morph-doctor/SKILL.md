@@ -21,6 +21,9 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
 - Every module in `modules` has its folder; no folder under `harness/modules/` is missing from
   `modules` (stale rules agents would read).
 - Every agent file under `.claude/agents/` points at a body under `harness/agents/` that exists.
+- Module markers (`harness/README.md` § Modules → **Module markers**): no `module:<name>` marker
+  for a module missing from `modules` (text left from a removal: offer the removal command), and every
+  `<!-- module:<name> -->` opening line has its closing line.
 - **No remote yet** (`git remote` prints nothing): skip every check here that reads the remote or the
   code host, and say so once. With `pr_host` other than `none`, say the project isn't online yet and
   offer to create it (morph-init render.md § 1, "No remote yet").
@@ -80,6 +83,8 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
   owner instead of reporting a failure. `ci_gate: false` with a CI that has passed on the integration
   branch: mention that the owner can make it required and set `ci_gate: true`.
 
+- **Built-in skills:** `code-review` and `security-review` are in this session's skill list. Report
+  each missing one with its fallback (morph-init `references/catalog.md` § Built-in skills).
 - **Service tools:** `project/SKILLS_AND_MCPS.md` § Service tools has a row for every external service
   named in `project/STACK.md` and `project/RELEASE.md`. Compare each row's "Connected as" with the MCP
   tools this session has, and report rows older than 90 days (offer a research-mode re-check, which

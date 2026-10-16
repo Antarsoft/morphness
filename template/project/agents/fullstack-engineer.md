@@ -6,7 +6,7 @@
 
 ## Read before you start
 
-In [project/STACK.md](../STACK.md) read only § Commands, § Database, § Local stack (QA) and § Browser tests; the rest is deploy and tooling notes no feature needs.
+In [project/STACK.md](../STACK.md) read only § Commands, § Database<!-- module:browser-e2e -->, § Browser tests<!-- /module:browser-e2e --> and § Local stack (QA); the rest is deploy and tooling notes no feature needs.
 
 <!-- morph-init: fill any other section a Full-stack run always needs (for example a design doc's token rules before touching UI styling). -->
 
