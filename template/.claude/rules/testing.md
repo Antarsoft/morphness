@@ -11,7 +11,7 @@ Prefer testing **pure logic** (business rules, parsers, calculations, matching, 
 ## When to add tests
 
 - New or changed **business rules**, parsers, aggregations, or shared schemas → unit tests.
-- **Bug fixes** → regression test when reproduction is stable and small. Prove it with a negative test: with the fix taken out (back up the file and restore it; never `git checkout`/`stash`), the new test fails. Record that run in `progress.md`.
+- **Bug fixes** → regression test when reproduction is stable and small. Prove it with a negative test: with the fix taken out (back up the file and restore it; never `git checkout`/`stash`), the new test fails. Record that run in `progress.md`. In bug mode, QA's failing-test commit before the fix is that proof ([harness/MODES.md](../../harness/MODES.md) § Bug mode).
 - **Security boundaries** (webhook signature checks, API or ingest authentication, access policies) → tests for the verification and rejection paths where feasible without live keys.
 - **New UI flows** (a new page, form or auth step): with the `browser-e2e` module, add or extend a browser end-to-end test, following the project's shared fixtures; without it, the plan names the manual or automated check that covers the flow.
 - **New page or dialog reachable from the app** → add it to the project's accessibility scan when it has one (`project/TESTING.md`).
