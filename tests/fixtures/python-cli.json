@@ -1,0 +1,22 @@
+{
+  "about": "Python CLI with uv: one branch, nothing deployed, no modules, no typecheck or browser tests.",
+  "values": {
+    "project.name": "tidy-csv",
+    "project.description": "A command-line tool that cleans CSV files.",
+    "stack.summary": "Python 3.12 CLI (Typer), uv",
+    "stack.package_manager": "uv",
+    "stack.toolchain_setup": "",
+    "stack.install_cmd": "uv sync",
+    "cmd.install": "uv sync",
+    "cmd.lint": "uv run ruff check .",
+    "cmd.unit": "uv run pytest -q"
+  },
+  "branches": { "integration": "main", "production": "main" },
+  "environments": [],
+  "apps": [],
+  "modules": [],
+  "checks": {
+    "before_qa": ["install", "lint", "unit"],
+    "before_signoff": ["install", "lint", "unit"]
+  }
+}

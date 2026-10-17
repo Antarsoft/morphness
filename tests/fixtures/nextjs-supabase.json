@@ -1,0 +1,29 @@
+{
+  "about": "Web SaaS from profiles/web-saas-nextjs-supabase: two branches, two environments, four modules.",
+  "values": {
+    "project.name": "Acme Pages",
+    "project.description": "A/B testing for landing pages.",
+    "stack.summary": "Next.js + Supabase, pnpm monorepo",
+    "stack.package_manager": "pnpm",
+    "stack.toolchain_setup": "corepack enable && corepack install",
+    "stack.install_cmd": "pnpm install",
+    "cmd.install": "pnpm install",
+    "cmd.typecheck": "pnpm typecheck",
+    "cmd.lint": "pnpm lint",
+    "cmd.unit": "pnpm test",
+    "cmd.build": "pnpm build",
+    "cmd.e2e-targeted": "pnpm qa:stack && pnpm test:e2e",
+    "cmd.e2e-full": "pnpm e2e"
+  },
+  "branches": { "integration": "dev", "production": "main" },
+  "environments": [
+    { "name": "dev", "branch": "dev", "deploy": "host", "real_data": false },
+    { "name": "production", "branch": "main", "deploy": "host", "real_data": true }
+  ],
+  "apps": [],
+  "modules": ["roadmap", "data-access", "browser-e2e", "legal"],
+  "checks": {
+    "before_qa": ["install", "typecheck", "lint", "unit", "build", "e2e-targeted"],
+    "before_signoff": ["install", "typecheck", "lint", "unit", "build", "e2e-full"]
+  }
+}

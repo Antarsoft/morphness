@@ -61,4 +61,4 @@ Routing:
 
 ---
 
-Summarised in `_harness/learnings/<feature-slug>-v<version>.md`: yes | no · Action items added to its § Action items: yes | none · Decisions listed in the hand-off: yes · Cost line in the hand-off: yes · Prune counter: N/<loop.prune_every> (DUE | ok)
+Summarised in `_harness/learnings/<feature-slug>-v<version>.md`: yes | no · Action items added to its § Action items: yes | none · Decisions listed in the hand-off: yes · Cost line in the hand-off: yes · Prune counter: N/<loop.prune_every> (DUE | ok) · Rules: X/<loop.rule_budget_kb> KB

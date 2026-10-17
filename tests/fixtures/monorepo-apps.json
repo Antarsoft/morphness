@@ -1,0 +1,32 @@
+{
+  "about": "Turborepo with two apps (web and api), roadmap, browser-e2e and ci-cd modules.",
+  "values": {
+    "project.name": "Shoplane",
+    "project.description": "A storefront and its API.",
+    "stack.summary": "Turborepo: Next.js web app and Hono API, pnpm",
+    "stack.package_manager": "pnpm",
+    "stack.toolchain_setup": "corepack enable",
+    "stack.install_cmd": "pnpm install --frozen-lockfile",
+    "cmd.install": "pnpm install --frozen-lockfile",
+    "cmd.typecheck": "pnpm turbo run typecheck",
+    "cmd.lint": "pnpm turbo run lint",
+    "cmd.unit": "pnpm turbo run test",
+    "cmd.build": "pnpm turbo run build",
+    "cmd.e2e-targeted": "pnpm --filter web exec playwright test",
+    "cmd.e2e-full": "pnpm --filter web e2e"
+  },
+  "branches": { "integration": "dev", "production": "main" },
+  "environments": [
+    { "name": "dev", "branch": "dev", "deploy": "host", "real_data": false },
+    { "name": "production", "branch": "main", "deploy": "host", "real_data": true }
+  ],
+  "apps": [
+    { "name": "web", "path": "apps/web", "stack": "Next.js", "e2e": "apps/web/e2e", "deploy": { "dev": "host", "production": "host" } },
+    { "name": "api", "path": "apps/api", "stack": "Hono on Node 22", "e2e": "none", "deploy": { "dev": "host", "production": "host" } }
+  ],
+  "modules": ["roadmap", "browser-e2e", "ci-cd"],
+  "checks": {
+    "before_qa": ["install", "typecheck", "lint", "unit", "build", "e2e-targeted"],
+    "before_signoff": ["install", "typecheck", "lint", "unit", "build", "e2e-full"]
+  }
+}

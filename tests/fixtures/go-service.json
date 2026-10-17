@@ -1,0 +1,28 @@
+{
+  "about": "Go API with a staging environment on the integration branch, ci-cd and claude-projects modules.",
+  "values": {
+    "project.name": "ledger-api",
+    "project.description": "An HTTP service that records payments.",
+    "stack.summary": "Go 1.23 HTTP service, Postgres",
+    "stack.package_manager": "go modules",
+    "stack.toolchain_setup": "",
+    "stack.install_cmd": "go mod download",
+    "cmd.install": "go mod download",
+    "cmd.typecheck": "go vet ./...",
+    "cmd.lint": "golangci-lint run",
+    "cmd.unit": "go test ./...",
+    "cmd.build": "go build ./..."
+  },
+  "branches": { "integration": "develop", "production": "main" },
+  "environments": [
+    { "name": "dev", "branch": "develop", "deploy": "workflow", "real_data": false },
+    { "name": "staging", "branch": "develop", "deploy": "workflow", "real_data": false },
+    { "name": "production", "branch": "main", "deploy": "workflow", "real_data": true }
+  ],
+  "apps": [],
+  "modules": ["ci-cd", "claude-projects"],
+  "checks": {
+    "before_qa": ["install", "typecheck", "lint", "unit", "build"],
+    "before_signoff": ["install", "typecheck", "lint", "unit", "build"]
+  }
+}

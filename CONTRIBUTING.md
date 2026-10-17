@@ -52,6 +52,12 @@ apply the change to a copy that has morphed. Add a line under **Unreleased** in
 [CHANGELOG.md](CHANGELOG.md) for any change to `template/` or `skills/`. Check both with
 `scripts/check-updates.sh --since origin/main`.
 
+Run `scripts/kit-selftest.sh` before opening the PR (the `selftest` check runs it too). It renders
+`template/` for the sample projects in `tests/fixtures/` the way `/morph-init` would, then runs
+render.md's self-checks, a link check, the template scripts and the guard hook cases in
+`tests/guard-cases.jsonl` on each copy. A new placeholder needs a line in render.md § 3; a new
+guard rule needs a case.
+
 ## Catalog entries
 
 Skills and connectors suggested by morph-init live in `skills/morph-init/references/catalog.md`.
