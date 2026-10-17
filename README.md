@@ -172,6 +172,7 @@ These are defaults; change any of them (see [Make it yours](#-make-it-yours)).
 | `/morph-init` | Install and set up the harness. |
 | `/morph-update` | Review what changed upstream (kit updates and lessons) and bring in what you accept, merged with your edits. |
 | `/morph-doctor` | Check wiring, flag a due prune or stuck features, and count upstream updates waiting. |
+| `/morph-module` | Add or remove an optional module (`add security`, `remove ci-cd`) on a project that already has the harness. |
 | `/morph-share` | Turn rules that fired into a PR to the lessons catalog. |
 
 Morphness runs in plain Claude Code (CLI, desktop, web). If you use a **Claude Project** with a
@@ -186,7 +187,7 @@ and advised settings (coordinator opus · medium, feature threads opus · high).
 | 🤖 `.claude/agents/` | Full-stack (medium, high, xhigh effort), QA (medium, high), researcher (medium, high) and legal-writer subagents. |
 | 🛡️ `.claude/settings.json` | Deny rules for secrets and protected-branch pushes, ask rules on every merge command. |
 | 🗺️ `harness/` | The process: lifecycle, handoffs, checks, modes (full, light, research), release and environments, the plan checklist, model prices, and how it morphs. |
-| 🧩 `harness/modules/` | Optional: Claude Projects, data access (local-first, remote read-only), browser e2e, legal wording, roadmap, CI/CD pipelines. |
+| 🧩 `harness/modules/` | Optional: Claude Projects, data access (local-first, remote read-only), browser e2e, legal wording, roadmap, CI/CD pipelines, security (threat model, secret scanning, dependency audit). |
 | 🏷️ `project/` | Your project's facts: stack, the commands behind each check and their scope, risk areas, effort per area, and the official connector for each service you use. |
 | 🎛️ `harness.config.yml` | Branches, environments, apps, branch protection, who merges, release tags, modules, named checks, CI gate, risk areas, models and effort, cost tracking, loop limits. |
 | 📜 `scripts/` | The prune counter and the feature cost estimate, run at the end of every hand-off. |

@@ -1,5 +1,5 @@
 {
-  "about": "Web SaaS from profiles/web-saas-nextjs-supabase: two branches, two environments, four modules.",
+  "about": "Web SaaS from profiles/web-saas-nextjs-supabase: two branches, two environments, five modules.",
   "values": {
     "project.name": "Acme Pages",
     "project.description": "A/B testing for landing pages.",
@@ -13,7 +13,9 @@
     "cmd.unit": "pnpm test",
     "cmd.build": "pnpm build",
     "cmd.e2e-targeted": "pnpm qa:stack && pnpm test:e2e",
-    "cmd.e2e-full": "pnpm e2e"
+    "cmd.e2e-full": "pnpm e2e",
+    "cmd.secrets": "gitleaks git --log-opts=\"origin/dev..HEAD\" --redact --no-banner && gitleaks dir . --redact --no-banner",
+    "cmd.audit": "pnpm audit --prod --audit-level high"
   },
   "branches": { "integration": "dev", "production": "main" },
   "environments": [
@@ -21,9 +23,9 @@
     { "name": "production", "branch": "main", "deploy": "host", "real_data": true }
   ],
   "apps": [],
-  "modules": ["roadmap", "data-access", "browser-e2e", "legal"],
+  "modules": ["roadmap", "data-access", "browser-e2e", "legal", "security"],
   "checks": {
-    "before_qa": ["install", "typecheck", "lint", "unit", "build", "e2e-targeted"],
-    "before_signoff": ["install", "typecheck", "lint", "unit", "build", "e2e-full"]
+    "before_qa": ["install", "typecheck", "lint", "unit", "build", "e2e-targeted", "secrets", "audit"],
+    "before_signoff": ["install", "typecheck", "lint", "unit", "build", "e2e-full", "secrets", "audit"]
   }
 }
