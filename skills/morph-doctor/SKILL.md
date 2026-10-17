@@ -19,7 +19,8 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
 `checks`, as render.md § 3b now does. Also:
 
 - Every module in `modules` has its folder; no folder under `harness/modules/` is missing from
-  `modules` (stale rules agents would read).
+  `modules` (stale rules agents would read). Offer the fix through `/morph-module add <name>` (a
+  module listed but never installed) or `/morph-module remove <name>` (a folder left behind).
 - Every agent file under `.claude/agents/` points at a body under `harness/agents/` that exists.
 - **Guard hook:** `.claude/settings.json` → `hooks.PreToolUse` runs `scripts/guard.sh`, the script
   exists, `python3` is installed (without it the guard lets every call through), and the push test in
@@ -76,6 +77,12 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
   workflow exists only with `release_tags: true`. `Bash(gh api*rulesets*)` and `Bash(gh api*protection*)`
   are `ask` rules in `.claude/settings.json`, not `deny`: a deny blocks render.md § 7b. Offer to move
   them (update note `2026-10-16-ci-cd-ruleset-ask`).
+- With the security module: `secrets` and `audit` are in `checks.before_qa` and
+  `checks.before_signoff` with commands in `project/CONTROLS.md`; each tool the commands start is
+  installed (its version command; a missing one is the owner's install, reported once); the secrets
+  command redacts (gitleaks: `--redact`); `project/CONTROLS.md` § Security paths is filled; and each
+  row in § Security exceptions has a reason, an approval and a review date that hasn't passed (report
+  each one past it).
 - `release_tags: per-package`: the versioning tool named in `project/RELEASE.md` § Versions has its
   config in the repo (`.changeset/config.json`, `nx.json` → `release`, `release-please-config.json`,
   `lerna.json`), and no Morphness tag workflow is in `ci_cd.tags`. Any other value than `true`,
