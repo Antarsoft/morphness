@@ -36,7 +36,7 @@ Copy every file under `SRC/template/` to the same path in `T`, skipping any file
 |-------------|----|
 | `CLAUDE.md` | Keep the user's content. Append the template's `CLAUDE.md` body under a `## Morphness` heading, or add the line `@AGENTS.md` if the template's AGENTS.md was copied. |
 | `AGENTS.md` | Keep it. Append the template's golden rules and harness table under `## Morphness`, without duplicating rules it already has. |
-| `.claude/settings.json` | Merge: union `permissions.allow`, `deny`, `ask`; add the SessionStart hook if absent; keep every existing key. Show the diff. |
+| `.claude/settings.json` | Merge: union `permissions.allow`, `deny`, `ask`; add the SessionStart and PreToolUse (guard) hooks if absent; an existing PreToolUse hook stays, with the guard added as one more entry; keep every existing key. Show the diff. |
 | `.github/pull_request_template.md` (GitLab: `.gitlab/merge_request_templates/Default.md`) | Keep the user's. Mention the template's sections in the hand-off, and that the tag workflow reads a `## Release notes` section. |
 | `.mcp.json` | Merge `mcpServers`; never remove one. |
 | Anything else | Keep the user's file; list it in the hand-off. |
@@ -209,7 +209,8 @@ All must pass before committing; fix and re-run on failure.
    `grep -rnE '(^|[^$]){{ *[a-z]' AGENTS.md CLAUDE.md harness.config.yml project .claude scripts .github`
    (the `[^$]` keeps CI expressions such as `${{ secrets.X }}` out of the result).
 2. No fill comment remains: `grep -rn '<!-- morph-init: fill' .` returns nothing.
-3. `.claude/settings.json`, `.mcp.json` and `.github/rulesets/*.json` parse (`jq . <file>`, or `python3 -m json.tool`).
+3. `.claude/settings.json`, `.mcp.json` and `.github/rulesets/*.json` parse (`jq . <file>`, or `python3 -m json.tool`), and
+   `.claude/settings.json` → `hooks.PreToolUse` runs `scripts/guard.sh`.
 4. Every relative link in `AGENTS.md`, `CLAUDE.md`, `harness/**` (except `harness/templates/`, whose
    links resolve where the template is copied), `project/**` and `.claude/**` (except `.claude/skills/`, which holds installed third-party skills)
    resolves to a file that exists. Links to docs a module creates (the roadmap) count once that module's On install ran.
@@ -230,7 +231,12 @@ All must pass before committing; fix and re-run on failure.
    `Prune counter: 0/<loop.prune_every>`. `scripts/feature-cost.sh` is executable and runs without a
    Python error (it may print `Cost: not measured`, or this session's cost). Both read
    `harness.config.yml` through `scripts/lib/config.sh`: `bash -c '. scripts/lib/config.sh;
-   config_get branches.integration'` prints the integration branch.
+   config_get branches.integration'` prints the integration branch. The prune counter's second line
+   is `Rules: <size>/<loop.rule_budget_kb> KB always loaded`, with no `Prune is DUE`.
+   `scripts/guard.sh` parses and blocks a push to the integration branch:
+   `echo '{"tool_name":"Bash","tool_input":{"command":"git push origin <integration>"}}' | bash scripts/guard.sh`
+   exits 2 (python3 must be installed; without it the guard lets everything through, so say so in the
+   hand-off).
 
 ## 7b. Apply host settings (owner's yes)
 

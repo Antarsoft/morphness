@@ -42,7 +42,7 @@ while IFS= read -r -d '' f; do
   copied=$((copied + 1))
 done < <(find "$SRC" -type f -print0 | sort -z)
 
-[ "$DRY" = 1 ] || chmod +x "$TARGET/scripts/session-start.sh" "$TARGET/scripts/prune-counter.sh" "$TARGET/scripts/feature-cost.sh" 2>/dev/null || true
+[ "$DRY" = 1 ] || chmod +x "$TARGET/scripts/session-start.sh" "$TARGET/scripts/prune-counter.sh" "$TARGET/scripts/feature-cost.sh" "$TARGET/scripts/guard.sh" 2>/dev/null || true
 
 echo "Morphness: $copied file(s) $( [ "$DRY" = 1 ] && echo 'to copy' || echo 'copied' ) into $TARGET"
 if [ "${#skipped[@]}" -gt 0 ]; then

@@ -1,0 +1,13 @@
+name: selftest
+on:
+  pull_request:
+    paths: ["template/**", "tests/**", "scripts/kit-selftest.sh", "skills/morph-init/references/render.md", ".github/workflows/selftest.yml"]
+  push:
+    branches: [main]
+    paths: ["template/**", "tests/**", "scripts/kit-selftest.sh", "skills/morph-init/references/render.md", ".github/workflows/selftest.yml"]
+jobs:
+  render:
+    runs-on: ubuntu-24.04   # pinned: bump it in its own PR
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
+      - run: STRICT=1 scripts/kit-selftest.sh

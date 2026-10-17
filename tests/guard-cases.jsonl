@@ -1,0 +1,56 @@
+{"expect": "pass", "tool": "Bash", "input": {"command": "git status && git diff --stat"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git push -u origin feature/login"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git push origin HEAD"}, "branch": "feature/login"}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git push"}, "branch": "feature/login"}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git push origin {I}"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git push origin {P}"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git push origin feature/login:{P}"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git push origin HEAD:refs/heads/{I}"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git push upstream {I} --no-verify"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git -C . push origin {P}"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "cd app && env GIT_TRACE=1 git push origin {P}"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "bash -c 'git push origin {I}'"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "echo $(git push origin {P})"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git push"}, "branch": "{I}"}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git push origin HEAD"}, "branch": "{P}"}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git push --all origin"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git push origin --delete {I}"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git push origin :{P}"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git push --force-with-lease origin feature/login"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git push -uf origin feature/login"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git push origin +feature/login"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "cat .env"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "grep KEY apps/web/.env.local"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "source .env.production && npm start"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "cat < .env"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "cp .env.example .env"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "cat .env.example"}}
+{"expect": "deny", "tool": "Read", "input": {"file_path": "/repo/.env"}}
+{"expect": "deny", "tool": "Edit", "input": {"file_path": "/repo/apps/api/.env.staging"}}
+{"expect": "pass", "tool": "Read", "input": {"file_path": "/repo/.env.example"}}
+{"expect": "pass", "tool": "Read", "input": {"file_path": "/repo/src/env.ts"}}
+{"expect": "deny", "tool": "Grep", "input": {"pattern": "KEY", "path": ".env.local"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "gh secret set STRIPE_KEY --body x"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "gh api -X PUT repos/o/r/actions/secrets/KEY -f encrypted_value=x"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "gh api -X POST repos/o/r/rulesets --input .github/rulesets/environment-branches.json"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "gh api -X PATCH repos/o/r -F delete_branch_on_merge=true"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "gh api repos/o/r/rulesets"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "gh pr create --draft --base dev"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "npx supabase db push"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "pnpm exec prisma migrate deploy"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "wrangler d1 migrations apply prod-db --remote"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "supabase db reset"}}
+{"expect": "ask", "tool": "mcp__vercel__create_project", "input": {}}
+{"expect": "ask", "tool": "mcp__cloudflare__workers_put_script", "input": {}}
+{"expect": "ask", "tool": "mcp__Supabase__execute_sql", "input": {}}
+{"expect": "pass", "tool": "mcp__vercel__list_deployments", "input": {}}
+{"expect": "pass", "tool": "mcp__github__get_file_contents", "input": {}}
+{"expect": "pass", "tool": "mcp__supabase__search_docs", "input": {}}
+{"expect": "pass", "tool": "Write", "input": {"file_path": "/repo/src/app.ts"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git commit -q -F - <<'EOF'\nStop reading .env in tests\n\nThe loader skipped .env.local.\nEOF"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "gh pr create --draft --body \"$(cat <<'EOF'\n## What this adds\nNo more .env reads.\nEOF\n)\""}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "cat > .env <<'EOF'\nKEY=1\nEOF"}}
+{"expect": "pass", "tool": "mcp__github__pull_request_read", "input": {}}
+{"expect": "ask", "tool": "mcp__github__resolve_review_thread", "input": {}}
+{"expect": "ask", "tool": "mcp__cloudflare__d1_database_query", "input": {}}
+{"expect": "ask", "tool": "mcp__github__create_or_update_file", "input": {}}

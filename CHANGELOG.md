@@ -6,6 +6,17 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Guard hook: `scripts/guard.sh` runs before Bash, file and MCP tool calls and reads commands the way
+  the shell does. It blocks pushes to environment branches in every form (a bare `git push` on one,
+  `HEAD`, `--all`, inside `bash -c` or `$(…)`), force-pushes, `.env` files other than the example,
+  code-host secrets and well-known remote database writes, and asks before `gh api` writes to rulesets
+  and protection and before any MCP tool that isn't a read (`guard.mcp_writes`). The settings deny
+  rules stay as a second layer. `/morph-init` checks it and `/morph-doctor` reports a missing guard.
+- Rule size gauge: the prune counter prints `Rules: X/36 KB always loaded` for the hand-off, and a
+  prune is due when the always-loaded rules pass `loop.rule_budget_kb`.
+- Kit self-test: `scripts/kit-selftest.sh` (and the `selftest` CI check) renders the template for four
+  sample projects and runs the install self-checks, a link check, the scripts and the guard cases.
+
 ## 2026-10-16
 
 - Script fixes: `prune-counter.sh` and `feature-cost.sh` read `harness.config.yml` in block or

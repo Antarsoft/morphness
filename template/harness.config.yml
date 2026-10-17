@@ -121,9 +121,17 @@ claude_projects:
 # An estimate even on a Pro or Max plan, where nothing is billed per call. track: false turns it off.
 cost: { track: true, prices: harness/MODEL_PRICES.md }
 
+# The guard hook (scripts/guard.sh, wired in .claude/settings.json) runs before tool calls. It always
+# blocks secret .env files, pushes to environment branches, force-pushes, code-host secrets and
+# well-known remote database writes. mcp_writes: ask makes every MCP tool that isn't a read (get,
+# list, search, …) show a permission prompt, so no connector write runs without the owner's yes; off
+# leaves MCP tools to the ask rules in .claude/settings.json.
+guard: { mcp_writes: ask }
+
 loop:
   retro_max_items: 3      # usual action items per retro (soft: more with one line why, none is fine)
   prune_every: 10         # learnings files between prunes
+  rule_budget_kb: 36      # always-loaded rule files (CLAUDE.md, AGENTS.md, .claude/rules/); over it, a prune is due
   qa_max_rounds: 2        # QA rework rounds before escalating to the owner
 
 # Where this copy came from upstream. Written by /morph-init, updated by /morph-update.

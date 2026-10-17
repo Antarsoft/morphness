@@ -21,6 +21,11 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
 - Every module in `modules` has its folder; no folder under `harness/modules/` is missing from
   `modules` (stale rules agents would read).
 - Every agent file under `.claude/agents/` points at a body under `harness/agents/` that exists.
+- **Guard hook:** `.claude/settings.json` → `hooks.PreToolUse` runs `scripts/guard.sh`, the script
+  exists, `python3` is installed (without it the guard lets every call through), and the push test in
+  render.md § 7 item 9 exits 2. A copy without the hook: point to `/morph-update` (update note
+  `2026-10-17-guard-hook`). `guard.mcp_writes: off`: mention once that connector writes then rely on
+  the named `ask` rules alone.
 - Module markers (`harness/README.md` § Modules → **Module markers**): no `module:<name>` marker
   for a module missing from `modules` (text left from a removal: offer the removal command), and every
   `<!-- module:<name> -->` opening line has its closing line.
@@ -98,7 +103,9 @@ From `_harness/`:
 
 - **Prune due:** run `bash scripts/prune-counter.sh` (when the copy lacks it, count the `*-v*.md` files
   in `_harness/learnings/`). When it prints `Prune is DUE`, say "Prune due" and point to
-  `harness/SETUP.md` § Prune. A missing script is drift worth naming: `/morph-update` adds it.
+  `harness/SETUP.md` § Prune. Report its `Rules:` gauge line as is, and name the largest always-loaded
+  files when it is above 90% of `loop.rule_budget_kb`. A copy whose script prints no `Rules:` line:
+  point to `/morph-update` (update note `2026-10-17-rule-budget`). A missing script is drift worth naming: `/morph-update` adds it.
 - **Feature cost:** with `cost.track` on (or no `cost:` key), `bash scripts/feature-cost.sh` runs and
   prints a `Cost` line (in a fresh session it may say `not measured`, which is fine; a Python error
   is not). Every model in `agents:` (`model`, `medium_model`, `high_model`), mapped to its current
