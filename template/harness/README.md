@@ -17,7 +17,7 @@ This folder is the **kit**. It was installed from Morphness, but it now belongs 
 | [MORPHING.md](./MORPHING.md) | How this harness changes itself: where lessons land, trials, pruning, sharing upstream |
 | [SKILLS_AND_MCPS.md](./SKILLS_AND_MCPS.md) | When to use skills and MCPs (project details in `project/SKILLS_AND_MCPS.md`) |
 | [PLAN_CHECKLIST.md](./PLAN_CHECKLIST.md) | The Technical Lead's checklist before asking for plan approval |
-| [templates/](./templates/) | `feature.md`, `plan.md`, `bug-plan.md`, `progress.md`, `qa-result.md`, `retro.md`, `prune.md`, `research.md`, `release-qa-result.md`,<!-- module:roadmap --> `version.md`, `version-checklist.md`,<!-- /module:roadmap --> `learnings-entry.md`, `steps.md` |
+| [templates/](./templates/) | `feature.md`, `plan.md`, `bug-plan.md`, `progress.md`, `qa-result.md`, `retro.md`, `prune.md`, `research.md`, `trial.md`, `release-qa-result.md`,<!-- module:roadmap --> `version.md`, `version-checklist.md`,<!-- /module:roadmap --> `learnings-entry.md`, `steps.md` |
 | [agents/](./agents/) | Generic role bodies for the Full-stack, QA<!-- module:legal -->, legal-writer<!-- /module:legal --> and researcher subagents (project addenda in `project/agents/`) |
 | [modules/](./modules/) | Optional parts, switched on in `harness.config.yml` → `modules` |
 

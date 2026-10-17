@@ -114,7 +114,7 @@ From `_harness/`:
   is drift: `/morph-update` adds them.
 - **Open action items:** retro items in `_harness/LEARNINGS.md` still `open` or `approved` but not
   `applied` for more than two features.
-- **Trials:** trials in `_harness/LEARNINGS.md` § Trials with no decision past their end condition.
+- **Trials:** active trials in `_harness/trials/` (the `Trial` lines `scripts/prune-counter.sh` prints) that have run their length with no decision. A copy that still keeps trials as rows in `_harness/LEARNINGS.md` § Trials: check those, and point to `/morph-update` (update note `2026-10-17-trial-files`).
 - **Stuck features:** feature folders whose `plan.md` Status is `approved` with no `progress.md`, or
   `progress.md` marked complete with no `qa-result.md`.
 

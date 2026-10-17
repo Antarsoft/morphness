@@ -14,13 +14,13 @@ Process: `harness/SETUP.md` § Prune; why: `harness/MORPHING.md` § Pruning.
 
 **Cost:** window total $… over N measured features, average $… per feature; previous window average $… (or "first window"). Estimates at API list prices (`harness/MODEL_PRICES.md`), so compare windows priced the same way.
 
-**Trend:** one or two lines: did rework and cost per feature fall, and why we think so.
+**Trend:** the `Last N features: …` line from `bash scripts/prune-counter.sh --prune` (average rework rounds, QA fails, total cost), then one line: did rework and cost per feature fall against the previous window, and why we think so.
 
 ## 1b. Trials
 
-One row per `_harness/LEARNINGS.md` § Trials entry: KPI numbers over this window's features, `keep` or `revert` (or `carry on` when no feature qualified), one line of why. When the project tracks plan usage: the owner's usage reading for this prune day, next to the previous prune's.
+One row per active trial in `_harness/trials/`: its `Trial …` line from `bash scripts/prune-counter.sh --prune` (features run against its length, rework rounds, QA fails, cost), `keep` or `revert` against its Pass and Revert lines, or `carry on` when it hasn't run its length, with one line of why. When the project tracks plan usage: the owner's usage reading for this prune day, next to the previous prune's.
 
-| Trial | Features run | KPI numbers | Proposal |
+| Trial | Features run | Numbers | Proposal |
 |-------|--------------|-------------|----------|
 | | | | keep · revert · carry on |
 
@@ -36,9 +36,11 @@ One row per research file added since the last prune, from its header and § How
 
 ## 2. Rule audit
 
+Start from the `Rule tags` lines of `bash scripts/prune-counter.sh --prune`: every rule tagged `(from <slug>, <date>)`, with the features finished since. For each, check the retros after that date for the problem its **Why raised** names.
+
 | Rule / item (file) | Added by (provenance) | Evidence | Verdict |
 |--------------------|-----------------------|----------|---------|
-| | feature slug · learned · `(lesson: <id>)` | fired (retro link) · insurance (cost of the failure) · never fired · too new to judge | keep · merge into … · shorten · move to on-demand · remove |
+| | `(from <slug>, <date>)` · feature slug · learned · `(lesson: <id>)` | fired (retro link) · insurance (cost of the failure) · never fired · too new to judge | keep · merge into … · shorten · move to on-demand · remove |
 
 ## 3. Open action items older than the window
 
@@ -72,4 +74,4 @@ Rule rows (§ 2), trial rows (§ 1b) and upstream rows (§ 3c): the human approv
 
 ## 5. Applied
 
-Docs change / commit: … · Upstream rows applied with `/morph-update`: yes | none approved | not checked · `_harness/learnings/` files folded into `LEARNINGS.md` and deleted: yes | no · Steps files folded into the next version's checklist (roadmap module): yes | no | n/a · Last prune and Counting from updated: yes | no
+Docs change / commit: … · Upstream rows applied with `/morph-update`: yes | none approved | not checked · `_harness/learnings/` files folded into `LEARNINGS.md` and deleted: yes | no · Trial features added to their trial file's § Results: yes | none · Steps files folded into the next version's checklist (roadmap module): yes | no | n/a · Last prune and Counting from updated: yes | no

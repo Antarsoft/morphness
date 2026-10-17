@@ -5,8 +5,12 @@
 # features each count the others that merged first, and files a prune folded on the integration
 # branch don't come back from a branch cut before it. The gauge adds up the files Claude Code loads
 # into every session (CLAUDE.md, the files it imports with `@`, and each .claude/rules/*.md without a
-# `paths:` line) against loop.rule_budget_kb.
-# Usage: bash scripts/prune-counter.sh   (from anywhere in the repo; read-only)
+# `paths:` line) against loop.rule_budget_kb. Each active trial (_harness/trials/*.md) gets a line
+# with how many of its features have run.
+# Usage: bash scripts/prune-counter.sh [--prune]   (from anywhere in the repo; read-only)
+#   --prune  also print what a prune reads (harness/SETUP.md § Prune): one trend line for the window
+#            (rework rounds, QA fails, cost), each trial's numbers, and every rule tagged
+#            `(from <slug>, <date>)` with the features finished since it landed
 
 . "$(cd "$(dirname "$0")" && pwd)/lib/config.sh" || exit 1
 cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)" || exit 1
@@ -29,6 +33,7 @@ if [ -n "$integration" ] && git fetch -q origin "$integration" 2>/dev/null; then
   files="$(printf '%s\n%s\n' "$files" "$(learnings_at "origin/$integration")")"
 else
   echo "(integration branch not fetched; counting this branch only)" >&2
+  integration=""
 fi
 count="$(printf '%s\n' "$files" | grep . | sort -u | wc -l | tr -d ' ')"
 
@@ -59,4 +64,104 @@ elif [ -f .claude/rules/technical-lead.md ] \
   && [ "$(wc -c < .claude/rules/technical-lead.md)" -gt 20480 ]; then
   echo "Prune is DUE (.claude/rules/technical-lead.md is over 20 KB)"
 fi
+
+# Trials, and with --prune the trend, trial numbers and rule tags. A file that is only on the
+# integration branch is read from there.
+command -v python3 >/dev/null 2>&1 || exit 0
+read -r -d '' program <<'PY' || true
+import glob, re, sys
+
+prune = "--prune" in sys.argv[1:]
+DATE = r"\d{4}-\d{2}-\d{2}"
+
+def read(path):
+    try:
+        return open(path, encoding="utf-8").read()
+    except OSError:
+        return ""
+
+# Learnings files: date, rework rounds (QA rounds after the first), whether QA failed, cost, trial.
+features = []
+for chunk in sys.stdin.read().split("\036")[1:]:
+    name, _, text = chunk.partition("\n")
+    heading = re.search(r"^### .*?(" + DATE + ")", text, re.M)
+    rounds = re.search(r"QA rounds:\s*(\d+)", text)
+    cost = re.search(r"\*\*Cost:\*\*\s*≈\s*\$\s*([0-9][0-9,]*(?:\.[0-9]+)?)", text)
+    trial = re.search(r"^- \*\*Trial:\*\*\s*`?([a-z0-9][a-z0-9-]*)", text, re.M)
+    r = int(rounds.group(1)) if rounds else 1
+    features.append({
+        "name": name,
+        "date": heading.group(1) if heading else "",
+        "rework": max(r - 1, 0),
+        "failed": r > 1 or "failed-escalated" in text,
+        "cost": float(cost.group(1).replace(",", "")) if cost else None,
+        "trial": trial.group(1) if trial else "",
+    })
+
+def summary(fs):
+    if not fs:
+        return "no features"
+    costs = [f["cost"] for f in fs if f["cost"] is not None]
+    rework = sum(f["rework"] for f in fs) / len(fs)
+    return (f"rework rounds {rework:.1f} avg, QA fails {sum(f['failed'] for f in fs)}, "
+            f"cost ${sum(costs):.2f} ({len(costs)} of {len(fs)} measured)")
+
+if prune:
+    print(f"Last {len(features)} features: {summary(features)}")
+
+# Active trials: features run = rows already folded into § Results plus this window's files that
+# name the trial on their Trial line.
+for path in sorted(glob.glob("_harness/trials/*.md")):
+    text = read(path)
+    slug = path.rsplit("/", 1)[-1][:-3]
+    status = re.search(r"^\*\*Status:\*\*\s*(\w+)", text, re.M)
+    if slug == "README" or (status and status.group(1) != "active"):
+        continue
+    length = re.search(r"^\*\*Length:\*\*\s*(\d+)", text, re.M)
+    length = int(length.group(1)) if length else 0
+    results = text.split("## Results", 1)[-1] if "## Results" in text else ""
+    folded = len([l for l in results.splitlines() if re.match(r"^\| *[^|\s-]", l)
+                  and not l.lstrip("| ").startswith("Feature")])
+    mine = [f for f in features if f["trial"] == slug]
+    run = folded + len(mine)
+    line = f"Trial {slug}: {run}/{length or '?'} features"
+    if length and run >= length:
+        line += ", ready to decide at the next prune"
+    if prune and mine:
+        line += f"; this window: {summary(mine)}"
+    print(line)
+
+if not prune:
+    sys.exit(0)
+
+# Rule tags: `(from <slug>, <date>)`, or `(from a, <date>; b, <date>)` once tightened. Spans in
+# backticks are examples, not tags. Features since = finished on a later date (this window's
+# files plus the dated lines a prune folded into LEARNINGS.md and its archive).
+dates = [f["date"] for f in features if f["date"]]
+for path in ("_harness/LEARNINGS.md", "_harness/LEARNINGS-archive.md"):
+    entries = read(path).split("## Entries", 1)
+    if len(entries) == 2:
+        dates += re.findall(r"^- .*?(" + DATE + ")", entries[1], re.M)
+paths = ["CLAUDE.md", "AGENTS.md"] + sorted(glob.glob(".claude/rules/*.md") + glob.glob(".claude/agents/*.md")
+         + glob.glob("harness/**/*.md", recursive=True) + glob.glob("project/**/*.md", recursive=True))
+tags = []
+for path in paths:
+    for n, line in enumerate(read(path).splitlines(), 1):
+        line = re.sub(r"`[^`]*`", "", line)
+        for group in re.findall(r"\(from ([^()]*?" + DATE + r"[^()]*)\)", line):
+            pairs = re.findall(r"([a-z0-9][a-z0-9.-]*)(?: v\d+)?,\s*(" + DATE + ")", group)
+            if pairs:
+                slug, day = max(pairs, key=lambda p: p[1])
+                tags.append((path, n, slug, day, sum(d > day for d in dates)))
+young = sum(t[4] < 3 for t in tags)
+print(f"Rule tags: {len(tags)} ({young} too new to judge: fewer than 3 features since)")
+for path, n, slug, day, since in tags:
+    print(f"  {path}:{n} from {slug}, {day}: features since: {since}" + (" (too new to judge)" if since < 3 else ""))
+PY
+printf '%s\n' "$files" | grep . | sort -u | while read -r f; do
+  printf '\036%s\n' "$f"
+  if [ -f "_harness/learnings/$f" ]; then cat "_harness/learnings/$f"
+  elif [ -n "$integration" ]; then git show "origin/$integration:_harness/learnings/$f" 2>/dev/null
+  fi
+done | python3 -I -c "$program" "$@"
 exit 0

@@ -17,10 +17,11 @@ The prune is `DUE` when `_harness/learnings/` holds Threshold feature files or m
 ## Entry format
 
 ```markdown
-### <feature-slug> v<version> (YYYY-MM-DD)
+### <feature-slug> v<version>, YYYY-MM-DD
 - **Verdict:** pass | failed-escalated; QA rounds: N; review round: yes | no
 - **Failure causes:** plan gap ×N, implementation ×N, environment ×N, process ×N (or none)
 - **Cost:** ≈ $<total> (Technical Lead $…, Full-stack $…, QA $…, any other subagent $…), or `not measured (<reason>)`; Full-stack <model> <effort> <duration> / <tool calls>; QA <model> <effort> <duration> / <tool calls>
+- **Trial:** <trial-slug> (only when this feature ran a trial; omit otherwise)
 - **Escaped:** <feature that passed QA with this bug, and the AC or check that missed it> (bug-fix features only; omit otherwise)
 - **Lessons:** 1–3 one-liners
 - **Retro:** [retro.md](./features/<feature-slug>/<version>/Plan/retro.md)
@@ -30,10 +31,7 @@ The template is also in [harness/templates/learnings-entry.md](../harness/templa
 
 ## Trials
 
-Model or effort changes under trial ([project/HARNESS_AGENTS.md](../project/HARNESS_AGENTS.md) § Trials). The prune tabulates each row's KPI from the window's learnings files ([harness/SETUP.md](../harness/SETUP.md) § Prune, step 1) and proposes keep or revert; the change that starts or ends a trial edits this table.
-
-| Trial | Started | Scope | KPI (per feature) | Pass | Decide at |
-|-------|---------|-------|-------------------|------|-----------|
+Each trial is its own file in [trials/](./trials/), one per change under trial ([harness/MORPHING.md](../harness/MORPHING.md) § Trials). A feature that ran one says so on its learnings file's **Trial** line; the prune reads the numbers and proposes keep or revert.
 
 ## Action items
 
@@ -66,6 +64,6 @@ A new state gets its own table under this heading, with a row added to the list 
 
 ## Entries
 
-Entries since the last prune are in `_harness/learnings/` (one file per feature, format above). The lines below are the condensed ones a prune folded in: one line each with the verdict, QA rounds and the lesson, linking the retro.
+Entries since the last prune are in `_harness/learnings/` (one file per feature, format above). The lines below are the condensed ones a prune folded in, one each: `- <feature-slug> v<version>, YYYY-MM-DD: <verdict>, QA rounds N, ≈ $<cost>; <lesson> ([retro](…))`. Keep the date: `scripts/prune-counter.sh --prune` counts features since a rule landed from it.
 
 None yet.

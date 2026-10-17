@@ -62,7 +62,7 @@ Each framework or library behaviour the plan depends on, with the source that co
 
 Pick per feature; the human approves it with the plan. Levels and criteria: `harness/SETUP.md` § Effort per feature; subagent names: `project/HARNESS_AGENTS.md`.
 
-- **Full-stack:** medium | high | xhigh (or a trial variant from `_harness/LEARNINGS.md` § Trials): one-line reason. A `medium` plan names the file it copies.
+- **Full-stack:** medium | high | xhigh (or a trial variant from `_harness/trials/`): one-line reason. A `medium` plan names the file it copies.
 - **QA:** medium | high: one-line reason.
 - **Code review before QA:** yes (Full-stack xhigh) | no. See `harness/SETUP.md` § Code review before QA.
 
