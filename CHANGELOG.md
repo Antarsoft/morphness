@@ -6,6 +6,15 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Trials as files: `_harness/trials/<trial-slug>.md` (template `harness/templates/trial.md`) holds the
+  hypothesis, the change, its length in features, the metric and the pass and revert conditions. A
+  feature that runs one names it on its learnings file's **Trial** line, the prune counter prints
+  `Trial <slug>: N/<length> features` in every hand-off, and the prune decides keep or revert from
+  the numbers. Replaces the table in `_harness/LEARNINGS.md` § Trials.
+- Prune trend line: `bash scripts/prune-counter.sh --prune` prints one summary of the window (average
+  rework rounds, QA fails, total cost) for the prune proposal, plus each trial's numbers.
+- Rule provenance with a date: a rule a retro adds ends with `(from <feature>, <date>)`, and
+  `prune-counter.sh --prune` lists each tag with the features finished since, for the rule audit.
 - Guard hook: `scripts/guard.sh` runs before Bash, file and MCP tool calls and reads commands the way
   the shell does. It blocks pushes to environment branches in every form (a bare `git push` on one,
   `HEAD`, `--all`, inside `bash -c` or `$(…)`), force-pushes, `.env` files other than the example,

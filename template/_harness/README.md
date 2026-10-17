@@ -24,15 +24,16 @@ features/
       steps.md         # TL: the human's steps at QA pass (roadmap module off; on, under docs/versions/)
 research/              # research mode: <YYYY-MM-DD>-<slug>.md, one question each
 learnings/             # one learnings file per feature until the next prune
+trials/                # one file per trial: <trial-slug>.md
 prunes/                # one prune proposal per prune: <YYYY-MM-DD>.md
 releases/
   <release-version>/
     qa-result.md       # release QA record
-LEARNINGS.md           # condensed entries, trials, action items
+LEARNINGS.md           # condensed entries, action items
 HARNESS_BACKLOG.md     # larger harness changes waiting for a slot
 ```
 
-Across features: [LEARNINGS.md](./LEARNINGS.md) holds one condensed line per folded retro, the trials table and the action-items tables with each item's status.
+Across features: [LEARNINGS.md](./LEARNINGS.md) holds one condensed line per folded retro and the action-items tables with each item's status; [trials/](./trials/) holds the changes under trial.
 
 ## Start a feature
 

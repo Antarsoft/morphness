@@ -43,7 +43,9 @@ _harness/
     <YYYY-MM-DD>-<slug>.md  # research mode: Tech Lead asks and decides, researcher answers
   learnings/
     <slug>-v<version>.md  # Tech Lead; one per feature until the prune folds it
-  LEARNINGS.md            # trends, trials, action items (folded by the prune)
+  trials/
+    <trial-slug>.md       # one per change under trial (harness/MORPHING.md § Trials)
+  LEARNINGS.md            # trends, action items (folded by the prune)
   prunes/
     <YYYY-MM-DD>.md       # prune proposals
   releases/

@@ -60,8 +60,8 @@ keeps everything it learned; it moves into the places Morphness reads it from.
    cited as evidence) moves to the project file that holds that topic: commands and CI to
    `project/CONTROLS.md`, test rules to `project/TESTING.md`, plan checklist greps to
    `project/PLAN_CHECKLIST.md` (grouped under the kit item they sharpen, plus `P` items for the rest),
-   role details to `project/agents/<role>.md` addenda, agents, effort and trials to
-   `project/HARNESS_AGENTS.md`, release steps to `project/RELEASE.md`, anything else to the matching
+   role details to `project/agents/<role>.md` addenda, agents and effort to
+   `project/HARNESS_AGENTS.md`, trials to `_harness/trials/<slug>.md` (from `harness/templates/trial.md`), release steps to `project/RELEASE.md`, anything else to the matching
    `project/` file or a new `project/PROCESS.md`. A generic line the kit already says in substance can
    go; when in doubt, keep it. Project files that already exist keep their content and get the kit's
    vocabulary (step 5).

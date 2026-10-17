@@ -28,7 +28,7 @@ One line each.
 - **QA:** did QA test the right things (ACs, deviations), anything duplicated or missed, any deferrals that could have been avoided?
 - **Handoff:** does the steps file hold only what agents can't do, and could QA have closed any deferred AC?
 - **Human touchpoints:** where did the human have to correct or unblock the TL or agents?
-- **Trials:** if this feature ran a trial variant, its KPI numbers (`_harness/LEARNINGS.md` § Trials).
+- **Trials:** if this feature ran a trial (`_harness/trials/`), its slug and whether it hit the revert condition; the learnings file's **Trial** line records it.
 
 ## What went well
 
@@ -56,9 +56,9 @@ Routing:
 |------|---------|---------------|
 | Code change | Tighten a shared schema | A new harness feature (`feature.md`) or a task suggestion |
 | Doc change | Note a project fact in `project/PROJECT.md` | Light-mode docs change, own commit on this feature's PR |
-| Harness change | Split large features by risk | The owner file per MORPHING.md, own commit on this feature's PR (a large one gets its own plan) |
-| Process change | Run a code review before QA for xhigh work | Same as a harness change; a trial first when its value is uncertain |
+| Harness change | Split large features by risk | The owner file per MORPHING.md, own commit on this feature's PR (a large one gets its own plan); the rule ends with `(from <feature-slug>, <date>)` |
+| Process change | Run a code review before QA for xhigh work | Same as a harness change; a trial (`_harness/trials/`) first when its value is uncertain |
 
 ---
 
-Summarised in `_harness/learnings/<feature-slug>-v<version>.md`: yes | no · Action items added to its § Action items: yes | none · Decisions listed in the hand-off: yes · Cost line in the hand-off: yes · Prune counter: N/<loop.prune_every> (DUE | ok) · Rules: X/<loop.rule_budget_kb> KB
+Summarised in `_harness/learnings/<feature-slug>-v<version>.md`: yes | no · Action items added to its § Action items: yes | none · Decisions listed in the hand-off: yes · Cost line in the hand-off: yes · Prune counter: N/<loop.prune_every> (DUE | ok) · Rules: X/<loop.rule_budget_kb> KB · Trial lines: pasted | none
