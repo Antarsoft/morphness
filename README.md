@@ -136,8 +136,10 @@ shown, and everything lands on a branch for you to review.
    When a connected service's official connector can do a step, the Technical Lead offers to do it
    instead, and runs each action only after your yes.
 
-For a small change, ask for **light mode** (no feature folder or retro). When you want an answer
-rather than a change, ask a question and the Technical Lead uses **research mode**.
+For a small change, ask for **light mode** (no feature folder or retro). For something broken, the
+Technical Lead uses **bug mode**: QA writes a failing test first, then Full-stack finds the cause and
+makes the smallest fix. When you want an answer rather than a change, ask a question and the
+Technical Lead uses **research mode**.
 
 > [!TIP]
 > ⭐ If Morphness saves you a rework round, [star the repo](https://github.com/antarsoft/morphness) so more teams find it.

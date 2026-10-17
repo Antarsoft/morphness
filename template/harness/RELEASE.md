@@ -155,7 +155,7 @@ With `release_tags: per-package`, each published package in a monorepo has its o
 
 ## Hotfix
 
-For a production bug that can't wait for the next release:
+For a production bug that can't wait for the next release. It is planned and built in bug mode with **Branch:** hotfix ([MODES.md](./MODES.md) § Bug mode): the failing test first, then the fix, then QA.
 
 1. Branch from the production branch on the remote.
 2. Draft PR to the production branch (explicit base) at the first push, marked ready after QA **pass** on the hotfix; the human merges. Title `Hotfix vX.Y.Z`, with the next **patch** version (v0.6.0 → v0.6.1). The body uses the PR template's **Release notes** and **Hotfix** sections.

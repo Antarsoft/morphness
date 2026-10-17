@@ -23,7 +23,7 @@ Read this file first. The **harness is generic** (the kit in `harness/`, which t
 | [harness/STRATEGY.md](harness/STRATEGY.md) | Roles and folder layout |
 | [harness/HANDOFFS.md](harness/HANDOFFS.md) | Templates and ownership |
 | [harness/CONTROLS.md](harness/CONTROLS.md) | Checks before handover (commands: [project/CONTROLS.md](project/CONTROLS.md)) |
-| [harness/MODES.md](harness/MODES.md) | Full, light and research modes |
+| [harness/MODES.md](harness/MODES.md) | Full, light, bug and research modes |
 | [harness/RELEASE.md](harness/RELEASE.md) | Release integration → production (project specifics: [project/RELEASE.md](project/RELEASE.md)) |
 | [harness/MORPHING.md](harness/MORPHING.md) | How the harness changes itself (retros, prunes, where a lesson lands) |
 | `harness/modules/` | Optional modules enabled in `harness.config.yml` → `modules` |

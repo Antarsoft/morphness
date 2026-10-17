@@ -15,7 +15,7 @@
 | `QA/qa-result.md` | QA engineer | QA engineer only | Verdict and evidence |
 | `_harness/learnings/<slug>-v<version>.md` | Technical Lead | Technical Lead; the prune folds it | Retro entry and action items ([templates/learnings-entry.md](./templates/learnings-entry.md)) |
 
-**Application code:** Full-stack engineer. **No product code edits:** QA engineer, Technical Lead, researcher.
+**Application code:** Full-stack engineer. **No product code edits:** QA engineer, Technical Lead, researcher. One exception: in bug mode QA writes the regression test the plan assigns, before the fix ([MODES.md](./MODES.md) § Bug mode).
 
 ## `plan.md` minimum sections
 
@@ -34,7 +34,7 @@
 9. Approval: approver and date (whether it is approved is the **Status** line)
 10. Decisions: one dated line per decision the human makes in chat after approval, written the same turn (§ Threads)
 
-Copy from [templates/plan.md](./templates/plan.md).
+Copy from [templates/plan.md](./templates/plan.md). A bug-mode plan is shorter and copies [templates/bug-plan.md](./templates/bug-plan.md) instead ([MODES.md](./MODES.md) § Bug mode).
 
 ## Steps file (human hand-off)
 
@@ -83,6 +83,8 @@ Each project lists its subagents in **`project/HARNESS_AGENTS.md`**. Delegate wi
 3. QA verdict **pass** → steps 4 and 5 below, then the human decides on the merge into the integration branch ([SETUP.md](./SETUP.md) § After QA pass); production ships later in a release ([RELEASE.md](./RELEASE.md)). **Fail** → Full-stack rework (at most `loop.qa_max_rounds` QA rounds per version).
 4. After QA **pass**, the Technical Lead writes the steps file (or none) and sets `plan.md` to `passed` with its **Steps file** line, then hands to the human; for a UI change the reply shows every screenshot. The retro follows without waiting for the human ([SETUP.md](./SETUP.md) § Retrospective).
 5. **Features with migrations:** the steps file lists the migrations in order. They reach the integration environment after the feature PR merges, by the project's migration workflow or by the human (`project/RELEASE.md`). Agents never apply them.<!-- module:data-access --> Once they are applied, the Technical Lead runs a QA stage B pass (read-only, [modules/data-access/](./modules/data-access/README.md)). The feature is done when it passes.<!-- /module:data-access -->
+
+In bug mode the order changes: QA's reproduction run (the failing test) comes before step 1 ([MODES.md](./MODES.md) § Bug mode).
 
 The Technical Lead must not implement or QA even if the human says "execute", "run", "develop" or "implement". See `.claude/rules/technical-lead.md`.
 
@@ -145,6 +147,27 @@ Run the before_qa checks in harness/CONTROLS.md that the change touches (command
 Do not create a feature folder or progress.md. Write logs under the session scratchpad directory.
 If the change turns out to need new behaviour, a test of its own, or files beyond the list, stop and hand back: it needs a full plan.
 Hand back to the Technical Lead with: files changed, each check with its scope and exit code, and anything you didn't do.
+```
+
+**QA engineer, bug reproduction** ([MODES.md](./MODES.md) § Bug mode, step 2; before any fix)
+
+```text
+You are the QA engineer for a bug-mode plan. This is the reproduction run: no fix exists yet.
+Read: <abs-path>/Plan/plan.md (must be approved), § Symptom, § Reproduction and § Regression test.
+Write the regression test § Regression test assigns, in the file and at the level it names. Add no other tests and change no product code.
+Run it and fill <abs-path>/QA/qa-result.md § Reproduction: commit, command, exit code, the failure's tail, and whether it fails for the reason the plan gives. A failure for another reason (setup, fixtures) means fix the test.
+If you can't make it fail, record not reproduced with what you tried. Never leave a test that passes today.
+Update only: the regression test file and qa-result.md. Do not commit; the Technical Lead commits the test.
+Write logs and scratch files under the session scratchpad directory, never / or the repo root.
+No verdict. Hand back to the Technical Lead with the test path, reproduced or not, and the failure in one line.
+```
+
+**Full-stack engineer, bug mode** (after the failing test is committed; add to the Full-stack block above)
+
+```text
+This is a bug-mode plan (harness/agents/fullstack-engineer.md § Bug mode). The failing regression test is committed as WIP(<slug>): failing test; its run is in <abs-path>/QA/qa-result.md § Reproduction.
+Fill progress.md § Root cause before changing code. Then make the smallest fix that turns the test green, within plan.md § Fix limit.
+Do not edit the regression test. If the fix needs anything § Fix limit names as a stop, record what you found in § Root cause and hand back without changing code.
 ```
 
 **QA engineer**

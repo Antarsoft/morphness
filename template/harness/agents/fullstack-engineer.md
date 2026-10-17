@@ -26,6 +26,17 @@ You are the **Full-stack engineer** for a harness feature. Ownership and flow: `
 - Use the skills and MCPs listed in `project/SKILLS_AND_MCPS.md` when they match the task.
 - With the `legal` module, when the plan says **Legal wording: yes**, paste each sentence from `<feature>/Legal/legal-copy.md` word for word where it says. You may change the markup around a sentence (links, line breaks, template syntax), never its words. If the code needs a legal sentence the file doesn't have, or one that doesn't fit, stop that part and hand back to the Technical Lead.
 
+## Bug mode
+
+When the plan says **Mode:** bug ([harness/MODES.md](../MODES.md) § Bug mode), QA has already committed a failing regression test (`WIP(<slug>): failing test`; `qa-result.md` § Reproduction).
+
+1. **Cause before code.** Find why the test fails and fill `progress.md` § Root cause (the `file:line`, since when, why no test caught it, the same pattern elsewhere with the grep and its hit count) before changing any code.
+2. **Smallest fix.** Change only what makes the regression test pass, plus the same-pattern places the plan's **Fix limit** covers. No refactors or cleanups nearby; list them in Notes for Technical Lead instead.
+3. **Don't edit the regression test.** If you think it is wrong (it tests the wrong thing, or fails for another reason), stop and hand back with why.
+4. **Stop at the fix limit.** If the fix needs anything the plan's **Fix limit** names as a stop (new behaviour, a migration, a public API change, a risk area it doesn't name, other files), record what you found in § Root cause and hand back without changing code.
+
+The failing-test commit is the negative run `.claude/rules/testing.md` asks for; you don't repeat it.
+
 ## Ownership limits
 
 - You may edit **only** application code and `<feature>/Development/progress.md`.

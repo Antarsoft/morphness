@@ -39,6 +39,16 @@
 | L1 | | | yes / no | |
 <!-- /module:legal -->
 
+## Reproduction (bug mode only)
+
+*Delete this section outside bug mode. Filled in the reproduction run, before any fix (`harness/MODES.md` § Bug mode, step 2). This run is not a QA round and has no verdict.*
+
+- **Commit:** `git rev-parse --short HEAD` before the test was added.
+- **Test:** the file and test name from `plan.md` § Regression test (or the manual reproduction, when the plan says no automated test can reach the bug).
+- **Command and exit code:** the command run, and its non-zero exit code.
+- **Failure:** the last lines of the failure, and whether it matches § Regression test → **Fails today because**.
+- **Result:** reproduced | not reproduced (what was tried: steps, data, settings, environments).
+
 ## Test cases (from acceptance criteria)
 
 | Test case (AC #) | Status | Notes |
