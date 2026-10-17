@@ -26,8 +26,8 @@ _harness/
     <feature-slug>/       # kebab-case; Tech Lead proposes, human confirms
       <version>/          # integer 1, 2, 3 …
         Plan/
-          feature.md      # human intent
-          plan.md         # Tech Lead; requires human approval before dev
+          feature.md      # human intent (none in bug mode)
+          plan.md         # Tech Lead; requires human approval before dev (bug mode: the short bug plan)
           review.md       # Tech Lead; pre-QA code review findings (xhigh Full-stack only)
           retro.md        # Tech Lead; retrospective after pass or escalation
         Research/

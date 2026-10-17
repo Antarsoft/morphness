@@ -16,6 +16,12 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
   prune is due when the always-loaded rules pass `loop.rule_budget_kb`.
 - Kit self-test: `scripts/kit-selftest.sh` (and the `selftest` CI check) renders the template for four
   sample projects and runs the install self-checks, a link check, the scripts and the guard cases.
+- Bug mode, next to full, light and research: for something that worked and is broken. A short bug
+  plan (`harness/templates/bug-plan.md`) replaces `feature.md` and the full plan; QA writes the
+  failing regression test and the Technical Lead commits it before any fix; Full-stack writes the
+  root cause in `progress.md` before the smallest fix, and stops at the plan's fix limit; QA
+  re-runs with the test unchanged. The learnings file, with its **Escaped** line, replaces
+  `retro.md`. A hotfix is bug mode on the production branch.
 
 ## 2026-10-16
 

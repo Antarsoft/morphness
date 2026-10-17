@@ -53,6 +53,14 @@ The working tree may hold the feature's **uncommitted** work (the TL commits WIP
 - To revert: copy the backup back, delete it, and check that `git diff -- <file>` matches the saved diff.
 - Before handing back: no `*.qa-backup` files remain, and `git status` shows only the Full-stack engineer's files plus `qa-result.md`.
 
+## Bug mode
+
+When the plan says **Mode:** bug ([harness/MODES.md](../MODES.md) § Bug mode), you run twice.
+
+**Reproduction run (before any fix).** Write the regression test `plan.md` § Regression test assigns, at the level and in the file it names, asserting the expected behaviour. Run it and fill `qa-result.md` § Reproduction: the commit, the command, its exit code, the failure's tail, and whether it fails for the reason the plan gives. A test that fails for another reason (a setup error, a missing fixture) doesn't count: fix the test, not the product. Change no product code, and add no other tests. When you can't make it fail, record **not reproduced** with what you tried and hand back; don't guess a test that passes. No verdict: this run is not a QA round.
+
+**Re-run (after the fix).** The normal QA pass on the plan's ACs, plus: the regression test passes on the final commit, and `git diff <failing-test commit> -- <test file>` is empty or each change is explained in `progress.md`. An unexplained change to the test is a fail.
+
 ## Round 2 (after a QA fail)
 
 Round 2 checks what the rework could have changed, not the whole plan again.
@@ -66,8 +74,8 @@ The Technical Lead escalates to the human after `loop.qa_max_rounds` failed roun
 
 ## Ownership limits
 
-- You may edit **only** `<feature>/QA/qa-result.md`.
-- **No product code edits** (source, migrations, config), and do not add product tests unless the plan assigns it.
+- You may edit **only** `<feature>/QA/qa-result.md` (and, in bug mode's reproduction run, the regression test file the plan names).
+- **No product code edits** (source, migrations, config), and do not add product tests unless the plan assigns it (in bug mode, the regression test in `plan.md` § Regression test, and only in the reproduction run).
 - Never edit `plan.md`, `feature.md`, `progress.md`, the feature's steps file, or `Legal/legal-copy.md`.
 
 ## Hand back

@@ -73,6 +73,7 @@ See [MODES.md](./MODES.md). Summary:
 |------|------------------------------|--------------|
 | **Full** | Yes | Yes |
 | **Light** | No | Optional single agent (never the TL writing app code) |
+| **Bug** | Yes, with the short bug plan | Yes: QA writes the failing test first, then Full-stack fixes, then QA re-runs; a learnings line instead of `retro.md` |
 | **Research** | `_harness/research/` only | Researcher only; no code, no QA, no retro |
 
 ---
@@ -205,7 +206,7 @@ Technical Lead:
 
 ## Retrospective
 
-Every full-harness feature ends with a short Technical Lead retro. No retro in light mode.
+Every full-harness feature ends with a short Technical Lead retro. No retro in light mode; in bug mode the learnings file alone is the look-back ([MODES.md](./MODES.md) § Bug mode, step 6).
 
 - **When:** after the QA pass hand-off, or on `failed-escalated`, before the next plan. Failed features need it most.
 - **Inputs:** `feature.md`, `plan.md` (with its open questions and answers), `progress.md`, `review.md` if any, `qa-result.md`, the steps file if any, the agents' completion notices and any human corrections in the conversation.
