@@ -9,6 +9,9 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 - The guard hook checks the allowed Morphness `curl` read: only `-f -s -S -L` and URLs under the two
   Morphness prefixes pass silently; writing a file, another method, a body, headers, a config file or
   another URL asks first.
+- `prune-counter.sh` prints only `Prune proposal waiting: <path>` while a prune proposal waits for the
+  owner, no `Prune is DUE` line, so a Technical Lead following the hand-off bullet writes no second
+  proposal. The prune template's **Status** can be `declined`.
 - Small, bug and security wording lined up across the rules, plans and agent bodies (small plan QA scope
   and limit, security review on bug plans, full-mode-only sections marked, lighter agent reads and QA
   layout pass); `prune-counter.sh` shows a waiting prune proposal.

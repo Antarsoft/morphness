@@ -69,21 +69,27 @@ echo "Checklists: $(kb "$cbytes")/$cbudget KB"
 echo "Project docs: $(kb "$dbytes")/$dbudget KB"
 # A proposal the owner hasn't decided yet: the hand-off names it instead of writing another.
 waiting="$(grep -l -E '^\*\*Status:\*\*[[:space:]]*proposed' _harness/prunes/*.md 2>/dev/null | sort | tail -n 1)"
-[ -n "$waiting" ] && echo "Prune proposal waiting: $waiting"
+due=""
 if [ "$count" -ge "$threshold" ]; then
-  echo "Prune is DUE"
+  due="Prune is DUE"
 elif [ "$bytes" -gt $((budget * 1024)) ]; then
   largest="$(printf '%s\n' "$loaded" | head -n 3 | while read -r b f; do printf '%s %s KB, ' "$f" "$(kb "$b")"; done)"
-  echo "Prune is DUE (always-loaded rules are over loop.rule_budget_kb; largest: ${largest%, })"
+  due="Prune is DUE (always-loaded rules are over loop.rule_budget_kb; largest: ${largest%, })"
 elif [ "$cbytes" -gt $((cbudget * 1024)) ]; then
-  echo "Prune is DUE (the plan checklists are over loop.checklist_budget_kb)"
+  due="Prune is DUE (the plan checklists are over loop.checklist_budget_kb)"
 elif [ "$dbytes" -gt $((dbudget * 1024)) ]; then
   largest="$(for f in project/*.md; do [ -f "$f" ] && printf '%s %s\n' "$(wc -c < "$f" | tr -d ' ')" "$f"; done \
     | sort -rn | head -n 2 | while read -r b f; do printf '%s %s KB, ' "$f" "$(kb "$b")"; done)"
-  echo "Prune is DUE (the project docs are over loop.project_docs_budget_kb; largest: ${largest%, })"
+  due="Prune is DUE (the project docs are over loop.project_docs_budget_kb; largest: ${largest%, })"
 elif [ -f .claude/rules/technical-lead.md ] \
   && [ "$(wc -c < .claude/rules/technical-lead.md)" -gt 20480 ]; then
-  echo "Prune is DUE (.claude/rules/technical-lead.md is over 20 KB)"
+  due="Prune is DUE (.claude/rules/technical-lead.md is over 20 KB)"
+fi
+# While a proposal waits for the owner the hand-off names it and writes no second one, so DUE is not printed.
+if [ -n "$waiting" ]; then
+  echo "Prune proposal waiting: $waiting${due#Prune is DUE}"
+elif [ -n "$due" ]; then
+  echo "$due"
 fi
 
 # Trials, and with --prune the trend, trial numbers and rule tags. A file that is only on the
