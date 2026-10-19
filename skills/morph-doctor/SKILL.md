@@ -24,12 +24,12 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
 - Every agent file under `.claude/agents/` points at a body under `harness/agents/` that exists.
 - **Required tools:** `git`, `python3`, `awk` and `perl` are on PATH (`command -v`), and `bash` is the
   shell the hooks run in (native Windows without Git Bash is not supported). Report each missing one with
-  what stops working: no `python3` turns `scripts/guard.sh` off (every call passes) and stops the prune
+  what stops working: no `python3` makes `scripts/guard.sh` block every tool call (it fails closed; `guard.fail_open: true` lets them through) and stops the prune
   counter and cost scripts; no `awk` stops every script that reads `harness.config.yml`; no `perl` stops
   `/morph-module remove`; no `git` stops the process. `timeout` (or `gtimeout`) missing: say that
   `scripts/session-start.sh` then runs without a time limit.
 - **Guard hook:** `.claude/settings.json` → `hooks.PreToolUse` runs `scripts/guard.sh`, the script
-  exists, `python3` is installed (without it the guard lets every call through), and the push test in
+  exists, `python3` is installed (without it the guard blocks every call, unless `guard.fail_open: true`), and the push test in
   render.md § 7 item 9 exits 2. A copy without the hook: point to `/morph-update` (update note
   `2026-10-17-guard-hook`). `guard.mcp_writes: off`: mention once that connector writes then rely on
   the named `ask` rules alone; `guard.deploys`, `guard.publishes` or `guard.schema_pushes: off` the

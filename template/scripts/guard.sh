@@ -54,15 +54,29 @@
 # This stops accidents, not intent: it reads the command text, so a script that runs a deploy, an
 # unlisted tool or a deliberately disguised call gets past it. The settings rules and the owner's
 # review are the other layers.
-# Everything else passes untouched. Without python3 the hook lets the call through (the settings
-# rules still apply) and /morph-doctor reports it.
+# Everything else passes untouched.
+# The hook fails closed: without python3, without the config reader (scripts/lib/config.sh), when the
+# project folder can't be entered, on input it can't parse and on an internal error, it exits 2
+# with the reason, so a broken guard blocks the call instead of passing it. `guard: { fail_open: true }`
+# in harness.config.yml lets calls through when python3 is missing (the owner's choice for a machine
+# that can't have it); /morph-doctor reports the gap either way.
 #
 # Input: the hook's JSON on stdin. Test by hand:
 #   echo '{"tool_name":"Bash","tool_input":{"command":"git push origin main"}}' | bash scripts/guard.sh
 
-. "$(cd "$(dirname "$0")" && pwd)/lib/config.sh" 2>/dev/null || exit 0
-cd "${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}" 2>/dev/null || exit 0
-command -v python3 >/dev/null 2>&1 || exit 0
+guard_closed() {
+  echo "Blocked by scripts/guard.sh: $1 The guard fails closed. Fix that, then retry (/morph-doctor lists what is missing)." >&2
+  exit 2
+}
+
+. "$(cd "$(dirname "$0")" && pwd)/lib/config.sh" 2>/dev/null || guard_closed "scripts/lib/config.sh is missing or unreadable, so harness.config.yml can't be read."
+cd "${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}" 2>/dev/null || guard_closed "the project folder can't be entered."
+if ! command -v python3 >/dev/null 2>&1; then
+  case "$(config_get guard.fail_open | tr 'A-Z' 'a-z')" in
+    true|yes|on) echo "scripts/guard.sh: python3 is missing and guard.fail_open is set, so this call is not checked." >&2; exit 0 ;;
+  esac
+  guard_closed "python3 is not installed, so the call can't be checked. Install python3, or set guard.fail_open: true in harness.config.yml to accept unchecked calls."
+fi
 
 GUARD_BRANCHES="$(
   {
@@ -79,7 +93,7 @@ GUARD_NETWORK="$(config_get guard.network)"
 GUARD_ALLOW_HOSTS="$(config_get guard.allow_hosts)"
 export GUARD_BRANCHES GUARD_MCP_WRITES GUARD_DEPLOYS GUARD_PUBLISHES GUARD_SCHEMA_PUSHES GUARD_NETWORK GUARD_ALLOW_HOSTS
 
-exec python3 -I -c '
+python3 -I -c '
 import fnmatch, json, os, re, shlex, subprocess, sys
 
 PROTECTED = set(os.environ.get("GUARD_BRANCHES", "").split())
@@ -105,7 +119,9 @@ def ask(reason):
 try:
     event = json.load(sys.stdin)
 except Exception:
-    sys.exit(0)
+    deny("the hook input is not valid JSON, so the call can\u2019t be checked.")
+if not isinstance(event, dict):
+    deny("the hook input is not a JSON object, so the call can\u2019t be checked.")
 if event.get("hook_event_name") == "ConfigChange":
     # The settings files changed while the session runs. A change to settings.local.json (the file an
     # agent could use to grant itself permissions) is blocked; one to settings.json is allowed, and the
@@ -594,3 +610,7 @@ elif tool.startswith("mcp__") and MCP_ASK:
             "(harness/SKILLS_AND_MCPS.md § Connector actions).")
 sys.exit(0)
 '
+rc=$?
+# 0 = pass or ask (JSON on stdout), 2 = deny. Anything else is a crash inside the hook: block, don't pass.
+[ "$rc" -eq 0 ] || [ "$rc" -eq 2 ] || guard_closed "the guard script crashed (exit $rc), so the call can't be checked."
+exit "$rc"

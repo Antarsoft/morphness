@@ -363,3 +363,11 @@
 {"expect": "deny", "tool": "Grep", "input": {"pattern": "TOKEN", "path": "/home/u/.aws/credentials"}}
 {"expect": "deny", "tool": "Grep", "input": {"pattern": "x", "glob": "**/*.pem"}}
 {"expect": "pass", "tool": "Grep", "input": {"pattern": "x", "glob": "**/*.ts"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git status"}, "without": "python3"}
+{"expect": "deny", "tool": "Read", "input": {"file_path": "README.md"}, "without": "python3"}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git status"}, "without": "python3", "guard": {"fail_open": "true"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git status"}, "without": "config"}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git status"}, "raw": "not json"}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git status"}, "raw": ""}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git status"}, "raw": "[1, 2]"}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git status"}, "raw": "{}"}

@@ -6,6 +6,11 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Guard: it fails closed. Without `python3`, without `scripts/lib/config.sh`, with a project folder it
+  cannot enter, on input that is not a JSON object and on a crash, `scripts/guard.sh` exits 2 with the
+  reason instead of letting the call through; `guard: { fail_open: true }` accepts unchecked calls when
+  `python3` is missing. `/morph-doctor` says so.
+
 - Guard: the secret catalogue is real. Besides `.env*`, the guard denies `.envrc`, `*.pem`, `*.key`,
   `*.p12`, `id_rsa` and its kin, `.netrc`, `.pgpass`, `.git-credentials`, `credentials.json`,
   `secrets.yml` and similar, anything under `.aws`, `.ssh`, `.gnupg`, `.azure`, `.kube`,
