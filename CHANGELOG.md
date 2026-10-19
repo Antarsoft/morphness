@@ -6,6 +6,8 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- The plan checklist has a group index with skip conditions, so a plan with no UI or no data reads fewer items.
+
 - The prune report prints a `Loop:` line (escapes and rule tags added in the window), so a project can
   see whether the learning loop does anything.
 
