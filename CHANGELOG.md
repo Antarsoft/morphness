@@ -6,6 +6,10 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Guard: it protects its own files. An Edit, Write or Bash write to `scripts/guard.sh`,
+  `scripts/session-start.sh`, `scripts/lib/`, `.claude/settings.json` or `harness.config.yml` asks the
+  owner; `.claude/settings.local.json` is denied; a `ConfigChange` hook blocks a mid-session change to
+  the local settings.
 - Supply-chain pins: the catalog lists a pinned commit for every third-party skill and installs from it,
   `project/SKILLS_AND_MCPS.md` records the commit, `/morph-doctor` diffs installed skills against their
   source, the CI scaffolds pin `actions/checkout` to a commit, and the self-test checks that every action

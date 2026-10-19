@@ -456,12 +456,14 @@ def check(name, fx, t):
     # guard hook cases
     branches = {"{I}": fx["branches"]["integration"], "{P}": fx["branches"]["production"]}
     for case in cases:
-        raw = json.dumps({"tool_name": case["tool"], "tool_input": case["input"]})
+        # "extra" adds top-level event fields (a ConfigChange event has no tool).
+        raw = json.dumps({"tool_name": case["tool"], "tool_input": case["input"], **case.get("extra", {})})
         for k, v in branches.items():
             raw = raw.replace(k, v)
         here = case.get("branch", "feature/selftest")
         for k, v in branches.items():
             here = here.replace(k, v)
+        raw = raw.replace("{ROOT}", t)
         run(["git", "checkout", "-q", "-B", here], t)
         cfg_path = os.path.join(t, "harness.config.yml")
         saved = open(cfg_path, encoding="utf-8").read()
