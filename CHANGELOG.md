@@ -8,6 +8,11 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 - The prune report prints a `Loop:` line (escapes and rule tags added in the window), so a project can
   see whether the learning loop does anything.
+
+- Trials wait for an escape window: a trial that has run its length is decided only after one prune
+  window of features has finished past its last trial feature, and the decision reads the `Escaped`
+  lines of bug-mode and fix-PR learnings files traced to its features.
+
 - Guard: destructive local and persistence asks. `scripts/guard.sh` asks before a recursive `rm` outside the
   repo (or of the repo folder, its `.git` or a path built at run time; `/tmp` passes), before a write to
   `~/.bashrc`, `~/.profile`, `~/.zshrc` and other startup files or schedules, before `crontab` (except `-l`),
