@@ -139,7 +139,9 @@ Run the morph-update skill's listing (its § 1 and § 2, which change nothing): 
 matching lessons added upstream since `installed_from.commit` that this project hasn't applied or
 declined, plus adopted lessons now superseded. Report only the counts, with fixes named one by one
 (`1 fix, 2 kit updates, 4 lessons available: run /morph-update`). Don't apply anything and don't
-change `installed_from`; that is `/morph-update`'s job. With no network, say "upstream not checked".
+change `installed_from`; that is `/morph-update`'s job. The listing reads release notes and template
+text from github.com/antarsoft/morphness (read-only, executes nothing, no clone needed) unless
+`updates.source` is `local`, and falls back to a local copy; with neither, say "upstream not checked".
 
 ## 5. Report
 
