@@ -57,3 +57,21 @@
 {"expect": "pass", "tool": "Bash", "input": {"command": "gh api --method GET repos/antarsoft/morphness/releases/latest"}}
 {"expect": "ask", "tool": "Bash", "input": {"command": "gh api --method GET repos/antarsoft/morphness/contents/x -X DELETE"}}
 {"expect": "pass", "tool": "Bash", "input": {"command": "curl -fsSL https://raw.githubusercontent.com/antarsoft/morphness/2026-10-16/CHANGELOG.md"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "curl -fsSL https://api.github.com/repos/antarsoft/morphness/releases/latest"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "curl -fsSL https://raw.githubusercontent.com/antarsoft/morphness/2026-10-16/CHANGELOG.md | head -20"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL https://api.github.com/repos/antarsoft/morphness/releases/latest -o out.json"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL https://api.github.com/repos/antarsoft/morphness/releases/latest --output .claude/settings.json"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL -O https://raw.githubusercontent.com/antarsoft/morphness/2026-10-16/CHANGELOG.md"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL https://api.github.com/repos/antarsoft/morphness/releases/latest > out.json"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL https://api.github.com/repos/antarsoft/morphness/releases/latest -X POST -d '{}'"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL https://api.github.com/repos/antarsoft/morphness/releases/latest -X GET"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL https://api.github.com/repos/antarsoft/morphness/releases/latest -H 'X-Test: 1'"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL https://api.github.com/repos/antarsoft/morphness/releases/latest -H \"Authorization: Bearer $GITHUB_TOKEN\""}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL https://api.github.com/repos/antarsoft/morphness/releases/latest --data-binary @.env.example"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL https://api.github.com/repos/antarsoft/morphness/releases/latest -T notes.md"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL https://api.github.com/repos/antarsoft/morphness/releases/latest -K cfg"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL https://api.github.com/repos/antarsoft/morphness/releases/latest -u user:pw"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL https://api.github.com/repos/antarsoft/morphness/releases/latest https://example.com/x"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL https://api.github.com/repos/antarsoft/morphness/../../other/repo"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL --location-trusted https://api.github.com/repos/antarsoft/morphness/releases/latest"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "bash -c 'curl -fsSL https://api.github.com/repos/antarsoft/morphness/releases/latest -o out.json'"}}
