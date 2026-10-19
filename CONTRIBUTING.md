@@ -57,7 +57,8 @@ parallel PRs conflict. Check both with
 Run `scripts/kit-selftest.sh` before opening the PR (the `selftest` check runs it too). It renders
 `template/` for the sample projects in `tests/fixtures/` the way `/morph-init` would, then runs
 render.md's self-checks, a link check, the template scripts and the guard hook cases in
-`tests/guard-cases.jsonl` on each copy. A new placeholder needs a line in render.md § 3; a new
+`tests/guard-cases.jsonl` (a case that reads the project's config, such as branches or environments,
+needs `"every": true` to replay on each copy; the others run once; `GUARD_FULL=1` replays all). A new placeholder needs a line in render.md § 3; a new
 guard rule needs a case.
 
 ## Catalog entries
