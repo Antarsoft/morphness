@@ -2,7 +2,7 @@
 id: 2026-10-19-supply-chain-pins
 title: CI workflows pin actions to a commit, third-party skills install from a pinned commit
 kind: fix
-release: unreleased
+release: 2026-10-19.2
 applies_to: { modules: [] }
 files:
   - project/SKILLS_AND_MCPS.md

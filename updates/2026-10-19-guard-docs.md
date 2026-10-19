@@ -2,7 +2,7 @@
 id: 2026-10-19-guard-docs
 title: One description of the guard hook, matching what it does
 kind: rule
-release: unreleased
+release: 2026-10-19.2
 applies_to: { modules: [] }
 files:
   - AGENTS.md

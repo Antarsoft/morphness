@@ -2,7 +2,7 @@
 id: 2026-10-19-guard-block-environments
 title: The guard protects environment branches written as a block list
 kind: fix
-release: unreleased
+release: 2026-10-19.2
 applies_to: { modules: [] }
 files:
   - scripts/guard.sh

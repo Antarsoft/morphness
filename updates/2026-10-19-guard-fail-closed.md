@@ -2,7 +2,7 @@
 id: 2026-10-19-guard-fail-closed
 title: The guard blocks when it cannot run
 kind: fix
-release: unreleased
+release: 2026-10-19.2
 applies_to: { modules: [] }
 files:
   - scripts/guard.sh

@@ -2,7 +2,7 @@
 id: 2026-10-19-agent-context
 title: Subagents skip the project instructions, and the Technical Lead rule moves out of the rules folder
 kind: fix
-release: unreleased
+release: 2026-10-19.2
 applies_to: { modules: [] }
 files:
   - .claude/agents/fullstack-engineer-medium.md

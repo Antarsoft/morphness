@@ -2,7 +2,7 @@
 id: 2026-10-19-guard-local-asks
 title: The guard asks before destructive deletes, shell startup edits and reads of ~/.claude
 kind: fix
-release: unreleased
+release: 2026-10-19.2
 applies_to: { modules: [] }
 files:
   - scripts/guard.sh

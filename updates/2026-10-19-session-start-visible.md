@@ -2,7 +2,7 @@
 id: 2026-10-19-session-start-visible
 title: Session start shows its commands, times out and skips dependency scripts
 kind: fix
-release: unreleased
+release: 2026-10-19.2
 applies_to: { modules: [] }
 files:
   - scripts/session-start.sh

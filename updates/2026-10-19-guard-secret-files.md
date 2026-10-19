@@ -2,7 +2,7 @@
 id: 2026-10-19-guard-secret-files
 title: The guard and the deny list cover real secret files, not only .env
 kind: fix
-release: unreleased
+release: 2026-10-19.2
 applies_to: { modules: [] }
 files:
   - scripts/guard.sh

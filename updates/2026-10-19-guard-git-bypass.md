@@ -2,7 +2,7 @@
 id: 2026-10-19-guard-git-bypass
 title: The guard follows branch changes inside a command and asks before tag pushes
 kind: fix
-release: unreleased
+release: 2026-10-19.2
 applies_to: { modules: [] }
 files:
   - scripts/guard.sh

@@ -2,7 +2,7 @@
 id: 2026-10-19-prune-handoff-cost
 title: Hand-offs no longer wait on the network or poll background agents, and an exceeded budget fails the hand-off
 kind: fix
-release: unreleased
+release: 2026-10-19.2
 applies_to: { modules: [] }
 files:
   - scripts/prune-counter.sh

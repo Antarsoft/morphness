@@ -2,7 +2,7 @@
 id: 2026-10-19-guard-cli-ask
 title: The guard asks before any call to a deploy, cloud or database CLI unless it only reads
 kind: fix
-release: unreleased
+release: 2026-10-19.2
 applies_to: { modules: [] }
 files:
   - scripts/guard.sh
