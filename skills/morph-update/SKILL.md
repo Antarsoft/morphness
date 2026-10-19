@@ -95,8 +95,8 @@ asks "what's new?"), do § 1 and § 2 and stop: change nothing, write nothing.
 **Kit updates.** The notes in upstream `updates/` (not `README.md`) that are:
 
 - added after `BASE` (paths under `updates/` in `list(HEAD)` that aren't in `list(BASE)`), plus every
-  id in `updates.deferred`; read each with `read(HEAD, updates/<id>.md)`;
-- not in `updates.applied` or `updates.declined`;
+  id in `installed_from.updates.deferred`; read each with `read(HEAD, updates/<id>.md)`;
+- not in `installed_from.updates.applied` or `installed_from.updates.declined`;
 - relevant: `applies_to.modules` empty, or overlapping `harness.config.yml` → `modules`. A
   `kind: module` note whose `offer_module` isn't enabled is offered as an **opt-in** ("add the ci-cd
   module?"); one whose module is already enabled (added by hand) is checked for missing pieces instead.
@@ -183,9 +183,9 @@ project file's content beyond the change being applied.
    - `commit`: `HEAD`'s commit (on GitHub, the `sha` the commits request gives for the tag).
      `release`: the newest release heading in `read(HEAD, CHANGELOG.md)` (the first `## YYYY-MM-DD`
      or `## YYYY-MM-DD.N` heading below `## Unreleased`).
-   - `updates.applied` and `updates.declined`: append this run's ids (and the "already here" ones
+   - `installed_from.updates.applied` and `installed_from.updates.declined`: append this run's ids (and the "already here" ones
      to `applied`).
-   - `updates.deferred`: set to the notes answered **later**, each as `{ id, base }` where `base` is
+   - `installed_from.updates.deferred`: set to the notes answered **later**, each as `{ id, base }` where `base` is
      its old base (its existing entry's `base`, else `BASE`), so its files still merge against the
      template it was written for. Drop deferred entries that were applied or declined now.
    When the owner declined everything and nothing was deferred, still move `commit` forward so the
