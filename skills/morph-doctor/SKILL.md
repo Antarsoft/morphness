@@ -28,6 +28,10 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
   counter and cost scripts; no `awk` stops every script that reads `harness.config.yml`; no `perl` stops
   `/morph-module remove`; no `git` stops the process. `timeout` (or `gtimeout`) missing: say that
   `scripts/session-start.sh` then runs without a time limit.
+- **Session commands:** `.git/morphness-session-commands` exists and matches the two commands in
+  `scripts/session-start.sh`. A mismatch means the commands changed since this clone last ran them and
+  session start is holding them: show the owner both versions and, on a yes, run
+  `bash scripts/session-start.sh --accept`. A copy whose script lacks the pin: point to `/morph-update`.
 - **Guard hook:** `.claude/settings.json` → `hooks.PreToolUse` runs `scripts/guard.sh`, the script
   exists, `python3` is installed (without it the guard lets every call through), and the push test in
   render.md § 7 item 9 exits 2. A copy without the hook: point to `/morph-update` (update note

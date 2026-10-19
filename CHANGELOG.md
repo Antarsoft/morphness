@@ -6,12 +6,15 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Session start: the toolchain and install commands are pinned per clone. A pulled change to either
+  makes `scripts/session-start.sh` run nothing and show the old and new commands; the owner confirms
+  in the session and `bash scripts/session-start.sh --accept` records and runs them (an `ask` rule
+  covers that command). `/morph-doctor` reports a held change.
 - Guard: the secret catalogue is real. Besides `.env*`, the guard denies `.envrc`, `*.pem`, `*.key`,
   `*.p12`, `id_rsa` and its kin, `.netrc`, `.pgpass`, `.git-credentials`, `credentials.json`,
   `secrets.yml` and similar, anything under `.aws`, `.ssh`, `.gnupg`, `.azure`, `.kube`,
   `.config/gcloud` and `.config/gh`, and env-file globs like `.en?`; `.npmrc` and `.pypirc` ask.
   `.claude/settings.json` gets matching `Read` and `Edit` deny rules.
-
 - Guard: one-command exfiltration. The `.env` check sees through `@` and `<` (`curl -d @.env`), a bare
   `env` or `printenv` and `/proc/<pid>/environ` are denied, and a new `network` group in `guard:` asks
   before `curl` or `wget` send a body or a non-GET request to a host outside `localhost` and
