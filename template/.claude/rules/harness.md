@@ -10,6 +10,7 @@ For non-trivial features, follow the generic harness in `harness/` and `AGENTS.m
 - **Subagents:** delegate with the Agent tool. Model and effort live in each `.claude/agents/*.md` file; the role body is `harness/agents/<role>.md` plus `project/agents/<role>.md`. The plan's **Agent effort** section picks the variant (for example `fullstack-engineer-xhigh`; every variant, trials included, is listed in `project/HARNESS_AGENTS.md` § Agents). See `project/HARNESS_AGENTS.md`.
 - **Researcher subagent:** research mode and optional research before a plan ([harness/MODES.md](../../harness/MODES.md) § Research mode); read-only, cites every claim, **only** edits its research file between the two lines; never decides (the TL checks and records it).
 - **Bug mode:** bug reports get the short bug plan; QA writes the failing test before any fix, Full-stack records the root cause before fixing ([harness/MODES.md](../../harness/MODES.md) § Bug mode).
+- **Small mode (default for a clear request):** a fully specified change in a few named files that alters no access, money, stored data's shape or deletion, secrets, dependency or flow gets the short small plan and the same three agents ([harness/MODES.md](../../harness/MODES.md) § Small mode).
 - **Light mode:** small fixes may skip `_harness/` (see `harness/MODES.md`). Light mode still does **not** allow the TL to write app code; use Full-stack or a single agent explicitly assigned as implementer (not the TL).
 
 Read `project/STACK.md`, `harness/CONTROLS.md` and `project/CONTROLS.md` for checks.
