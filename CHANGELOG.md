@@ -13,6 +13,8 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 - `prune-counter.sh` prints only `Prune proposal waiting: <path>` while a prune proposal waits for the
   owner, no `Prune is DUE` line, so a Technical Lead following the hand-off bullet writes no second
   proposal. The prune template's **Status** can be `declined`.
+- Security module wording in the Technical Lead rule, `SETUP.md` and `HANDOFFS.md` is marked, so a
+  project without the module doesn't load it; the self-test fails when module text is left behind.
 - Small, bug and security wording lined up across the rules, plans and agent bodies (small plan QA scope
   and limit, security review on bug plans, full-mode-only sections marked, lighter agent reads and QA
   layout pass); `prune-counter.sh` shows a waiting prune proposal.
