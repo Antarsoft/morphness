@@ -16,7 +16,7 @@ Process: `harness/SETUP.md` § Prune; why: `harness/MORPHING.md` § Pruning.
 
 **Escaped:** the window's `Escaped` retro lines (bugs found after QA passed), one line each, or "none". A repeat points at a rule row in § 2.
 
-**Trend:** the `Last N features: …` line from `bash scripts/prune-counter.sh --prune` (average rework rounds, QA fails, total cost), then one line: did rework and cost per feature fall against the previous window, and why we think so.
+**Trend:** the `Last N features: …` and `Loop: …` lines from `bash scripts/prune-counter.sh --prune` (average rework rounds, QA fails, total cost; escapes and rule tags added in the window), then one line: did rework and cost per feature fall against the previous window, and why we think so.
 
 ## 1b. Trials
 
