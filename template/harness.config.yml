@@ -135,19 +135,22 @@ cost: { track: true, prices: harness/MODEL_PRICES.md }
 #   deploys        any call to a deploy or cloud CLI (vercel, wrangler, netlify, fly, railway, heroku, gcloud, aws,
 #                  az, kubectl, helm, pulumi, terraform, firebase, stripe ...) and hosted supabase writes unless it only reads
 #                  (get, list, status, plan ...) or is --dry-run/--help; platform secrets and variables;
-#                  gh pr merge, gh release, gh workflow run, any gh api write
+#                  gh pr merge, gh release, gh workflow run, any gh api write; a make/npm/pnpm/yarn task or a script
+#                  file named deploy, release or promote; a change to .github/workflows or another CI definition
 #   publishes      npm/pnpm/yarn/bun publish (also with --filter/--workspace), changeset publish, cargo publish,
-#                  docker push, twine upload, gem push
+#                  docker push, twine upload, gem push; a task or script named publish
 #   schema_pushes  prisma db push/migrate reset, drizzle-kit push, psql/mysql/mongosh/redis-cli against a host
 #                  that is not local, unless the statement only reads
 #   network        curl/wget with a body or a method other than GET to a host outside localhost and
 #                  allow_hosts (a space-separated list, for example allow_hosts: "api.example.com"),
-#                  scp, sftp, rsync to or from another machine, nc, socat, telnet, ftp
+#                  ssh, scp, sftp, rsync to or from another machine, nc, socat, telnet, ftp
+#   installs       a package runner (npx, bunx, pnpm dlx, uvx) downloading a package that isn't installed in the
+#                  project, unless it is a common dev tool, and `skills add`
 #   fail_open      true lets calls through when python3 is missing; by default a guard that can't run
 #                  (no python3, no config reader, unreadable input, a crash) blocks the call
 # A command with --dry-run or --help passes in every group. What the guard denies, asks and does not see:
 # AGENTS.md § Permissions for this project.
-guard: { mcp_writes: ask, deploys: ask, publishes: ask, schema_pushes: ask, network: ask }
+guard: { mcp_writes: ask, deploys: ask, publishes: ask, schema_pushes: ask, network: ask, installs: ask }
 
 loop:
   retro_max_items: 3      # usual action items per retro (soft: more with one line why, none is fine)
