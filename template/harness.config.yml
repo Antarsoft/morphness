@@ -131,11 +131,14 @@ cost: { track: true, prices: harness/MODEL_PRICES.md }
 # beats an allow rule, so `off` is the only way to run these without a prompt, for instance
 # `prisma db push` on a local stack.
 #   mcp_writes     every MCP tool that isn't a read (get, list, search, ...)
-#   deploys        vercel, wrangler/fly/firebase/netlify deploys, platform secrets and variables
-#                  (vercel env add, wrangler secret put, netlify env:set), supabase functions deploy,
-#                  terraform apply, kubectl apply, helm upgrade
-#   publishes      npm/pnpm/yarn/bun publish (also with --filter/--workspace), changeset publish, cargo publish
-#   schema_pushes  prisma db push, drizzle-kit push
+#   deploys        any call to a deploy or cloud CLI (vercel, wrangler, netlify, fly, railway, heroku, gcloud, aws,
+#                  az, kubectl, helm, pulumi, terraform, firebase, stripe, supabase ...) unless it only reads
+#                  (get, list, status, plan ...) or is --dry-run/--help; platform secrets and variables;
+#                  gh pr merge, gh release, gh workflow run, any gh api write
+#   publishes      npm/pnpm/yarn/bun publish (also with --filter/--workspace), changeset publish, cargo publish,
+#                  docker push, twine upload, gem push
+#   schema_pushes  prisma db push/migrate reset, drizzle-kit push, psql/mysql/mongosh/redis-cli against a host
+#                  that is not local, unless the statement only reads
 #   network        curl/wget with a body or a method other than GET to a host outside localhost and
 #                  allow_hosts (a space-separated list, for example allow_hosts: "api.example.com"),
 #                  scp, sftp, rsync to or from another machine, nc, socat, telnet, ftp
