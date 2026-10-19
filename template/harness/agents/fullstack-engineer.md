@@ -63,6 +63,8 @@ Run every `before_qa` check in [harness/CONTROLS.md](../CONTROLS.md) § Before F
 
 Browser tests: run only the targeted specs when CONTROLS.md requires browser tests (the plan's **Targeted e2e specs** plus the smoke and accessibility specs when the project has them and every spec you add or edit), or the full suite when the plan says `full` or your diff touches a cross-cutting path ([harness/CONTROLS.md](../CONTROLS.md) § Cross-cutting paths). Record which specs ran. QA runs the full suite (`project/HARNESS_AGENTS.md` § Browser tests).
 
+A check the environment refused (a denied command, no permission) is **not run**, with the refusal recorded in `progress.md`; never swap in a different command and count it as a pass.
+
 All must exit 0. Do not mark **Ready for QA** until validation is recorded. Fill **Ended** from `date` (on rework keep **Started** and update Ended); the Technical Lead records the real duration.
 
 ## Hand back
