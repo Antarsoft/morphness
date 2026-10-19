@@ -116,7 +116,7 @@ For each accepted kit update:
    - **Edited here:** `git merge-file -p T/<path> <base copy> <HEAD copy>` with the two template
      versions written to temporary files. A clean merge: show the diff against the project's file
      and write it on the owner's yes. Conflicts: resolve them yourself so the project's own rules
-     survive (a rule with provenance such as `(feature-slug)` or `(lesson: <id>)` is never dropped)
+     survive (a rule with provenance such as `(from <feature-slug>, <date>)`, `(feature-slug)` or `(lesson: <id>)` is never dropped)
      and the upstream change is added around them; show the result and the reasoning, and write it
      only on the owner's yes. When the upstream change contradicts a local rule, don't pick: show
      both and let the owner decide.

@@ -6,6 +6,15 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Trials as files: `_harness/trials/<trial-slug>.md` (template `harness/templates/trial.md`) holds the
+  hypothesis, the change, its length in features, the metric and the pass and revert conditions. A
+  feature that runs one names it on its learnings file's **Trial** line, the prune counter prints
+  `Trial <slug>: N/<length> features` in every hand-off, and the prune decides keep or revert from
+  the numbers. Replaces the table in `_harness/LEARNINGS.md` § Trials.
+- Prune trend line: `bash scripts/prune-counter.sh --prune` prints one summary of the window (average
+  rework rounds, QA fails, total cost) for the prune proposal, plus each trial's numbers.
+- Rule provenance with a date: a rule a retro adds ends with `(from <feature>, <date>)`, and
+  `prune-counter.sh --prune` lists each tag with the features finished since, for the rule audit.
 - Small mode, between light and full and the default for a clear request: a fully specified change
   in a few named files that alters no access, money, stored data's shape or deletion, secrets,
   dependency or flow gets a short plan (`harness/templates/small-plan.md`) instead of `feature.md`,

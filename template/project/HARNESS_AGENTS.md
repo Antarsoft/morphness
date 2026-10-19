@@ -46,9 +46,7 @@ Each `plan.md` has an **Agent effort** section naming the Full-stack and QA leve
 
 ## Trials
 
-A trial is a model or effort change run on a fixed number of features with a KPI, decided at the next prune ([harness/SETUP.md](../harness/SETUP.md) § Prune; the rows live in `_harness/LEARNINGS.md` § Trials). Each feature's learnings file records the model with the effort on its **Cost** line, so the prune can tabulate by model.
-
-Write each trial as one bullet: what changes, who started it, the features it covers (for example "the next three UI-only features"), the KPI per feature (QA rounds, implementation failure causes, Full-stack duration, estimated cost, tool calls), the pass rule, and the revert rule (for example "revert on the first feature that needs a second QA round from an implementation cause"). When a trial ends, say so here in one line and move the rule into § Effort per feature or drop it.
+A model or effort trial runs on a fixed number of features and is decided at a prune from the numbers. Its file is `_harness/trials/<trial-slug>.md` ([harness/MORPHING.md](../harness/MORPHING.md) § Trials); here it gets one bullet naming the variant and linking that file. When it ends, say so here in one line and move the variant into § Effort per feature or drop it.
 
 <!-- morph-init: no trials at install. Leave this comment; the first retro or prune that starts a trial adds the bullet. -->
 

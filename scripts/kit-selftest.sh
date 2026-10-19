@@ -360,6 +360,9 @@ def check(name, fx, t):
         bad(f"prune-counter.sh printed no Rules gauge line: {r.stdout!r}")
     if any(l.startswith("Prune is DUE") for l in lines):
         bad(f"a fresh install is already due a prune: {r.stdout!r}")
+    r = run(["bash", "scripts/prune-counter.sh", "--prune"], t)
+    if r.returncode or "Last 0 features: no features" not in r.stdout or "Rule tags: 0 " not in r.stdout:
+        bad(f"prune-counter.sh --prune on a fresh install printed {r.stdout!r} (stderr {r.stderr.strip()!r})")
     r = run(["bash", "scripts/feature-cost.sh"], t, env=dict(os.environ, HOME=t))
     if r.returncode or "Traceback" in r.stdout + r.stderr:
         bad(f"feature-cost.sh failed: {r.stdout}{r.stderr}")
