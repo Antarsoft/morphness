@@ -1,6 +1,6 @@
 ---
 name: fullstack-engineer
-description: Harness Full-stack engineer. The Technical Lead uses this agent to implement an approved _harness/features/<slug>/<version>/Plan/plan.md (any "execute / implement / develop / build / fix" request for feature work), and for QA-fail rework. Pass the absolute feature folder path in the prompt. Default (effort high): use when the plan's Agent effort says Full-stack high.
+description: "Harness Full-stack engineer. The Technical Lead uses this agent to implement an approved _harness/features/<slug>/<version>/Plan/plan.md (any \"execute / implement / develop / build / fix\" request for feature work), and for QA-fail rework. Pass the absolute feature folder path in the prompt. Default (effort high): use when the plan's Agent effort says Full-stack high."
 model: "{{models.fullstack}}"
 effort: high
 omitClaudeMd: true
