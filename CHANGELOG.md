@@ -6,6 +6,10 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Supply-chain pins: the catalog lists a pinned commit for every third-party skill and installs from it,
+  `project/SKILLS_AND_MCPS.md` records the commit, `/morph-doctor` diffs installed skills against their
+  source, the CI scaffolds pin `actions/checkout` to a commit, and the self-test checks that every action
+  is pinned and that `ci.on_drafts` renders as a boolean.
 - Agent context: subagents set `omitClaudeMd: true`, the Technical Lead rule moves to
   `harness/TECHNICAL_LEAD.md` (imported by `CLAUDE.md`, so only the main chat loads it), the researcher
   agents lose the shell, and a rule says to log long command output and print only the tail.

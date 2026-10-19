@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-24.04   # pinned: bump it in its own PR
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
         with:
           fetch-depth: 0
 
@@ -47,8 +47,8 @@ jobs:
           fi
           echo "code=$code" >> "$GITHUB_OUTPUT"
 
-      # morph-init: fill the toolchain setup (for example actions/setup-node@v4 with the pinned version and
-      # the package manager cache), each step with `if: steps.scope.outputs.code == 'true'`.
+      # morph-init: fill the toolchain setup (for example actions/setup-node with the pinned version and
+      # the package manager cache), each `uses:` pinned to a full commit SHA with the version in a comment, each step with `if: steps.scope.outputs.code == 'true'`.
 
       # morph-init: fill one step per check in harness.config.yml → checks.before_qa, in order, named after
       # the check and running its command from project/CONTROLS.md. Leave out e2e checks unless the plan
