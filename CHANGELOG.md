@@ -7,6 +7,11 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 ## Unreleased
 
 - The plan checklist has a group index with skip conditions, so a plan with no UI or no data reads fewer items.
+
+- Trials wait for an escape window: a trial that has run its length is decided only after one prune
+  window of features has finished past its last trial feature, and the decision reads the `Escaped`
+  lines of bug-mode and fix-PR learnings files traced to its features.
+
 - Guard: destructive local and persistence asks. `scripts/guard.sh` asks before a recursive `rm` outside the
   repo (or of the repo folder, its `.git` or a path built at run time; `/tmp` passes), before a write to
   `~/.bashrc`, `~/.profile`, `~/.zshrc` and other startup files or schedules, before `crontab` (except `-l`),
