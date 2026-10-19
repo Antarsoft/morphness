@@ -6,6 +6,12 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Guard: the deploy asks now cover `vercel env add|rm|update` (vercel asks for anything but a list of
+  read-only subcommands), `wrangler secret put|delete|bulk` and `netlify env:set|unset|import`, and the
+  publish ask covers `pnpm --filter x publish`, `npm --workspace x publish` and `changeset publish`.
+  A command with `--dry-run` passes. `guard:` in `harness.config.yml` gets `deploys`, `publishes` and
+  `schema_pushes` switches (ask or off) next to `mcp_writes`, so local `prisma db push` can run without
+  a prompt. CLAUDE.md, AGENTS.md and the config comment point at `scripts/guard.sh` for the list.
 - `prune-counter.sh` treats an `approved` prune proposal as open too (no repeated `Prune is DUE`), matches the
   status on a whole line, and skips `prunes/README.md`; § Prune says a declined proposal is still folded and reset.
 - A check recorded "not run" is not a pass at the merge gate (it runs, or the owner accepts it in

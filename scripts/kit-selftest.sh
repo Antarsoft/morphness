@@ -451,7 +451,14 @@ def check(name, fx, t):
         for k, v in branches.items():
             here = here.replace(k, v)
         run(["git", "checkout", "-q", "-B", here], t)
+        cfg_path = os.path.join(t, "harness.config.yml")
+        saved = open(cfg_path, encoding="utf-8").read()
+        if case.get("guard"):
+            # "guard": {"deploys": "off"} switches that ask off for this case only.
+            pairs = ", ".join(f"{k}: {v}" for k, v in case["guard"].items())
+            open(cfg_path, "w", encoding="utf-8").write(re.sub(r"(?m)^guard:.*$", "guard: { " + pairs + " }", saved))
         r = run(["bash", "scripts/guard.sh"], t, input=raw, env=dict(os.environ, CLAUDE_PROJECT_DIR=t))
+        open(cfg_path, "w", encoding="utf-8").write(saved)
         got = "deny" if r.returncode == 2 else "ask" if '"ask"' in r.stdout else "pass" if r.returncode == 0 else f"exit {r.returncode}"
         expect = case["expect"]
         if got != expect:
