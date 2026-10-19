@@ -6,11 +6,35 @@ These are the seed principles: each one comes from a failure that reached a buil
 
 ## How to use it
 
+- Work through every item of each group the index below doesn't skip. For each, record in `plan.md` § References → **Greps** the grep or check you ran and its hit count, or "n/a" with a few words on why the item doesn't apply: one line per kit item (`K1`, `K2`, …, applying the project's specifics for that item from `project/PLAN_CHECKLIST.md`) and one per project item (`P1`, `P2`, …). A plan with no Greps record is not ready for approval.
+- **A whole group can be n/a in one line.** When a group doesn't fit the project or the plan (a CLI tool, a library or a data pipeline has no UI; a plan that stores nothing has no Data items), write one line for the group with its range and the reason, for example `K14–K20 n/a: no user interface (CLI tool)`. The line under each group heading says when that happens. A group that applies in part gets one line per item as usual.
+- Item numbers are stable once the project cites them in retros and prunes ("checklist item 12"). A new item takes the next free number inside its group's range or at the end; a removed item leaves its number unused.
+- Each item ends with the reason it exists in brackets. When a retro sharpens an item, add the sentence and the feature slug that taught it.
+- "Full-stack to confirm" means the plan states the claim as unverified and the Full-stack engineer checks it first, before building on it. Use it only where the item allows it.
+
+## How to use it
+
 - Work through every item. For each, record in `plan.md` § References → **Greps** the grep or check you ran and its hit count, or "n/a" with a few words on why the item doesn't apply: one line per kit item (`K1`, `K2`, …, applying the project's specifics for that item from `project/PLAN_CHECKLIST.md`) and one per project item (`P1`, `P2`, …). A plan with no Greps record is not ready for approval.
 - **A whole group can be n/a in one line.** When a group doesn't fit the project or the plan (a CLI tool, a library or a data pipeline has no UI; a plan that stores nothing has no Data items), write one line for the group with its range and the reason, for example `K14–K20 n/a: no user interface (CLI tool)`. The line under each group heading says when that happens. A group that applies in part gets one line per item as usual.
 - Item numbers are stable once the project cites them in retros and prunes ("checklist item 12"). A new item takes the next free number inside its group's range or at the end; a removed item leaves its number unused.
 - Each item ends with the reason it exists in brackets. When a retro sharpens an item, add the sentence and the feature slug that taught it.
 - "Full-stack to confirm" means the plan states the claim as unverified and the Full-stack engineer checks it first, before building on it. Use it only where the item allows it.
+
+## Group index
+
+Read this table first. A group whose "skip" condition holds takes one `n/a` line in `plan.md` (see below) and its items are not read; read the other groups in full.
+
+| Group | Items | Skip the group when |
+|-------|-------|---------------------|
+| Planning and scope | 1-8 | always run it |
+| Contracts and sources | 9-13 | the plan assumes nothing about a framework, library or service |
+| UI and interaction | 14-20 | the plan has no UI |
+| Testing | 21-24 | always run it |
+| Data | 25-28 | the plan stores or migrates nothing |
+| Security | 29-32 | the plan adds no input, route, credential or permission |
+| Copy, privacy and legal | 33-36 | the plan adds no user-facing copy, personal data or terms |
+| Release and operations | 37-38 | the plan changes nothing that ships separately or runs on a schedule |
+| Process | 39-40 | always run it |
 
 ## Before asking for approval
 
