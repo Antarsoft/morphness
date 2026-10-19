@@ -2,7 +2,7 @@
 id: 2026-10-17-guard-hook
 title: Guard hook that checks tool calls before they run
 kind: rule
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 files:
   - scripts/guard.sh

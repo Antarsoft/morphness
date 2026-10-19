@@ -2,7 +2,7 @@
 id: 2026-10-19-process-rules
 title: Three retro and check rules from the run review
 kind: rule
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 files:
   - harness/SETUP.md

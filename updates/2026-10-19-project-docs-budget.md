@@ -2,7 +2,7 @@
 id: 2026-10-19-project-docs-budget
 title: The project fact docs get a size budget
 kind: config
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 files:
   - scripts/prune-counter.sh

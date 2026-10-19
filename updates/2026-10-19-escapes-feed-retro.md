@@ -2,7 +2,7 @@
 id: 2026-10-19-escapes-feed-retro
 title: A bug found after a pass always gets a retro item, and its fix checks sibling paths
 kind: rule
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 files:
   - harness/MODES.md

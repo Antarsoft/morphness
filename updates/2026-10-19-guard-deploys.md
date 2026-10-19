@@ -2,7 +2,7 @@
 id: 2026-10-19-guard-deploys
 title: Guard asks before deploys, publishes and schema pushes
 kind: config
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 files:
   - scripts/guard.sh

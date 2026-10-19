@@ -2,7 +2,7 @@
 id: 2026-10-19-post-merge-fixes
 title: Small, bug and security wording lined up across the rules and templates
 kind: fix
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 files:
   - .claude/agents/fullstack-engineer-medium.md

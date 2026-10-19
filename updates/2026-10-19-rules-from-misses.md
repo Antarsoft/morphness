@@ -2,7 +2,7 @@
 id: 2026-10-19-rules-from-misses
 title: Retro rules come from misses, and the plan checklists get a size budget
 kind: rule
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 files:
   - harness/SETUP.md

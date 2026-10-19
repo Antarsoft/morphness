@@ -2,7 +2,7 @@
 id: 2026-10-17-security-module
 title: Optional security module (threat model, secret scanning, dependency audit)
 kind: module
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 offer_module: security
 files:

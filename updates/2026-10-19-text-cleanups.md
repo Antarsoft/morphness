@@ -2,7 +2,7 @@
 id: 2026-10-19-text-cleanups
 title: Safety sections always read, last copies of old wording removed
 kind: rule
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 files:
   - .claude/agents/fullstack-engineer.md
