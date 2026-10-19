@@ -6,6 +6,8 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- A check recorded "not run" is not a pass at the merge gate (it runs, or the owner accepts it in
+  `plan.md` § Decisions); the refused-check rule is now in the QA and Full-stack agent bodies too.
 - Three process rules: a retro item that adds a sentence says why a script or check can't do the job;
   a retro item tagged `cause: environment` goes to the owner, never a rule on the Technical Lead's own
   yes; a check the environment refused is recorded "not run", never an "equivalent".
