@@ -2,7 +2,7 @@
 id: 2026-10-19-guard-own-files
 title: The guard protects its own files
 kind: fix
-release: unreleased
+release: 2026-10-19.2
 applies_to: { modules: [] }
 files:
   - scripts/guard.sh

@@ -2,7 +2,7 @@
 id: 2026-10-19-trial-escape-window
 title: A trial is decided only after an escape window, reading Escaped lines from fix PRs
 kind: template
-release: unreleased
+release: 2026-10-19.2
 applies_to: { modules: [] }
 files:
   - harness/MORPHING.md

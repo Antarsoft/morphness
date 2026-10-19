@@ -2,7 +2,7 @@
 id: 2026-10-19-session-command-pin
 title: A changed session-start command waits for the owner
 kind: fix
-release: unreleased
+release: 2026-10-19.2
 applies_to: { modules: [] }
 files:
   - scripts/session-start.sh

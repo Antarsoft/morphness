@@ -2,7 +2,7 @@
 id: 2026-10-19-checklist-group-index
 title: The plan checklist starts with a group index the Technical Lead skips from
 kind: template
-release: unreleased
+release: 2026-10-19.2
 applies_to: { modules: [] }
 files:
   - harness/PLAN_CHECKLIST.md
