@@ -14,7 +14,14 @@
 #     writes to …/secrets or …/variables)
 #   - remote database writes from well-known CLIs (`supabase db push`, `prisma migrate deploy`,
 #     `wrangler d1 … --remote`, …)
+#   - writing `.claude/settings.local.json` (the owner writes that file; an agent that could write it
+#     could grant itself permissions that never show in a PR)
 # Asks (the owner answers a permission prompt):
+#   - changing the files the guard itself rests on: scripts/guard.sh, scripts/session-start.sh,
+#     scripts/lib/, .claude/settings.json and harness.config.yml, by an Edit/Write tool or a Bash
+#     write (redirect, `sed -i`, `cp`, `mv`, `rm`, `chmod`, `tee`, `git restore`, an interpreter
+#     one-liner naming the file). /morph-init, /morph-update and the retro change them on the owner's
+#     yes, so the prompt shows the owner each change instead of blocking it.
 #   - deploys, platform secrets and publishes from well-known CLIs, so nothing reaches a shared
 #     environment or registry by accident. Three groups, each with its own switch (`guard.deploys`,
 #     `guard.publishes`, `guard.schema_pushes`: ask or off):
@@ -67,7 +74,7 @@ GUARD_SCHEMA_PUSHES="$(config_get guard.schema_pushes)"
 export GUARD_BRANCHES GUARD_MCP_WRITES GUARD_DEPLOYS GUARD_PUBLISHES GUARD_SCHEMA_PUSHES
 
 exec python3 -I -c '
-import json, os, re, shlex, subprocess, sys
+import fnmatch, json, os, re, shlex, subprocess, sys
 
 PROTECTED = set(os.environ.get("GUARD_BRANCHES", "").split())
 def switch(name):
@@ -92,8 +99,57 @@ try:
     event = json.load(sys.stdin)
 except Exception:
     sys.exit(0)
+if event.get("hook_event_name") == "ConfigChange":
+    # The settings files changed while the session runs. A change to settings.local.json (the file an
+    # agent could use to grant itself permissions) is blocked; one to settings.json is allowed, and the
+    # owner sees the notice because the Edit/Write that made it already asked.
+    if event.get("source") == "local_settings":
+        deny("settings.local.json changed during the session; it is the owner\u2019s file. Restore it, or the owner confirms the change.")
+    sys.exit(0)
 tool = event.get("tool_name") or ""
 args = event.get("tool_input") or {}
+
+# ---- the guard own files -------------------------------------------------------------------------
+# A write here switches the guard off for every later call, so these ask (the owner reads the change);
+# settings.local.json is the owner alone and is denied.
+GUARD_FILES = ["scripts/guard.sh", "scripts/session-start.sh", "scripts/lib/*", ".claude/settings.json",
+               "harness.config.yml"]
+OWNER_FILES = [".claude/settings.local.json"]
+ROOT = os.getcwd()
+CD_DIRS = []   # directories a `cd` in the same command moves to; a relative path is also tried under each
+
+def rels_to_root(word):
+    """Where a path word points, relative to the project root, once per directory a `cd` could set."""
+    w = str(word).strip("\"\x27")
+    for var in ("${CLAUDE_PROJECT_DIR}", "$CLAUDE_PROJECT_DIR", "${PWD}", "$PWD"):
+        w = w.replace(var, ROOT)
+    if not w or any(c in w for c in "$`"):
+        return
+    root = os.path.realpath(ROOT)
+    for full in [w] if os.path.isabs(w) else [os.path.join(ROOT, d, w) for d in [""] + CD_DIRS]:
+        full = os.path.normpath(full)
+        for cand in (full, os.path.realpath(full)):
+            for base in (ROOT, root):
+                if cand == base or cand.startswith(base + os.sep):
+                    yield os.path.relpath(cand, base)
+
+def protected_kind(word):
+    """"owner" for settings.local.json, "guard" for the guard files, "" for anything else."""
+    for part in re.split(r"[=:<>|,;()]", str(word)):
+        globbed = any(c in part for c in "*?[")
+        for rel in rels_to_root(part) if part else ():
+            for kind, names in (("owner", OWNER_FILES), ("guard", GUARD_FILES)):
+                for name in names:
+                    if fnmatch.fnmatch(rel, name) or (globbed and fnmatch.fnmatch(name.replace("/*", "/x"), rel)):
+                        return kind
+    return ""
+
+def protect(path, how):
+    kind = protected_kind(path)
+    if kind == "owner":
+        deny(f"`{path}` is the owner\u2019s file ({how}); an agent never writes settings.local.json.")
+    if kind == "guard":
+        ask(f"`{path}` is one of the files the guard rests on ({how}); the owner approves each change to it.")
 
 # ---- secret env files --------------------------------------------------------------------------
 SAFE_ENV = {".env.example", ".env.sample", ".env.template"}
@@ -339,10 +395,36 @@ def check_curl(words):
                 "the terminal only (no file, method, body, header or config). Use `gh api --method GET` "
                 "or the plain `curl -fsSL <url>`.")
 
+WRITERS = {"cp", "mv", "rm", "ln", "install", "tee", "truncate", "chmod", "chown", "chattr", "dd", "rsync",
+           "patch", "ed", "ex", "vi", "vim", "nano", "touch", "unlink", "shred"}
+INTERPRETERS = {"python", "python3", "node", "ruby", "perl", "php", "deno", "bun"}
+
+def guard_file_write(cmd, words):
+    """Ask or deny when a Bash command writes one of the protected files."""
+    name = words[0]
+    named = [w for w in words[1:] if protected_kind(w)]
+    if not named:
+        return
+    sub = words[1] if len(words) > 1 else ""
+    writes = (name in WRITERS
+              or (name in ("sed", "perl", "ruby") and any(re.match(r"^-[A-Za-z]*i", w) or w.startswith("--in-place") for w in words[1:]))
+              or (name in INTERPRETERS and any(w in ("-c", "-e", "-p", "-pe", "-pi") or w.startswith("-i") for w in words[1:]))
+              or (name == "git" and sub in ("update-index", "checkout", "restore", "rm", "mv", "apply", "stash", "reset"))
+              or (name in ("awk", "gawk") and "-i" in words[1:] and "inplace" in " ".join(words)))
+    if writes:
+        protect(named[0], f"`{name}` writes it")
+
 def check_bash(cmd):
     # Heredoc bodies are text (a commit message, a PR body), not commands: keep only their first line.
     cmd = re.sub(r"(<<-?\s*([\x27\"]?)(\w+)\2[^\n]*)\n.*?\n[ \t]*\3[ \t]*(?=\n|\)|$)", r"\1", cmd, flags=re.S)
     for words in simple_commands(cmd):
+        if words[0] == "cd" and len(words) > 1:
+            CD_DIRS.append(words[1].strip("\"\x27"))
+    # A redirect (`> f`, `>> f`, `>|f`, `tee`-less here-doc writes) onto a protected file.
+    for m in re.finditer(r"[0-9&]?>>?\|?\s*([^\s;&|<>()]+)", cmd):
+        protect(m.group(1), "a redirect writes it")
+    for words in simple_commands(cmd):
+        guard_file_write(cmd, words)
         for w in words[1:]:
             if env_in_word(w):
                 deny(f"`{w}` is a secret env file; agents never read or write it (AGENTS.md § Golden rules). Use .env.example for names.")
@@ -387,6 +469,8 @@ if tool == "Bash":
     check_bash(str(args.get("command", "")))
 elif tool in ("Read", "Edit", "MultiEdit", "Write", "NotebookEdit"):
     p = args.get("file_path") or args.get("notebook_path") or ""
+    if tool != "Read":
+        protect(p, f"{tool} writes it")
     if is_secret_env(p):
         deny(f"`{p}` is a secret env file; agents never read or write it (AGENTS.md § Golden rules).")
 elif tool == "Grep":

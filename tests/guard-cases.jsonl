@@ -169,3 +169,63 @@
 {"expect": "pass", "tool": "Bash", "input": {"command": "prisma db push"}, "guard": {"schema_pushes": "off"}}
 {"expect": "pass", "tool": "Bash", "input": {"command": "drizzle-kit push"}, "guard": {"schema_pushes": "off"}}
 {"expect": "ask", "tool": "Bash", "input": {"command": "prisma db push"}, "guard": {"deploys": "off", "publishes": "off"}}
+{"expect": "ask", "tool": "Write", "input": {"file_path": "scripts/guard.sh", "content": "x"}}
+{"expect": "ask", "tool": "Edit", "input": {"file_path": "scripts/guard.sh", "old_string": "a", "new_string": "b"}}
+{"expect": "ask", "tool": "Write", "input": {"file_path": "scripts/session-start.sh", "content": "x"}}
+{"expect": "ask", "tool": "Edit", "input": {"file_path": "scripts/session-start.sh", "old_string": "a", "new_string": "b"}}
+{"expect": "ask", "tool": "Write", "input": {"file_path": "scripts/lib/config.sh", "content": "x"}}
+{"expect": "ask", "tool": "Edit", "input": {"file_path": "scripts/lib/config.sh", "old_string": "a", "new_string": "b"}}
+{"expect": "ask", "tool": "Write", "input": {"file_path": ".claude/settings.json", "content": "x"}}
+{"expect": "ask", "tool": "Edit", "input": {"file_path": ".claude/settings.json", "old_string": "a", "new_string": "b"}}
+{"expect": "ask", "tool": "Write", "input": {"file_path": "harness.config.yml", "content": "x"}}
+{"expect": "ask", "tool": "Edit", "input": {"file_path": "harness.config.yml", "old_string": "a", "new_string": "b"}}
+{"expect": "ask", "tool": "MultiEdit", "input": {"file_path": "scripts/guard.sh", "edits": []}}
+{"expect": "ask", "tool": "Write", "input": {"file_path": "{ROOT}/scripts/guard.sh", "content": "exit 0"}}
+{"expect": "ask", "tool": "Write", "input": {"file_path": "./scripts/../scripts/guard.sh", "content": "exit 0"}}
+{"expect": "deny", "tool": "Write", "input": {"file_path": ".claude/settings.local.json", "content": "{}"}}
+{"expect": "deny", "tool": "Edit", "input": {"file_path": ".claude/settings.local.json", "old_string": "a", "new_string": "b"}}
+{"expect": "pass", "tool": "Read", "input": {"file_path": "scripts/guard.sh"}}
+{"expect": "pass", "tool": "Read", "input": {"file_path": ".claude/settings.local.json"}}
+{"expect": "pass", "tool": "Write", "input": {"file_path": "src/app.ts", "content": "x"}}
+{"expect": "pass", "tool": "Write", "input": {"file_path": "scripts/other.sh", "content": "x"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "echo 'exit 0' > scripts/guard.sh"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "echo x >> .claude/settings.json"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "cat > harness.config.yml <<EOF\nx\nEOF"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "sed -i 's/guard.sh/true/' .claude/settings.json"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "sed -i.bak s/a/b/ harness.config.yml"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "perl -pi -e 's/a/b/' scripts/guard.sh"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "chmod -x scripts/guard.sh"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "chmod 000 scripts/lib/config.sh"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "cp /tmp/x scripts/session-start.sh"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "mv /tmp/x .claude/settings.json"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "rm scripts/guard.sh"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "rm -f scripts/lib/config.sh"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "ln -sf /tmp/x scripts/guard.sh"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "tee scripts/guard.sh < /tmp/x"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git update-index --assume-unchanged scripts/guard.sh"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git checkout -- scripts/guard.sh"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git restore harness.config.yml"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "python3 -c \"open('scripts/guard.sh','w').write('exit 0')\""}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "node -e \"require('fs').writeFileSync('scripts/guard.sh','')\""}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "echo x | tee -a scripts/lib/config.sh"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "cd scripts && echo x > guard.sh && cd .."}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "echo x > $CLAUDE_PROJECT_DIR/scripts/guard.sh"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "bash -c 'echo x > scripts/guard.sh'"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "truncate -s 0 .claude/settings.json"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "dd if=/dev/null of=scripts/guard.sh"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "echo x > scripts/*.sh"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "echo '{}' > .claude/settings.local.json"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "sed -i 's/a/b/' .claude/settings.local.json"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "cp /tmp/x .claude/settings.local.json"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "cat scripts/guard.sh"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git diff scripts/guard.sh .claude/settings.json"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git add harness.config.yml"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "grep -n guard .claude/settings.json"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "bash scripts/guard.sh < /dev/null"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "bash scripts/session-start.sh 2>&1"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git status"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "ls scripts/lib"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "echo hi > out.txt"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "bash scripts/prune-counter.sh 2>/dev/null"}}
+{"expect": "deny", "tool": "ConfigChange", "input": {}, "extra": {"hook_event_name": "ConfigChange", "source": "local_settings", "file_path": ".claude/settings.local.json"}}
+{"expect": "pass", "tool": "ConfigChange", "input": {}, "extra": {"hook_event_name": "ConfigChange", "source": "project_settings", "file_path": ".claude/settings.json"}}

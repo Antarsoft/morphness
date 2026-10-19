@@ -6,6 +6,11 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Guard: it protects its own files. An Edit, Write or Bash write to `scripts/guard.sh`,
+  `scripts/session-start.sh`, `scripts/lib/`, `.claude/settings.json` or `harness.config.yml` asks the
+  owner; `.claude/settings.local.json` is denied; a `ConfigChange` hook blocks a mid-session change to
+  the local settings.
+
 ## 2026-10-19
 
 - Retro wording: the retro template has a Cause column and the `cause: environment` and "why not a
