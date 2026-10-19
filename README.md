@@ -183,7 +183,7 @@ These are defaults; change any of them (see [Make it yours](#-make-it-yours)).
 
 Morphness runs in plain Claude Code (CLI, desktop, web). If you use a **Claude Project** with a
 coordinator and threads, the `claude-projects` module adds a playbook for the Project instructions
-and advised settings (coordinator opus · medium, feature threads opus · high).
+and advised settings (coordinator sonnet · medium, feature threads sonnet · high).
 
 ## 📦 What you get
 

@@ -114,9 +114,9 @@ agents:
 # Advisory only: Claude Projects settings can't be set from a repo.
 # See harness/modules/claude-projects/README.md for where to set them.
 claude_projects:
-  coordinator: { model: opus, effort: medium }
-  feature_threads: { model: opus, effort: high }
-  one_shot_threads: { model: opus, effort: medium }
+  coordinator: { model: sonnet, effort: medium }
+  feature_threads: { model: sonnet, effort: high }
+  one_shot_threads: { model: sonnet, effort: medium }
 
 # What each feature's Claude Code work would cost at public API prices, for comparing features
 # (harness/SETUP.md § Retrospective → Feature cost). scripts/feature-cost.sh reads the session

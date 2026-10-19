@@ -256,9 +256,10 @@ one of them (a new field, a limit) still uses small mode when it leaves the risk
 For a migration, show the earlier harness's agents table instead of the advised one, with the
 differences marked, and keep its extra variants (a trial variant stays, with its trial).
 
-12b. Only with Claude Projects: "Advised Claude Projects settings: coordinator opus at medium effort,
-feature threads opus at high, one-shot threads opus at medium. Keep?" Note these are set in the Claude
-Projects UI, not the repo. → `claude_projects.*`
+12b. Only with Claude Projects: "Advised Claude Projects settings: coordinator sonnet at medium effort,
+feature threads sonnet at high, one-shot threads sonnet at medium; opus at high for a review, research
+or architecture thread. Keep?" With the Opus preset from Q12, advise opus in the three rows. Note these
+are set in the Claude Projects UI, not the repo. → `claude_projects.*`
 
 Leave out the Legal writer row when the legal module is off. Accept any model or effort the user
 names. → `agents.*`
@@ -306,8 +307,8 @@ agents: { technical_lead: { model: opus, effort: high },
           qa: { model: sonnet, medium_model: sonnet, default: high },
           researcher: { model: sonnet, high_model: opus, default: medium },
           legal_writer: { model: fable, effort: high } }
-claude_projects: { coordinator: { model: opus, effort: medium }, feature_threads: { model: opus, effort: high },
-                   one_shot_threads: { model: opus, effort: medium } }
+claude_projects: { coordinator: { model: sonnet, effort: medium }, feature_threads: { model: sonnet, effort: high },
+                   one_shot_threads: { model: sonnet, effort: medium } }
 loop: { retro_max_items: 3, prune_every: 10, qa_max_rounds: 2 }
 accepted: { skills: [], connectors: [], lessons: [] }
 ```

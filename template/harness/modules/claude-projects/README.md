@@ -14,9 +14,13 @@ Set these in the Project's settings. They mirror `harness.config.yml` § claude_
 
 | Session | Model | Effort | Why |
 |---------|-------|--------|-----|
-| Coordinator | opus | medium | It triages, routes and answers status from memory; it doesn't plan or code. |
-| Feature threads | opus | high | The thread is the Technical Lead: it writes plans and drives agents. |
-| One-shot threads (a status check, a quick question) | opus | medium | Short work that doesn't need a plan. |
+| Coordinator | sonnet | medium | It triages, routes and answers status from memory; it doesn't plan or code. |
+| Feature threads | sonnet | high | The thread is the Technical Lead: it writes plans and drives agents, with the plan, QA and checks around it. |
+| One-shot threads (a status check, a quick question) | sonnet | medium | Short work that doesn't need a plan. |
+
+Use opus at `high` for a thread that does the hard thinking itself without the plan and QA around it
+(a review, research or an architecture decision), or for a feature in an area where a missed edge case
+is costly. With the Opus preset at install (Q12), the three rows above are opus instead.
 
 Subagent models and efforts come from `.claude/agents/*.md` in the repo, whatever the thread runs on.
 For risky features the Technical Lead may ask you to raise a thread's effort; say so in the thread.
