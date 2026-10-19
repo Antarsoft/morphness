@@ -8,8 +8,12 @@
 #   - a push that would update an environment branch (branches.* and every environments[].branch):
 #     an explicit refspec, `HEAD` or a bare `git push` while on one, `--all`, `--mirror`, a delete
 #   - a force push (`--force*`, `-f`, a `+` refspec), on any branch
-#   - reading or writing a `.env` file (`.env`, `.env.local`, `.env.production`, …) with any tool;
-#     `.env.example`, `.env.sample` and `.env.template` are fine
+#   - reading or writing a `.env` file (`.env`, `.env.local`, `.env.production`, …) or another secret
+#     or credential file with any tool: `.envrc`, `*.pem`, `*.key`, `*.p12`, `id_rsa` and its kin,
+#     `.netrc`, `.pgpass`, `.git-credentials`, `credentials.json`, `secrets.yml` and similar, and
+#     anything under `.aws`, `.ssh` (except `*.pub`), `.gnupg`, `.azure`, `.kube`, `.config/gcloud`,
+#     `.config/gh`; `.env.example`, `.env.sample` and `.env.template` are fine. `.npmrc` and `.pypirc`
+#     ask instead (they are often plain config)
 #   - writing secrets or variables on the code host (`gh secret set`, `gh variable set`, `gh api`
 #     writes to …/secrets or …/variables)
 #   - remote database writes from well-known CLIs (`supabase db push`, `prisma migrate deploy`,
@@ -154,20 +158,55 @@ def protect(path, how):
     if kind == "guard":
         ask(f"`{path}` is one of the files the guard rests on ({how}); the owner approves each change to it.")
 
-# ---- secret env files --------------------------------------------------------------------------
-SAFE_ENV = {".env.example", ".env.sample", ".env.template"}
+# ---- secret and credential files ---------------------------------------------------------------
+SAFE_SUFFIX = (".example", ".sample", ".template")
+SECRET_DIRS = {".aws", ".ssh", ".gnupg", ".azure", ".kube"}
+SECRET_NAMES = {".envrc", ".netrc", "_netrc", ".pgpass", ".git-credentials", ".my.cnf", ".htpasswd"}
+ASK_NAMES = {".npmrc", ".pypirc"}
+SECRET_SUFFIX = (".pem", ".key", ".p12", ".pfx", ".jks", ".keystore", ".ppk", ".tfstate")
+SECRET_RE = re.compile(r"^(id_(rsa|dsa|ecdsa|ed25519)(_[a-z0-9_]+)?"
+                       r"|(credentials?|client_secrets?|service[-_]account[-_a-z0-9]*|[a-z0-9_-]+[-_]credentials?)\.(json|ya?ml|toml|ini|xml|csv|txt)"
+                       r"|(secrets?|[a-z0-9_-]+[-_.]secrets?)\.(json|ya?ml|toml|env|ini|txt|properties|cfg|conf)"
+                       r"|[a-z0-9_.-]+\.(secrets?|credentials?))$")
+GLOB_PROBES = (".env", ".envrc", ".netrc", ".npmrc", ".pypirc", ".pgpass", ".git-credentials")
+
+def secret_kind(path):
+    """"deny" for a secret or credential file, "ask" for one that is often plain config, "" otherwise."""
+    parts = [c for c in str(path).strip("\"\x27").split("/") if c]
+    if not parts or any(c.isspace() for c in parts[-1]):
+        return ""
+    name = parts[-1]
+    low = name.lower()
+    dirs = [c.lower() for c in parts[:-1]]
+    if low in (".env.example", ".env.sample", ".env.template") or low.endswith(SAFE_SUFFIX):
+        return ""
+    if low == ".env" or low.startswith(".env."):
+        return "deny"
+    if any(c in SECRET_DIRS for c in dirs):
+        return "" if low.endswith(".pub") else "deny"
+    for i, c in enumerate(dirs):
+        nxt = dirs[i + 1] if i + 1 < len(dirs) else low
+        if (c == ".config" and nxt in ("gcloud", "gh", "doctl")) or (c == ".docker" and low == "config.json"):
+            return "deny"
+    if low in SECRET_NAMES or (low.endswith(SECRET_SUFFIX) and low not in SECRET_SUFFIX) or SECRET_RE.match(low):
+        return "deny"
+    if low in ASK_NAMES:
+        return "ask"
+    if any(c in low for c in "*?[") and low.startswith(".env"):
+        return "deny"
+    if any(c in low for c in "*?[") and low.startswith(".") and len(re.sub(r"[*?\[\]]", "", low)) >= 3:
+        for probe in GLOB_PROBES:
+            if fnmatch.fnmatch(probe, low):
+                return "ask" if probe in ASK_NAMES else "deny"
+    return ""
+
 def is_secret_env(path):
-    name = os.path.basename(str(path).rstrip("/").strip("\"\x27"))
-    if name in SAFE_ENV or name.endswith((".example", ".sample", ".template")):
-        return False
-    return name == ".env" or name.startswith(".env.")
+    return secret_kind(path) == "deny"
 
 def env_in_word(word):
-    # Covers plain paths, globs (.env*), redirections glued to a word and VAR=path forms.
-    for part in re.split(r"[=:<>|,;()@]", word):
-        if part and (is_secret_env(part) or re.search(r"(^|/)\.env\*", part)):
-            return True
-    return False
+    # Covers plain paths, globs (.env*, .en?), redirections glued to a word, VAR=path and @file forms.
+    kinds = [secret_kind(part) for part in re.split(r"[=:<>|,;()@]", word) if part]
+    return "deny" if "deny" in kinds else "ask" if "ask" in kinds else ""
 
 # ---- Bash parsing ------------------------------------------------------------------------------
 SEPARATORS = {";", "&&", "||", "|", "&", "|&", "\n", "(", ")", "{", "}"}
@@ -485,8 +524,11 @@ def check_bash(cmd):
         for w in words[1:]:
             if re.search(r"^/proc/[^/]+/environ$", w):
                 deny("`/proc/<pid>/environ` is the whole environment, secrets included.")
-            if env_in_word(w):
-                deny(f"`{w}` is a secret env file; agents never read or write it (AGENTS.md § Golden rules). Use .env.example for names.")
+            kind = env_in_word(w)
+            if kind == "deny":
+                deny(f"`{w}` is a secret or credential file; agents never read or write it (AGENTS.md § Golden rules). Use .env.example for names.")
+            if kind == "ask":
+                ask(f"`{w}` often holds registry tokens; the owner approves a read or change of it.")
         line = " ".join(words)
         if GROUP_ASK["publishes"] and PUBLISH_ASK.search(line) and not dry_run(words):
             ask("`publish` releases a package to a shared registry; only the owner approves it (the Shared remote environments golden rule in AGENTS.md). "
@@ -534,13 +576,16 @@ elif tool in ("Read", "Edit", "MultiEdit", "Write", "NotebookEdit"):
     p = args.get("file_path") or args.get("notebook_path") or ""
     if tool != "Read":
         protect(p, f"{tool} writes it")
-    if is_secret_env(p):
-        deny(f"`{p}` is a secret env file; agents never read or write it (AGENTS.md § Golden rules).")
+    kind = secret_kind(p)
+    if kind == "deny":
+        deny(f"`{p}` is a secret or credential file; agents never read or write it (AGENTS.md § Golden rules).")
+    if kind == "ask":
+        ask(f"`{p}` often holds registry tokens; the owner approves a read or change of it.")
 elif tool == "Grep":
     for key in ("path", "glob"):
         v = str(args.get(key) or "")
-        if v and env_in_word(v):
-            deny(f"`{v}` names a secret env file; agents never read it.")
+        if v and env_in_word(v) == "deny":
+            deny(f"`{v}` names a secret or credential file; agents never read it.")
 elif tool.startswith("mcp__") and MCP_ASK:
     short = tool.split("__", 2)[-1]
     words = {w.lower() for w in re.split(r"[_\-.]|(?<=[a-z])(?=[A-Z])", short) if w}
