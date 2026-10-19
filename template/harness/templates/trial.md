@@ -19,6 +19,10 @@ One or two lines: what should change, and why we think so.
 
 The exact rule text, or the variant (agent file, model, effort) and where it applies. A rule under trial ends with `(trial: <trial-slug>)` in its owner file.
 
+## Escape window
+
+A trial is decided only after one prune window (`loop.prune_every` features) has finished past its last qualifying feature. The decision reads the `Escaped` lines of fix PRs traced to its features as well as the numbers below (`harness/MORPHING.md` § Trials, step 4).
+
 ## Results
 
 One row per feature that ran it, added by the prune when it folds that feature's learnings file (`harness/SETUP.md` § Prune, step 6). Until then the learnings file is the record.
