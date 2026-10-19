@@ -2,7 +2,7 @@
 id: background-agent-signs-of-life
 title: Wait for a background agent's notification, don't poll it
 kind: rule
-target: .claude/rules/technical-lead.md
+target: harness/TECHNICAL_LEAD.md
 in_template: true
 tags: { stack: [], service: [], area: [process, agents] }
 evidence: { fired: unknown, features: 153, source: "Twinpage prune audits" }

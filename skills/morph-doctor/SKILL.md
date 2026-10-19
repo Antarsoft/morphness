@@ -22,6 +22,16 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
   `modules` (stale rules agents would read). Offer the fix through `/morph-module add <name>` (a
   module listed but never installed) or `/morph-module remove <name>` (a folder left behind).
 - Every agent file under `.claude/agents/` points at a body under `harness/agents/` that exists.
+- **Required tools:** `git`, `python3`, `awk` and `perl` are on PATH (`command -v`), and `bash` is the
+  shell the hooks run in (native Windows without Git Bash is not supported). Report each missing one with
+  what stops working: no `python3` turns `scripts/guard.sh` off (every call passes) and stops the prune
+  counter and cost scripts; no `awk` stops every script that reads `harness.config.yml`; no `perl` stops
+  `/morph-module remove`; no `git` stops the process. `timeout` (or `gtimeout`) missing: say that
+  `scripts/session-start.sh` then runs without a time limit.
+- **Session commands:** `.git/morphness-session-commands` exists and matches the two commands in
+  `scripts/session-start.sh`. A mismatch means the commands changed since this clone last ran them and
+  session start is holding them: show the owner both versions and, on a yes, run
+  `bash scripts/session-start.sh --accept`. A copy whose script lacks the pin: point to `/morph-update`.
 - **Guard hook:** `.claude/settings.json` → `hooks.PreToolUse` runs `scripts/guard.sh`, the script
   exists, `python3` is installed (without it the guard lets every call through), and the push test in
   render.md § 7 item 9 exits 2. A copy without the hook: point to `/morph-update` (update note
@@ -72,7 +82,7 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
 - With the ci-cd module: every path in `ci_cd` exists; the CI workflow has one step per `before_qa`
   check whose command matches `project/CONTROLS.md` (report each missing or differing step); no runner
   image ends in `-latest`; the CI workflow uses `pull_request`, not `pull_request_target`, lists `ready_for_review` in its
-  `types` and has a `merge_group` trigger, skips drafts exactly when `ci_cd.on_drafts` is false, and reads no
+  `types` and has a `merge_group` trigger, skips drafts exactly when `ci_cd.on_drafts` is false (and the value in the `if:` line is the literal `true` or `false`, not a placeholder or other text), every `uses:` pins a full 40-character commit SHA (a version tag or branch is reported; the fix is to pin the SHA the tag points to), and reads no
   `secrets.` other than `GITHUB_TOKEN`; deploy and migrations jobs name an `environment`, and their
   `options` list exactly the names in `environments`; a tag
   workflow exists only with `release_tags: true`. `Bash(gh api*rulesets*)` and `Bash(gh api*protection*)`
@@ -96,6 +106,14 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
   owner instead of reporting a failure. `ci_gate: false` with a CI that has passed on the integration
   branch: mention that the owner can make it required and set `ci_gate: true`.
 
+- **Installed skills match their pin:** each row in `project/SKILLS_AND_MCPS.md` § Installed (repo)
+  names `<owner/repo>@<40-character commit>`; report a row without one as unpinned (the owner may
+  accept that). With `git` and network, for each pinned row clone the source into an empty temporary
+  folder, check out the commit and diff the skill's folder against the installed path (`diff -r`,
+  read-only, nothing installed or run); report each skill whose files differ (changed since install, or
+  edited locally) and list the changed files, because skill text enters the agents' context. A source
+  that can't be fetched is "not checked", not a pass. Also report a pin that differs from the one in
+  the upstream `catalog.md` as available to review through `/morph-update`, not as a fault.
 - **Built-in skills:** `code-review` and `security-review` are in this session's skill list. Report
   each missing one with its fallback (morph-init `references/catalog.md` § Built-in skills).
 - **Service tools:** `project/SKILLS_AND_MCPS.md` § Service tools has a row for every external service

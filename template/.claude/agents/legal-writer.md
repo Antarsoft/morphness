@@ -4,6 +4,7 @@ description: Harness legal writer. The Technical Lead uses this agent at plan ti
 model: "{{models.legal}}"
 effort: high
 tools: Read, Grep, Glob, Edit, Write
+omitClaudeMd: true
 ---
 
 You are the **legal writer** for a harness feature in the {{project.name}} repo.

@@ -1,8 +1,9 @@
 @AGENTS.md
+@harness/TECHNICAL_LEAD.md
 
 ## Claude Code notes
 
-Project rules live in `.claude/rules/*.md` and load automatically: `technical-lead.md`, `harness.md`, `testing.md`. Stack facts live in [project/STACK.md](project/STACK.md), not in a rule file.
+The Technical Lead's hard limits (`harness/TECHNICAL_LEAD.md`) are imported above, so only the main chat loads them; subagents set `omitClaudeMd: true` and read their role files instead. Project rules live in `.claude/rules/*.md` and load automatically: `harness.md`, `testing.md`. Stack facts live in [project/STACK.md](project/STACK.md), not in a rule file.
 
 - **Delegation:** the Agent tool with a `subagent_type` from `.claude/agents/`: `fullstack-engineer` / `qa-engineer`, or their effort variants picked in the plan's **Agent effort** section, `researcher` / `researcher-high` for research mode and research before a plan, and `legal-writer` for a plan's legal wording (when the `legal` module is enabled). Models, effort levels and the mapping are in [project/HARNESS_AGENTS.md](project/HARNESS_AGENTS.md). Pass the absolute feature folder paths in the prompt.
 - **Subagent instructions:** each `.claude/agents/*.md` file only sets model, effort and tool limits; the role body is `harness/agents/<role>.md` (generic), then `project/agents/<role>.md` (this project's addenda).

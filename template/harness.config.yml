@@ -125,8 +125,8 @@ claude_projects:
 cost: { track: true, prices: harness/MODEL_PRICES.md }
 
 # The guard hook (scripts/guard.sh, wired in .claude/settings.json) runs before tool calls. It always
-# blocks secret .env files, pushes to environment branches, force-pushes, code-host secrets and
-# well-known remote database writes: no switch. The asks below show a permission prompt (the owner
+# blocks secret .env files (also behind `@` and `<`), a bare `env` or `printenv`, pushes to environment
+# branches, force-pushes, code-host secrets and well-known remote database writes: no switch. The asks below show a permission prompt (the owner
 # answers it); `off` skips that group's prompt, and the settings.json rules still apply. A hook ask
 # beats an allow rule, so `off` is the only way to run these without a prompt, for instance
 # `prisma db push` on a local stack.
@@ -136,8 +136,11 @@ cost: { track: true, prices: harness/MODEL_PRICES.md }
 #                  terraform apply, kubectl apply, helm upgrade
 #   publishes      npm/pnpm/yarn/bun publish (also with --filter/--workspace), changeset publish, cargo publish
 #   schema_pushes  prisma db push, drizzle-kit push
+#   network        curl/wget with a body or a method other than GET to a host outside localhost and
+#                  allow_hosts (a space-separated list, for example allow_hosts: "api.example.com"),
+#                  scp, sftp, rsync to or from another machine, nc, socat, telnet, ftp
 # A command with --dry-run or --help passes in every group. The full list is in scripts/guard.sh.
-guard: { mcp_writes: ask, deploys: ask, publishes: ask, schema_pushes: ask }
+guard: { mcp_writes: ask, deploys: ask, publishes: ask, schema_pushes: ask, network: ask }
 
 loop:
   retro_max_items: 3      # usual action items per retro (soft: more with one line why, none is fine)

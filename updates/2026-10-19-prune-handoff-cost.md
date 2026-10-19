@@ -8,7 +8,7 @@ files:
   - scripts/prune-counter.sh
   - harness/SETUP.md
   - harness/HANDOFFS.md
-  - .claude/rules/technical-lead.md
+  - harness/TECHNICAL_LEAD.md
   - project/PROCESS.md
 removed: []
 ---
@@ -34,5 +34,5 @@ and polling a long build cost a full-context turn every 10 minutes.
 
 Merge the `scripts/prune-counter.sh` changes (the `PRUNE_FETCH` condition, the date-named proposal filter,
 the `over` flag and the final exit status), the matching sentences in `harness/SETUP.md` § Retrospective,
-the Background agents paragraph in `harness/HANDOFFS.md`, the bullet in `.claude/rules/technical-lead.md`
+the Background agents paragraph in `harness/HANDOFFS.md`, the bullet in `harness/TECHNICAL_LEAD.md`
 and the example line in `project/PROCESS.md`. If you installed the lesson `background-agent-signs-of-life`, replace its rule with the new text.

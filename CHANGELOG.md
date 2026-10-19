@@ -9,6 +9,34 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 - The prune counter no longer fetches at every hand-off (`PRUNE_FETCH=1` opts in), counts only date-named
   proposal files, and exits 1 when a size budget is over and no proposal is open; the Technical Lead waits
   for a background agent's completion notification instead of polling it every 10 minutes.
+- Session start: the toolchain and install commands are pinned per clone. A pulled change to either
+  makes `scripts/session-start.sh` run nothing and show the old and new commands; the owner confirms
+  in the session and `bash scripts/session-start.sh --accept` records and runs them (an `ask` rule
+  covers that command). `/morph-doctor` reports a held change.
+- Guard: the secret catalogue is real. Besides `.env*`, the guard denies `.envrc`, `*.pem`, `*.key`,
+  `*.p12`, `id_rsa` and its kin, `.netrc`, `.pgpass`, `.git-credentials`, `credentials.json`,
+  `secrets.yml` and similar, anything under `.aws`, `.ssh`, `.gnupg`, `.azure`, `.kube`,
+  `.config/gcloud` and `.config/gh`, and env-file globs like `.en?`; `.npmrc` and `.pypirc` ask.
+  `.claude/settings.json` gets matching `Read` and `Edit` deny rules.
+- Guard: one-command exfiltration. The `.env` check sees through `@` and `<` (`curl -d @.env`), a bare
+  `env` or `printenv` and `/proc/<pid>/environ` are denied, and a new `network` group in `guard:` asks
+  before `curl` or `wget` send a body or a non-GET request to a host outside `localhost` and
+  `guard.allow_hosts`, and before `scp`, `sftp`, `rsync` to another machine, `nc`, `socat`, `telnet`, `ftp`.
+- Session start: `scripts/session-start.sh` prints the toolchain and install commands, runs them under
+  a timeout (`MORPHNESS_START_TIMEOUT`, default 300 s), prints the command and the last lines of its
+  output on failure, and adds `--ignore-scripts` to npm, pnpm, bun and yarn 1 installs. `scripts/install.sh`
+  and `/morph-doctor` check `git`, `python3`, `awk` and `perl` and say what stops working without each.
+- Guard: it protects its own files. An Edit, Write or Bash write to `scripts/guard.sh`,
+  `scripts/session-start.sh`, `scripts/lib/`, `.claude/settings.json` or `harness.config.yml` asks the
+  owner; `.claude/settings.local.json` is denied; a `ConfigChange` hook blocks a mid-session change to
+  the local settings.
+- Supply-chain pins: the catalog lists a pinned commit for every third-party skill and installs from it,
+  `project/SKILLS_AND_MCPS.md` records the commit, `/morph-doctor` diffs installed skills against their
+  source, the CI scaffolds pin `actions/checkout` to a commit, and the self-test checks that every action
+  is pinned and that `ci.on_drafts` renders as a boolean.
+- Agent context: subagents set `omitClaudeMd: true`, the Technical Lead rule moves to
+  `harness/TECHNICAL_LEAD.md` (imported by `CLAUDE.md`, so only the main chat loads it), the researcher
+  agents lose the shell, and a rule says to log long command output and print only the tail.
 
 ## 2026-10-19
 

@@ -51,7 +51,7 @@ keeps everything it learned; it moves into the places Morphness reads it from.
    `LEARNINGS.md`, the backlog and any archive). Copy only `_harness/` template files that don't exist,
    and refresh `_harness/README.md`'s layout block if it lacks folders the kit uses.
 2. **Replace the kit files.** Copy over, overwriting: `harness/**` (kit docs, `agents/`, `modules/`,
-   `templates/`), `.claude/rules/{technical-lead,harness,testing}.md`, the `.claude/agents/*.md` files
+   `templates/`), `.claude/rules/{harness,testing}.md`, the `.claude/agents/*.md` files
    the template has, `AGENTS.md` and `CLAUDE.md`, and add `harness.config.yml`. Delete kit files the
    template no longer has (a version file, a doc a module now covers) once step 3 has moved their
    project content. Every old file stays readable with `git show <integration branch>:<path>`.
@@ -84,7 +84,7 @@ Replace every `{{key}}` in the copied files with its answer. Keys: `project.name
 `stack.package_manager`, `stack.toolchain_setup`, `stack.install_cmd`, `cmd.<check-name>`, `models.tl`,
 `models.fullstack`, `models.fullstack_medium`, `models.qa`, `models.qa_medium`, `models.researcher`, `models.researcher_high`, `models.legal`, `morphness.repo`, `morphness.commit`, `morphness.release`,
 and in ci-cd workflow scaffolds `ci.docs_regex` (a regex for the documentation paths in `harness/CONTROLS.md` § Documentation paths with `project/CONTROLS.md`'s changes; it must not match `.claude/settings.json`, hook or skill scripts),
-`ci.on_drafts` (`ci_cd.on_drafts`, `true` or `false`),
+`ci.on_drafts` (`ci_cd.on_drafts`, exactly `true` or `false`: it lands inside an Actions expression, so any other text breaks the workflow),
 `environments.names` (the names in `environments`, comma-separated, in order) and `environments.first`
 (the first name), and in `.github/rulesets/environment-branches.json` `branch_protection.refs` (each
 distinct environment branch as `"refs/heads/<branch>"`, comma-separated) and

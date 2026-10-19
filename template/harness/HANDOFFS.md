@@ -86,7 +86,7 @@ Each project lists its subagents in **`project/HARNESS_AGENTS.md`**. Delegate wi
 
 In bug mode the order changes: QA's reproduction run (the failing test) comes before step 1 ([MODES.md](./MODES.md) § Bug mode).
 
-The Technical Lead must not implement or QA even if the human says "execute", "run", "develop" or "implement". See `.claude/rules/technical-lead.md`.
+The Technical Lead must not implement or QA even if the human says "execute", "run", "develop" or "implement". See `harness/TECHNICAL_LEAD.md`.
 
 ## Parallel plans
 

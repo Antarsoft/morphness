@@ -1,8 +1,18 @@
 #!/usr/bin/env bash
 # SessionStart hook (.claude/settings.json): set up the toolchain, then install dependencies.
 # morph-init fills the two commands below from project/STACK.md; an empty one is skipped.
+# Each command is printed before it runs, runs under a timeout (MORPHNESS_START_TIMEOUT seconds,
+# default 300; needs `timeout` or `gtimeout`, without one it runs unbounded and says so), and on
+# failure the last lines of its output are printed. A package install of npm, pnpm, bun or yarn 1 gets
+# --ignore-scripts, so a dependency's lifecycle scripts don't run at session start; to run them, write
+# the flag yourself (`--ignore-scripts=false`) or run the install by hand.
 # The install is skipped while the lockfiles and the command are unchanged since its last successful
 # run in this clone (hash in the git folder; delete morphness-install.hash there to force it).
+# The two commands are pinned per clone (the text, in the git folder: morphness-session-commands). The
+# first run in a clone records them; a later run whose commands differ (a pulled branch changed them) runs
+# nothing, prints the old and new commands, and waits: the owner confirms in the session, and only then
+# `bash scripts/session-start.sh --accept` records and runs them. A fresh clone has no pin yet, so the
+# first run there is covered by Claude Code's own trust prompt for the folder, not by this check.
 # Never fails session start: no `set -e`, always exits 0.
 
 cd "${CLAUDE_PROJECT_DIR:-$(pwd)}" || exit 0
@@ -10,20 +20,74 @@ cd "${CLAUDE_PROJECT_DIR:-$(pwd)}" || exit 0
 TOOLCHAIN_SETUP='{{stack.toolchain_setup}}'
 INSTALL_CMD='{{stack.install_cmd}}'
 
+pin_file="$(git rev-parse --git-path morphness-session-commands 2>/dev/null)"
+if [ -n "$pin_file" ] && [ -n "$TOOLCHAIN_SETUP$INSTALL_CMD" ]; then
+  current="toolchain: $TOOLCHAIN_SETUP"$'\n'"install: $INSTALL_CMD"
+  if [ "$1" = "--accept" ] || [ ! -f "$pin_file" ]; then
+    printf '%s\n' "$current" > "$pin_file" 2>/dev/null
+  elif [ "$(cat "$pin_file" 2>/dev/null)" != "$current" ]; then
+    echo "session-start: NOT RUN. The toolchain and install commands changed since this clone last ran them."
+    echo "  was:"; sed 's/^/    /' "$pin_file"
+    echo "  now:"; printf '%s\n' "$current" | sed 's/^/    /'
+    echo "  Show the owner both versions and ask in this chat whether to run the new commands. Only if the"
+    echo "  owner says yes, run: bash scripts/session-start.sh --accept"
+    exit 0
+  fi
+fi
+
+LIMIT="${MORPHNESS_START_TIMEOUT:-300}"
+TIMEOUT_BIN="$(command -v timeout || command -v gtimeout)"
+out_file="$(mktemp 2>/dev/null || echo /tmp/morphness-start.$$)"
+trap 'rm -f "$out_file" "$out_file.path"' EXIT
+
+# Package installs skip dependency lifecycle scripts where the manager supports the flag.
+safe_install() {
+  local cmd="$1"
+  case "$cmd" in *ignore-scripts*) printf '%s' "$cmd"; return ;; esac
+  case "$cmd" in
+    npm\ ci*|npm\ install*|npm\ i|npm\ i\ *|pnpm\ install*|pnpm\ i|pnpm\ i\ *|bun\ install*|bun\ i|bun\ i\ *)
+      printf '%s --ignore-scripts' "$cmd" ;;
+    yarn|yarn\ install*)
+      case "$(yarn --version 2>/dev/null)" in 1.*) printf '%s --ignore-scripts' "$cmd" ;; *) printf '%s' "$cmd" ;; esac ;;
+    *) printf '%s' "$cmd" ;;
+  esac
+}
+
+# Runs "$2" in a child bash under the timeout, output kept in $out_file; "$3" = path: afterwards PATH
+# is taken over from the child, so a version manager's `use` still reaches the next step.
 run_step() {
-  local label="$1" cmd="$2"
+  local label="$1" cmd="$2" keep_path="$3" rc
   # Skip an empty command or one morph-init left unrendered.
   case "$cmd" in ''|*'{''{'*) return 0 ;; esac
-  # eval in this shell so a toolchain setup (a version manager's `use`) changes PATH here.
-  if ! eval "$cmd" >/dev/null 2>&1; then
-    echo "session-start: $label failed; run it manually: $cmd"
+  echo "session-start: $label: $cmd"
+  if [ "$keep_path" = path ]; then
+    set -- bash -c "$cmd"$'\n''rc=$?; printf %s "$PATH" > "$MORPHNESS_PATH_FILE"; exit $rc'
+  else
+    set -- bash -c "$cmd"
+  fi
+  export MORPHNESS_PATH_FILE="$out_file.path"
+  if [ -n "$TIMEOUT_BIN" ]; then
+    "$TIMEOUT_BIN" "$LIMIT" "$@" >"$out_file" 2>&1
+  else
+    echo "session-start: no timeout command found; $label runs without a time limit"
+    "$@" >"$out_file" 2>&1
+  fi
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    if [ "$rc" -eq 124 ]; then
+      echo "session-start: $label timed out after ${LIMIT}s; run it manually: $cmd"
+    else
+      echo "session-start: $label failed (exit $rc); run it manually: $cmd"
+    fi
+    tail -n 15 "$out_file" | sed 's/^/  | /'
     return 1
   fi
+  if [ "$keep_path" = path ] && [ -s "$out_file.path" ]; then PATH="$(cat "$out_file.path")"; export PATH; fi
 }
 
 start_path="$PATH"
 
-run_step "toolchain setup" "$TOOLCHAIN_SETUP"
+run_step "toolchain setup" "$TOOLCHAIN_SETUP" path
 
 # Persist a changed PATH for later Bash calls in this session.
 if [ "$PATH" != "$start_path" ] && [ -n "$CLAUDE_ENV_FILE" ]; then
@@ -44,7 +108,7 @@ done
 
 if [ -n "$lock_hash" ] && [ -n "$hash_file" ] && [ "$(cat "$hash_file" 2>/dev/null)" = "$lock_hash" ]; then
   echo "session-start: dependencies unchanged since the last install; skipped"
-elif run_step "dependency install" "$INSTALL_CMD" && [ -n "$lock_hash" ] && [ -n "$hash_file" ]; then
+elif run_step "dependency install" "$(safe_install "$INSTALL_CMD")" nopath && [ -n "$lock_hash" ] && [ -n "$hash_file" ]; then
   echo "$lock_hash" > "$hash_file" 2>/dev/null
 fi
 

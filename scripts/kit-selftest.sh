@@ -387,6 +387,18 @@ def check(name, fx, t):
         r = run(["actionlint"], t)
         if r.returncode:
             bad("actionlint:\n" + r.stdout)
+    # 7b. workflows pin every action to a commit and render ci.on_drafts as a boolean
+    for wf in glob.glob(os.path.join(t, ".github/workflows/*.yml")):
+        for m in re.finditer(r"^\s*-?\s*uses:\s*(\S+)", read(wf), re.M):
+            if m.group(1).startswith("./"):
+                continue
+            if not re.fullmatch(r"[\w./-]+@[0-9a-f]{40}", m.group(1)):
+                bad(f"{os.path.relpath(wf, t)}: action not pinned to a commit: {m.group(1)}")
+    ci_wf = os.path.join(t, ".github/workflows/ci.yml")
+    if os.path.exists(ci_wf):
+        drafts = re.search(r"^\s*if: \$\{\{ !github\.event\.pull_request\.draft \|\| (\S+) \}\}", read(ci_wf), re.M)
+        if not drafts or drafts.group(1) not in ("true", "false"):
+            bad(f"ci.yml draft condition is not a rendered boolean: {drafts.group(1) if drafts else 'line not found'}")
     # 8. environments and apps
     if fx["environments"]:
         if fx["environments"][0]["branch"] != cfg("branches.integration"):
@@ -407,6 +419,49 @@ def check(name, fx, t):
             bad(f"bash -n {os.path.relpath(f, t)}: {r.stderr.strip()}")
     if not os.access(os.path.join(t, "scripts/session-start.sh"), os.X_OK):
         bad("scripts/session-start.sh is not executable")
+    # session-start.sh: prints the command, reports a failure with the tail of its output, times out, and
+    # adds --ignore-scripts to an npm install; always exits 0
+    src = open(os.path.join(template, "scripts/session-start.sh"), encoding="utf-8").read()
+    def start(tool, install, limit="3", extra=()):
+        body = re.sub(r"^TOOLCHAIN_SETUP=.*$", lambda m: f"TOOLCHAIN_SETUP='{tool}'", src, flags=re.M)
+        body = re.sub(r"^INSTALL_CMD=.*$", lambda m: f"INSTALL_CMD='{install}'", body, flags=re.M)
+        f = os.path.join(t, "scripts/.session-start-test.sh")
+        open(f, "w").write(body)
+        env = dict(os.environ, MORPHNESS_START_TIMEOUT=limit, CLAUDE_PROJECT_DIR=t)
+        env.pop("CLAUDE_ENV_FILE", None)
+        r = run(["bash", f, *extra], t, env=env)
+        os.remove(f)
+        return r
+    pin = run(["git", "rev-parse", "--git-path", "morphness-session-commands"], t).stdout.strip()
+    pin = os.path.join(t, pin) if pin else ""
+    def repin():
+        if pin and os.path.exists(pin):
+            os.remove(pin)
+    repin()
+    r = start("", "echo one; echo boom >&2; exit 3")
+    if r.returncode or "dependency install failed (exit 3)" not in r.stdout or "| boom" not in r.stdout:
+        bad(f"session-start.sh on a failing install printed {r.stdout!r} (exit {r.returncode})")
+    repin()
+    if shutil.which("timeout") or shutil.which("gtimeout"):
+        r = start("", "sleep 30", "1")
+        if r.returncode or "timed out after 1s" not in r.stdout:
+            bad(f"session-start.sh on a hanging install printed {r.stdout!r} (exit {r.returncode})")
+    repin()
+    r = start("false", "")
+    if r.returncode or "toolchain setup failed (exit 1)" not in r.stdout:
+        bad(f"session-start.sh on a failing toolchain setup printed {r.stdout!r}")
+    repin()
+    r = start("", "npm ci")
+    if r.returncode or "npm ci --ignore-scripts" not in r.stdout:
+        bad(f"session-start.sh did not add --ignore-scripts to npm ci: {r.stdout!r}")
+    # pinned commands: a changed command runs nothing until --accept
+    r = start("", "echo changed")
+    if r.returncode or "NOT RUN" not in r.stdout or "dependency install:" in r.stdout:
+        bad(f"session-start.sh ran or stayed quiet on changed commands: {r.stdout!r}")
+    r = start("", "echo changed", extra=("--accept",))
+    if "NOT RUN" in r.stdout or "dependency install: echo changed" not in r.stdout:
+        bad(f"session-start.sh --accept did not run the new commands: {r.stdout!r}")
+    repin()
     if cfg("branches.integration") != fx["branches"]["integration"]:
         bad("config_get branches.integration doesn't print the integration branch")
     r = run(["bash", "scripts/prune-counter.sh"], t)
@@ -457,12 +512,14 @@ def check(name, fx, t):
     # guard hook cases
     branches = {"{I}": fx["branches"]["integration"], "{P}": fx["branches"]["production"]}
     for case in cases:
-        raw = json.dumps({"tool_name": case["tool"], "tool_input": case["input"]})
+        # "extra" adds top-level event fields (a ConfigChange event has no tool).
+        raw = json.dumps({"tool_name": case["tool"], "tool_input": case["input"], **case.get("extra", {})})
         for k, v in branches.items():
             raw = raw.replace(k, v)
         here = case.get("branch", "feature/selftest")
         for k, v in branches.items():
             here = here.replace(k, v)
+        raw = raw.replace("{ROOT}", t)
         run(["git", "checkout", "-q", "-B", here], t)
         cfg_path = os.path.join(t, "harness.config.yml")
         saved = open(cfg_path, encoding="utf-8").read()

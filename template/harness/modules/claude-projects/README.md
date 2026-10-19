@@ -70,7 +70,7 @@ The thread rules (one feature and one PR per thread, nothing sent into a thread 
 
 ## On remove
 
-When the project doesn't run the harness from a Claude Project, morph-init deletes this folder and the items below. The thread rules in `.claude/rules/technical-lead.md` § One feature per thread and `harness/HANDOFFS.md` § Threads stay: in a plain CLI session a thread is one session, and the sentences about a coordinator or the project chat say "when there is one" or "with the `claude-projects` module".
+When the project doesn't run the harness from a Claude Project, morph-init deletes this folder and the items below. The thread rules in `harness/TECHNICAL_LEAD.md` § One feature per thread and `harness/HANDOFFS.md` § Threads stay: in a plain CLI session a thread is one session, and the sentences about a coordinator or the project chat say "when there is one" or "with the `claude-projects` module".
 
 **Delete these files:** none outside this folder.
 

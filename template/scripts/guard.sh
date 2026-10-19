@@ -8,13 +8,24 @@
 #   - a push that would update an environment branch (branches.* and every environments[].branch):
 #     an explicit refspec, `HEAD` or a bare `git push` while on one, `--all`, `--mirror`, a delete
 #   - a force push (`--force*`, `-f`, a `+` refspec), on any branch
-#   - reading or writing a `.env` file (`.env`, `.env.local`, `.env.production`, …) with any tool;
-#     `.env.example`, `.env.sample` and `.env.template` are fine
+#   - reading or writing a `.env` file (`.env`, `.env.local`, `.env.production`, …) or another secret
+#     or credential file with any tool: `.envrc`, `*.pem`, `*.key`, `*.p12`, `id_rsa` and its kin,
+#     `.netrc`, `.pgpass`, `.git-credentials`, `credentials.json`, `secrets.yml` and similar, and
+#     anything under `.aws`, `.ssh` (except `*.pub`), `.gnupg`, `.azure`, `.kube`, `.config/gcloud`,
+#     `.config/gh`; `.env.example`, `.env.sample` and `.env.template` are fine. `.npmrc` and `.pypirc`
+#     ask instead (they are often plain config)
 #   - writing secrets or variables on the code host (`gh secret set`, `gh variable set`, `gh api`
 #     writes to …/secrets or …/variables)
 #   - remote database writes from well-known CLIs (`supabase db push`, `prisma migrate deploy`,
 #     `wrangler d1 … --remote`, …)
+#   - writing `.claude/settings.local.json` (the owner writes that file; an agent that could write it
+#     could grant itself permissions that never show in a PR)
 # Asks (the owner answers a permission prompt):
+#   - changing the files the guard itself rests on: scripts/guard.sh, scripts/session-start.sh,
+#     scripts/lib/, .claude/settings.json and harness.config.yml, by an Edit/Write tool or a Bash
+#     write (redirect, `sed -i`, `cp`, `mv`, `rm`, `chmod`, `tee`, `git restore`, an interpreter
+#     one-liner naming the file). /morph-init, /morph-update and the retro change them on the owner's
+#     yes, so the prompt shows the owner each change instead of blocking it.
 #   - deploys, platform secrets and publishes from well-known CLIs, so nothing reaches a shared
 #     environment or registry by accident. Three groups, each with its own switch (`guard.deploys`,
 #     `guard.publishes`, `guard.schema_pushes`: ask or off):
@@ -64,10 +75,12 @@ GUARD_MCP_WRITES="$(config_get guard.mcp_writes)"
 GUARD_DEPLOYS="$(config_get guard.deploys)"
 GUARD_PUBLISHES="$(config_get guard.publishes)"
 GUARD_SCHEMA_PUSHES="$(config_get guard.schema_pushes)"
-export GUARD_BRANCHES GUARD_MCP_WRITES GUARD_DEPLOYS GUARD_PUBLISHES GUARD_SCHEMA_PUSHES
+GUARD_NETWORK="$(config_get guard.network)"
+GUARD_ALLOW_HOSTS="$(config_get guard.allow_hosts)"
+export GUARD_BRANCHES GUARD_MCP_WRITES GUARD_DEPLOYS GUARD_PUBLISHES GUARD_SCHEMA_PUSHES GUARD_NETWORK GUARD_ALLOW_HOSTS
 
 exec python3 -I -c '
-import json, os, re, shlex, subprocess, sys
+import fnmatch, json, os, re, shlex, subprocess, sys
 
 PROTECTED = set(os.environ.get("GUARD_BRANCHES", "").split())
 def switch(name):
@@ -75,7 +88,8 @@ def switch(name):
 
 MCP_ASK = switch("GUARD_MCP_WRITES")
 GROUP_ASK = {"deploys": switch("GUARD_DEPLOYS"), "publishes": switch("GUARD_PUBLISHES"),
-             "schema_pushes": switch("GUARD_SCHEMA_PUSHES")}
+             "schema_pushes": switch("GUARD_SCHEMA_PUSHES"), "network": switch("GUARD_NETWORK")}
+ALLOW_HOSTS = {"localhost", "127.0.0.1", "::1"} | set(re.split(r"[\s,]+", os.environ.get("GUARD_ALLOW_HOSTS", "").lower()))
 
 def deny(reason):
     sys.stderr.write("Blocked by scripts/guard.sh: " + reason + "\n")
@@ -92,23 +106,107 @@ try:
     event = json.load(sys.stdin)
 except Exception:
     sys.exit(0)
+if event.get("hook_event_name") == "ConfigChange":
+    # The settings files changed while the session runs. A change to settings.local.json (the file an
+    # agent could use to grant itself permissions) is blocked; one to settings.json is allowed, and the
+    # owner sees the notice because the Edit/Write that made it already asked.
+    if event.get("source") == "local_settings":
+        deny("settings.local.json changed during the session; it is the owner\u2019s file. Restore it, or the owner confirms the change.")
+    sys.exit(0)
 tool = event.get("tool_name") or ""
 args = event.get("tool_input") or {}
 
-# ---- secret env files --------------------------------------------------------------------------
-SAFE_ENV = {".env.example", ".env.sample", ".env.template"}
+# ---- the guard own files -------------------------------------------------------------------------
+# A write here switches the guard off for every later call, so these ask (the owner reads the change);
+# settings.local.json is the owner alone and is denied.
+GUARD_FILES = ["scripts/guard.sh", "scripts/session-start.sh", "scripts/lib/*", ".claude/settings.json",
+               "harness.config.yml"]
+OWNER_FILES = [".claude/settings.local.json"]
+ROOT = os.getcwd()
+CD_DIRS = []   # directories a `cd` in the same command moves to; a relative path is also tried under each
+
+def rels_to_root(word):
+    """Where a path word points, relative to the project root, once per directory a `cd` could set."""
+    w = str(word).strip("\"\x27")
+    for var in ("${CLAUDE_PROJECT_DIR}", "$CLAUDE_PROJECT_DIR", "${PWD}", "$PWD"):
+        w = w.replace(var, ROOT)
+    if not w or any(c in w for c in "$`"):
+        return
+    root = os.path.realpath(ROOT)
+    for full in [w] if os.path.isabs(w) else [os.path.join(ROOT, d, w) for d in [""] + CD_DIRS]:
+        full = os.path.normpath(full)
+        for cand in (full, os.path.realpath(full)):
+            for base in (ROOT, root):
+                if cand == base or cand.startswith(base + os.sep):
+                    yield os.path.relpath(cand, base)
+
+def protected_kind(word):
+    """"owner" for settings.local.json, "guard" for the guard files, "" for anything else."""
+    for part in re.split(r"[=:<>|,;()]", str(word)):
+        globbed = any(c in part for c in "*?[")
+        for rel in rels_to_root(part) if part else ():
+            for kind, names in (("owner", OWNER_FILES), ("guard", GUARD_FILES)):
+                for name in names:
+                    if fnmatch.fnmatch(rel, name) or (globbed and fnmatch.fnmatch(name.replace("/*", "/x"), rel)):
+                        return kind
+    return ""
+
+def protect(path, how):
+    kind = protected_kind(path)
+    if kind == "owner":
+        deny(f"`{path}` is the owner\u2019s file ({how}); an agent never writes settings.local.json.")
+    if kind == "guard":
+        ask(f"`{path}` is one of the files the guard rests on ({how}); the owner approves each change to it.")
+
+# ---- secret and credential files ---------------------------------------------------------------
+SAFE_SUFFIX = (".example", ".sample", ".template")
+SECRET_DIRS = {".aws", ".ssh", ".gnupg", ".azure", ".kube"}
+SECRET_NAMES = {".envrc", ".netrc", "_netrc", ".pgpass", ".git-credentials", ".my.cnf", ".htpasswd"}
+ASK_NAMES = {".npmrc", ".pypirc"}
+SECRET_SUFFIX = (".pem", ".key", ".p12", ".pfx", ".jks", ".keystore", ".ppk", ".tfstate")
+SECRET_RE = re.compile(r"^(id_(rsa|dsa|ecdsa|ed25519)(_[a-z0-9_]+)?"
+                       r"|(credentials?|client_secrets?|service[-_]account[-_a-z0-9]*|[a-z0-9_-]+[-_]credentials?)\.(json|ya?ml|toml|ini|xml|csv|txt)"
+                       r"|(secrets?|[a-z0-9_-]+[-_.]secrets?)\.(json|ya?ml|toml|env|ini|txt|properties|cfg|conf)"
+                       r"|[a-z0-9_.-]+\.(secrets?|credentials?))$")
+GLOB_PROBES = (".env", ".envrc", ".netrc", ".npmrc", ".pypirc", ".pgpass", ".git-credentials")
+
+def secret_kind(path):
+    """"deny" for a secret or credential file, "ask" for one that is often plain config, "" otherwise."""
+    parts = [c for c in str(path).strip("\"\x27").split("/") if c]
+    if not parts or any(c.isspace() for c in parts[-1]):
+        return ""
+    name = parts[-1]
+    low = name.lower()
+    dirs = [c.lower() for c in parts[:-1]]
+    if low in (".env.example", ".env.sample", ".env.template") or low.endswith(SAFE_SUFFIX):
+        return ""
+    if low == ".env" or low.startswith(".env."):
+        return "deny"
+    if any(c in SECRET_DIRS for c in dirs):
+        return "" if low.endswith(".pub") else "deny"
+    for i, c in enumerate(dirs):
+        nxt = dirs[i + 1] if i + 1 < len(dirs) else low
+        if (c == ".config" and nxt in ("gcloud", "gh", "doctl")) or (c == ".docker" and low == "config.json"):
+            return "deny"
+    if low in SECRET_NAMES or (low.endswith(SECRET_SUFFIX) and low not in SECRET_SUFFIX) or SECRET_RE.match(low):
+        return "deny"
+    if low in ASK_NAMES:
+        return "ask"
+    if any(c in low for c in "*?[") and low.startswith(".env"):
+        return "deny"
+    if any(c in low for c in "*?[") and low.startswith(".") and len(re.sub(r"[*?\[\]]", "", low)) >= 3:
+        for probe in GLOB_PROBES:
+            if fnmatch.fnmatch(probe, low):
+                return "ask" if probe in ASK_NAMES else "deny"
+    return ""
+
 def is_secret_env(path):
-    name = os.path.basename(str(path).rstrip("/").strip("\"\x27"))
-    if name in SAFE_ENV or name.endswith((".example", ".sample", ".template")):
-        return False
-    return name == ".env" or name.startswith(".env.")
+    return secret_kind(path) == "deny"
 
 def env_in_word(word):
-    # Covers plain paths, globs (.env*), redirections glued to a word and VAR=path forms.
-    for part in re.split(r"[=:<>|,;()]", word):
-        if part and (is_secret_env(part) or re.search(r"(^|/)\.env\*", part)):
-            return True
-    return False
+    # Covers plain paths, globs (.env*, .en?), redirections glued to a word, VAR=path and @file forms.
+    kinds = [secret_kind(part) for part in re.split(r"[=:<>|,;()@]", word) if part]
+    return "deny" if "deny" in kinds else "ask" if "ask" in kinds else ""
 
 # ---- Bash parsing ------------------------------------------------------------------------------
 SEPARATORS = {";", "&&", "||", "|", "&", "|&", "\n", "(", ")", "{", "}"}
@@ -143,13 +241,20 @@ def simple_commands(cmd, depth=0):
         else:
             cur.append(t)
 
+BARE_ENV = []   # set when a command would print the whole environment
+
 def expand(words, depth):
+    first = os.path.basename(words[0]) if words else ""
     while words and (words[0] in WRAPPERS or re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", words[0])
                      or (words[0].startswith("-") and len(words) > 1 and words[1] != "--")):
         words = words[1:]
     if not words:
+        if first == "env":
+            BARE_ENV.append(first)
         return
     name = os.path.basename(words[0])
+    if name == "printenv" and len(words) == 1:
+        BARE_ENV.append(name)
     if name in SHELLS and "-c" in words[1:]:
         i = words.index("-c")
         if i + 1 < len(words):
@@ -319,6 +424,53 @@ def check_gh(words):
             if re.search(r"^/?repos/[^/]+/morphness(/|$)", path):
                 ask(f"`gh api {path}` ({method or default_method}) writes to the Morphness repository; update checks only read it.")
 
+# ---- network and remote copies -------------------------------------------------------------------
+CURL_BODY_LONG = ("--data", "--data-binary", "--data-raw", "--data-urlencode", "--data-ascii", "--form",
+                  "--form-string", "--upload-file", "--json", "--post-data", "--post-file", "--body-data",
+                  "--body-file")
+REMOTE_COPY = {"scp", "sftp", "rsync", "nc", "ncat", "netcat", "socat", "telnet", "ftp"}
+REMOTE_ARG = re.compile(r"^(rsync://|ssh://|([^/\s@]+@)?[A-Za-z0-9_.\[\]-]+:[^:])")
+
+def url_hosts(words):
+    from urllib.parse import urlparse
+    hosts = []
+    for w in words:
+        if "://" in w:
+            try:
+                hosts.append((urlparse(w).hostname or "").lower())
+            except ValueError:
+                hosts.append("?")
+    return hosts
+
+def check_network(words):
+    name, rest = words[0], words[1:]
+    if not GROUP_ASK["network"]:
+        return
+    if name in ("curl", "wget"):
+        sends = False
+        for k, w in enumerate(rest):
+            if w.startswith(CURL_BODY_LONG) or (re.match(r"^-[A-Za-z]*[dFT]", w) and not w.startswith("--")):
+                sends = True
+            method = ""
+            if w in ("-X", "--request", "--method") and k + 1 < len(rest):
+                method = rest[k + 1]
+            elif w.startswith(("--request=", "--method=")):
+                method = w.split("=", 1)[1]
+            elif w.startswith("-X") and len(w) > 2:
+                method = w[2:]
+            if method and method.upper() not in ("GET", "HEAD"):
+                sends = True
+        if sends:
+            hosts = url_hosts(rest)
+            if not hosts or any(h not in ALLOW_HOSTS for h in hosts):
+                ask(f"`{name}` sends a body or a non-GET request to a host outside the allow-list ({sorted(h for h in hosts if h not in ALLOW_HOSTS) or sorted(ALLOW_HOSTS)}); "
+                    "that is how a file leaves the machine. `guard.network: off` or `guard.allow_hosts` in harness.config.yml changes this.")
+    elif name in REMOTE_COPY:
+        if name in ("rsync",) and not any(REMOTE_ARG.match(w) for w in rest if not w.startswith("-")):
+            return
+        ask(f"`{name}` copies files to or from another machine; only the owner approves it. "
+            "`guard.network: off` in harness.config.yml turns this prompt off.")
+
 MORPHNESS_URLS = ("https://api.github.com/repos/antarsoft/morphness/",
                   "https://raw.githubusercontent.com/antarsoft/morphness/")
 CURL_READ_FLAG = re.compile(r"^(-[fsSL]+|--fail|--silent|--show-error|--location)$")
@@ -339,19 +491,51 @@ def check_curl(words):
                 "the terminal only (no file, method, body, header or config). Use `gh api --method GET` "
                 "or the plain `curl -fsSL <url>`.")
 
+WRITERS = {"cp", "mv", "rm", "ln", "install", "tee", "truncate", "chmod", "chown", "chattr", "dd", "rsync",
+           "patch", "ed", "ex", "vi", "vim", "nano", "touch", "unlink", "shred"}
+INTERPRETERS = {"python", "python3", "node", "ruby", "perl", "php", "deno", "bun"}
+
+def guard_file_write(cmd, words):
+    """Ask or deny when a Bash command writes one of the protected files."""
+    name = words[0]
+    named = [w for w in words[1:] if protected_kind(w)]
+    if not named:
+        return
+    sub = words[1] if len(words) > 1 else ""
+    writes = (name in WRITERS
+              or (name in ("sed", "perl", "ruby") and any(re.match(r"^-[A-Za-z]*i", w) or w.startswith("--in-place") for w in words[1:]))
+              or (name in INTERPRETERS and any(w in ("-c", "-e", "-p", "-pe", "-pi") or w.startswith("-i") for w in words[1:]))
+              or (name == "git" and sub in ("update-index", "checkout", "restore", "rm", "mv", "apply", "stash", "reset"))
+              or (name in ("awk", "gawk") and "-i" in words[1:] and "inplace" in " ".join(words)))
+    if writes:
+        protect(named[0], f"`{name}` writes it")
+
 def check_bash(cmd):
     # Heredoc bodies are text (a commit message, a PR body), not commands: keep only their first line.
     cmd = re.sub(r"(<<-?\s*([\x27\"]?)(\w+)\2[^\n]*)\n.*?\n[ \t]*\3[ \t]*(?=\n|\)|$)", r"\1", cmd, flags=re.S)
     for words in simple_commands(cmd):
+        if words[0] == "cd" and len(words) > 1:
+            CD_DIRS.append(words[1].strip("\"\x27"))
+    # A redirect (`> f`, `>> f`, `>|f`, `tee`-less here-doc writes) onto a protected file.
+    for m in re.finditer(r"[0-9&]?>>?\|?\s*([^\s;&|<>()]+)", cmd):
+        protect(m.group(1), "a redirect writes it")
+    for words in simple_commands(cmd):
+        guard_file_write(cmd, words)
         for w in words[1:]:
-            if env_in_word(w):
-                deny(f"`{w}` is a secret env file; agents never read or write it (AGENTS.md § Golden rules). Use .env.example for names.")
+            if re.search(r"^/proc/[^/]+/environ$", w):
+                deny("`/proc/<pid>/environ` is the whole environment, secrets included.")
+            kind = env_in_word(w)
+            if kind == "deny":
+                deny(f"`{w}` is a secret or credential file; agents never read or write it (AGENTS.md § Golden rules). Use .env.example for names.")
+            if kind == "ask":
+                ask(f"`{w}` often holds registry tokens; the owner approves a read or change of it.")
         line = " ".join(words)
         if GROUP_ASK["publishes"] and PUBLISH_ASK.search(line) and not dry_run(words):
             ask("`publish` releases a package to a shared registry; only the owner approves it (the Shared remote environments golden rule in AGENTS.md). "
                 "`guard.publishes: off` in harness.config.yml turns this prompt off.")
         # `npx supabase …`, `pnpm exec prisma …`: match the tool the runner starts.
         line = re.sub(r"^(npx|bunx|pnpx|(pnpm|yarn|bun|npm)(\s+(exec|dlx|x))?)(\s+-\S+)*\s+(--\s+)?", "", line)
+        check_network(words)
         if words[0] == "git":
             check_git(words)
         elif words[0] == "gh":
@@ -368,6 +552,9 @@ def check_bash(cmd):
             if GROUP_ASK[group] and re.search(pattern, line) and not dry_run(words):
                 ask(f"`{label}` changes a shared remote environment or registry; only the owner approves it (the Shared remote environments golden rule in AGENTS.md). "
                     f"`guard.{group}: off` in harness.config.yml turns this prompt off.")
+
+    if BARE_ENV:
+        deny("a bare `env` or `printenv` prints every variable, secrets included. Name the variable you need (`printenv NAME`).")
 
 # ---- dispatch ------------------------------------------------------------------------------------
 # An MCP tool passes when a word of its name is a read verb and none is a write verb
@@ -387,13 +574,18 @@ if tool == "Bash":
     check_bash(str(args.get("command", "")))
 elif tool in ("Read", "Edit", "MultiEdit", "Write", "NotebookEdit"):
     p = args.get("file_path") or args.get("notebook_path") or ""
-    if is_secret_env(p):
-        deny(f"`{p}` is a secret env file; agents never read or write it (AGENTS.md § Golden rules).")
+    if tool != "Read":
+        protect(p, f"{tool} writes it")
+    kind = secret_kind(p)
+    if kind == "deny":
+        deny(f"`{p}` is a secret or credential file; agents never read or write it (AGENTS.md § Golden rules).")
+    if kind == "ask":
+        ask(f"`{p}` often holds registry tokens; the owner approves a read or change of it.")
 elif tool == "Grep":
     for key in ("path", "glob"):
         v = str(args.get(key) or "")
-        if v and env_in_word(v):
-            deny(f"`{v}` names a secret env file; agents never read it.")
+        if v and env_in_word(v) == "deny":
+            deny(f"`{v}` names a secret or credential file; agents never read it.")
 elif tool.startswith("mcp__") and MCP_ASK:
     short = tool.split("__", 2)[-1]
     words = {w.lower() for w in re.split(r"[_\-.]|(?<=[a-z])(?=[A-Z])", short) if w}

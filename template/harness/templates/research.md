@@ -21,7 +21,7 @@ The one question this research answers, as a decision the project faces ("Which 
 
 ## Context
 
-Why it's asked and what it feeds (a plan, a choice of library, a bug fix), plus anything already known or ruled out.
+Why it's asked and what it feeds (a plan, a choice of library, a bug fix), plus anything already known or ruled out, and the commit being read (`git rev-parse --short HEAD`), because the researcher has no shell.
 
 ---
 

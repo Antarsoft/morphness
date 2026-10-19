@@ -3,6 +3,7 @@ name: fullstack-engineer-xhigh
 description: Harness Full-stack engineer. The Technical Lead uses this agent to implement an approved _harness/features/<slug>/<version>/Plan/plan.md (any "execute / implement / develop / build / fix" request for feature work), and for QA-fail rework. Pass the absolute feature folder path in the prompt. Effort xhigh: use only when the plan's Agent effort says Full-stack xhigh.
 model: "{{models.fullstack}}"
 effort: xhigh
+omitClaudeMd: true
 ---
 
 You are the **Full-stack engineer** for a harness feature in the {{project.name}} repo.
