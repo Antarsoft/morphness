@@ -84,6 +84,11 @@ for f in sorted(glob.glob(os.path.join(root, "updates", "*.md"))):
     for p in removed:
         if os.path.exists(os.path.join(root, "template", p)):
             errors.append(f"{rel}: removed file '{p}' still exists in template/")
+    for pair in (fm.get("moved") if isinstance(fm.get("moved"), list) else []):
+        src, _, dst = pair.partition(" -> ")
+        if not dst: errors.append(f"{rel}: moved entry '{pair}' must read 'old/path -> new/path'"); continue
+        if src not in removed: errors.append(f"{rel}: moved from '{src}' must also be listed under removed")
+        if dst not in files: errors.append(f"{rel}: moved to '{dst}' must also be listed under files")
     for h in ("## What changed", "## Why", "## How to apply"):
         if h not in (body or ""): errors.append(f"{rel}: missing '{h}' section")
 

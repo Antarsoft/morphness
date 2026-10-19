@@ -345,9 +345,11 @@ def fill_workflow(path, fx):
         kept.append(line)
     write(path, "\n".join(kept))
 
-def render(fx, t):
-    shutil.copytree(template, t)
-    modules = fx["modules"]
+def render(fx, t, tpl=None):
+    tpl = tpl or template
+    all_modules = sorted(os.listdir(os.path.join(tpl, "harness/modules")))
+    shutil.copytree(tpl, t)
+    modules = [m for m in fx["modules"] if m in all_modules]
     values = dict(DEFAULTS)
     values.update({"branches.integration": fx["branches"]["integration"],
                    "branches.production": fx["branches"]["production"]})
@@ -359,7 +361,7 @@ def render(fx, t):
     values.update(fx["values"])
     checks = set(fx["checks"]["before_qa"]) | set(fx["checks"]["before_signoff"])
 
-    for name in ALL_MODULES:
+    for name in all_modules:
         if name not in modules:
             remove_module(t, name)
     ci_paths = {}
@@ -686,6 +688,139 @@ def check(name, fx, t):
             bad(f"guard: expected {expect}, got {got} for {raw} on branch {here} ({r.stderr.strip()})")
     run(["git", "checkout", "-q", fx["branches"]["integration"]], t)
 
+# ---- update from the previous release ---------------------------------------------------------
+# A project installed from the newest release tag, brought up to date the way skills/morph-update does
+# it: the kit updates added since (updates/ notes) merged against the template at that release.
+# Without local edits the result must equal a fresh install; with edits, they must survive with no
+# conflict. The merged project then goes through the same self-checks as a fresh one.
+RELEASE_NAME = re.compile(r"\d{4}-\d{2}-\d{2}(?:\.[2-9]|\.[1-9]\d+)?")
+
+def release_key(tag):
+    date, _, n = tag.partition(".")
+    return (date, int(n or 1))
+
+def frontmatter(text):
+    m = re.match(r"^---\n(.*?)\n---\n", text, re.S)
+    out, key = {}, None
+    for line in (m.group(1).splitlines() if m else []):
+        item = re.match(r"^\s+-\s+(.*?)\s*(#.*)?$", line)
+        if item and key:
+            out.setdefault(key, []).append(item.group(1).strip('"'))
+            continue
+        kv = re.match(r"^([a-z_]+):\s*(.*?)\s*(#.*)?$", line)
+        if kv:
+            key = kv.group(1)
+            out[key] = [] if kv.group(2) in ("", "[]") else kv.group(2)
+    return out
+
+def previous_release():
+    if os.environ.get("UPDATE_FROM"):
+        return os.environ["UPDATE_FROM"]
+    tags = sorted((t for t in run(["git", "tag", "--list"], root).stdout.split() if RELEASE_NAME.fullmatch(t)), key=release_key)
+    return tags[-1] if tags else None
+
+def old_template(tag, dest):
+    r = subprocess.run(["git", "-C", root, "archive", tag, "template"], capture_output=True)
+    if r.returncode:
+        return False
+    import io, tarfile
+    with tarfile.open(fileobj=io.BytesIO(r.stdout)) as tar:
+        try:
+            tar.extractall(dest, filter="data")
+        except TypeError:
+            tar.extractall(dest)
+    return True
+
+# Local edits an owner's project would carry: (file, text appended or inserted after an anchor).
+EDITS = [
+    ("AGENTS.md", None, "\n- Never edit vendor/ by hand.\n"),
+    (".claude/rules/testing.md", None, "\n- Run `make fmt` before every commit.\n"),
+    ("project/STACK.md", None, "\nOwner note: the staging database is shared.\n"),
+    (".claude/settings.json", '"allow": [', '\n      "Bash(make:*)",'),
+]
+
+def edit_file(path, anchor, text):
+    s = read(path)
+    write(path, s + text if anchor is None else s.replace(anchor, anchor + text, 1))
+
+def update_case(name, fx, tag, base_tpl, edits):
+    bad = lambda msg: failures.append(f"{name} (update from {tag}{', local edits' if edits else ''}): {msg}")
+    work_u = tempfile.mkdtemp(prefix="morphness-update-")
+    old, new, proj = (os.path.join(work_u, d) for d in ("old", "new", "proj"))
+    render(fx, old, base_tpl)               # what the owner installed at <tag>
+    render(fx, new, template)               # what a fresh install of this checkout gives
+    shutil.copytree(old, proj)
+    if edits:
+        for rel, anchor, text in EDITS:
+            edit_file(os.path.join(proj, rel), anchor, text)
+    ls = lambda ref, d: set(run(["git", "ls-tree", "-r", "--name-only", ref, d], root).stdout.split()) if ref else set()
+    added = sorted(f for f in glob.glob(os.path.join(root, "updates", "*.md"))
+                   if os.path.basename(f) != "README.md" and f"updates/{os.path.basename(f)}" not in ls(tag, "updates/"))
+    files, removed, moved = [], [], {}
+    for f in added:
+        fm = frontmatter(read(f))
+        files += fm.get("files", [])
+        removed += fm.get("removed", [])
+        for pair in fm.get("moved", []):
+            src, _, dst = pair.partition(" -> ")
+            moved[src] = dst
+    # every template file that differs from the release is named by some new note
+    r = run(["git", "diff", "--name-only", tag, "--", "template"], root)
+    changed = {p[len("template/"):] for p in r.stdout.split()} | \
+              {os.path.relpath(p, template) for p in run(["git", "ls-files", "--others", "--exclude-standard", "--", "template"], root).stdout.split() for p in [os.path.join(root, p)]}
+    for p in sorted(changed - set(files) - set(removed) - set(moved) - set(moved.values())):
+        bad(f"template/{p} changed since {tag} but no kit update note lists it")
+    rd = lambda base, rel: read(os.path.join(base, rel)) if os.path.exists(os.path.join(base, rel)) else None
+    def merge(rel_ours, rel_base, rel_theirs, out_rel):
+        ours = os.path.join(proj, rel_ours)
+        r = run(["git", "merge-file", "-p", ours, os.path.join(old, rel_base), os.path.join(new, rel_theirs)], root)
+        if r.returncode > 0:
+            bad(f"{rel_ours}: {r.returncode} merge conflict(s) against the template at {tag}")
+        os.makedirs(os.path.dirname(os.path.join(proj, out_rel)), exist_ok=True)
+        write(os.path.join(proj, out_rel), r.stdout)
+    for src, dst in moved.items():
+        if rd(proj, src) is None:
+            continue
+        merge(src, src, dst, dst)
+        if src != dst:
+            os.remove(os.path.join(proj, src))
+    for rel in sorted(set(files)):
+        if rel in moved.values() or rd(new, rel) is None:
+            continue    # moved (done above), or not part of this project: a module it lacks, a file a later note removed
+        targets = [rel]
+        scaffold = re.fullmatch(r"harness/modules/ci-cd/github/(.+)", rel)
+        if scaffold and rd(new, f".github/workflows/{scaffold.group(1)}") is not None:
+            targets.append(f".github/workflows/{scaffold.group(1)}")   # the live copy the scaffold was filled into
+        for t_rel in targets:
+            if rd(proj, t_rel) is None or rd(old, t_rel) is None:
+                os.makedirs(os.path.dirname(os.path.join(proj, t_rel)), exist_ok=True)
+                write(os.path.join(proj, t_rel), rd(new, t_rel))
+            elif rd(proj, t_rel) == rd(old, t_rel):
+                shutil.copy2(os.path.join(new, t_rel), os.path.join(proj, t_rel))
+            elif rd(proj, t_rel) != rd(new, t_rel):
+                merge(t_rel, t_rel, t_rel, t_rel)
+    for rel in removed:
+        if rd(proj, rel) is not None and rd(proj, rel) == rd(old, rel):
+            os.remove(os.path.join(proj, rel))
+    expected = new
+    if edits:
+        expected = os.path.join(work_u, "expected")
+        shutil.copytree(new, expected)
+        for rel, anchor, text in EDITS:
+            edit_file(os.path.join(expected, rel), anchor, text)
+    for base in (expected, proj):
+        other = proj if base == expected else expected
+        for f in files_under(base):
+            rel = os.path.relpath(f, base)
+            if rel.startswith(".git/"):
+                continue
+            a, b = rd(base, rel), rd(other, rel)
+            if b is None:
+                bad(f"{rel} is {'missing from' if base == expected else 'left in'} the updated project")
+            elif base == expected and a != b:
+                bad(f"{rel} differs from a fresh install of this checkout")
+    return proj, work_u
+
 # Guard cases marked "every" (branches, environments, guard switches, broken input) or "only" replay on each
 # sample project; the rest test rules that don't read the project's config, so they run once, on
 # nextjs-supabase (closest to the install default; python-cli has integration == production). GUARD_FULL=1,
@@ -697,6 +832,16 @@ if once_on not in names:
     FULL = True
 
 work = tempfile.mkdtemp(prefix="morphness-selftest-")
+prev_tag, old_tpl = previous_release(), None
+if prev_tag:
+    tpl_dir = tempfile.mkdtemp(prefix="morphness-previous-")
+    old_tpl = os.path.join(tpl_dir, "template") if old_template(prev_tag, tpl_dir) else None
+if not old_tpl:
+    msg = f"no release tag {prev_tag or ''} in this checkout (fetch the tags: git fetch --tags, or checkout with fetch-depth: 0)"
+    if os.environ.get("STRICT") == "1":
+        failures.append("update: " + msg)
+    else:
+        print("note: " + msg + "; the update-from-the-previous-release case is skipped")
 for path in fixtures:
     name = os.path.splitext(os.path.basename(path))[0]
     fx = json.load(open(path))
@@ -704,6 +849,12 @@ for path in fixtures:
     render(fx, t)
     before = len(failures)
     check(name, fx, t)
+    if prev_tag and old_tpl:
+        for edits in (False, True):
+            proj, work_u = update_case(name, fx, prev_tag, old_tpl, edits)
+            if edits:
+                check(f"{name} (updated from {prev_tag})", fx, proj)
+            shutil.rmtree(work_u, ignore_errors=True)
     print(f"{name}: {'ok' if len(failures) == before else str(len(failures) - before) + ' problem(s)'}")
 if os.environ.get("KEEP") == "1":
     print(f"rendered copies kept in {work}")

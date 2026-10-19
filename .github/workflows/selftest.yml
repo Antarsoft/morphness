@@ -1,10 +1,10 @@
 name: selftest
 on:
   pull_request:
-    paths: ["template/**", "tests/**", "scripts/kit-selftest.sh", "skills/morph-init/references/render.md", ".github/workflows/selftest.yml"]
+    paths: ["template/**", "updates/**", "skills/morph-update/**", "tests/**", "scripts/kit-selftest.sh", "skills/morph-init/references/render.md", ".github/workflows/selftest.yml"]
   push:
     branches: [main]
-    paths: ["template/**", "tests/**", "scripts/kit-selftest.sh", "skills/morph-init/references/render.md", ".github/workflows/selftest.yml"]
+    paths: ["template/**", "updates/**", "skills/morph-update/**", "tests/**", "scripts/kit-selftest.sh", "skills/morph-init/references/render.md", ".github/workflows/selftest.yml"]
 jobs:
   render:
     runs-on: ubuntu-24.04   # pinned: bump it in its own PR
