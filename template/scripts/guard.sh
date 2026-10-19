@@ -499,23 +499,28 @@ DEPLOY_ASK = [
     ("deploys", r"^(netlify|ntl)\b.*\benv(:|\s+)(set|unset|import|clone|migrate)\b", "netlify env set"),
     ("deploys", r"^supabase\b.*\bfunctions\s+deploy\b", "supabase functions deploy"),
     ("schema_pushes", r"\bprisma\s+db\s+push\b", "prisma db push"),
+    ("schema_pushes", r"\bprisma\s+(migrate\s+reset|db\s+execute)\b", "prisma migrate reset"),
     ("schema_pushes", r"^drizzle-kit\b.*\b(push|migrate)\b", "drizzle-kit push"),
     ("deploys", r"^(terraform|tofu)\b.*\b(apply|destroy)\b", "terraform apply"),
     ("deploys", r"^kubectl\b.*\bapply\b", "kubectl apply"),
     ("deploys", r"^helm\b.*\b(upgrade|install)\b", "helm upgrade"),
     ("publishes", r"^cargo\b.*\bpublish\b", "cargo publish"),
     ("publishes", r"^changeset\b.*\bpublish\b", "changeset publish"),
+    ("publishes", r"^docker\b.*(\bpush\b|--push\b)", "docker push"),
+    ("publishes", r"^(twine\s+upload|gem\s+push|poetry\s+publish|flit\s+publish|uv\s+publish|dotnet\s+nuget\s+push|mvn\b.*\bdeploy|gradlew?\b.*\bpublish)", "a package upload"),
+    ("deploys", r"^supabase\b.*\b(secrets\s+(set|unset)|functions\s+delete|projects\s+(create|delete)|branches\s+(create|delete|update|disable)|domains\b|vanity-subdomains\b|network-(bans|restrictions)\b|ssl-enforcement\b|postgres-config\b|sso\b|config\s+push|storage\s+(cp|mv|rm))", "supabase on the hosted project"),
+    ("deploys", r"^(wrangler|npx wrangler)\b.*\b(kv|r2|d1|queues|vectorize|hyperdrive|pages|secret|versions)[: ]+(key |bucket |namespace |project )?(put|delete|create|bulk|deploy|rollback|upload)\b", "wrangler on a hosted resource"),
 ]
 # Matched on the command as typed, because the runner strip below removes a leading `npm`. Covers
 # `pnpm --filter x publish`, `npm --workspace x publish` and `yarn npm publish`.
 PUBLISH_ASK = re.compile(r"^(npm|pnpm|yarn|bun)\b.*\bpublish\b")
 # vercel: only these subcommands read. A scoped one (`env`, `domains`, `dns`, …) reads only with `ls`
-# and the like; `vercel env add|rm|update`, `vercel alias set`, `vercel deploy` and a bare `vercel` ask.
-VERCEL_READ = {"ls", "list", "inspect", "logs", "whoami", "login", "logout", "help", "link", "pull",
+# and the like; `vercel env add|rm|update|pull`, `vercel alias set`, `vercel deploy`, `vercel pull` and a bare `vercel` ask.
+VERCEL_READ = {"ls", "list", "inspect", "logs", "whoami", "login", "logout", "help", "link",
                "build", "dev", "bisect", "version"}
 VERCEL_SCOPED = {"env", "domains", "dns", "alias", "aliases", "project", "projects", "certs", "teams",
                  "team", "git", "integration", "webhooks", "rolling-release"}
-VERCEL_SCOPED_READ = {"ls", "list", "inspect", "pull", "help"}
+VERCEL_SCOPED_READ = {"ls", "list", "inspect", "help"}
 
 def vercel_writes(line):
     words = line.split()[1:]
@@ -536,9 +541,15 @@ def dry_run(words):
             return True
     return False
 
-GH_ASK_PATHS = re.compile(r"(/git/(refs|tags)|/merges|/pulls/[^/]+/merge|rulesets|/protection|/branches/[^/]+/protection|^/?repos/[^/]+/[^/]+/?$|collaborators|/hooks|/keys|/environments)")
+
+GH_ASK = {"repo": {"delete", "archive", "unarchive", "rename", "create", "edit", "transfer"},
+          "release": {"create", "delete", "edit", "upload", "delete-asset"},
+          "workflow": {"run", "enable", "disable"}, "pr": {"merge"}, "auth": {"token", "login", "logout", "refresh", "setup-git"},
+          "issue": {"delete", "transfer"}, "extension": {"install", "upgrade", "exec"}, "alias": {"set", "import"}}
 
 def check_gh(words):
+    if len(words) > 2 and words[2] in GH_ASK.get(words[1], ()):
+        ask(f"`gh {words[1]} {words[2]}` changes the code host (deletes, releases, merges, workflow runs, credentials, extensions); only the owner approves it.")
     if len(words) > 2 and words[1] in ("secret", "variable") and words[2] in ("set", "delete", "remove"):
         deny("secrets and variables on the code host are the owner’s (the Shared remote environments golden rule in AGENTS.md).")
     if len(words) > 1 and words[1] == "api":
@@ -561,12 +572,11 @@ def check_gh(words):
         if method in ("POST", "PUT", "PATCH", "DELETE") or (writes and method in ("", "POST")):
             if re.search(r"(secrets|variables)", path):
                 deny("secrets and variables on the code host are the owner’s (the Shared remote environments golden rule in AGENTS.md).")
-            default_method = "POST"
-            if GH_ASK_PATHS.search(path):
-                ask(f"`gh api {path}` ({method or default_method}) changes repository settings or protection; only the owner approves it.")
-            # Upstream update checks only read Morphness; .claude/settings.json allows those reads.
-            if re.search(r"^/?repos/[^/]+/morphness(/|$)", path):
-                ask(f"`gh api {path}` ({method or default_method}) writes to the Morphness repository; update checks only read it.")
+            if path.strip("/") == "graphql" and "mutation" not in " ".join(rest).lower():
+                return   # a GraphQL query is a read
+            # Every other write asks; update checks only read (GET), which .claude/settings.json allows.
+            verb = method or "POST"
+            ask(f"`gh api {path}` ({verb}) writes to the code host (merges, dispatches, settings, deletes); only the owner approves it.")
 
 # ---- network and remote copies -------------------------------------------------------------------
 CURL_BODY_LONG = ("--data", "--data-binary", "--data-raw", "--data-urlencode", "--data-ascii", "--form",
@@ -695,6 +705,127 @@ def check_rm(words):
         if outside_repo(t):
             ask(f"`rm -r` would delete `{t}`, which is outside this repo (or the repo itself, its .git, or a path built at run time); the owner approves it.")
 
+# ---- known deploy, cloud and database CLIs: a call asks unless it is a listed read ---------------------
+CLI_GROUP = {}
+for _group, _names in (("deploys", "wrangler netlify ntl fly flyctl railway heroku gcloud gsutil aws az doctl kubectl helm "
+                                    "pulumi terraform tofu firebase stripe render sst serverless sls amplify"),
+                       ("schema_pushes", "psql mysql mariadb mongosh mongo redis-cli sqlcmd cockroach pscale turso")):
+    for _n in _names.split():
+        CLI_GROUP[_n] = _group
+CLI_READ = {"get", "list", "ls", "describe", "show", "view", "info", "status", "inspect", "logs", "log", "tail", "whoami",
+            "version", "help", "diff", "plan", "validate", "check", "search", "history", "doctor", "explain", "top",
+            "events", "output", "outputs", "regions", "usage", "current", "lint", "template", "preview", "fmt",
+            "graph", "providers", "api-resources", "api-versions", "cluster-info", "can-i", "dev", "types", "init"}
+CLI_WRITE_EXTRA = {"sync", "cp", "mv", "rm", "rb", "mb", "scale", "restart", "undo", "annotate", "label",
+            "taint", "untaint", "drain", "cordon", "uncordon", "replace", "ssh", "console", "shell", "proxy", "forward",
+            "tunnel", "destroy", "up", "install", "upgrade", "uninstall", "release", "login", "logout", "auth", "token",
+            "env", "secrets", "secret", "config:set", "unset", "invoke", "kill", "reboot", "terminate", "detach", "attach"}
+CLI_NOUNS = {"env", "secrets", "secret", "release", "auth", "token", "config"}
+CLI_SECRET = re.compile(r"(access-token|identity-token|secret-value|session-token|authorization-token|login-password|"
+                        r"export-credentials|(^|[ :])token($|[ :]))")
+CLI_LOCAL_OK = {"firebase": {"use", "emulators", "init"}, "stripe": {"listen"}, "terraform": {"init", "fmt", "validate"},
+                "tofu": {"init", "fmt", "validate"}}
+LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1", "0.0.0.0", "host.docker.internal", ""}
+SQL_WRITE = re.compile(r"\b(insert|update|delete|drop|truncate|alter|create|grant|revoke|copy|merge|call|vacuum|reindex|"
+                       r"cluster|lock|set|reset|do|refresh|comment|execute|replace|upsert|load|import)\b", re.I)
+REDIS_READ = {"get", "mget", "keys", "scan", "ttl", "pttl", "exists", "type", "info", "ping", "dbsize", "hget", "hgetall",
+              "hmget", "hkeys", "hlen", "llen", "lrange", "lindex", "smembers", "scard", "sismember", "zrange", "zcard",
+              "zscore", "strlen", "memory", "slowlog", "client", "config", "time", "lastsave", "--version", "-v", "--help"}
+MONGO_READ = re.compile(r"^\s*(db\.[\w.]+\.(find|findOne|count|countDocuments|estimatedDocumentCount|distinct)\(|"
+                        r"show\s+\w+|db\.(getCollectionNames|stats|version)\()", re.S)
+MONGO_WRITE = re.compile(r"(drop|delete|insert|update|remove|replace|bulkWrite|createIndex|rename|save|\$out|\$merge|"
+                         r"runCommand|adminCommand|eval|\.exec\()", re.I)
+
+def cli_asks(label):
+    return ask(f"`{label}` can change a shared cloud, deploy or database resource unless it is a read; only the owner approves it "
+               "(the Shared remote environments golden rule in AGENTS.md). The `guard:` switch in harness.config.yml turns this prompt off.")
+
+def hosts_in(words):
+    from urllib.parse import urlparse
+    hosts = []
+    for k, w in enumerate(words):
+        if "://" in w:
+            try:
+                hosts.append((urlparse(w.strip("\"\x27")).hostname or "").lower())
+            except ValueError:
+                hosts.append("?")
+        elif w in ("-h", "-H", "--host", "--hostname") and k + 1 < len(words):
+            hosts.append(words[k + 1].lower())
+        elif re.match(r"^--host(name)?=", w):
+            hosts.append(w.split("=", 1)[1].lower())
+        elif re.match(r"^-[hH]\S", w):
+            hosts.append(w[2:].lower())
+    return hosts
+
+def check_db(name, words):
+    """Ask when a database client reaches a host that is not local, unless the statement is a read."""
+    rest = words[1:]
+    if any(w in ("--help", "-?", "--version", "-V", "-v") for w in rest):
+        return
+    hosts = hosts_in(rest)
+    remote = any("$" in w or "`" in w for w in rest) or any(h not in LOCAL_HOSTS for h in hosts)
+    if not remote:
+        return
+    stmt = ""
+    for k, w in enumerate(rest):
+        if w in ("-c", "--command", "-e", "--execute", "--eval", "--sql", "-q") and k + 1 < len(rest):
+            stmt = rest[k + 1]
+        elif re.match(r"^--(command|execute|eval|sql)=", w):
+            stmt = w.split("=", 1)[1]
+    if name == "redis-cli":
+        cmd = [w for w in rest if not w.startswith("-")]
+        known = [w for k, w in enumerate(rest) if not w.startswith("-") and (k == 0 or rest[k - 1] not in ("-h", "-p", "-a", "-n", "-u", "--user", "--pass"))]
+        first = (known[0].lower() if known else "")
+        if first in REDIS_READ:
+            return
+    elif name in ("mongosh", "mongo"):
+        if stmt and MONGO_READ.match(stmt) and not MONGO_WRITE.search(stmt):
+            return
+    elif stmt:
+        body = stmt.strip().lstrip("(").lower()
+        if re.match(r"(select|show|explain|describe|desc|table|values|with|pragma|\\d)", body) and not SQL_WRITE.search(body):
+            return
+    cli_asks(name + " on a remote host")
+
+def runner_words(words):
+    """The command a package runner starts: `npx wrangler deploy` -> wrangler deploy."""
+    w = list(words)
+    if w and w[0] in ("npx", "bunx", "pnpx"):
+        w = w[1:]
+    elif len(w) > 1 and w[0] in ("pnpm", "yarn", "bun", "npm") and w[1] in ("exec", "dlx", "x"):
+        w = w[2:]
+    else:
+        return w
+    while w and w[0].startswith("-") and w[0] != "--":
+        w = w[1:]
+    if w and w[0] == "--":
+        w = w[1:]
+    return w[:1] and [os.path.basename(w[0])] + w[1:] or w
+
+def check_cli(words):
+    name = words[0]
+    group = CLI_GROUP.get(name)
+    if not group or not GROUP_ASK[group]:
+        return
+    if group == "schema_pushes":
+        check_db(name, words)   # -h is a host here, not help
+        return
+    if dry_run(words):
+        return
+    rest = [w for w in words[1:] if w != "--"]
+    if any(w in ("--version", "-v", "-V", "--help", "-h", "help") for w in rest):
+        return
+    positional = [w for w in rest if not w.startswith("-")]
+    joined = " ".join(positional).lower()
+    if CLI_SECRET.search(joined):
+        cli_asks(f"{name} {joined}")
+    tokens = [t for w in positional for t in re.split(r"[:/\s_=.\-]", w.lower()) if t]
+    if positional and re.split(r"[:/]", positional[0].lower())[0] in CLI_LOCAL_OK.get(name, ()):
+        return
+    # Nouns like env or secrets only count as a write when no read verb comes with them (wrangler secret list).
+    if any((t in WRITE_VERBS or t in CLI_WRITE_EXTRA) and t not in CLI_NOUNS for t in tokens) or not any(t in CLI_READ for t in tokens):
+        cli_asks(f"{name} {joined}".strip())
+
 def check_bash(cmd):
     # `$(git branch --show-current)` and its kin are the current branch: read them as HEAD.
     cmd = HEAD_SUBST.sub("HEAD", cmd)
@@ -745,6 +876,7 @@ def check_bash(cmd):
             if GROUP_ASK[group] and re.search(pattern, line) and not dry_run(words):
                 ask(f"`{label}` changes a shared remote environment or registry; only the owner approves it (the Shared remote environments golden rule in AGENTS.md). "
                     f"`guard.{group}: off` in harness.config.yml turns this prompt off.")
+        check_cli(runner_words(words))
 
     if BARE_ENV:
         deny("a bare `env` or `printenv` prints every variable, secrets included. Name the variable you need (`printenv NAME`).")
