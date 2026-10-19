@@ -1,6 +1,6 @@
 # Plan checklist (before asking for approval)
 
-The Technical Lead runs this checklist on every `plan.md` before asking the owner to approve it. It lives here, not in `.claude/rules/technical-lead.md`, so it is read once per plan instead of being loaded into every session; the rule links to it and requires the **Greps** record in `plan.md`.
+The Technical Lead runs this checklist on every `plan.md` before asking the owner to approve it. It lives here, not in `harness/TECHNICAL_LEAD.md`, so it is read once per plan instead of being loaded into every session; the rule links to it and requires the **Greps** record in `plan.md`.
 
 These are the seed principles: each one comes from a failure that reached a builder, a reviewer or QA on an earlier project, generalized so it holds on any stack. This project's own items (stack-specific greps, paths, vendors) live in [project/PLAN_CHECKLIST.md](../project/PLAN_CHECKLIST.md); run both files. Retros add items to either file and prunes audit them ([SETUP.md](./SETUP.md) § Retrospective and § Prune; [MORPHING.md](./MORPHING.md) says which file a new item belongs in). The community catalog of lessons that can be added one at a time is described in [MORPHING.md](./MORPHING.md).
 
@@ -91,5 +91,5 @@ These are the seed principles: each one comes from a failure that reached a buil
 
 ### Process
 
-39. **Decisions and status in the file.** The rules are in `.claude/rules/technical-lead.md` (Status and § Approval before the first delegation) and [HANDOFFS.md](./HANDOFFS.md) § Threads (decisions in § Decisions the same turn). A plan step that edits a TL-owned doc says so, so the builder leaves it to the TL. Check: § Decisions matches the chat; Status reads approved before delegating. [A builder stopped on a plan that still said pending; a decision left in chat was lost at a thread hand-over.]
+39. **Decisions and status in the file.** The rules are in `harness/TECHNICAL_LEAD.md` (Status and § Approval before the first delegation) and [HANDOFFS.md](./HANDOFFS.md) § Threads (decisions in § Decisions the same turn). A plan step that edits a TL-owned doc says so, so the builder leaves it to the TL. Check: § Decisions matches the chat; Status reads approved before delegating. [A builder stopped on a plan that still said pending; a decision left in chat was lost at a thread hand-over.]
 40. **Parallel plans.** When another plan is open at the same time, this plan follows [HANDOFFS.md](./HANDOFFS.md) § Parallel plans and [CONTROLS.md](./CONTROLS.md) § After merging the integration branch → Merge order. Check: list the open plans and the files they share (`git diff --name-only origin/<integration>...<branch>`); § Out of scope names the other plan's files and functions. [Two threads negotiating the same line crossed messages; naming the other plan's functions kept a merge to one docs conflict.]

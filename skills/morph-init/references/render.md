@@ -51,7 +51,7 @@ keeps everything it learned; it moves into the places Morphness reads it from.
    `LEARNINGS.md`, the backlog and any archive). Copy only `_harness/` template files that don't exist,
    and refresh `_harness/README.md`'s layout block if it lacks folders the kit uses.
 2. **Replace the kit files.** Copy over, overwriting: `harness/**` (kit docs, `agents/`, `modules/`,
-   `templates/`), `.claude/rules/{technical-lead,harness,testing}.md`, the `.claude/agents/*.md` files
+   `templates/`), `.claude/rules/{harness,testing}.md`, the `.claude/agents/*.md` files
    the template has, `AGENTS.md` and `CLAUDE.md`, and add `harness.config.yml`. Delete kit files the
    template no longer has (a version file, a doc a module now covers) once step 3 has moved their
    project content. Every old file stays readable with `git show <integration branch>:<path>`.
