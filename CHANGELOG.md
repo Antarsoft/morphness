@@ -6,6 +6,10 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Agent context: subagents set `omitClaudeMd: true`, the Technical Lead rule moves to
+  `harness/TECHNICAL_LEAD.md` (imported by `CLAUDE.md`, so only the main chat loads it), the researcher
+  agents lose the shell, and a rule says to log long command output and print only the tail.
+
 ## 2026-10-19
 
 - Retro wording: the retro template has a Cause column and the `cause: environment` and "why not a

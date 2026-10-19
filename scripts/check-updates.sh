@@ -45,6 +45,11 @@ def parse(text):
             fm[key] = [] if v in ("", "[]") else v.strip('"')
     return fm, m.group(2)
 
+all_removed = set()
+for f in glob.glob(os.path.join(root, "updates", "*.md")):
+    fm0, _ = parse(open(f, encoding="utf-8").read())
+    if fm0 and isinstance(fm0.get("removed"), list): all_removed.update(fm0["removed"])
+
 for f in sorted(glob.glob(os.path.join(root, "updates", "*.md"))):
     if os.path.basename(f) == "README.md": continue
     rel = os.path.relpath(f, root)
@@ -73,7 +78,8 @@ for f in sorted(glob.glob(os.path.join(root, "updates", "*.md"))):
     removed = fm.get("removed") if isinstance(fm.get("removed"), list) else []
     if not files and not removed: errors.append(f"{rel}: lists no files")
     for p in files:
-        if not os.path.isfile(os.path.join(root, "template", p)):
+        # An older note may name a file a later note moved or deleted (its `removed:` list).
+        if p not in all_removed and not os.path.isfile(os.path.join(root, "template", p)):
             errors.append(f"{rel}: file '{p}' not found in template/")
     for p in removed:
         if os.path.exists(os.path.join(root, "template", p)):

@@ -87,9 +87,9 @@ elif [ "$dbytes" -gt $((dbudget * 1024)) ]; then
   largest="$(for f in project/*.md; do [ -f "$f" ] && printf '%s %s\n' "$(wc -c < "$f" | tr -d ' ')" "$f"; done \
     | sort -rn | head -n 2 | while read -r b f; do printf '%s %s KB, ' "$f" "$(kb "$b")"; done)"
   due="Prune is DUE (the project docs are over loop.project_docs_budget_kb; largest: ${largest%, })"
-elif [ -f .claude/rules/technical-lead.md ] \
-  && [ "$(wc -c < .claude/rules/technical-lead.md)" -gt 20480 ]; then
-  due="Prune is DUE (.claude/rules/technical-lead.md is over 20 KB)"
+elif [ -f harness/TECHNICAL_LEAD.md ] \
+  && [ "$(wc -c < harness/TECHNICAL_LEAD.md)" -gt 20480 ]; then
+  due="Prune is DUE (harness/TECHNICAL_LEAD.md is over 20 KB)"
 fi
 # While a proposal is open the hand-off names it and writes no second one, so DUE is not printed.
 if [ -n "$waiting" ]; then

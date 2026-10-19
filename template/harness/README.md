@@ -70,7 +70,7 @@ Each rule lives in **one** owner file. Every other doc links to the owner instea
 | Subagent names, models, effort mapping, project trials | `project/HARNESS_AGENTS.md` | (none) |
 | Release flow | [RELEASE.md](./RELEASE.md) | Link to it |
 | How the harness changes itself | [MORPHING.md](./MORPHING.md) | (none) |
-| TL hard limits (incl. commit policy) | `.claude/rules/technical-lead.md` | `AGENTS.md` keeps a one-line pointer |
+| TL hard limits (incl. commit policy) | `harness/TECHNICAL_LEAD.md` | `AGENTS.md` keeps a one-line pointer |
 | What tests to write and where | `.claude/rules/testing.md` and `project/TESTING.md` | (none) |
 
 ## Wired or not

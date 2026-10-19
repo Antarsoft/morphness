@@ -2,7 +2,7 @@
 id: background-agent-signs-of-life
 title: Check a background agent for signs of life
 kind: rule
-target: .claude/rules/technical-lead.md
+target: harness/TECHNICAL_LEAD.md
 in_template: true
 tags: { stack: [], service: [], area: [process, agents] }
 evidence: { fired: unknown, features: 153, source: "Twinpage prune audits" }

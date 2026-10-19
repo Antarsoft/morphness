@@ -51,7 +51,7 @@ The grep or step that verifies it, if there is one.
 ```
 
 `target` paths are relative to an installed harness: `harness/PLAN_CHECKLIST.md`,
-`.claude/rules/technical-lead.md`, `.claude/rules/testing.md`, `project/TESTING.md`,
+`harness/TECHNICAL_LEAD.md`, `.claude/rules/testing.md`, `project/TESTING.md`,
 `harness/modules/<name>/README.md`, `harness/agents/<role>.md`.
 
 ## Matching
