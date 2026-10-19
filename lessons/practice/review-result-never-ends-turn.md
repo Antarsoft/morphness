@@ -2,7 +2,7 @@
 id: review-result-never-ends-turn
 title: A review result never ends the lead's turn
 kind: rule
-target: .claude/rules/technical-lead.md
+target: harness/TECHNICAL_LEAD.md
 in_template: true
 tags: { stack: [], service: [], area: [process, review] }
 evidence: { fired: 1, features: 153, source: "Twinpage prune audits" }
