@@ -6,6 +6,10 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Retro wording: the retro template has a Cause column and the `cause: environment` and "why not a
+  script" prompts, SETUP says the owner writes any `settings.local.json` change, two redundant prune
+  sentences are gone, counts from private data are out of the "learned:" notes, and the self-test's
+  security-module text check is wider (`[Ss]ecurity[ -]module`, the config file and `.github` too).
 - Guard: the deploy asks now cover `vercel env add|rm|update` (vercel asks for anything but a list of
   read-only subcommands), `wrangler secret put|delete|bulk` and `netlify env:set|unset|import`, and the
   publish ask covers `pnpm --filter x publish`, `npm --workspace x publish` and `changeset publish`.
