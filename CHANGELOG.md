@@ -6,6 +6,9 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- The advised Claude Projects settings follow the Sonnet default: coordinator, feature threads and
+  one-shot threads on sonnet (medium, high, medium), with opus at high advised for a review, research
+  or architecture thread. `/morph-init` still advises opus in all three with the Opus preset.
 - The prune proposal no longer waits for the owner: when `scripts/prune-counter.sh` prints
   `Prune is DUE`, the Technical Lead writes `_harness/prunes/<date>.md` before the hand-off, which
   says `Prune is DUE: proposal written at <path>`. The owner only decides its rows; nothing is
