@@ -6,6 +6,11 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- The prune proposal no longer waits for the owner: when `scripts/prune-counter.sh` prints
+  `Prune is DUE`, the Technical Lead writes `_harness/prunes/<date>.md` before the hand-off, which
+  says `Prune is DUE: proposal written at <path>`. The owner only decides its rows; nothing is
+  applied without that, and the next feature doesn't wait. The Claude Projects coordinator posts once
+  per proposal, and `/morph-doctor` names the proposal waiting for a decision.
 - Updates without a clone: `/morph-update`, `/morph-doctor`, the prune's upstream check and
   `UPDATE.md` read the newest release, its update notes, lessons and template text straight from
   github.com/antarsoft/morphness with read-only requests (nothing fetched is executed, no account
