@@ -113,6 +113,12 @@
     "ask": [
       "Bash(*session-start.sh --accept*)",
       "Bash(git push)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -f*)",
+      "Bash(*| sh)",
+      "Bash(*| sh *)",
+      "Bash(*| bash)",
+      "Bash(*| bash *)",
       "Bash(git -C * push*)",
       "Bash(gh pr merge*)",
       "Bash(glab mr merge*)",

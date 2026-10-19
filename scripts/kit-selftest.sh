@@ -519,7 +519,9 @@ def check(name, fx, t):
     if r.returncode or "Traceback" in r.stdout + r.stderr:
         bad(f"feature-cost.sh failed: {r.stdout}{r.stderr}")
     # guard hook cases
-    branches = {"{I}": fx["branches"]["integration"], "{P}": fx["branches"]["production"]}
+    # {I^} and {P^} are the same branches in capitals (a guard case for `git push origin Main`).
+    branches = {"{I}": fx["branches"]["integration"], "{P}": fx["branches"]["production"],
+                "{I^}": fx["branches"]["integration"].upper(), "{P^}": fx["branches"]["production"].upper()}
     # config_env_branches lists every environment branch, in flow or block style alike.
     r = run(["bash", "-c", ". scripts/lib/config.sh; config_env_branches"], t)
     want = [e["branch"] for e in fx["environments"]]
@@ -541,6 +543,12 @@ def check(name, fx, t):
         run(["git", "checkout", "-q", "-B", here], t)
         cfg_path = os.path.join(t, "harness.config.yml")
         saved = open(cfg_path, encoding="utf-8").read()
+        # "files": {".env": "K=1"} puts those files in the project for this case only (a recursive grep reads them).
+        made = []
+        for rel, text in case.get("files", {}).items():
+            os.makedirs(os.path.dirname(os.path.join(t, rel)) or t, exist_ok=True)
+            open(os.path.join(t, rel), "w", encoding="utf-8").write(text)
+            made.append(os.path.join(t, rel))
         if case.get("guard"):
             # "guard": {"deploys": "off"} switches that ask off for this case only.
             pairs = ", ".join(f"{k}: {v}" for k, v in case["guard"].items())
@@ -562,6 +570,8 @@ def check(name, fx, t):
         if case.get("without") == "config":
             os.rename(lib + ".off", lib)
         open(cfg_path, "w", encoding="utf-8").write(saved)
+        for path in made:
+            os.remove(path)
         got = "deny" if r.returncode == 2 else "ask" if '"ask"' in r.stdout else "pass" if r.returncode == 0 else f"exit {r.returncode}"
         expect = case["expect"]
         if got != expect:

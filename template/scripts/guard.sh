@@ -43,19 +43,25 @@ GUARD_DEPLOYS="$(config_get guard.deploys)"
 GUARD_PUBLISHES="$(config_get guard.publishes)"
 GUARD_SCHEMA_PUSHES="$(config_get guard.schema_pushes)"
 GUARD_NETWORK="$(config_get guard.network)"
+GUARD_INSTALLS="$(config_get guard.installs)"
 GUARD_ALLOW_HOSTS="$(config_get guard.allow_hosts)"
-export GUARD_BRANCHES GUARD_MCP_WRITES GUARD_DEPLOYS GUARD_PUBLISHES GUARD_SCHEMA_PUSHES GUARD_NETWORK GUARD_ALLOW_HOSTS
+export GUARD_BRANCHES GUARD_MCP_WRITES GUARD_DEPLOYS GUARD_PUBLISHES GUARD_SCHEMA_PUSHES GUARD_NETWORK GUARD_INSTALLS GUARD_ALLOW_HOSTS
 
 python3 -I -c '
-import fnmatch, json, os, re, shlex, subprocess, sys
+import fnmatch, json, os, re, shlex, subprocess, sys, tempfile
 
 PROTECTED = set(os.environ.get("GUARD_BRANCHES", "").split())
+PROTECTED_LOW = {b.lower() for b in PROTECTED}
+def protected_branch(name):
+    # Branch names are case sensitive on the code host but not on every remote or file system, so `Main` counts as `main`.
+    return str(name).lower() in PROTECTED_LOW
 def switch(name):
     return os.environ.get(name, "ask").strip().lower() not in ("off", "false", "no")
 
 MCP_ASK = switch("GUARD_MCP_WRITES")
 GROUP_ASK = {"deploys": switch("GUARD_DEPLOYS"), "publishes": switch("GUARD_PUBLISHES"),
-             "schema_pushes": switch("GUARD_SCHEMA_PUSHES"), "network": switch("GUARD_NETWORK")}
+             "schema_pushes": switch("GUARD_SCHEMA_PUSHES"), "network": switch("GUARD_NETWORK"),
+             "installs": switch("GUARD_INSTALLS")}
 ALLOW_HOSTS = {"localhost", "127.0.0.1", "::1"} | set(re.split(r"[\s,]+", os.environ.get("GUARD_ALLOW_HOSTS", "").lower()))
 
 def deny(reason):
@@ -89,8 +95,10 @@ args = event.get("tool_input") or {}
 # A write here switches the guard off for every later call, so these ask (the owner reads the change);
 # settings.local.json is the owner alone and is denied.
 GUARD_FILES = ["scripts/guard.sh", "scripts/session-start.sh", "scripts/lib/*", ".claude/settings.json",
-               "harness.config.yml"]
+               "harness.config.yml", ".git/hooks/*", ".git/config"]
 OWNER_FILES = [".claude/settings.local.json"]
+# CI definitions run with the repository\u2019s secrets, so a change to one asks (the `deploys` switch turns it off).
+CI_FILES = [".github/workflows/*", ".github/actions/*", ".gitlab-ci.yml"]
 ROOT = os.getcwd()
 CD_DIRS = []   # directories a `cd` in the same command moves to; a relative path is also tried under each
 
@@ -146,13 +154,13 @@ def home_kind(word):
 
 def protected_kind(word):
     """"owner" for settings.local.json, "guard" for the guard files, "persist" for shell startup files and
-    schedules, "" for anything else."""
+    schedules, "ci" for CI definitions, "" for anything else."""
     for part in re.split(r"[=:<>|,;()]", str(word)):
         if part and home_kind(part) == "persist":
             return "persist"
         globbed = any(c in part for c in "*?[")
         for rel in rels_to_root(part) if part else ():
-            for kind, names in (("owner", OWNER_FILES), ("guard", GUARD_FILES)):
+            for kind, names in (("owner", OWNER_FILES), ("guard", GUARD_FILES), ("ci", CI_FILES if GROUP_ASK["deploys"] else [])):
                 for name in names:
                     if fnmatch.fnmatch(rel, name) or (globbed and fnmatch.fnmatch(name.replace("/*", "/x"), rel)):
                         return kind
@@ -166,6 +174,9 @@ def protect(path, how):
         ask(f"`{path}` is one of the files the guard rests on ({how}); the owner approves each change to it.")
     if kind == "persist":
         ask(f"`{path}` runs in every later shell or on a schedule ({how}); the owner approves a change to it.")
+    if kind == "ci":
+        ask(f"`{path}` is a CI definition that runs with the repository\u2019s secrets ({how}); the owner reads each change to it. "
+            "`guard.deploys: off` in harness.config.yml turns this prompt off.")
 
 # ---- secret and credential files ---------------------------------------------------------------
 SAFE_SUFFIX = (".example", ".sample", ".template")
@@ -256,11 +267,82 @@ def simple_commands(cmd, depth=0):
 
 BARE_ENV = []   # set when a command would print the whole environment
 
+class Cmd(list):
+    """A simple command (the name stripped to its basename, then the arguments) that remembers the first word as typed."""
+    def __init__(self, words, raw):
+        super().__init__(words)
+        self.raw = raw
+
+# Options that take a value, per wrapper, so `timeout 10 cmd`, `nice -n 5 cmd` and `xargs -a f cmd` reach the real command.
+WRAPPER_VALUE_OPTS = {"sudo": {"-u", "-g", "-h", "-p", "-C", "-D", "-R", "-T", "-U", "-r", "-t"}, "doas": {"-u", "-C"},
+                      "env": {"-u", "-C", "-S", "--unset", "--chdir"}, "nice": {"-n"}, "ionice": {"-c", "-n", "-p", "-P", "-t"},
+                      "timeout": {"-s", "-k", "--signal", "--kill-after"}, "time": {"-f", "-o"}, "exec": {"-a"},
+                      "stdbuf": {"-i", "-o", "-e"},
+                      "xargs": {"-a", "-I", "-L", "-n", "-P", "-s", "-d", "-E", "-l", "--arg-file", "--max-args", "--delimiter"}}
+WRAPPERS |= {"timeout", "setsid", "stdbuf", "ionice", "chronic", "unbuffer"}
+INTERP_RE = re.compile(r"^(python|node|nodejs|ruby|perl|php|deno|bun)[0-9.]*$")
+# Code in an interpreter one-liner that starts another process, which the guard then cannot read.
+SPAWN_RE = re.compile(r"(subprocess|os\.system|os\.popen|os\.exec|os\.spawn|pty\.spawn|Popen|child_process|execSync|spawnSync|"
+                      r"\bspawn\(|\bexecFile|\bexec\(|Deno\.Command|Bun\.spawn|Bun\.\$|\bsystem\(|\bpopen\(|shell_exec|passthru|"
+                      r"proc_open|%x[({\[]|IO\.popen|Open3|\bexecv)")
+
+def operands(words):
+    """The words that are not options and not redirections (`<<<`, `> f`, `<<EOF`) or their targets."""
+    out, skip = [], False
+    for w in words:
+        if skip:
+            skip = False
+            continue
+        if re.match(r"^[0-9&]*(<<<|<<-?|<|>>?\|?)$", w):
+            skip = True
+            continue
+        if w.startswith("-") or re.match(r"^[0-9&]*(<|>)", w):
+            continue
+        out.append(w)
+    return out
+
+def shell_script(words):
+    """For `sh -c x`, `bash -lc x` and `sh -ec x`: the command string, else None."""
+    for k, w in enumerate(words[1:], 1):
+        if not w.startswith("-") or w == "--":
+            break
+        if re.match(r"^-[A-Za-z]*c[A-Za-z]*$", w) or w == "--command":
+            rest = [x for x in words[k + 1:] if not x.startswith("-")]
+            return rest[0] if rest else ""
+    return None
+
+SHELL_FETCH = re.compile(r"(^|[;&|(\s])(source|\.|eval|sh|bash|zsh|dash|ksh)\b[^;&|\n]*?(\$\(|`|<\()\s*(curl|wget)\b")
+FETCH_RE = re.compile(r"(\$\(|`|<\()\s*(curl|wget)\b")
+
+def ask_fetched():
+    ask("this runs code that `curl` or `wget` fetches in the same command, and nobody has read it. Download it to a file, "
+        "read it, then run it, or leave it to the owner.")
+
 def expand(words, depth):
     first = os.path.basename(words[0]) if words else ""
-    while words and (words[0] in WRAPPERS or re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", words[0])
-                     or (words[0].startswith("-") and len(words) > 1 and words[1] != "--")):
+    # Strip what only starts the real command: wrappers (with their options), `VAR=value` prefixes and keywords.
+    while words:
+        w, base = words[0], os.path.basename(words[0])
+        if re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", w):
+            if env_in_word(w) == "deny":
+                deny(f"`{w}` puts a secret or credential file name in a variable; agents never read or write it (AGENTS.md \u00a7 Golden rules).")
+            words = words[1:]
+            continue
+        if base not in WRAPPERS:
+            break
         words = words[1:]
+        values = WRAPPER_VALUE_OPTS.get(base, set())
+        while words and words[0].startswith("-") and words[0] != "--":
+            words = words[2:] if words[0] in values else words[1:]
+        if words and words[0] == "--":
+            words = words[1:]
+        if base == "timeout" and words:
+            words = words[1:]   # the duration
+        if base == "xargs" and words:
+            run = os.path.basename(words[0])
+            if run in SHELLS or run == "eval" or INTERP_RE.match(run):
+                ask("`xargs` starts a shell or an interpreter on text it reads, so the guard cannot see the commands it runs. "
+                    "Name the command itself.")
     if not words:
         if first == "env":
             BARE_ENV.append(first)
@@ -268,15 +350,41 @@ def expand(words, depth):
     name = os.path.basename(words[0])
     if name == "printenv" and len(words) == 1:
         BARE_ENV.append(name)
-    if name in SHELLS and "-c" in words[1:]:
-        i = words.index("-c")
-        if i + 1 < len(words):
-            yield from simple_commands(words[i + 1], depth + 1)
-        return
+    if words[0].startswith(("$", "`")) and "/" not in words[0]:
+        ask(f"`{words[0]}` builds the command name at run time, so the guard cannot see which command runs. Write the command out.")
+    if name in SHELLS:
+        script = shell_script(words)
+        if script is not None:
+            if FETCH_RE.search(script):
+                ask_fetched()
+            yield from simple_commands(script, depth + 1)
+            return
+        if not operands(words[1:]) or "-s" in words[1:]:
+            ask(f"`{name}` reads its commands from a pipe, a here-string or a here-document, so the guard cannot see them. Write the commands out.")
     if name == "eval":
+        if FETCH_RE.search(" ".join(words[1:])):
+            ask_fetched()
         yield from simple_commands(" ".join(words[1:]), depth + 1)
         return
-    yield [name] + words[1:]
+    if name in ("source", ".") and any(FETCH_RE.search(w) or w.startswith("<(") for w in words[1:]):
+        ask_fetched()
+    if name == "alias" and any("=" in w for w in words[1:]):
+        ask("`alias` defines a command the guard cannot follow when it is used later in the chain. Write the command out.")
+    if INTERP_RE.match(name):
+        for k, w in enumerate(words[1:], 1):
+            if w in ("-c", "-e", "-p", "-pe", "-E", "eval", "--eval", "--print") and k + 1 < len(words) and SPAWN_RE.search(words[k + 1]):
+                ask(f"`{name} {w}` starts another process from inline code, so the guard cannot see what runs. Write the command out, or use a script file.")
+    if name == "find" and any(w in ("-exec", "-execdir", "-ok", "-okdir") for w in words):
+        # `find … -exec CMD … {} +`: check CMD like a command of its own.
+        k = next(i for i, w in enumerate(words) if w in ("-exec", "-execdir", "-ok", "-okdir"))
+        inner = []
+        for w in words[k + 1:]:
+            if w in (";", "+"):
+                break
+            inner.append(w)
+        if inner:
+            yield from expand(inner, depth + 1)
+    yield Cmd([name] + words[1:], words[0])
 
 # ---- git push --------------------------------------------------------------------------------
 GIT_OPTS_WITH_VALUE = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path"}
@@ -334,7 +442,7 @@ def follow_git(sub, rest, git_dir_args):
                 return
         if "--" in rest or not positional or positional[0] == "-":
             return
-        if sub == "checkout" and positional[0] not in PROTECTED and os.path.exists(positional[0]):
+        if sub == "checkout" and not protected_branch(positional[0]) and os.path.exists(positional[0]):
             return   # a path restore, HEAD stays
         SIM["head"] = branch_of(positional[0], "")
     elif sub == "symbolic-ref":
@@ -346,8 +454,12 @@ def follow_git(sub, rest, git_dir_args):
     elif sub == "tag":
         if positional and not any(f in ("-d", "--delete", "-l", "--list") for f in flags):
             SIM["tags"].add(positional[0])
+    elif sub == "reset" and "--hard" in flags:
+        ask("`git reset --hard` throws away uncommitted work and moves the branch; the owner approves it. Commit or stash first, or reset with `--soft`/`--mixed`.")
+    elif sub == "clean" and ("--force" in flags or "f" in short) and "--dry-run" not in flags and "n" not in short:
+        ask("`git clean -f` deletes untracked files, ignored ones too with `-x`, and nothing brings them back; the owner approves it. Run `git clean -n` to see what it would delete.")
     elif sub == "branch":
-        names = [x for x in positional if x in PROTECTED]
+        names = [x for x in positional if protected_branch(x)]
         if names and (any(f in ("--delete", "--force", "--move") for f in flags) or re.search("[dDfmM]", short)):
             deny(f"agents never delete, move or force `{names[0]}`: it is an environment branch and changes only through a PR "
                  "(AGENTS.md § Golden rules).")
@@ -424,7 +536,7 @@ def check_git(words):
         else:
             targets.append(branch_of(dst, here))
     for t in targets:
-        if t and t in PROTECTED:
+        if t and protected_branch(t):
             what = "delete" if deleting or any(s.startswith(":") for s in refspecs) else "push to"
             deny(f"agents never {what} `{t}`: it is an environment branch and moves only through a PR "
                  "(AGENTS.md § Golden rules). Push a feature branch and open a PR.")
@@ -535,7 +647,7 @@ def check_gh(words):
 CURL_BODY_LONG = ("--data", "--data-binary", "--data-raw", "--data-urlencode", "--data-ascii", "--form",
                   "--form-string", "--upload-file", "--json", "--post-data", "--post-file", "--body-data",
                   "--body-file")
-REMOTE_COPY = {"scp", "sftp", "rsync", "nc", "ncat", "netcat", "socat", "telnet", "ftp"}
+REMOTE_COPY = {"scp", "sftp", "rsync", "nc", "ncat", "netcat", "socat", "telnet", "ftp", "ssh", "mosh"}
 REMOTE_ARG = re.compile(r"^(rsync://|ssh://|([^/\s@]+@)?[A-Za-z0-9_.\[\]-]+:[^:])")
 
 def url_hosts(words):
@@ -575,7 +687,7 @@ def check_network(words):
     elif name in REMOTE_COPY:
         if name in ("rsync",) and not any(REMOTE_ARG.match(w) for w in rest if not w.startswith("-")):
             return
-        ask(f"`{name}` copies files to or from another machine; only the owner approves it. "
+        ask(f"`{name}` copies files to or from another machine, or runs commands on one; only the owner approves it. "
             "`guard.network: off` in harness.config.yml turns this prompt off.")
 
 MORPHNESS_URLS = ("https://api.github.com/repos/antarsoft/morphness/",
@@ -617,7 +729,7 @@ def guard_file_write(cmd, words):
     if writes:
         protect(named[0], f"`{name}` writes it")
 
-TMP_DIRS = ["/tmp", "/var/tmp"]
+TMP_DIRS = ["/tmp", "/var/tmp", os.path.realpath(tempfile.gettempdir())]
 
 def outside_repo(word):
     """True when a path word is outside the project (the project folder itself, its .git and anything
@@ -641,6 +753,14 @@ def outside_repo(word):
                 continue
             return True
     return False
+
+def rel_inside(word):
+    """True when a path word is the project folder or below it (a file path, unlike outside_repo, which also flags the folder itself)."""
+    w = expand_home(word)
+    if "$" in w or "`" in w:
+        return False
+    full = os.path.normpath(w if os.path.isabs(w) else os.path.join(ROOT, w))
+    return any(under(c, b) for c in {full, os.path.realpath(full)} for b in (ROOT, os.path.realpath(ROOT)))
 
 def check_rm(words):
     """Ask when a recursive rm reaches outside the repo."""
@@ -779,6 +899,211 @@ def check_cli(words):
     if any((t in WRITE_VERBS or t in CLI_WRITE_EXTRA) and t not in CLI_NOUNS for t in tokens) or not any(t in CLI_READ for t in tokens):
         cli_asks(f"{name} {joined}".strip())
 
+# ---- code that is fetched and run, script files, deploy scripts, tree searches ---------------------
+SEGMENT_END = lambda t: t in SEPARATORS or set(t) <= set(";&|()")
+
+def bare(words):
+    """The command in a list of words, without wrappers, VAR=value prefixes and their options."""
+    words = list(words)
+    while words:
+        base = os.path.basename(words[0])
+        if re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", words[0]):
+            words = words[1:]
+        elif base in WRAPPERS:
+            words = words[1:]
+            values = WRAPPER_VALUE_OPTS.get(base, set())
+            while words and words[0].startswith("-") and words[0] != "--":
+                words = words[2:] if words[0] in values else words[1:]
+            if words and words[0] == "--":
+                words = words[1:]
+            if base == "timeout" and words:
+                words = words[1:]
+        else:
+            break
+    return words
+
+DOWNLOADERS = {"curl", "wget", "fetch", "http", "https", "xh", "aria2c"}
+
+def reads_stdin(words):
+    """True for a shell or an interpreter that takes its program from standard input."""
+    name = os.path.basename(words[0])
+    if name in SHELLS:
+        return shell_script(words) is None and (not operands(words[1:]) or "-s" in words[1:])
+    if INTERP_RE.match(name):
+        return "-" in words[1:] or (not operands(words[1:]) and not any(w in ("-c", "-e", "-p", "-pe", "-E", "--eval") for w in words[1:]))
+    return False
+
+def check_pipes(cmd):
+    """Ask when a pipeline ends in a shell or interpreter that runs what it reads (`curl … | sh`, `base64 -d | sh`)."""
+    segs, seps, cur = [], [], []
+    for t in tokens(cmd.replace("\n", " ; ")):
+        if SEGMENT_END(t):
+            segs.append(cur)
+            seps.append(t)
+            cur = []
+        else:
+            cur.append(t)
+    segs.append(cur)
+    for i, sep in enumerate(seps):
+        if sep not in ("|", "|&"):
+            continue
+        words = bare(segs[i + 1])
+        if not words or not reads_stdin(words):
+            continue
+        j = i
+        while j >= 0:
+            prev = bare(segs[j])
+            if prev and os.path.basename(prev[0]) in DOWNLOADERS:
+                ask_fetched()
+            if j > 0 and seps[j - 1] in ("|", "|&"):
+                j -= 1
+            else:
+                break
+        ask(f"`{os.path.basename(words[0])}` at the end of a pipe runs whatever the pipe prints, so the guard cannot see the commands. Write the commands out.")
+
+KNOWN_RUNNERS = {"tsc", "tsx", "ts-node", "eslint", "prettier", "vitest", "jest", "playwright", "next", "vite", "turbo", "tailwindcss",
+                 "prisma", "drizzle-kit", "supabase", "vercel", "wrangler", "biome", "tsup", "esbuild", "rollup", "webpack",
+                 "storybook", "cypress", "mocha", "nx", "changeset", "lint-staged", "commitlint", "nodemon", "cross-env", "rimraf",
+                 "expo", "eas", "netlify", "firebase", "stripe", "ruff", "black", "mypy", "pytest", "uvicorn", "alembic"}
+
+def fetched_package(words):
+    """The package a runner downloads and runs (`npx x`, `bunx x`, `pnpm dlx x`, `uvx x`), with its arguments; None when
+    the runner only uses what is installed (`--no-install`, `pnpm exec`)."""
+    name, rest = words[0], words[1:]
+    if name in ("npx", "bunx", "pnpx", "uvx"):
+        args = rest
+    elif name in ("npm", "pnpm", "yarn", "bun") and rest[:1] in (["exec"], ["x"], ["dlx"]) and not (name in ("pnpm", "yarn") and rest[0] == "exec") \
+            and not (name == "yarn" and rest[0] == "x"):
+        args = rest[1:]
+    elif name == "pipx" and rest[:1] == ["run"]:
+        args = rest[1:]
+    else:
+        return None
+    if any(a in ("--no-install", "--no", "--offline", "--prefer-offline") for a in args):
+        return None
+    pkg, k = "", 0
+    while k < len(args):
+        a = args[k]
+        if a in ("-p", "--package", "--from") and k + 1 < len(args):
+            pkg = args[k + 1]
+            break
+        if a.startswith(("--package=", "--from=")):
+            pkg = a.split("=", 1)[1]
+            break
+        if a == "--":
+            args = args[k + 1:]
+            k = 0
+            continue
+        if not a.startswith("-"):
+            pkg = a
+            break
+        k += 1
+    if not pkg:
+        return None
+    return pkg, [a for a in args[k + 1:] if not a.startswith("-")]
+
+def check_fetched_package(words):
+    got = fetched_package(words)
+    if not got or not GROUP_ASK["installs"]:
+        return
+    pkg, after = got
+    m = re.match(r"^(@[^/@]+/)?([^@/]+)(@.*)?$", pkg)
+    short = m.group(2) if m else pkg
+    for base in [ROOT] + [os.path.join(ROOT, d) for d in CD_DIRS]:
+        if any(os.path.exists(os.path.join(base, d, short)) for d in ("node_modules/.bin", ".venv/bin")):
+            return
+    if short == "skills" and after[:1] == ["add"]:
+        ask("`skills add` downloads skills (instructions the agent then follows) from the internet; the owner reads what is added. "
+            "`guard.installs: off` in harness.config.yml turns this prompt off.")
+    if short in KNOWN_RUNNERS:
+        return
+    ask(f"`{words[0]} {pkg}` downloads `{short}` from the package registry and runs it, and it is not installed in this project. "
+        "Add it as a dependency, or the owner approves the run. `guard.installs: off` in harness.config.yml turns this prompt off.")
+
+DEPLOY_NAME = re.compile(r"(^|[:_./-])(deploy[a-z]*|release[a-z]*|promote[a-z]*|rollout|ship)($|[:_./-])")
+PUBLISH_NAME = re.compile(r"(^|[:_./-])publish[a-z]*($|[:_./-])")
+DEPLOY_FILE = re.compile(r"^(deploy|release|publish|promote|rollout)[\w.-]*$")
+PM_VALUE_OPTS = {"--filter", "-F", "-C", "--cwd", "--prefix", "-w", "--workspace", "--dir", "--workspace-root"}
+
+def check_deploy_script(words):
+    """Ask when a task runner, package script or script file is named for a deploy or release: its commands are not visible."""
+    if not words or dry_run(words):
+        return
+    name, rest = os.path.basename(words[0]), words[1:]
+    targets, files = [], []
+    if name in ("make", "gmake", "just", "task", "rake", "mage"):
+        targets = [w for w in operands(rest) if "=" not in w]
+    elif name in ("npm", "pnpm", "yarn", "bun"):
+        ops, k = [], 0
+        while k < len(rest):
+            if rest[k] in PM_VALUE_OPTS:
+                k += 2
+                continue
+            if not rest[k].startswith("-"):
+                ops.append(rest[k])
+            k += 1
+        if ops[:1] in (["run"], ["run-script"]):
+            targets = ops[1:2]
+        elif name != "npm":
+            targets = ops[:1]
+    elif name in SHELLS or INTERP_RE.match(name):
+        files = operands(rest)[:1]
+    elif "/" in getattr(words, "raw", words[0]):
+        files = [words.raw]
+    for t in targets:
+        for group, pattern in (("deploys", DEPLOY_NAME), ("publishes", PUBLISH_NAME)):
+            if GROUP_ASK[group] and pattern.search(t.lower()):
+                ask(f"`{name} {t}` runs a target or script named for a deploy, release or publish; its commands are not visible here, so the owner approves it. "
+                    f"`guard.{group}: off` in harness.config.yml turns this prompt off.")
+    for f in files:
+        group = "publishes" if re.match(r"^publish", os.path.basename(f).lower()) else "deploys"
+        if GROUP_ASK[group] and DEPLOY_FILE.match(os.path.basename(f).lower()):
+            ask(f"`{f}` is a script named for a deploy, release or publish; its commands are not visible here, so the owner approves it. "
+                f"`guard.{group}: off` in harness.config.yml turns this prompt off.")
+
+SCAN_SKIP = {".git", "node_modules", ".next", ".venv", "venv", "dist", "build", "target", "__pycache__", ".cache"}
+
+def secret_in_tree(path, limit=20000):
+    """The first secret or credential file below a directory (skipping dependency and build folders), else None."""
+    seen = 0
+    for top, dirs, names in os.walk(path):
+        dirs[:] = [d for d in dirs if d not in SCAN_SKIP]
+        for n in names + dirs:
+            seen += 1
+            if seen > limit:
+                return None
+            full = os.path.join(top, n)
+            if file_secret_kind(full) == "deny" or (n in SECRET_DIRS and os.path.isdir(full)):
+                return full
+    return None
+
+def check_tree_search(words):
+    """A recursive grep (or `rg --hidden`) over a tree that holds a secret file reads it; deny unless the secret names are excluded."""
+    name, rest = words[0], words[1:]
+    flags = [w for w in rest if w.startswith("-")]
+    if name in ("grep", "egrep", "fgrep", "zgrep"):
+        recursive = any(w in ("--recursive", "--dereference-recursive") or re.match(r"^-[A-Za-z]*[rR][A-Za-z]*$", w) for w in flags)
+    elif name == "rg":
+        recursive = any(w in ("--hidden", "-.", "--no-ignore", "--no-ignore-vcs") or re.match(r"^-u{2,}$", w) for w in flags)
+    else:
+        return
+    excludes = [w.split("=", 1)[1] if "=" in w else "" for w in rest if re.match(r"^--(exclude(-dir)?|glob|iglob)=", w)]
+    excludes += [rest[k + 1] for k, w in enumerate(rest[:-1]) if w in ("--exclude", "--exclude-dir", "--glob", "--iglob", "-g")]
+    excludes += [w for w in rest if w.startswith("!")]
+    if not recursive or any("env" in x for x in excludes):
+        return
+    ops = operands(rest)
+    own_pattern = any(w in ("-e", "--regexp", "-f", "--file") or w.startswith(("--regexp=", "--file=")) for w in flags)
+    paths = ops if own_pattern else ops[1:]
+    for pth in paths or ["."]:
+        full = os.path.normpath(os.path.join(ROOT, expand_home(pth)))
+        if os.path.isdir(full) and rel_inside(pth):
+            hit = secret_in_tree(full)
+            if hit:
+                deny(f"`{name}` over `{pth}` would read `{os.path.relpath(hit, ROOT)}`, a secret or credential file; agents never read it "
+                     "(AGENTS.md \u00a7 Golden rules). Search `src/` (or the folder you mean), exclude it (`--exclude=.env*`) or use the Grep tool.")
+
+
 def check_bash(cmd):
     # `$(git branch --show-current)` and its kin are the current branch: read them as HEAD.
     cmd = HEAD_SUBST.sub("HEAD", cmd)
@@ -787,12 +1112,46 @@ def check_bash(cmd):
     for words in simple_commands(cmd):
         if words[0] == "cd" and len(words) > 1:
             CD_DIRS.append(words[1].strip("\"\x27"))
+    check_pipes(cmd)
+    if SHELL_FETCH.search(cmd):
+        ask_fetched()
+    # Files this command writes, so that running one of them in the same command is seen (see run_target below).
+    written = set()
+    def norm(path):
+        return os.path.normpath(str(path).strip("\"\x27"))
     # A redirect (`> f`, `>> f`, `>|f`, `tee`-less here-doc writes) onto a protected file.
     for m in re.finditer(r"[0-9&]?>>?\|?\s*([^\s;&|<>()]+)", cmd):
         protect(m.group(1), "a redirect writes it")
+        written.add(norm(m.group(1)))
     for words in simple_commands(cmd):
         guard_file_write(cmd, words)
+        ops = operands(words[1:])
+        if words[0] == "tee":
+            written |= {norm(x) for x in ops}
+        elif words[0] in ("cp", "mv", "install") and len(ops) > 1:
+            written.add(norm(ops[-1]))
+        elif words[0] in ("curl", "wget"):
+            for k, w in enumerate(words[1:-1], 1):
+                if w in ("-o", "--output", "-O", "--output-document"):
+                    written.add(norm(words[k + 1]))
+        run = ""
+        if words[0] in SHELLS and shell_script(words) is None or INTERP_RE.match(words[0]) or words[0] in ("source", "."):
+            run = ops[0] if ops else ""
+        elif "/" in getattr(words, "raw", words[0]):
+            run = words.raw
+        if run and norm(run) in written:
+            ask(f"`{run}` is a file this same command wrote, so the guard cannot see what it does when it runs. "
+                "The owner reads the command, file contents included, and approves it.")
+        check_fetched_package(words)
+        check_deploy_script(words)
+        check_tree_search(words)
+        prev = ""
         for w in words[1:]:
+            skipped = bool(re.match(r"^--(exclude(-dir)?|glob|iglob|ignore)=", w)) or w.startswith("!") \
+                or (words[0] in ("grep", "egrep", "fgrep", "zgrep", "rg", "ag", "ack") and prev in ("--exclude", "--exclude-dir", "--glob", "--iglob", "-g"))
+            prev = w
+            if skipped:
+                continue   # an exclude pattern such as --exclude=.env* names a secret in order to leave it out
             if re.search(r"^/proc/[^/]+/environ$", w):
                 deny("`/proc/<pid>/environ` is the whole environment, secrets included.")
             kind = env_in_word(w)
@@ -861,6 +1220,8 @@ elif tool in ("Read", "Edit", "MultiEdit", "Write", "NotebookEdit"):
         ask(f"`{p}` often holds registry tokens; the owner approves a read or change of it.")
     if kind == "home":
         ask(f"`{p}` is under ~/.claude: Claude Code settings, permissions and other projects\u2019 transcripts; the owner approves a read or change of it.")
+    if tool != "Read" and p and outside_repo(p) and not rel_inside(p):
+        ask(f"`{p}` is outside this project, and {tool} would write it; the owner approves a write anywhere but the repo and /tmp.")
 elif tool == "Grep":
     for key in ("path", "glob"):
         v = str(args.get(key) or "")
