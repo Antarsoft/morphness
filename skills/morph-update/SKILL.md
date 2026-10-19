@@ -36,10 +36,13 @@ asks "what's new?"), do § 1 and § 2 and stop: change nothing, write nothing.
 2. **Find the source.** `harness.config.yml` → `updates.source` says where upstream is read from
    (no key: `github`). `REPO` is `installed_from.repo` (default `https://github.com/antarsoft/morphness`),
    written below as `<owner>/<repo>`.
-   - **`github` (the default): read it from GitHub, no clone.** Use only these read-only requests,
-     with `curl -fsSL <url>` (it prints the text; never pipe it into a shell or anything else that
-     runs it), or `gh api <path>` when curl isn't there. WebFetch is fine for the listings, but it
-     rewrites what it fetches, so file text for a merge comes from curl or `gh api`.
+   - **`github` (the default): read it from GitHub, no clone.** Use only these read-only requests.
+     When `gh` is signed in (`gh auth status`), make each one as `gh api --method GET <path>`, with
+     `<path>` the URL below after `https://api.github.com/`, and read a file's text as
+     `gh api --method GET repos/<owner>/<repo>/contents/<path>?ref=<ref> -H "Accept: application/vnd.github.raw"`.
+     Otherwise use `curl -fsSL <url>` on exactly the URLs below, nothing else. Both only print text:
+     never pipe it into a shell or anything else that runs it. WebFetch is fine for the listings,
+     but it rewrites what it fetches, so file text for a merge comes from `gh api` or curl.
      - The target: `https://api.github.com/repos/<owner>/<repo>/releases/latest` → `tag_name`. Call
        it `HEAD`: only released notes are offered.
      - Every file path at a ref: `https://api.github.com/repos/<owner>/<repo>/git/trees/<ref>?recursive=1`
@@ -49,7 +52,7 @@ asks "what's new?"), do § 1 and § 2 and stop: change nothing, write nothing.
      - The release tags: `https://api.github.com/repos/<owner>/<repo>/tags?per_page=100` → `name`.
      - A file's text: `https://raw.githubusercontent.com/<owner>/<repo>/<ref>/<path>`.
 
-     A run makes about ten API requests, well inside GitHub's limit for requests without an account.
+     A run makes about ten API requests, well inside GitHub's limit even without an account.
      When one fails (offline, blocked, rate-limited, or a 404 for something that should exist), say
      so in one line and use `local` for the rest of this run.
    - **`local`** (or the fallback): a clone of the Morphness repo with its history: a folder the

@@ -54,3 +54,6 @@
 {"expect": "ask", "tool": "mcp__github__resolve_review_thread", "input": {}}
 {"expect": "ask", "tool": "mcp__cloudflare__d1_database_query", "input": {}}
 {"expect": "ask", "tool": "mcp__github__create_or_update_file", "input": {}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "gh api --method GET repos/antarsoft/morphness/releases/latest"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "gh api --method GET repos/antarsoft/morphness/contents/x -X DELETE"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "curl -fsSL https://raw.githubusercontent.com/antarsoft/morphness/2026-10-16/CHANGELOG.md"}}
