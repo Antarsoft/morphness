@@ -6,6 +6,9 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Three process rules: a retro item that adds a sentence says why a script or check can't do the job;
+  a retro item tagged `cause: environment` goes to the owner, never a rule on the Technical Lead's own
+  yes; a check the environment refused is recorded "not run", never an "equivalent".
 - The guard hook now asks before deploys and publishes from well-known CLIs (vercel, wrangler, fly,
   firebase, netlify, `supabase functions deploy`, `prisma db push`, `drizzle-kit push`,
   `terraform apply`, `kubectl apply`, `helm upgrade`, `npm publish`, `cargo publish`) and before `gh api`
