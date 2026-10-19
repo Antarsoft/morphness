@@ -5,7 +5,9 @@
 # tests/guard-cases.jsonl, and the template scripts. It catches kit drift: a placeholder render.md
 # doesn't know, a link to a file that moved, a module marker that leaves broken text, a script that
 # no longer runs on a fresh install. It also checks that /morph-module can add any module back: each
-# module has On install and On remove, and each marked span has a unique anchor line above it.
+# module has On install and On remove, and each marked span has a unique anchor line above it. And it
+# checks the kit's own cross-references: every `file § Heading` names a heading that file has, every config
+# key a doc or script names is in template/harness.config.yml, and every key there is named somewhere.
 #
 # Usage: scripts/kit-selftest.sh [fixture ...]   (a name such as python-cli, or a path; default: every
 #   tests/fixtures/*.json)
@@ -127,6 +129,109 @@ for name in ALL_MODULES:
             anchor = inline.sub("", lines[a]) if a >= 0 else None
             if anchor is None or without.count(anchor) != 1:
                 failures.append(f"kit: {rel}: a {name} span (line {s + 1}) has no unique anchor line above it")
+
+# ---- once: § references name headings that exist, and config keys match the template config ------
+# A reference such as `harness/SETUP.md § Prune` must point at a heading (or a bold lead-in) in that
+# file, and a config key the scripts and docs name (`loop.prune_every`, `config_get guard.deploys`)
+# must exist in template/harness.config.yml; every key in that file must be named somewhere in the kit.
+doc_files = [f for base in ("template", "skills", "docs") for f in files_under(os.path.join(root, base), exts=".md")]
+doc_files += [os.path.join(root, n) for n in ("README.md", "INSTALL.md", "UPDATE.md", "CONTRIBUTING.md") if os.path.exists(os.path.join(root, n))]
+
+def anchors(path):
+    found, fence = [], False
+    for line in read(path).splitlines():
+        if line.startswith("```"):
+            fence = not fence
+        if fence:
+            continue
+        m = re.match(r"#{1,6}\s+(.*)", line) or re.match(r"\*\*([^*]+?)\.?\*\*", line)
+        if m:
+            found.append(re.sub(r"[`*]", "", m.group(1)).strip().lower())
+    return found
+
+def norm(s):
+    return re.sub(r"\s*\(.*?\)", "", s).strip(" .:").lower()
+
+anchor_cache = {p: anchors(p) for p in doc_files}
+def kit_target(ref, src):
+    rel = ref.lstrip("/")
+    skill = re.match(r"(.*?/skills/[^/]+)/", src.replace(os.sep, "/"))
+    local = [os.path.join(os.path.dirname(src), rel)] + ([os.path.join(skill.group(1), rel)] if skill else [])
+    found = [os.path.normpath(p) for p in local + [os.path.join(template, rel), os.path.join(root, rel), os.path.join(root, "skills/morph-init", rel)] if os.path.normpath(p) in anchor_cache]
+    if found:
+        return found[0]
+    ends = [p for p in doc_files if p.endswith("/" + rel)] if "/" in rel else []
+    return ends[0] if len(ends) == 1 else None
+
+SECTION_REF = re.compile(r"`?([A-Za-z0-9_./-]+\.md)(?:#[\w-]+)?[`)]*,? §§? ?([^\n]*)")
+section_refs = 0
+for src in doc_files:
+    for n, line in enumerate(read(src).splitlines(), 1):
+        for m in SECTION_REF.finditer(line):
+            target = kit_target(m.group(1), src)
+            if not target:
+                continue    # a file the project writes at run time (progress.md, qa-result.md, ...)
+            wanted = norm(re.split(r"[.;,):]|`|—|→|\s(?:and|or)\b|\sfor\b|\sin\b", m.group(2))[0].strip("* "))
+            if not wanted:
+                continue
+            section_refs += 1
+            number = re.match(r"(\d+[a-z]?)\b", wanted)
+            have = anchor_cache[target]
+            if target.endswith("harness/templates/plan.md"):    # plan.md is also the bug and small plan at run time
+                have = have + anchor_cache[target.replace("plan.md", "bug-plan.md")] + anchor_cache[target.replace("plan.md", "small-plan.md")]
+            ok = any(re.match(re.escape(number.group(1)) + r"[. ]", h) for h in have) if number else \
+                any(norm(h).startswith(wanted) or wanted.startswith(norm(h)) for h in have)
+            if not ok:
+                failures.append(f"kit: {os.path.relpath(src, root)}:{n} refers to {m.group(1)} § {wanted}, which has no such heading")
+if section_refs < 100:
+    failures.append(f"kit: only {section_refs} § references found; the heading check no longer reads the docs")
+
+if yaml:
+    config_text = read(os.path.join(template, "harness.config.yml"))
+    config_lines = config_text.splitlines()
+    def comment_block(top):    # the comment lines directly above `top:` in the config
+        at = next(i for i, l in enumerate(config_lines) if l.startswith(top + ":"))
+        block = []
+        while at and config_lines[at - 1].startswith("#"):
+            at -= 1
+            block.append(config_lines[at])
+        return "\n".join(block)
+    config_keys = set()
+    def flatten(node, prefix=""):
+        for k, v in node.items():
+            config_keys.add(prefix + k)
+            if isinstance(v, dict):
+                flatten(v, prefix + k + ".")
+    flatten(yaml.safe_load(config_text))
+    tops = {k for k in config_keys if "." not in k}
+    # optional keys the config only describes in a comment (guard.fail_open, guard.allow_hosts) count as there
+    known = lambda key: key in config_keys or (key.count(".") == 1 and key.split(".")[0] in tops
+                                               and re.search(r"\b%s\b" % re.escape(key.split(".")[1]), comment_block(key.split(".")[0])))
+    kit_text = {}
+    for p in doc_files + list(files_under(os.path.join(template, "scripts"))) + list(files_under(os.path.join(root, ".github"))):
+        try:
+            kit_text[p] = read(p)
+        except (UnicodeDecodeError, FileNotFoundError):
+            pass
+    dotted = re.compile(r"`((?:%s)\.[a-z_][a-z0-9_.]*)`" % "|".join(sorted(tops)))
+    mentioned = ""
+    reads = 0
+    for p, text in kit_text.items():
+        rel = os.path.relpath(p, root)
+        mentioned += text
+        if rel.endswith("render.md"):
+            continue    # § 3 names render-time placeholders (environments.names), not config keys
+        for key in set(dotted.findall(text)) | set(re.findall(r"config_get\s+([a-z_]+\.[a-z_.]+)", text)):
+            key = key.rstrip(".")
+            reads += 1
+            if not known(key):
+                failures.append(f"kit: {rel} names config key {key}, which is not in template/harness.config.yml")
+    for key in sorted(config_keys):
+        last = key.split(".")[-1]
+        if key not in mentioned and f"`{last}`" not in mentioned and not re.search(rf"\b{re.escape(last)}:", mentioned):
+            failures.append(f"kit: config key {key} in template/harness.config.yml is not named in any doc or script")
+    if reads < 30 or len(config_keys) < 40:
+        failures.append(f"kit: only {reads} config key mentions and {len(config_keys)} config keys found; the key check no longer reads the kit")
 
 # ---- render ------------------------------------------------------------------------------------
 def remove_module(t, name):
