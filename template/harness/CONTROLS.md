@@ -23,8 +23,10 @@ A project may add its own names (for example a schema-drift check or an integrat
 
 `ci_gate` in `harness.config.yml` decides what gates a merge:
 
-- **`ci_gate: false`** (QA is the gate): QA's local run is the only gate before a merge, so `qa-result.md` must record the exit code of every `before_signoff` check, including, with the `browser-e2e` module, the full end-to-end run on the final commit (or its reuse under § After merging the integration branch). The Technical Lead does not recommend a merge, mark a PR ready, or sign off without that record, checked against `git rev-parse HEAD`. A stale or missing record goes back to QA.
+- **`ci_gate: false`** (QA is the gate): QA's local run is the only gate before a merge, so `qa-result.md` must record the exit code of every `before_signoff` check, including, with the `browser-e2e` module, the full end-to-end run on the final commit (or its reuse under § After merging the integration branch). The Technical Lead does not recommend a merge, mark a PR ready, or sign off without that record, checked against `git rev-parse HEAD`. A stale or missing record goes back to QA. A check recorded **not run** (no command, or the environment refused it, § Notes) is not a pass: it runs, or the owner accepts it in `plan.md` § Decisions, before the merge.
 - **`ci_gate: true`** (CI is also a gate): the same `qa-result.md` record is still required, and the PR's CI checks must be green on the final commit before the TL recommends a merge. CI does not replace QA's acceptance testing. Where the pipeline lives and what it runs: `project/CONTROLS.md` § CI.
+
+An offline `audit` recorded **not run** with its reason is the one exception (`harness/modules/security/README.md` § Named checks). <!-- module:security -->
 
 After merging the integration branch into a feature branch, the TL hands to QA with § After merging the integration branch named: when only documentation was combined, QA re-runs the fast checks and keeps its browser-suite result.
 
