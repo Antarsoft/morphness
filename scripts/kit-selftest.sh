@@ -520,6 +520,8 @@ def check(name, fx, t):
         for k, v in branches.items():
             here = here.replace(k, v)
         raw = raw.replace("{ROOT}", t)
+        if "raw" in case:
+            raw = case["raw"]   # input that is not a tool event at all (broken JSON)
         run(["git", "checkout", "-q", "-B", here], t)
         cfg_path = os.path.join(t, "harness.config.yml")
         saved = open(cfg_path, encoding="utf-8").read()
@@ -527,7 +529,22 @@ def check(name, fx, t):
             # "guard": {"deploys": "off"} switches that ask off for this case only.
             pairs = ", ".join(f"{k}: {v}" for k, v in case["guard"].items())
             open(cfg_path, "w", encoding="utf-8").write(re.sub(r"(?m)^guard:.*$", "guard: { " + pairs + " }", saved))
-        r = run(["bash", "scripts/guard.sh"], t, input=raw, env=dict(os.environ, CLAUDE_PROJECT_DIR=t))
+        env = dict(os.environ, CLAUDE_PROJECT_DIR=t)
+        lib = os.path.join(t, "scripts/lib/config.sh")
+        if case.get("without") == "python3":
+            # A PATH holding only the tools the script itself needs, so `command -v python3` fails.
+            bindir = os.path.join(work, "bin-no-python")
+            os.makedirs(bindir, exist_ok=True)
+            for tool in ("bash", "git", "awk", "tr", "sed", "grep", "cat", "dirname", "sort"):
+                src = shutil.which(tool)
+                if src and not os.path.exists(os.path.join(bindir, tool)):
+                    os.symlink(src, os.path.join(bindir, tool))
+            env["PATH"] = bindir
+        if case.get("without") == "config":
+            os.rename(lib, lib + ".off")
+        r = run(["bash", "scripts/guard.sh"], t, input=raw, env=env)
+        if case.get("without") == "config":
+            os.rename(lib + ".off", lib)
         open(cfg_path, "w", encoding="utf-8").write(saved)
         got = "deny" if r.returncode == 2 else "ask" if '"ask"' in r.stdout else "pass" if r.returncode == 0 else f"exit {r.returncode}"
         expect = case["expect"]

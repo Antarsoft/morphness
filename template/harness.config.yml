@@ -139,6 +139,8 @@ cost: { track: true, prices: harness/MODEL_PRICES.md }
 #   network        curl/wget with a body or a method other than GET to a host outside localhost and
 #                  allow_hosts (a space-separated list, for example allow_hosts: "api.example.com"),
 #                  scp, sftp, rsync to or from another machine, nc, socat, telnet, ftp
+#   fail_open      true lets calls through when python3 is missing; by default a guard that can't run
+#                  (no python3, no config reader, unreadable input, a crash) blocks the call
 # A command with --dry-run or --help passes in every group. The full list is in scripts/guard.sh.
 guard: { mcp_writes: ask, deploys: ask, publishes: ask, schema_pushes: ask, network: ask }
 
