@@ -2,7 +2,7 @@
 id: 2026-10-19-guard-bypass-asks
 title: The guard asks or denies for script indirection, fetched code, deploy scripts, ssh and risky git and file writes
 kind: fix
-release: unreleased
+release: 2026-10-19.3
 applies_to: { modules: [] }
 files:
   - scripts/guard.sh
