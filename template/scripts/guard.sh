@@ -285,33 +285,98 @@ def expand(words, depth):
 GIT_OPTS_WITH_VALUE = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path"}
 PUSH_OPTS_WITH_VALUE = {"--repo", "--receive-pack", "--exec", "-o", "--push-option", "--signed", "--recurse-submodules"}
 
-def current_branch(git_dir_args):
+# State a command chain leaves behind for the next git command: where HEAD points after a checkout,
+# switch or symbolic-ref (None = the real HEAD), remote.*.push values set by `git config`, new tags.
+SIM = {"head": None, "push": [], "tags": set()}
+HEAD_SUBST = re.compile(r"(\$\(|`)\s*git\s+(branch\s+--show-current|rev-parse\s+--abbrev-ref\s+HEAD|symbolic-ref\s+(--short\s+)?(-q\s+)?HEAD)\s*(\)|`)")
+
+def git_out(git_dir_args, *args):
     try:
-        return subprocess.run(["git"] + git_dir_args + ["symbolic-ref", "--short", "-q", "HEAD"],
-                              capture_output=True, text=True, timeout=5).stdout.strip()
+        r = subprocess.run(["git"] + git_dir_args + list(args), capture_output=True, text=True, timeout=5)
+        return r.stdout.strip() if r.returncode == 0 else ""
     except Exception:
         return ""
+
+def current_branch(git_dir_args):
+    if SIM["head"] is not None:
+        return SIM["head"]
+    return git_out(git_dir_args, "symbolic-ref", "--short", "-q", "HEAD")
 
 def branch_of(ref, here):
     ref = ref.strip()
     if ref in ("HEAD", "@"):
         return here
-    for prefix in ("refs/heads/", "heads/"):
+    # Gerrit style magic refs push to the branch they name.
+    for prefix in ("refs/for/", "refs/drafts/", "refs/publish/", "refs/heads/", "heads/"):
         if ref.startswith(prefix):
-            return ref[len(prefix):]
+            return ref[len(prefix):].split("%")[0]
     return ref
 
+def split_flags(rest):
+    """Split the words after a git subcommand into (positional, flags); `--` ends the flags."""
+    positional, flags = [], []
+    for j, w in enumerate(rest):
+        if w == "--":
+            positional += rest[j + 1:]
+            break
+        (flags if w.startswith("-") else positional).append(w)
+    return positional, flags
+
+def follow_git(sub, rest, git_dir_args):
+    """Update SIM for the git commands that move HEAD or change where a plain push goes, and deny
+    deleting or force-moving an environment branch."""
+    positional, flags = split_flags(rest)
+    short = "".join(f[1:] for f in flags if re.match(r"^-[A-Za-z]+$", f))
+    if sub in ("checkout", "switch"):
+        if "--detach" in flags or (sub == "switch" and "d" in short):
+            SIM["head"] = ""
+            return
+        for k, w in enumerate(rest):
+            if w in ("-b", "-B", "-c", "-C", "--orphan") and k + 1 < len(rest):
+                SIM["head"] = rest[k + 1]
+                return
+        if "--" in rest or not positional or positional[0] == "-":
+            return
+        if sub == "checkout" and positional[0] not in PROTECTED and os.path.exists(positional[0]):
+            return   # a path restore, HEAD stays
+        SIM["head"] = branch_of(positional[0], "")
+    elif sub == "symbolic-ref":
+        if len(positional) >= 2 and positional[0] == "HEAD":
+            SIM["head"] = branch_of(positional[1], "")
+    elif sub == "config":
+        if len(positional) >= 2 and re.match(r"^remote\..+\.push$", positional[0]):
+            SIM["push"].append(positional[1])
+    elif sub == "tag":
+        if positional and not any(f in ("-d", "--delete", "-l", "--list") for f in flags):
+            SIM["tags"].add(positional[0])
+    elif sub == "branch":
+        names = [x for x in positional if x in PROTECTED]
+        if names and (any(f in ("--delete", "--force", "--move") for f in flags) or re.search("[dDfmM]", short)):
+            deny(f"agents never delete, move or force `{names[0]}`: it is an environment branch and changes only through a PR "
+                 "(AGENTS.md § Golden rules).")
+
+def is_tag(spec, git_dir_args):
+    name = spec.lstrip("+").split(":")[0]
+    return (name.startswith("refs/tags/") or name in SIM["tags"]
+            or bool(git_out(git_dir_args, "rev-parse", "-q", "--verify", "refs/tags/" + name)))
+
 def check_git(words):
-    i, git_dir_args = 1, []
+    i, git_dir_args, cfg_push = 1, [], []
     while i < len(words) and words[i].startswith("-"):
         opt = words[i]
         if opt in GIT_OPTS_WITH_VALUE and i + 1 < len(words):
             if opt == "-C":
                 git_dir_args += ["-C", words[i + 1]]
+            m = re.match(r"^remote\..+\.push=(.*)$", words[i + 1]) if opt == "-c" else None
+            if m:
+                cfg_push.append(m.group(1))
             i += 2
         else:
             i += 1
-    if i >= len(words) or words[i] != "push":
+    if i >= len(words):
+        return
+    if words[i] != "push":
+        follow_git(words[i], words[i + 1:], git_dir_args)
         return
     rest = words[i + 1:]
     positional, flags, j = [], [], 0
@@ -330,26 +395,45 @@ def check_git(words):
     short = "".join(f[1:] for f in flags if re.match(r"^-[A-Za-z]+$", f))
     if any(f.startswith("--force") for f in flags) or "f" in short or any(p.startswith("+") for p in positional[1:]):
         deny("force pushes are not allowed (AGENTS.md § Golden rules). Push a new commit instead.")
-    if any(f in ("--all", "--mirror", "--branches") for f in flags):
-        deny("`git push --all` / `--mirror` would update the environment branches. Push your feature branch by name.")
+    if any(f in ("--all", "--mirror", "--branches", "--prune") for f in flags):
+        deny("`git push --all`, `--mirror` and `--prune` can update or delete the environment branches. Push your feature branch by name.")
     here = current_branch(git_dir_args)
     deleting = "--delete" in flags or "d" in short
     refspecs = positional[1:]
+    tag_push = any(f in ("--tags", "--follow-tags") for f in flags)
+    if refspecs and refspecs[0] == "tag":
+        tag_push, refspecs = True, refspecs[1:]
     targets = []
     if not refspecs:
-        targets.append(here)
+        # A bare push goes where remote.<name>.push says (set in the chain, with -c, or in the config), else to HEAD.
+        remote = positional[0] if positional else "origin"
+        configured = SIM["push"] + cfg_push + git_out(git_dir_args, "config", "--get-all", f"remote.{remote}.push").split()
+        if configured:
+            refspecs = configured
+        else:
+            targets.append(here)
     for spec in refspecs:
         spec = spec.lstrip("+")
+        dst = spec.split(":", 1)[1] if ":" in spec else spec
+        if "$" in dst or "`" in dst:
+            ask(f"`git push` target `{dst}` is built at run time, so the guard cannot see which branch it is. "
+                "Name the branch in the command.")
+        if is_tag(spec, git_dir_args):
+            tag_push = True
+            continue
         if ":" in spec:
-            src, dst = spec.split(":", 1)
+            src = spec.split(":", 1)[0]
             targets.append(branch_of(dst, here) if dst else branch_of(src, here))
         else:
-            targets.append(branch_of(spec, here))
+            targets.append(branch_of(dst, here))
     for t in targets:
         if t and t in PROTECTED:
             what = "delete" if deleting or any(s.startswith(":") for s in refspecs) else "push to"
             deny(f"agents never {what} `{t}`: it is an environment branch and moves only through a PR "
                  "(AGENTS.md § Golden rules). Push a feature branch and open a PR.")
+    if tag_push and GROUP_ASK["publishes"]:
+        ask("pushing a tag can start a release or a deploy on the code host; only the owner approves it. "
+            "`guard.publishes: off` in harness.config.yml turns this prompt off.")
 
 # ---- code host and remote databases --------------------------------------------------------------
 REMOTE_DB = [
@@ -527,6 +611,8 @@ def guard_file_write(cmd, words):
         protect(named[0], f"`{name}` writes it")
 
 def check_bash(cmd):
+    # `$(git branch --show-current)` and its kin are the current branch: read them as HEAD.
+    cmd = HEAD_SUBST.sub("HEAD", cmd)
     # Heredoc bodies are text (a commit message, a PR body), not commands: keep only their first line.
     cmd = re.sub(r"(<<-?\s*([\x27\"]?)(\w+)\2[^\n]*)\n.*?\n[ \t]*\3[ \t]*(?=\n|\)|$)", r"\1", cmd, flags=re.S)
     for words in simple_commands(cmd):
