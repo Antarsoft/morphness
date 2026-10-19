@@ -1,5 +1,5 @@
 {
-  "about": "Go API with a staging environment on the integration branch, ci-cd, claude-projects and security modules.",
+  "about": "Go API with a staging environment on its own branch and a block-style environments list, ci-cd, claude-projects and security modules.",
   "values": {
     "project.name": "ledger-api",
     "project.description": "An HTTP service that records payments.",
@@ -16,9 +16,10 @@
     "cmd.audit": "govulncheck ./..."
   },
   "branches": { "integration": "develop", "production": "main" },
+  "environments_style": "block",
   "environments": [
     { "name": "dev", "branch": "develop", "deploy": "workflow", "real_data": false },
-    { "name": "staging", "branch": "develop", "deploy": "workflow", "real_data": false },
+    { "name": "staging", "branch": "staging", "deploy": "workflow", "real_data": false },
     { "name": "production", "branch": "main", "deploy": "workflow", "real_data": true }
   ],
   "apps": [],

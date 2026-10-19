@@ -82,7 +82,7 @@ GUARD_BRANCHES="$(
   {
     config_get branches.integration
     config_get branches.production
-    sed -n 's/.*[{,][ \t]*branch:[ \t]*\([^ \t,}]*\).*/\1/p' harness.config.yml 2>/dev/null
+    config_env_branches
   } | tr -d "\"'" | grep . | sort -u | tr '\n' ' '
 )"
 GUARD_MCP_WRITES="$(config_get guard.mcp_writes)"
