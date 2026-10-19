@@ -67,8 +67,14 @@ echo "Prune counter: $count/$threshold"
 echo "Rules: $(kb "$bytes")/$budget KB always loaded"
 echo "Checklists: $(kb "$cbytes")/$cbudget KB"
 echo "Project docs: $(kb "$dbytes")/$dbudget KB"
-# A proposal the owner hasn't decided yet: the hand-off names it instead of writing another.
-waiting="$(grep -l -E '^\*\*Status:\*\*[[:space:]]*proposed' _harness/prunes/*.md 2>/dev/null | sort | tail -n 1)"
+# A proposal still open (proposed: the owner hasn't decided; approved: decided, cuts not applied yet):
+# the hand-off names it instead of writing another. A declined one is closed by prune step 6 (fold, reset).
+waiting=""
+for f in $(ls _harness/prunes/*.md 2>/dev/null | grep -v '/README\.md$' | sort); do
+  if grep -q -E '^\*\*Status:\*\*[[:space:]]*proposed[[:space:]]*$' "$f"; then waiting="$f"
+  elif grep -q -E '^\*\*Status:\*\*[[:space:]]*approved[[:space:]]*$' "$f"; then waiting="$f (approved, cuts not applied yet)"
+  fi
+done
 due=""
 if [ "$count" -ge "$threshold" ]; then
   due="Prune is DUE"
@@ -85,7 +91,7 @@ elif [ -f .claude/rules/technical-lead.md ] \
   && [ "$(wc -c < .claude/rules/technical-lead.md)" -gt 20480 ]; then
   due="Prune is DUE (.claude/rules/technical-lead.md is over 20 KB)"
 fi
-# While a proposal waits for the owner the hand-off names it and writes no second one, so DUE is not printed.
+# While a proposal is open the hand-off names it and writes no second one, so DUE is not printed.
 if [ -n "$waiting" ]; then
   echo "Prune proposal waiting: $waiting${due#Prune is DUE}"
 elif [ -n "$due" ]; then

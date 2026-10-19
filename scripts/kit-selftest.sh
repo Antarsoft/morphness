@@ -420,6 +420,24 @@ def check(name, fx, t):
     r = run(["bash", "scripts/prune-counter.sh", "--prune"], t)
     if r.returncode or "Last 0 features: no features" not in r.stdout or "Rule tags: 0 " not in r.stdout:
         bad(f"prune-counter.sh --prune on a fresh install printed {r.stdout!r} (stderr {r.stderr.strip()!r})")
+    # prune states: proposed and approved are open (named, no DUE); declined, applied and README are not
+    pdir, ldir = os.path.join(t, "_harness/prunes"), os.path.join(t, "_harness/learnings")
+    os.makedirs(pdir, exist_ok=True)
+    os.makedirs(ldir, exist_ok=True)
+    made = [os.path.join(ldir, f"selftest{i}-v1.md") for i in range(10)]
+    for f in made:
+        open(f, "w").write("x\n")
+    for status, want in (("proposed", "waiting"), ("approved", "waiting"), ("declined", "DUE"), ("applied", "DUE")):
+        pf = os.path.join(pdir, "2026-01-01.md")
+        open(pf, "w").write(f"# Prune\n\n**Status:** {status}  \n")
+        open(os.path.join(pdir, "README.md"), "w").write("**Status:** proposed\n")
+        out = run(["bash", "scripts/prune-counter.sh"], t).stdout
+        waiting = "Prune proposal waiting: _harness/prunes/2026-01-01.md" in out
+        due = "Prune is DUE" in out
+        if (want == "waiting") != waiting or waiting == due or "README.md" in out:
+            bad(f"prune-counter.sh with a {status} proposal and 10 learnings printed {out!r}")
+    for f in made + [pf, os.path.join(pdir, "README.md")]:
+        os.remove(f)
     r = run(["bash", "scripts/feature-cost.sh"], t, env=dict(os.environ, HOME=t))
     if r.returncode or "Traceback" in r.stdout + r.stderr:
         bad(f"feature-cost.sh failed: {r.stdout}{r.stderr}")
