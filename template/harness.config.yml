@@ -139,6 +139,12 @@ loop:
   project_docs_budget_kb: 48 # project/*.md fact docs; over it, a prune is due
   qa_max_rounds: 2        # QA rework rounds before escalating to the owner
 
+# Where /morph-update, /morph-doctor and the prune's upstream check read Morphness from.
+# github: release notes and template text straight from installed_from.repo on GitHub (read-only,
+# nothing is executed, no clone or account needed); falls back to local when GitHub can't be reached.
+# local: a clone you keep (~/.cache/morphness, or a folder you name).
+updates: { source: github }
+
 # Where this copy came from upstream. Written by /morph-init, updated by /morph-update.
 # commit: the Morphness commit the kit was last synced to (the base for merging kit updates).
 # release: the Morphness release that commit belongs to. updates: kit update notes (updates/ in

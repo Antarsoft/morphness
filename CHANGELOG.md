@@ -6,6 +6,12 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Updates without a clone: `/morph-update`, `/morph-doctor`, the prune's upstream check and
+  `UPDATE.md` read the newest release, its update notes, lessons and template text straight from
+  github.com/antarsoft/morphness with read-only requests (nothing fetched is executed, no account
+  needed), and fall back to a local clone when GitHub can't be reached. New config key
+  `updates.source: github | local` (default `github`); `/morph-init` allows the read-only fetches so
+  they don't prompt. Only released updates are offered.
 - Trials as files: `_harness/trials/<trial-slug>.md` (template `harness/templates/trial.md`) holds the
   hypothesis, the change, its length in features, the metric and the pass and revert conditions. A
   feature that runs one names it on its learnings file's **Trial** line, the prune counter prints

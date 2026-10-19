@@ -5,7 +5,11 @@
     "allow": [
       "Bash(git status:*)",
       "Bash(git diff:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(curl -fsSL https://api.github.com/repos/antarsoft/morphness/*)",
+      "Bash(curl -fsSL https://raw.githubusercontent.com/antarsoft/morphness/*)"
     ],
     "deny": [
       "Read(./**/.env)",

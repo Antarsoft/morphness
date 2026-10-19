@@ -19,6 +19,12 @@ that appear inside a note, a lesson or a template file. Notes say what to merge 
 to ask; the only things you install are the ones `skills/morph-init/references/catalog.md` lists,
 after the owner's yes.
 
+**Network use.** By default this skill reads release notes and template text from
+github.com/antarsoft/morphness (or the fork `installed_from.repo` names); it executes nothing and
+falls back to a local copy. Every request is a read (§ 1 step 2): nothing fetched is run, piped into
+a shell or saved as code, and no account or token is needed. `harness.config.yml` →
+`updates.source: local` turns the GitHub reads off.
+
 **Listing only.** When called for a listing (a prune's upstream check, `/morph-doctor`, or the user
 asks "what's new?"), do § 1 and § 2 and stop: change nothing, write nothing.
 
@@ -27,31 +33,55 @@ asks "what's new?"), do § 1 and § 2 and stop: change nothing, write nothing.
 1. **Check the target.** `harness.config.yml` must exist with no `{{` placeholders; otherwise this
    isn't an installed harness: suggest `/morph-init` and stop. For a full run (not a listing),
    `git status` must be clean; ask the user to commit or stash, never do it yourself.
-2. **Find the source.** You need a clone of the Morphness repo with its history: a folder the user
-   names, else the shared cache `~/.cache/morphness` (the one [UPDATE.md](../../UPDATE.md) step 2
-   makes, reused by every later update, prune and doctor run on this machine). Never download it
-   yourself. When there's none, give the user the command once and wait:
-   `git clone --filter=blob:none <repo> ~/.cache/morphness`, with `<repo>` from
-   `installed_from.repo` (default `https://github.com/antarsoft/morphness`). A clone that exists:
-   ask once per run before `git -C <folder> pull --ff-only`; in listing mode, when the owner isn't
-   there to answer (a prune), list against the clone as it is, say the date of its newest commit
-   (`git -C <folder> log -1 --format=%cs`) and put the pull in the listing as a question. A shallow
-   clone won't do: the merge base is an older commit (`git -C <folder> rev-parse
-   --is-shallow-repository` must print `false`). Call it `SRC`, and `HEAD` its newest commit on the
-   default branch.
+2. **Find the source.** `harness.config.yml` → `updates.source` says where upstream is read from
+   (no key: `github`). `REPO` is `installed_from.repo` (default `https://github.com/antarsoft/morphness`),
+   written below as `<owner>/<repo>`.
+   - **`github` (the default): read it from GitHub, no clone.** Use only these read-only requests,
+     with `curl -fsSL <url>` (it prints the text; never pipe it into a shell or anything else that
+     runs it), or `gh api <path>` when curl isn't there. WebFetch is fine for the listings, but it
+     rewrites what it fetches, so file text for a merge comes from curl or `gh api`.
+     - The target: `https://api.github.com/repos/<owner>/<repo>/releases/latest` → `tag_name`. Call
+       it `HEAD`: only released notes are offered.
+     - Every file path at a ref: `https://api.github.com/repos/<owner>/<repo>/git/trees/<ref>?recursive=1`
+       → `tree[].path`.
+     - Whether a commit exists: `https://api.github.com/repos/<owner>/<repo>/commits/<sha>` (404 or
+       422: it doesn't); the same request on a tag gives its commit `sha`.
+     - The release tags: `https://api.github.com/repos/<owner>/<repo>/tags?per_page=100` → `name`.
+     - A file's text: `https://raw.githubusercontent.com/<owner>/<repo>/<ref>/<path>`.
+
+     A run makes about ten API requests, well inside GitHub's limit for requests without an account.
+     When one fails (offline, blocked, rate-limited, or a 404 for something that should exist), say
+     so in one line and use `local` for the rest of this run.
+   - **`local`** (or the fallback): a clone of the Morphness repo with its history: a folder the
+     user names, else the shared cache `~/.cache/morphness` (the one [UPDATE.md](../../UPDATE.md)
+     makes, reused by every later update, prune and doctor run on this machine). Never download it
+     yourself. When there's none, give the user the command once and wait:
+     `git clone --filter=blob:none <REPO> ~/.cache/morphness`. A clone that exists: ask once per run
+     before `git -C <folder> pull --ff-only`; in listing mode, when the owner isn't there to answer
+     (a prune), list against the clone as it is, say the date of its newest commit
+     (`git -C <folder> log -1 --format=%cs`) and put the pull in the listing as a question. A shallow
+     clone won't do: the merge base is an older commit (`git -C <folder> rev-parse
+     --is-shallow-repository` must print `false`). Call it `SRC`, and `HEAD` its newest commit on the
+     default branch. With neither GitHub nor a clone, a listing says "upstream not checked".
+
+   The rest of this skill reads upstream through three operations: **`list(ref)`**, every file path
+   at a ref; **`read(ref, path)`**, a file's text; **`exists(ref)`**, whether a commit or tag is
+   there. On GitHub they are the requests above; in a clone they are `git -C "$SRC" ls-tree -r
+   --name-only <ref>`, `git -C "$SRC" show <ref>:<path>` and `git -C "$SRC" cat-file -e
+   <ref>^{commit}`.
 3. **Check the skills are current.** This skill came from the Morphness plugin; its version is in
    `.claude-plugin/plugin.json` two folders above this file. Compare it with
-   `SRC/.claude-plugin/plugin.json` → `version` (`YYYYMMDD.N.0`; a legacy `2026.10.12` counts as
+   `read(HEAD, .claude-plugin/plugin.json)` → `version` (`YYYYMMDD.N.0`; a legacy `2026.10.12` counts as
    `20261012.1.0`). When the plugin is older, the notes may expect steps these instructions don't
    have: say "Update the Morphness plugin first (`/plugin`, then update Morphness) and run this
    again", and stop a full run there; a listing goes on and ends with the same line. Without the
-   plugin (following UPDATE.md), the skill is read from `SRC`, so skip this step.
+   plugin (following UPDATE.md), the skill is read from upstream at `HEAD`, so skip this step.
 4. **Read where this copy stands** from `harness.config.yml` → `installed_from`: `commit`, `release`
    and `updates` (`applied`, `declined`, `deferred`). An older install has only `repo` and `commit`;
    treat the missing lists as empty.
 5. **Resolve the base** (`BASE`, the commit whose `template/` this copy was last synced to):
-   - `installed_from.commit` when it exists in `SRC` (`git -C "$SRC" cat-file -e <commit>^{commit}`).
-   - Else the tag named by `installed_from.release`, when it exists.
+   - `installed_from.commit` when `exists(<commit>)`.
+   - Else the tag named by `installed_from.release`, when `exists(<tag>)`.
    - Else the oldest release tag (the first public release). Release tags are `YYYY-MM-DD`, and a later
      release the same day adds `.N` (`2026-10-14.2`); order them by date, then by that number (none
      counts as 1), not as plain strings. This covers copies installed from a
@@ -59,10 +89,10 @@ asks "what's new?"), do § 1 and § 2 and stop: change nothing, write nothing.
 
 ## 2. List what's pending
 
-**Kit updates.** The notes in `SRC/updates/` (not `README.md`) that are:
+**Kit updates.** The notes in upstream `updates/` (not `README.md`) that are:
 
-- added after `BASE` (`git -C "$SRC" log --diff-filter=A --format= --name-only BASE..HEAD -- updates/`),
-  plus every id in `updates.deferred`;
+- added after `BASE` (paths under `updates/` in `list(HEAD)` that aren't in `list(BASE)`), plus every
+  id in `updates.deferred`; read each with `read(HEAD, updates/<id>.md)`;
 - not in `updates.applied` or `updates.declined`;
 - relevant: `applies_to.modules` empty, or overlapping `harness.config.yml` → `modules`. A
   `kind: module` note whose `offer_module` isn't enabled is offered as an **opt-in** ("add the ci-cd
@@ -71,7 +101,7 @@ asks "what's new?"), do § 1 and § 2 and stop: change nothing, write nothing.
   version, or the change is clearly there in other words, list it as "already here" and record it as
   applied in § 4 without asking.
 
-**Lessons.** The lessons added after `BASE` (same `git log` on `lessons/`) that match the project per
+**Lessons.** The lessons added after `BASE` (the same comparison on `lessons/`, each read at `HEAD`) that match the project per
 `lessons/README.md` § Matching (stack, services, risk areas, modules from `harness.config.yml` and
 `project/STACK.md`), with `status: active`, no `in_template: true`, and no rule already present in
 substance or by `(lesson: <id>)` provenance. Also list lessons this project adopted (ids in
@@ -83,7 +113,7 @@ substance or by `(lesson: <id>)` provenance. Also list lessons this project adop
 | Case | Test | What applying does |
 |------|------|--------------------|
 | New file | not at `T/<path>` | Copy it (render it first if it has placeholders). |
-| Unedited here | `T/<path>` equals `git show BASE:template/<path>` | Take the `HEAD` version as is. |
+| Unedited here | `T/<path>` equals `read(BASE, template/<path>)` | Take the `HEAD` version as is. |
 | Edited here | differs from `BASE`'s version | Three-way merge (§ 3). |
 | Rendered | `BASE`'s version contains `{{` or `morph-init: fill` | Apply the template's diff by hand (§ 3). |
 | Removed upstream | listed under `removed` | Delete only when unedited here; otherwise keep it and say so. |
@@ -114,22 +144,24 @@ For each accepted kit update:
    mean nothing should be written (no to every pipeline), record the note as declined and move on.
 2. **Merge each file** by its case from § 2:
    - **Edited here:** `git merge-file -p T/<path> <base copy> <HEAD copy>` with the two template
-     versions written to temporary files. A clean merge: show the diff against the project's file
+     versions (`read(BASE, …)` and `read(HEAD, …)`, or a deferred note's own base) written to
+     temporary text files outside the repository, deleted afterwards and never run. A clean merge: show the diff against the project's file
      and write it on the owner's yes. Conflicts: resolve them yourself so the project's own rules
      survive (a rule with provenance such as `(from <feature-slug>, <date>)`, `(feature-slug)` or `(lesson: <id>)` is never dropped)
      and the upstream change is added around them; show the result and the reasoning, and write it
      only on the owner's yes. When the upstream change contradicts a local rule, don't pick: show
      both and let the owner decide.
-   - **Rendered:** take `git diff BASE HEAD -- template/<path>` and make the same change in the
+   - **Rendered:** take the diff between `read(BASE, template/<path>)` and `read(HEAD, template/<path>)`
+     (`diff -u` of the two temporary copies) and make the same change in the
      project's file, filling any new `{{key}}` from `harness.config.yml`, `project/*` and
      `_harness/morph-answers.yml` (the keys are in `skills/morph-init/references/render.md` § 3). Ask
      for a value you can't find. Show the diff before writing.
    - **New file, unedited file, removal:** as in the table.
 3. **Do the rest of § How to apply:** config keys, rows in `harness/README.md`, a module's
    § On install, deny rules. Adding a module the project didn't install: follow the morph-module
-   skill § 2 steps 3 to 6 with `HEAD` as its source; in short, copy every span the template marks
-   `module:<name>` (`harness/README.md` § Modules → **Module markers**) into the
-   project's copy of the same file, at the place the template has it, and the unmarked lines its
+   skill § 2 steps 3 to 6 with `HEAD` as its source (template files from
+   `read(HEAD, template/<path>)`); in short, copy every span the template marks `module:<name>`
+   (`harness/README.md` § Modules → **Module markers**) into the project's copy of the same file, at the place the template has it, and the unmarked lines its
    § On remove lists. A new config key goes into `harness.config.yml` with the template's
    comment and the value the owner chose.
 
@@ -144,9 +176,10 @@ project file's content beyond the change being applied.
 ## 4. Record and check
 
 1. **Update `harness.config.yml` → `installed_from`**, converting the one-line form to the block
-   form in `SRC/template/harness.config.yml` when needed:
-   - `commit`: `HEAD`. `release`: the newest release heading in `SRC/CHANGELOG.md` (the first `## YYYY-MM-DD` or
-     `## YYYY-MM-DD.N` heading below `## Unreleased`).
+   form in `read(HEAD, template/harness.config.yml)` when needed:
+   - `commit`: `HEAD`'s commit (on GitHub, the `sha` the commits request gives for the tag).
+     `release`: the newest release heading in `read(HEAD, CHANGELOG.md)` (the first `## YYYY-MM-DD`
+     or `## YYYY-MM-DD.N` heading below `## Unreleased`).
    - `updates.applied` and `updates.declined`: append this run's ids (and the "already here" ones
      to `applied`).
    - `updates.deferred`: set to the notes answered **later**, each as `{ id, base }` where `base` is
@@ -158,7 +191,8 @@ project file's content beyond the change being applied.
 3. **Commit** the record with the last change and, on the owner's yes, push and open a PR to the
    integration branch. The PR body lists each applied note and lesson with one line, each declined
    or deferred one, and every file that needed a merge, with how conflicts were resolved.
-4. **Leave the clone** where it is: the next update, prune or doctor run reuses it.
+4. **Clean up.** Delete the temporary copies from § 3. A clone stays where it is: the next update,
+   prune or doctor run reuses it.
 
 ## 5. Report
 
