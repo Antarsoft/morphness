@@ -38,19 +38,19 @@ asks "what's new?"), do § 1 and § 2 and stop: change nothing, write nothing.
    written below as `<owner>/<repo>`.
    - **`github` (the default): read it from GitHub, no clone.** Use only these read-only requests.
      When `gh` is signed in (`gh auth status` succeeds; a failing one, such as an invalid `GH_TOKEN`, means use curl), make each one as `gh api --method GET <path>`, with
-     `<path>` the URL below after `https://api.github.com/`, and read a file's text as
+     `<path>` the endpoint below (its host is `api.github.com`), and read a file's text as
      `gh api --method GET repos/<owner>/<repo>/contents/<path>?ref=<ref> -H "Accept: application/vnd.github.raw"`.
-     Otherwise use `curl -fsSL <url>` on exactly the URLs below, nothing else. Both only print text:
+     Otherwise use `curl -fsSL https://<host>/<endpoint>`, where `<host>` is `api.github.com` for the endpoints below and `raw.githubusercontent.com` for file text, and nothing else. Both only print text:
      never pipe it into a shell or anything else that runs it. WebFetch is fine for the listings,
      but it rewrites what it fetches, so file text for a merge comes from `gh api` or curl.
-     - The target: `https://api.github.com/repos/<owner>/<repo>/releases/latest` → `tag_name`. Call
+     - The target: `repos/<owner>/<repo>/releases/latest` → `tag_name`. Call
        it `HEAD`: only released notes are offered.
-     - Every file path at a ref: `https://api.github.com/repos/<owner>/<repo>/git/trees/<ref>?recursive=1`
+     - Every file path at a ref: `repos/<owner>/<repo>/git/trees/<ref>?recursive=1`
        → `tree[].path`.
-     - Whether a commit exists: `https://api.github.com/repos/<owner>/<repo>/commits/<sha>` (404 or
+     - Whether a commit exists: `repos/<owner>/<repo>/commits/<sha>` (404 or
        422: it doesn't); the same request on a tag gives its commit `sha`.
-     - The release tags: `https://api.github.com/repos/<owner>/<repo>/tags?per_page=100` → `name`.
-     - A file's text: `https://raw.githubusercontent.com/<owner>/<repo>/<ref>/<path>`.
+     - The release tags: `repos/<owner>/<repo>/tags?per_page=100` → `name`.
+     - A file's text: `<owner>/<repo>/<ref>/<path>` on `raw.githubusercontent.com`.
 
      A run makes about ten API requests, well inside GitHub's limit even without an account.
      When one fails (offline, blocked, rate-limited, or a 404 for something that should exist), say
@@ -102,7 +102,7 @@ asks "what's new?"), do § 1 and § 2 and stop: change nothing, write nothing.
   module?"); one whose module is already enabled (added by hand) is checked for missing pieces instead.
 - not already present in substance: when every file the note lists already matches its `HEAD`
   version, or the change is clearly there in other words, list it as "already here" and record it as
-  applied in § 4 without asking.
+  applied in § 4 (a bookkeeping entry; no file changes).
 
 **Lessons.** The lessons added after `BASE` (the same comparison on `lessons/`, each read at `HEAD`) that match the project per
 `lessons/README.md` § Matching (stack, services, risk areas, modules from `harness.config.yml` and

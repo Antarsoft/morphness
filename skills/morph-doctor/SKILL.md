@@ -153,7 +153,7 @@ diverge. Flag only contradictions (two rules that say opposite things) and links
 
 ## 4. Upstream
 
-Run the morph-update skill's listing (its § 1 and § 2, which change nothing): kit updates and
+List what is newer upstream, read-only, by following § 1 and § 2 of `/morph-update` (they write nothing): kit updates and
 matching lessons added upstream since `installed_from.commit` that this project hasn't applied or
 declined, plus adopted lessons now superseded. Report only the counts, with fixes named one by one
 (`1 fix, 2 kit updates, 4 lessons available: run /morph-update`). Don't apply anything and don't
