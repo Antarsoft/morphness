@@ -393,6 +393,13 @@ def check(name, fx, t):
             bad("first environment doesn't run branches.integration")
         if fx["environments"][-1]["branch"] != cfg("branches.production"):
             bad("last environment doesn't run branches.production")
+    # 8b. without the security module the markdown the project reads names no security module text:
+    # the marker command ran, so this catches a sentence that mentions the module but was never marked
+    # (other modules keep conditional "with the `x` module" wording on purpose; security does not)
+    if "security" not in fx["modules"]:
+        r = run(["bash", "-c", "grep -rnE --include='*.md' 'module:security -->|`security` module|Security feature: yes|Security review before QA|plan\\.md. § Security' AGENTS.md CLAUDE.md harness project .claude 2>/dev/null"], t)
+        for line in r.stdout.splitlines():
+            bad(f"security module text left in a project without it: {line[:160]}")
     # 9. scripts
     for f in sorted(glob.glob(os.path.join(t, "scripts/*.sh")) + glob.glob(os.path.join(t, "scripts/lib/*.sh"))):
         r = run(["bash", "-n", f], t)
