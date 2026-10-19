@@ -48,12 +48,17 @@ your stack starts with them.
 
 ## ✨ Why use it
 
+Morphness doesn't make the model smarter: a capable model in a plain session already gets most
+changes right. What it adds is process around the model: a plan you approve, a QA record with
+evidence, an audit trail per feature, rules drawn from your project's own misses, and a lean path
+for clear requests so that process costs little when there's nothing to plan.
+
 | Reason | What that means |
 |--------|-----------------|
 | 🌍 **Improved by the community** | Every lesson in the catalog comes from a rule that ran in a real project, with its evidence recorded. `/morph-update` offers the ones that match your stack; `/morph-share` sends yours back. |
 | 🧭 **Plan first, then build** | A Technical Lead writes a plan with testable acceptance criteria and waits for your approval before any code is written. |
 | ✅ **QA is never skipped** | Every feature gets a separate QA agent that runs your checks and records the evidence, so "done" means verified, not claimed. |
-| 🔁 **Learns from its own mistakes** | Retros turn failures into rules, and prunes delete rules that never fire, so the instructions your agents read stay short and earned. |
+| 🔁 **Learns from its own mistakes** | Retros turn real misses (a failed QA round, a review fix, a bug you report after a pass) into rules, and prunes delete rules that never fire, so the instructions your agents read stay short and earned. |
 | 🛡️ **Safe by default** | Secrets and pushes to protected branches are denied in `.claude/settings.json` from the first install, and every merge command asks you first. Environment branches get a host ruleset (PR-only, no force-push). With the data-access module, your database and hosting write tools are denied too. Anything a connector would change runs only after your yes in chat, and every agent reads the rule: never write to a shared remote environment. |
 | 💲 **Know what each feature costs** | Every feature records an estimated dollar cost from Claude Code's own transcripts, split by agent, so you can compare features and tune effort. Useful as an estimate on a Pro or Max plan too. |
 | 🧰 **Yours to configure** | Branches, environments, checks, modules, risk areas, models, effort and loop limits all live in one `harness.config.yml`. Every rule and checklist is a plain Markdown file in your repo, so you can change anything. |
@@ -118,8 +123,9 @@ shown, and everything lands on a branch for you to review.
 - **Tools:** git and bash. `gh` for `/morph-share` to open its PR, and for applying branch
   protection or creating the repository during setup (each has a manual fallback). python3 for the
   feature cost estimate.
-- **Cost:** each feature is about three agent runs (plan, build, QA) plus a short retro, with the
-  Technical Lead and Full-stack on opus at high effort by default. Every hand-off ends with a
+- **Cost:** each feature is about three agent runs (plan, build, QA), with every role on sonnet by
+  default (`/morph-init` offers opus for planning and building). A clear, fully specified request
+  runs in small mode: a short plan, medium effort and no retro. Every hand-off ends with a
   `Cost ≈ $…` line priced at public API rates (`harness/MODEL_PRICES.md`, editable for your own).
   Tune spend with the medium variants and `project/HARNESS_AGENTS.md` § Effort per feature.
 
@@ -159,10 +165,10 @@ flowchart TB
 
 | Role | What it does | Model · effort |
 |------|--------------|----------------|
-| 🧭 **Technical Lead** | Your session. Plans, delegates, never codes | opus · high |
-| 🛠️ **Full-stack** | Builds the approved plan and its tests | opus · high (xhigh for risky cores; sonnet · medium for pattern-copy work) |
-| ✅ **QA** | Runs the checks, validates every criterion | sonnet · high (medium for small work) |
-| 🔎 **Researcher** | Answers a question about your code or the web with cited sources, read-only. For when you want an answer, not a change | sonnet · medium (opus · high for architecture) |
+| 🧭 **Technical Lead** | Your session. Plans, delegates, never codes | sonnet · high (opus with the opus preset) |
+| 🛠️ **Full-stack** | Builds the approved plan and its tests | sonnet · high (xhigh for risky cores; medium in small mode; opus with the opus preset) |
+| ✅ **QA** | Runs the checks, validates every criterion | sonnet · high (medium in small mode) |
+| 🔎 **Researcher** | Answers a question about your code or the web with cited sources, read-only. For when you want an answer, not a change | sonnet · medium (high for architecture) |
 | ⚖️ **Legal writer** | Writes wording that makes a legal promise | fable or opus · high |
 
 These are defaults; change any of them (see [Make it yours](#-make-it-yours)).
