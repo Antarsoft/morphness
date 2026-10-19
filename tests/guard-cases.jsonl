@@ -371,3 +371,7 @@
 {"expect": "deny", "tool": "Bash", "input": {"command": "git status"}, "raw": ""}
 {"expect": "deny", "tool": "Bash", "input": {"command": "git status"}, "raw": "[1, 2]"}
 {"expect": "pass", "tool": "Bash", "input": {"command": "git status"}, "raw": "{}"}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git push origin staging"}, "only": "go-service"}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git push origin HEAD:staging"}, "only": "go-service"}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git push --force origin staging"}, "only": "go-service"}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git push origin feature/staging-banner"}, "only": "go-service"}

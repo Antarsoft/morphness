@@ -154,6 +154,10 @@ def env_line(e):
     return (f"  - {{ name: {e['name']}, branch: {e['branch']}, deploy: {e['deploy']}, "
             f"real_data: {str(e['real_data']).lower()} }}")
 
+def env_block(e):
+    return [f"  - name: {e['name']}", f"    branch: {e['branch']}", f"    deploy: {e['deploy']}",
+            f"    real_data: {str(e['real_data']).lower()}"]
+
 def app_line(a):
     deploy = ", ".join(f"{k}: {v}" for k, v in a["deploy"].items())
     return (f"  - {{ name: {a['name']}, path: {a['path']}, stack: \"{a['stack']}\", e2e: {a['e2e']}, "
@@ -182,7 +186,12 @@ def render_config(t, fx, modules, ci_paths):
         if line.startswith("environments:"):
             while i + 1 < len(lines) and lines[i + 1].startswith("  - "):
                 i += 1
-            out += ["environments:"] + [env_line(e) for e in fx["environments"]] if fx["environments"] else ["environments: []"]
+            if not fx["environments"]:
+                out.append("environments: []")
+            elif fx.get("environments_style") == "block":
+                out += ["environments:"] + [l for e in fx["environments"] for l in env_block(e)]
+            else:
+                out += ["environments:"] + [env_line(e) for e in fx["environments"]]
         elif line.startswith("apps: []") and fx["apps"]:
             out += ["apps:"] + [app_line(a) for a in fx["apps"]]
         elif line.startswith("modules:"):
@@ -511,7 +520,14 @@ def check(name, fx, t):
         bad(f"feature-cost.sh failed: {r.stdout}{r.stderr}")
     # guard hook cases
     branches = {"{I}": fx["branches"]["integration"], "{P}": fx["branches"]["production"]}
+    # config_env_branches lists every environment branch, in flow or block style alike.
+    r = run(["bash", "-c", ". scripts/lib/config.sh; config_env_branches"], t)
+    want = [e["branch"] for e in fx["environments"]]
+    if r.stdout.split() != want:
+        bad(f"config_env_branches printed {r.stdout.split()}, harness.config.yml lists {want}")
     for case in cases:
+        if case.get("only") and case["only"] != name:
+            continue   # "only": "<fixture>" runs a case on that sample project alone
         # "extra" adds top-level event fields (a ConfigChange event has no tool).
         raw = json.dumps({"tool_name": case["tool"], "tool_input": case["input"], **case.get("extra", {})})
         for k, v in branches.items():

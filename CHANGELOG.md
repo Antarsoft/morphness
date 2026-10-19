@@ -6,6 +6,10 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Guard: environment branches are protected whether `environments:` is written as one-line maps or as
+  a block list. `scripts/lib/config.sh` gains `config_env_branches`, and the self-test renders one
+  sample project with a block list.
+
 - Guard: it fails closed. Without `python3`, without `scripts/lib/config.sh`, with a project folder it
   cannot enter, on input that is not a JSON object and on a crash, `scripts/guard.sh` exits 2 with the
   reason instead of letting the call through; `guard: { fail_open: true }` accepts unchecked calls when
