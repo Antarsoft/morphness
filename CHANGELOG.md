@@ -6,6 +6,10 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Trials wait for an escape window: a trial that has run its length is decided only after one prune
+  window of features has finished past its last trial feature, and the decision reads the `Escaped`
+  lines of bug-mode and fix-PR learnings files traced to its features.
+
 - Guard: environment branches are protected whether `environments:` is written as one-line maps or as
   a block list. `scripts/lib/config.sh` gains `config_env_branches`, and the self-test renders one
   sample project with a block list.
