@@ -387,6 +387,18 @@ def check(name, fx, t):
         r = run(["actionlint"], t)
         if r.returncode:
             bad("actionlint:\n" + r.stdout)
+    # 7b. workflows pin every action to a commit and render ci.on_drafts as a boolean
+    for wf in glob.glob(os.path.join(t, ".github/workflows/*.yml")):
+        for m in re.finditer(r"^\s*-?\s*uses:\s*(\S+)", read(wf), re.M):
+            if m.group(1).startswith("./"):
+                continue
+            if not re.fullmatch(r"[\w./-]+@[0-9a-f]{40}", m.group(1)):
+                bad(f"{os.path.relpath(wf, t)}: action not pinned to a commit: {m.group(1)}")
+    ci_wf = os.path.join(t, ".github/workflows/ci.yml")
+    if os.path.exists(ci_wf):
+        drafts = re.search(r"^\s*if: \$\{\{ !github\.event\.pull_request\.draft \|\| (\S+) \}\}", read(ci_wf), re.M)
+        if not drafts or drafts.group(1) not in ("true", "false"):
+            bad(f"ci.yml draft condition is not a rendered boolean: {drafts.group(1) if drafts else 'line not found'}")
     # 8. environments and apps
     if fx["environments"]:
         if fx["environments"][0]["branch"] != cfg("branches.integration"):
@@ -470,12 +482,14 @@ def check(name, fx, t):
     # guard hook cases
     branches = {"{I}": fx["branches"]["integration"], "{P}": fx["branches"]["production"]}
     for case in cases:
-        raw = json.dumps({"tool_name": case["tool"], "tool_input": case["input"]})
+        # "extra" adds top-level event fields (a ConfigChange event has no tool).
+        raw = json.dumps({"tool_name": case["tool"], "tool_input": case["input"], **case.get("extra", {})})
         for k, v in branches.items():
             raw = raw.replace(k, v)
         here = case.get("branch", "feature/selftest")
         for k, v in branches.items():
             here = here.replace(k, v)
+        raw = raw.replace("{ROOT}", t)
         run(["git", "checkout", "-q", "-B", here], t)
         cfg_path = os.path.join(t, "harness.config.yml")
         saved = open(cfg_path, encoding="utf-8").read()

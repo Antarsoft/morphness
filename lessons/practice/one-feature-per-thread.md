@@ -2,7 +2,7 @@
 id: one-feature-per-thread
 title: One feature, one PR per thread
 kind: rule
-target: .claude/rules/technical-lead.md
+target: harness/TECHNICAL_LEAD.md
 in_template: true
 tags: { stack: [], service: [], area: [process, cost] }
 evidence: { fired: 1, features: 153, source: "Twinpage prune audits" }

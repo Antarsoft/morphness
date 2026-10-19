@@ -17,7 +17,7 @@ A retro action item or a prune decision is applied to exactly one owner file ([R
 | How a role works, for any project | `harness/agents/<role>.md` | "QA reports a run only once its new exit file exists" |
 | A value or example that sharpens a kit process rule here (a check interval, the feature that taught it) | `project/PROCESS.md` | "Signs-of-life check every 10 minutes (learned in `<slug>`)" |
 | How a role works here | `project/agents/<role>.md` | "Full-stack captures screenshots at these widths and themes" |
-| A hard limit on the Technical Lead (one line; the how goes to the owner file above, linked) | `.claude/rules/technical-lead.md` | "Set the plan's status in the same turn as the approval" |
+| A hard limit on the Technical Lead (one line; the how goes to the owner file above, linked) | `harness/TECHNICAL_LEAD.md` | "Set the plan's status in the same turn as the approval" |
 | What tests to write | `.claude/rules/testing.md` (generic) or `project/TESTING.md` (this stack) | "A bug fix gets a regression test proven by a negative run" |
 | A structural setting (branches, modules, checks, effort variants, loop limits) | `harness.config.yml`, plus the rendered files that use it | "QA default effort becomes medium" |
 | A model or effort mapping | `project/HARNESS_AGENTS.md` and `.claude/agents/*.md` | "A cheaper Full-stack variant for UI-only features" (as a trial first) |

@@ -26,7 +26,7 @@ jobs:
   tag:
     runs-on: ubuntu-24.04   # pinned: bump it in its own PR
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
 
       # PR titles and bodies are untrusted text: they reach the script only through env and files.
       - name: find the version

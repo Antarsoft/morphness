@@ -10,6 +10,17 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
   a timeout (`MORPHNESS_START_TIMEOUT`, default 300 s), prints the command and the last lines of its
   output on failure, and adds `--ignore-scripts` to npm, pnpm, bun and yarn 1 installs. `scripts/install.sh`
   and `/morph-doctor` check `git`, `python3`, `awk` and `perl` and say what stops working without each.
+- Guard: it protects its own files. An Edit, Write or Bash write to `scripts/guard.sh`,
+  `scripts/session-start.sh`, `scripts/lib/`, `.claude/settings.json` or `harness.config.yml` asks the
+  owner; `.claude/settings.local.json` is denied; a `ConfigChange` hook blocks a mid-session change to
+  the local settings.
+- Supply-chain pins: the catalog lists a pinned commit for every third-party skill and installs from it,
+  `project/SKILLS_AND_MCPS.md` records the commit, `/morph-doctor` diffs installed skills against their
+  source, the CI scaffolds pin `actions/checkout` to a commit, and the self-test checks that every action
+  is pinned and that `ci.on_drafts` renders as a boolean.
+- Agent context: subagents set `omitClaudeMd: true`, the Technical Lead rule moves to
+  `harness/TECHNICAL_LEAD.md` (imported by `CLAUDE.md`, so only the main chat loads it), the researcher
+  agents lose the shell, and a rule says to log long command output and print only the tail.
 
 ## 2026-10-19
 
