@@ -9,6 +9,7 @@ files:
   - harness/SETUP.md
   - harness/HANDOFFS.md
   - harness/README.md
+  - harness/modules/security/README.md
 removed: []
 ---
 
