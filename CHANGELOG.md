@@ -6,6 +6,10 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Session start: the toolchain and install commands are pinned per clone. A pulled change to either
+  makes `scripts/session-start.sh` run nothing and show the old and new commands; the owner confirms
+  in the session and `bash scripts/session-start.sh --accept` records and runs them (an `ask` rule
+  covers that command). `/morph-doctor` reports a held change.
 - Session start: `scripts/session-start.sh` prints the toolchain and install commands, runs them under
   a timeout (`MORPHNESS_START_TIMEOUT`, default 300 s), prints the command and the last lines of its
   output on failure, and adds `--ignore-scripts` to npm, pnpm, bun and yarn 1 installs. `scripts/install.sh`

@@ -63,6 +63,7 @@
       "Bash(git push* +*)"
     ],
     "ask": [
+      "Bash(*session-start.sh --accept*)",
       "Bash(git push)",
       "Bash(git -C * push*)",
       "Bash(gh pr merge*)",

@@ -8,12 +8,32 @@
 # the flag yourself (`--ignore-scripts=false`) or run the install by hand.
 # The install is skipped while the lockfiles and the command are unchanged since its last successful
 # run in this clone (hash in the git folder; delete morphness-install.hash there to force it).
+# The two commands are pinned per clone (the text, in the git folder: morphness-session-commands). The
+# first run in a clone records them; a later run whose commands differ (a pulled branch changed them) runs
+# nothing, prints the old and new commands, and waits: the owner confirms in the session, and only then
+# `bash scripts/session-start.sh --accept` records and runs them. A fresh clone has no pin yet, so the
+# first run there is covered by Claude Code's own trust prompt for the folder, not by this check.
 # Never fails session start: no `set -e`, always exits 0.
 
 cd "${CLAUDE_PROJECT_DIR:-$(pwd)}" || exit 0
 
 TOOLCHAIN_SETUP='{{stack.toolchain_setup}}'
 INSTALL_CMD='{{stack.install_cmd}}'
+
+pin_file="$(git rev-parse --git-path morphness-session-commands 2>/dev/null)"
+if [ -n "$pin_file" ] && [ -n "$TOOLCHAIN_SETUP$INSTALL_CMD" ]; then
+  current="toolchain: $TOOLCHAIN_SETUP"$'\n'"install: $INSTALL_CMD"
+  if [ "$1" = "--accept" ] || [ ! -f "$pin_file" ]; then
+    printf '%s\n' "$current" > "$pin_file" 2>/dev/null
+  elif [ "$(cat "$pin_file" 2>/dev/null)" != "$current" ]; then
+    echo "session-start: NOT RUN. The toolchain and install commands changed since this clone last ran them."
+    echo "  was:"; sed 's/^/    /' "$pin_file"
+    echo "  now:"; printf '%s\n' "$current" | sed 's/^/    /'
+    echo "  Show the owner both versions and ask in this chat whether to run the new commands. Only if the"
+    echo "  owner says yes, run: bash scripts/session-start.sh --accept"
+    exit 0
+  fi
+fi
 
 LIMIT="${MORPHNESS_START_TIMEOUT:-300}"
 TIMEOUT_BIN="$(command -v timeout || command -v gtimeout)"
