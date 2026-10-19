@@ -30,7 +30,7 @@ without a push, and `/morph-doctor` finishes the setup once the project is onlin
 ## 2. Copy without overwriting
 
 Copy every file under `SRC/template/` to the same path in `T`, skipping any file that already exists.
-`SRC/scripts/install.sh --no-clobber <T>` does this and prints what it skipped. For each skipped file:
+`SRC/scripts/install.sh --no-clobber <T>` does this and prints what it skipped. If the permission layer refuses the script or `cp -n` (a project allowlist without `Bash(bash:*)`), ask the owner to allow it once, or copy file by file and skip what exists. For each skipped file:
 
 | File exists | Do |
 |-------------|----|
@@ -133,7 +133,7 @@ host, or `enabled: false`) delete the file, its link in `harness/RELEASE.md` § 
 that file's § Applying it yourself (GitLab: replace it with the protected-branch steps).
 Whatever § 7b can't apply goes in `project/RELEASE.md` § Manual steps and the hand-off: importing the
 ruleset (or setting GitLab's protected branches) and turning on branch deletion after merge. In `.claude/settings.json`, add the same four `git push` deny lines the
-template has for the integration branch for every other environment branch (a middle branch).
+template has for the integration branch for every other environment branch (a middle branch). When integration and production are the same branch, write each pattern once.
 
 `release_tags: per-package`: fill `project/RELEASE.md` § Versions from the tool's config, and in the
 PR template replace `vX.Y.Z` in the Release and Hotfix comments with `YYYY-MM-DD` (a date). With

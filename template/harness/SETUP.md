@@ -153,7 +153,7 @@ Deferred ACs go into the feature's steps file ([HANDOFFS.md](./HANDOFFS.md) § S
 1. `_harness/features/<slug>/1/Plan/feature.md`: human intent.
 2. Technical Lead: `plan.md`, [PLAN_CHECKLIST.md](./PLAN_CHECKLIST.md) → `awaiting-approval`.
 3. Human approves → Technical Lead sets `approved` in `plan.md` and commits → Full-stack implements → `progress.md` complete.
-4. Full-stack `xhigh` (or, with the `security` module, a security feature): Technical Lead review → `Plan/review.md` (§ Code review before QA).
+4. Full-stack `xhigh`<!-- module:security --> (or, with the `security` module, a security feature)<!-- /module:security -->: Technical Lead review → `Plan/review.md` (§ Code review before QA).
 5. QA: `qa-result.md` → pass or fail (within `loop.qa_max_rounds`).
 6. Pass: Technical Lead writes the steps file (or none) → `passed`. Last allowed fail: `failed-escalated`.
 7. Technical Lead: `Plan/retro.md` and the feature's `_harness/learnings/` file (§ Retrospective).
@@ -169,7 +169,7 @@ flowchart TD
   TL --> A{Approved?}
   A -->|no| H
   A -->|yes| FS[Full-stack: code + progress.md]
-  FS --> CR{xhigh or security feature?}
+  FS --> CR{review before QA?}
   CR -->|yes| RV[Tech Lead: code review + review.md]
   RV -->|fix items| RR[Full-stack: review round, same variant]
   RR --> TL2[Tech Lead: handoff to QA]
