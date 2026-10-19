@@ -6,6 +6,11 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Guard: one-command exfiltration. The `.env` check sees through `@` and `<` (`curl -d @.env`), a bare
+  `env` or `printenv` and `/proc/<pid>/environ` are denied, and a new `network` group in `guard:` asks
+  before `curl` or `wget` send a body or a non-GET request to a host outside `localhost` and
+  `guard.allow_hosts`, and before `scp`, `sftp`, `rsync` to another machine, `nc`, `socat`, `telnet`, `ftp`.
+
 - Guard: it protects its own files. An Edit, Write or Bash write to `scripts/guard.sh`,
   `scripts/session-start.sh`, `scripts/lib/`, `.claude/settings.json` or `harness.config.yml` asks the
   owner; `.claude/settings.local.json` is denied; a `ConfigChange` hook blocks a mid-session change to
