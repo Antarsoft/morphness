@@ -172,7 +172,7 @@ markers**; markers of chosen modules stay, so a later removal is just as mechani
   wants to approve case by case).
 - `ci-cd`: copy only the accepted scaffolds from `harness/modules/ci-cd/github/` to `.github/workflows/`
   (GitLab: write the same jobs into `.gitlab-ci.yml`), never over an existing file, and fill them.
-- `browser-e2e`, `legal`, `roadmap`: follow their On install sections.
+- `browser-e2e`, `legal`, `roadmap`, `security`: follow their On install sections.
 
 Without the roadmap module, steps files live at `_harness/features/<slug>/<version>/steps.md`.
 

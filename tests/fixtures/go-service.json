@@ -1,5 +1,5 @@
 {
-  "about": "Go API with a staging environment on the integration branch, ci-cd and claude-projects modules.",
+  "about": "Go API with a staging environment on the integration branch, ci-cd, claude-projects and security modules.",
   "values": {
     "project.name": "ledger-api",
     "project.description": "An HTTP service that records payments.",
@@ -11,7 +11,9 @@
     "cmd.typecheck": "go vet ./...",
     "cmd.lint": "golangci-lint run",
     "cmd.unit": "go test ./...",
-    "cmd.build": "go build ./..."
+    "cmd.build": "go build ./...",
+    "cmd.secrets": "gitleaks git --log-opts=\"origin/develop..HEAD\" --redact --no-banner && gitleaks dir . --redact --no-banner",
+    "cmd.audit": "govulncheck ./..."
   },
   "branches": { "integration": "develop", "production": "main" },
   "environments": [
@@ -20,9 +22,9 @@
     { "name": "production", "branch": "main", "deploy": "workflow", "real_data": true }
   ],
   "apps": [],
-  "modules": ["ci-cd", "claude-projects"],
+  "modules": ["ci-cd", "claude-projects", "security"],
   "checks": {
-    "before_qa": ["install", "typecheck", "lint", "unit", "build"],
-    "before_signoff": ["install", "typecheck", "lint", "unit", "build"]
+    "before_qa": ["install", "typecheck", "lint", "unit", "build", "secrets", "audit"],
+    "before_signoff": ["install", "typecheck", "lint", "unit", "build", "secrets", "audit"]
   }
 }

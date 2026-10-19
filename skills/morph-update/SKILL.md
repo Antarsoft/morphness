@@ -126,8 +126,9 @@ For each accepted kit update:
      for a value you can't find. Show the diff before writing.
    - **New file, unedited file, removal:** as in the table.
 3. **Do the rest of § How to apply:** config keys, rows in `harness/README.md`, a module's
-   § On install, deny rules. Adding a module the project didn't install: also copy every span the
-   template marks `module:<name>` (`harness/README.md` § Modules → **Module markers**) into the
+   § On install, deny rules. Adding a module the project didn't install: follow the morph-module
+   skill § 2 steps 3 to 6 with `HEAD` as its source; in short, copy every span the template marks
+   `module:<name>` (`harness/README.md` § Modules → **Module markers**) into the
    project's copy of the same file, at the place the template has it, and the unmarked lines its
    § On remove lists. A new config key goes into `harness.config.yml` with the template's
    comment and the value the owner chose.

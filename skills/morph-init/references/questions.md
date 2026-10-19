@@ -212,6 +212,20 @@ Skip for internal tools. "Does the product have legal pages, consent or data-han
 the agents might change?" Yes unlocks the legal module and the legal-writer agent's sources (suggest
 `docs/LEGAL.md`). → `modules`, `legal.*`
 
+## Q11b. Security
+
+Skip for a tool with no sign-in, no payments and no data about people. "Does the product have
+sign-in, take payments or keep data about people? The security module adds a short threat model to
+the plan of every feature that changes who can get in or see data, moves money, handles secrets or
+deletes people's data, a security review before testing, and two automatic
+checks on every feature: one looks for passwords and keys left in the code (secret scanning), one
+for libraries with known security holes (dependency audit)." Default yes when the scan finds auth,
+payment or user-data code. Yes unlocks the commands for the two checks: suggest gitleaks for secrets
+and the stack's own audit tool (`npm audit`, `pnpm audit`, `pip-audit`, `govulncheck`, `cargo audit`,
+`bundle-audit`), check whether each is installed (its version command), and say that a missing tool is
+the owner's install; the check is recorded as not run until then. → `modules`, `cmd.secrets`,
+`cmd.audit`, `checks.*`
+
 ## Q12. Models and effort
 
 "Which models should the agents use?" Offer two presets, then show the table for the one picked
@@ -264,7 +278,7 @@ project: { name: "", description: "" }
 humans: [{ name: "", github: "", role: owner }]
 environment: [claude-code-cli]
 stack: { summary: "", package_manager: "", toolchain_setup: "", install_cmd: "" }
-cmd: { install: "", typecheck: "", lint: "", unit: "", build: "", e2e-targeted: "", e2e-full: "", e2e-repeat: "" }  # plus any extra named checks
+cmd: { install: "", typecheck: "", lint: "", unit: "", build: "", e2e-targeted: "", e2e-full: "", e2e-repeat: "", secrets: "", audit: "" }  # plus any extra named checks; secrets and audit with the security module
 checks: { before_qa: [], before_signoff: [] }
 check_scope:   # Q5 follow-up; one entry per check Full-stack may narrow; [] = every check runs in full
   - { check: unit, scope: affected, command: "" }   # scope: full | affected (command) | paths (paths: [globs])

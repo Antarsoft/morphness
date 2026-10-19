@@ -73,7 +73,8 @@ roadmap:
   file: docs/ROADMAP.md
   versions_dir: docs/versions
 
-# Optional modules under harness/modules/: claude-projects, data-access, browser-e2e, legal, roadmap, ci-cd
+# Optional modules under harness/modules/: claude-projects, data-access, browser-e2e, legal, roadmap, ci-cd, security
+# Add or remove one on a live project with /morph-module add|remove <name>.
 modules: [roadmap]
 
 # Named checks. Commands for each name live in project/CONTROLS.md.

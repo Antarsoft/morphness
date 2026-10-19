@@ -14,6 +14,8 @@ The handoff rules (who runs which checks, when, and how the output is logged) ar
 | `e2e-targeted` | `{{cmd.e2e-targeted}}` followed by the specs: the plan's **Targeted e2e specs**, plus the smoke and accessibility specs and every spec the diff adds or edits | yes, for features touching pages, auth or the public API | <!-- module:browser-e2e -->
 | `e2e-full` | `{{cmd.e2e-full}}` | QA, once on the final commit; Full-stack when the plan says `full` or the diff touches a cross-cutting path | <!-- module:browser-e2e -->
 | `e2e-repeat` | `{{cmd.e2e-repeat}}` | yes, when a new or changed browser test uses a fake clock, hover or focus timing: five runs, record the pass count | <!-- module:browser-e2e -->
+| `secrets` | `{{cmd.secrets}}` | yes; the output is redacted and never pasted | <!-- module:security -->
+| `audit` | `{{cmd.audit}}` | yes, when the diff touches a dependency manifest or lockfile (§ Check scope); QA on the final commit | <!-- module:security -->
 <!-- morph-init: fill extra named checks the project adds (also add the name to harness.config.yml → checks). Example: "| `integration` | `make test-integration` | yes, for database features |". A check this project doesn't have gets no row here and no name in `checks` (never "none" or "not configured"); agents then record it as **not run** wherever the kit names it. -->
 
 ## Check scope
@@ -42,6 +44,20 @@ tail -n 30 "$SCRATCH/logs/<check>.log"
 A change to any of these paths can break pages or flows it doesn't name, so it gets `e2e-full` from Full-stack and a full (not scoped) QA round 2.
 
 <!-- morph-init: fill the list. Typical entries: shared packages, the database schema and migrations, the auth and session code, request middleware, the root layout, framework config, the browser-test fixtures and config, the root manifest and lockfile. Example: "`src/db/`, `migrations/`, `src/auth/`, `src/middleware.ts`, `package.json`, the lockfile". -->
+
+<!-- module:security -->
+## Security paths
+
+The code a security feature touches ([harness/modules/security/README.md](../harness/modules/security/README.md) § What counts as a security feature). A change here is a security feature only when it changes one of the behaviours that module section lists.
+
+<!-- morph-init: fill the paths by kind from the repo scan. Example: "Authentication and sessions: `src/auth/`, `src/middleware.ts`. Payments: `src/billing/`, `src/app/api/webhooks/stripe/`. User data: `src/db/schema/users.ts`, the `profiles` and `uploads` tables." Leave "Not set yet: add paths with the first security feature" for a new project. -->
+
+## Security exceptions
+
+Advisories the `audit` check skips, and secret-scan rules turned off, each accepted by the owner. One table row each: `| Id | Package or rule | Why | Approved (who, date) | Review by |`. The audit command skips exactly these ids.
+
+None.
+<!-- /module:security -->
 
 ## Shared resources
 

@@ -4,7 +4,8 @@
 # from skills/morph-init/references/render.md § 7 on the result, the guard hook cases in
 # tests/guard-cases.jsonl, and the template scripts. It catches kit drift: a placeholder render.md
 # doesn't know, a link to a file that moved, a module marker that leaves broken text, a script that
-# no longer runs on a fresh install.
+# no longer runs on a fresh install. It also checks that /morph-module can add any module back: each
+# module has On install and On remove, and each marked span has a unique anchor line above it.
 #
 # Usage: scripts/kit-selftest.sh [fixture ...]   (a name such as python-cli, or a path; default: every
 #   tests/fixtures/*.json)
@@ -77,6 +78,55 @@ m = re.search(r"\*\*Module markers\.\*\*.*?```bash\n(.*?)\n```", harness_readme,
 if not m:
     sys.exit("kit: no module marker command found in template/harness/README.md § Modules")
 MARKER_CMD = m.group(1)
+
+# ---- once: /morph-module can add and remove every module ---------------------------------------
+# It runs each module's On install / On remove, and puts a marked span back right after its anchor
+# (the nearest non-blank line above it in the kit's file that isn't marked for the module), so each
+# anchor must be found exactly once in the file without the module.
+morph_module = open(os.path.join(root, "skills/morph-module/SKILL.md"), encoding="utf-8").read()
+for name in ALL_MODULES:
+    readme = read(os.path.join(template, f"harness/modules/{name}/README.md"))
+    for section in ("## On install", "## On remove"):
+        if section not in readme:
+            failures.append(f"kit: harness/modules/{name}/README.md has no {section} section")
+    if f"`{name}`" not in morph_module:
+        failures.append(f"kit: skills/morph-module/SKILL.md doesn't name the {name} module")
+    opening, closing = f"<!-- module:{name} -->", f"<!-- /module:{name} -->"
+    inline = re.compile(re.escape(opening) + ".*?" + re.escape(closing))
+    for f in files_under(template, exts=".md"):
+        text = read(f)
+        if opening not in text:
+            continue
+        rel = os.path.relpath(f, template)
+        scratch = tempfile.mkdtemp(prefix="morphness-anchor-")
+        os.makedirs(os.path.join(scratch, "harness"))
+        copy = os.path.join(scratch, "harness/file.md")
+        write(copy, text)
+        run(["bash", "-c", MARKER_CMD.replace("m=legal;", f"m={name};", 1)], scratch)
+        without = read(copy).split("\n")
+        shutil.rmtree(scratch)
+        lines, marked, starts, i = text.split("\n"), set(), [], 0
+        while i < len(lines):
+            if lines[i] == opening:
+                if closing not in lines[i:]:
+                    failures.append(f"kit: {rel}: a {name} block opened on line {i + 1} is never closed"); break
+                j = lines.index(closing, i)
+                marked |= set(range(i, j + 1)); starts.append(i); i = j + 1; continue
+            stripped = inline.sub("", lines[i])
+            if opening in stripped:
+                marked.add(i); starts.append(i)
+            elif stripped != lines[i] and without.count(stripped) != 1:
+                failures.append(f"kit: {rel}: the line holding a {name} span isn't unique without it: {stripped[:70]!r}")
+            i += 1
+        for s in starts:
+            if s - 1 in marked:
+                continue
+            a = s - 1
+            while a >= 0 and (not lines[a].strip() or a in marked):
+                a -= 1
+            anchor = inline.sub("", lines[a]) if a >= 0 else None
+            if anchor is None or without.count(anchor) != 1:
+                failures.append(f"kit: {rel}: a {name} span (line {s + 1}) has no unique anchor line above it")
 
 # ---- render ------------------------------------------------------------------------------------
 def remove_module(t, name):

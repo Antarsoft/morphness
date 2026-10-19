@@ -35,6 +35,17 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 - QA's layout pass fails any overflow when the request is about layout or screen size.
 - README: what Morphness adds is process (plan, QA record, audit trail, rules from misses), not a
   smarter model.
+- Security module (optional): features that change who can sign in or read or change data, move
+  money, handle secrets or delete people's data (never small-mode changes) fill a short threat model in `plan.md` § Security, each mitigation tied to a tested acceptance criterion, and get
+  the security review before QA whatever their effort. Two named checks run on every feature:
+  `secrets` (secret scanning, always redacted) and `audit` (the stack's dependency audit, judged only on
+  packages the branch added or upgraded). `/morph-init` asks for it (Q11b) and `/morph-doctor` checks
+  the tools, the commands and accepted advisories past their review date.
+- `/morph-module add|remove <name>`: adds or removes a module on an installed project. It asks the
+  module's install questions, puts its marked text back from the kit (or deletes it), runs On install
+  or On remove, keeps the project's own files unless the owner says otherwise, updates `modules` and
+  runs `/morph-doctor`. The kit self-test now checks every module can be added back (On install and
+  On remove sections, and a unique anchor line for each marked span).
 - Guard hook: `scripts/guard.sh` runs before Bash, file and MCP tool calls and reads commands the way
   the shell does. It blocks pushes to environment branches in every form (a bare `git push` on one,
   `HEAD`, `--all`, inside `bash -c` or `$(…)`), force-pushes, `.env` files other than the example,

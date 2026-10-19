@@ -14,6 +14,8 @@ This is the only file that says which checks run at each handover and which are 
 | `e2e-targeted` | The end-to-end tests that cover what the plan changed (browser-e2e module) |
 | `e2e-full` | The whole end-to-end suite (browser-e2e module) |
 | `e2e-repeat` | A new or changed timing-sensitive end-to-end test passes five runs in a row (browser-e2e module) |
+| `secrets` | No secret is in the branch's commits or working tree (security module) | <!-- module:security -->
+| `audit` | No dependency with a known high or critical advisory is added or upgraded (security module) | <!-- module:security -->
 
 A project may add its own names (for example a schema-drift check or an integration suite) in `harness.config.yml` → `checks` and give each a command in `project/CONTROLS.md`. A named check with no command in this project is recorded as **not run**, never as passed.
 
@@ -91,6 +93,12 @@ With the `data-access` module, QA **must** run [modules/data-access/](./modules/
 
 Record results in `qa-result.md`. Agents never change a shared remote environment.
 <!-- /module:data-access -->
+
+<!-- module:security -->
+### Security checks and features
+
+With the `security` module, `secrets` and `audit` run like any named check, and [modules/security/](./modules/security/README.md) § Named checks says how their results are judged: a secret is never printed, and an `audit` advisory on a dependency the branch didn't add or upgrade is recorded as **pre-existing**, not a fail. A plan with **Security feature: yes** also gets the security review before QA ([SETUP.md](./SETUP.md) § Code review before QA), whatever its effort.
+<!-- /module:security -->
 
 ### Grep as evidence
 

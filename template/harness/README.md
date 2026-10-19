@@ -44,6 +44,7 @@ Switched on in `harness.config.yml` → `modules`. A module that is off is ignor
 | `browser-e2e` | Browser end-to-end and accessibility test rules, targeted vs full suite ([modules/browser-e2e/](./modules/browser-e2e/README.md)) | <!-- module:browser-e2e -->
 | `legal` | The legal-writer flow for legal pages, consent lines and data-handling promises ([modules/legal/](./modules/legal/README.md)) | <!-- module:legal -->
 | `ci-cd` | Pipelines the harness sets up and checks: CI running the named checks on PRs, owner-run deploy and migrations workflows, and release tags from the PR title ([modules/ci-cd/](./modules/ci-cd/README.md)) | <!-- module:ci-cd -->
+| `security` | A threat model in the plan of features that change access, money, secrets or deleting people's data, secret scanning and dependency audit as named checks, and a security review before QA for those features ([modules/security/](./modules/security/README.md)) | <!-- module:security -->
 | `claude-projects` | Running the harness in Claude projects: coordinator, one feature per thread, thread effort ([modules/claude-projects/](./modules/claude-projects/)) | <!-- module:claude-projects -->
 
 **Module markers.** Text in the kit that exists only for one module is marked, so adding or removing a module is mechanical: a block between `<!-- module:<name> -->` and `<!-- /module:<name> -->` lines, the same pair inside a line for part of a sentence, or a line (a table row, a list item) ending in `<!-- module:<name> -->`. To remove a module, delete every marked span and line for it:
@@ -52,7 +53,7 @@ Switched on in `harness.config.yml` → `modules`. A module that is off is ignor
 m=legal; perl -0pi -e "s/^<!-- module:$m -->\n.*?^<!-- \/module:$m -->\n\n?//msg; s/<!-- module:$m -->[^\n]*?<!-- \/module:$m -->//g; s/^[^\n]*<!-- module:$m -->\n//mg" $(grep -rl "module:$m -->" --include='*.md' harness project .github .gitlab 2>/dev/null)
 ```
 
-To add one later, copy each marked span for it from the kit's copy of the same file to the same place. Markers of modules that stay are kept. Always-loaded files (`AGENTS.md`, `CLAUDE.md`, `.claude/rules/`), `harness.config.yml` and code blocks carry no markers; each module's § On remove lists their lines.
+To add or remove one on a live project, run `/morph-module add <name>` or `/morph-module remove <name>`: it runs the module's On install or On remove steps, copies each marked span back from the kit's copy of the same file to the same place (adding) or deletes them with the command above (removing), updates `modules`, and runs `/morph-doctor`. Markers of modules that stay are kept. Always-loaded files (`AGENTS.md`, `CLAUDE.md`, `.claude/rules/`), `harness.config.yml` and code blocks carry no markers; each module's § On remove lists their lines.
 
 ## Rule owners
 

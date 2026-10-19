@@ -32,6 +32,23 @@ Each framework or library behaviour the plan depends on, with the source that co
 - **Removed client checks:** for each step that removes or bypasses a client-side check, what the server does with the same input, with the `file:line`. "None" if no checks are removed.
 - **Enforcement:** for each new limit or permission, every write path that could bypass it (server handlers, background jobs, direct database or storage APIs) and what blocks each one. Where access depends on who the caller is, also how that identity is verified (session check, signed token, allow-list). "None" if no new limits or permissions.
 
+<!-- module:security -->
+## Security
+
+- **Security feature:** yes | no. Yes when the change alters who can sign in or read or change data, moves money, handles secrets, or deletes people's data (`harness/modules/security/README.md` § What counts as a security feature; this project's code: `project/CONTROLS.md` § Security paths). Touching user data alone is not enough. For **no**, delete the rest of this section.
+- **Assets:** what an attacker would want from this change.
+- **Entry points:** each new or changed route, handler, job, webhook, form or upload, and who can reach it.
+- **Identity and ownership:** how each entry point knows the caller and checks they may touch the record, with `file:line`.
+- **Threats and mitigations:**
+
+  | # | Entry point | Threat | Mitigation | AC |
+  |---|-------------|--------|------------|----|
+  | 1 | | | | |
+
+- **Secrets:** each new secret, where it lives and who sets it (never a value). "None" if none.
+- **Accepted risks:** what is left open on purpose and why; the owner accepts them with the plan. "None" if none.
+
+<!-- /module:security -->
 ## Implementation steps
 
 ### Phase 1 (optional)
@@ -65,6 +82,7 @@ Pick per feature; the human approves it with the plan. Levels and criteria: `har
 - **Full-stack:** medium | high | xhigh (or a trial variant from `_harness/trials/`): one-line reason. A `medium` plan names the file it copies.
 - **QA:** medium | high: one-line reason.
 - **Code review before QA:** yes (Full-stack xhigh) | no. See `harness/SETUP.md` § Code review before QA.
+- **Security review before QA:** yes (Security feature: yes, or Full-stack xhigh on a risk area) | no. <!-- module:security -->
 
 ## Acceptance criteria
 
