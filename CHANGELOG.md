@@ -6,6 +6,14 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Guard: the CLI guard is inverted. `scripts/guard.sh` asks before any call to a known deploy, cloud or
+  database CLI (wrangler, netlify, fly, railway, heroku, gcloud, aws, az, kubectl, helm, pulumi, terraform,
+  firebase, stripe, psql, mysql, mongosh, redis-cli and more, also behind npx and pnpm exec) unless a read
+  verb (`get`, `list`, `status`, `plan` ...) is the only action, a local database host is the target, or
+  `--dry-run` / `--help` is given. It also asks before `gh pr merge`, `gh release`, `gh workflow run`,
+  `gh repo delete`, `gh auth token`, any `gh api` write and a GraphQL mutation, and before `docker push`,
+  `twine upload`, `gem push` and other publishes. `guard.deploys` and `guard.schema_pushes` turn the asks off.
+
 - Trials wait for an escape window: a trial that has run its length is decided only after one prune
   window of features has finished past its last trial feature, and the decision reads the `Escaped`
   lines of bug-mode and fix-PR learnings files traced to its features.
