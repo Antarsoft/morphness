@@ -133,7 +133,6 @@
 {"expect": "ask", "tool": "Bash", "input": {"command": "vercel deploy"}}
 {"expect": "ask", "tool": "Bash", "input": {"command": "npx vercel env update X"}}
 {"expect": "pass", "tool": "Bash", "input": {"command": "vercel env ls"}}
-{"expect": "pass", "tool": "Bash", "input": {"command": "vercel env pull"}}
 {"expect": "pass", "tool": "Bash", "input": {"command": "vercel domains ls"}}
 {"expect": "pass", "tool": "Bash", "input": {"command": "vercel dns ls x.com"}}
 {"expect": "pass", "tool": "Bash", "input": {"command": "vercel project inspect x"}}
@@ -464,3 +463,55 @@
 {"expect": "pass", "tool": "Bash", "input": {"command": "echo x >> out.log"}}
 {"expect": "pass", "tool": "Read", "input": {"file_path": "~/.bashrc"}}
 {"expect": "pass", "tool": "Read", "input": {"file_path": "./.claude/rules/harness.md"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "gh pr merge 12 --squash"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "gh api graphql -f query='mutation { mergePullRequest(input:{pullRequestId:\"x\"}) { clientMutationId } }'"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "gh api -X POST repos/o/r/dispatches -f event_type=deploy"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "gh repo delete o/r --yes"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "gh release create v1"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "gh workflow run deploy.yml"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "gh auth token"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "vercel env pull"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "wrangler kv:key put --binding X k v"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "fly secrets set K=v"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "railway up"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "heroku config:set K=v"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "gcloud run deploy svc --image x"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "aws s3 sync . s3://bucket --delete"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "aws s3 rb s3://bucket --force"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "aws lambda update-function-code --function-name f --zip-file fileb://x.zip"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "pulumi up -y"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "kubectl delete deployment api -n prod"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "docker push ghcr.io/o/img:latest"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "twine upload dist/*"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "gem push x.gem"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "supabase secrets set K=v"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "npx prisma migrate reset --force"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "psql \"$DATABASE_URL\" -c 'drop table users'"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "psql postgres://u:p@db.prod.example/app -c 'delete from users'"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "mysql -h prod.db -e 'drop database app'"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "mongosh \"$MONGO_URL\" --eval 'db.dropDatabase()'"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "redis-cli -h prod FLUSHALL"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "stripe customers delete cus_x"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "vercel pull"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "terraform apply -auto-approve"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "aws s3 cp x s3://b/x"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "psql -h prod.db -c 'drop table t'"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "gh api -X DELETE repos/o/r/git/refs/heads/x"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "npx wrangler deploy"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "aws s3 ls"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "aws sts get-caller-identity"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "kubectl get pods -n prod"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "fly status"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "heroku logs --tail"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "wrangler --version"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "vercel ls"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "terraform plan"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "psql -c 'select 1'"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "redis-cli ping"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "gh pr view 12"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "gh release list"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "docker build -t x ."}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "helm list"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "stripe customers list"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "pulumi preview"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "psql -h prod.db -c 'select 1'"}}
