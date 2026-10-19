@@ -10,9 +10,15 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
   firebase, netlify, `supabase functions deploy`, `prisma db push`, `drizzle-kit push`,
   `terraform apply`, `kubectl apply`, `helm upgrade`, `npm publish`, `cargo publish`) and before `gh api`
   writes to git refs and merges. AGENTS.md says plainly that the guard stops accidents, not intent.
+- Agent wrappers always read the ownership and remote-environment sections; the last copies of the old small-mode test, entry format and guard message wording point at their single source; install notes for duplicate deny lines and a refused no-clobber copy.
+- The guard hook checks the allowed Morphness `curl` read: only `-f -s -S -L` and URLs under the two
+  Morphness prefixes pass silently; writing a file, another method, a body, headers, a config file or
+  another URL asks first.
 - `prune-counter.sh` prints only `Prune proposal waiting: <path>` while a prune proposal waits for the
   owner, no `Prune is DUE` line, so a Technical Lead following the hand-off bullet writes no second
   proposal. The prune template's **Status** can be `declined`.
+- Security module wording in the Technical Lead rule, `SETUP.md` and `HANDOFFS.md` is marked, so a
+  project without the module doesn't load it; the self-test fails when module text is left behind.
 - Small, bug and security wording lined up across the rules, plans and agent bodies (small plan QA scope
   and limit, security review on bug plans, full-mode-only sections marked, lighter agent reads and QA
   layout pass); `prune-counter.sh` shows a waiting prune proposal.
