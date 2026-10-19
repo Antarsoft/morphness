@@ -23,7 +23,7 @@ after the owner's yes.
 github.com/antarsoft/morphness (or the fork `installed_from.repo` names); it executes nothing and
 falls back to a local copy. Every request is a read (§ 1 step 2): nothing fetched is run, piped into
 a shell or saved as code, and no account or token is needed. `harness.config.yml` →
-`updates.source: local` turns the GitHub reads off.
+`updates.source: local` (the top-level `updates` key, not `installed_from.updates`) turns the GitHub reads off.
 
 **Listing only.** When called for a listing (a prune's upstream check, `/morph-doctor`, or the user
 asks "what's new?"), do § 1 and § 2 and stop: change nothing, write nothing.
@@ -37,7 +37,7 @@ asks "what's new?"), do § 1 and § 2 and stop: change nothing, write nothing.
    (no key: `github`). `REPO` is `installed_from.repo` (default `https://github.com/antarsoft/morphness`),
    written below as `<owner>/<repo>`.
    - **`github` (the default): read it from GitHub, no clone.** Use only these read-only requests.
-     When `gh` is signed in (`gh auth status`), make each one as `gh api --method GET <path>`, with
+     When `gh` is signed in (`gh auth status` succeeds; a failing one, such as an invalid `GH_TOKEN`, means use curl), make each one as `gh api --method GET <path>`, with
      `<path>` the URL below after `https://api.github.com/`, and read a file's text as
      `gh api --method GET repos/<owner>/<repo>/contents/<path>?ref=<ref> -H "Accept: application/vnd.github.raw"`.
      Otherwise use `curl -fsSL <url>` on exactly the URLs below, nothing else. Both only print text:
@@ -64,8 +64,8 @@ asks "what's new?"), do § 1 and § 2 and stop: change nothing, write nothing.
      (a prune), list against the clone as it is, say the date of its newest commit
      (`git -C <folder> log -1 --format=%cs`) and put the pull in the listing as a question. A shallow
      clone won't do: the merge base is an older commit (`git -C <folder> rev-parse
-     --is-shallow-repository` must print `false`). Call it `SRC`, and `HEAD` its newest commit on the
-     default branch. With neither GitHub nor a clone, a listing says "upstream not checked".
+     --is-shallow-repository` must print `false`). Call it `SRC`. `HEAD` is the newest release tag's commit, as on GitHub (release tags sorted as
+     below; `git -C "$SRC" tag`), so notes merged after the last release stay unreleased and aren't offered. With neither GitHub nor a clone, a listing says "upstream not checked".
 
    The rest of this skill reads upstream through three operations: **`list(ref)`**, every file path
    at a ref; **`read(ref, path)`**, a file's text; **`exists(ref)`**, whether a commit or tag is
@@ -111,16 +111,25 @@ substance or by `(lesson: <id>)` provenance. Also list lessons this project adop
 `_harness/morph-answers.yml` § accepted, or `(lesson: <id>)` in its files) that are now
 `status: superseded`, with the lesson that replaces them.
 
-**For each kit update, classify its files** (paths relative to `template/` and to `T`):
+**For each kit update, classify its files** (paths relative to `template/` and to `T`). The project's
+files were rendered from the template when it was installed, so compare like with like: call
+`RB` and `RH` the template at `BASE` and at `HEAD` rendered the way this project's copy was
+(render.md § 3 and § 3b: fill `{{key}}` from `harness.config.yml`, `project/*` and
+`_harness/morph-answers.yml`; strip the spans marked for modules the project doesn't have with the
+command in `harness/README.md` § Modules → **Module markers**, and unlink their links; drop rows of
+named checks it doesn't have). A file with no placeholder, fill comment or module marker outside a
+code block renders to itself.
 
 | Case | Test | What applying does |
 |------|------|--------------------|
-| New file | not at `T/<path>` | Copy it (render it first if it has placeholders). |
-| Unedited here | `T/<path>` equals `read(BASE, template/<path>)` | Take the `HEAD` version as is. |
-| Edited here | differs from `BASE`'s version | Three-way merge (§ 3). |
-| Rendered | `BASE`'s version contains `{{` or `morph-init: fill` | Apply the template's diff by hand (§ 3). |
-| Removed upstream | listed under `removed` | Delete only when unedited here; otherwise keep it and say so. |
-| Module not enabled | under `harness/modules/<name>/` for a module not in `modules` | Skip unless the note offers that module. |
+| New file | not at `T/<path>` | Copy `RH` (a project that deleted a file on purpose: ask before bringing it back). |
+| Unedited here | `T/<path>` equals `RB` | Take `RH` as is. |
+| Edited here | differs from `RB` | Three-way merge of `T`, `RB` and `RH` (§ 3). Text the project already filled in (a fill comment turned into prose or "Not set yet") is the project's, not an upstream change. |
+| Moved | the note lists it under `moved:` as `old -> new` | Merge `T/<old>` (the project's edits) with `RB` of `<old>` and `RH` of `<new>`, write the result to `T/<new>`, delete `T/<old>`. |
+| Removed upstream | listed under `removed` (and not `moved`) | Delete only when unedited here; otherwise keep it and say so. |
+| Gone at `HEAD` | listed, but not in `list(HEAD)` | Skip it: a later note removes or moves it, and that note's row applies. |
+| Module not enabled | under `harness/modules/<name>/`, or named in that module's `## On remove` → **Delete these files** at `HEAD`, for a module not in `modules` | Skip unless the note offers that module. |
+| Scaffold | `harness/modules/ci-cd/github/<name>.yml` | Update the scaffold copy as above, and apply the same change to the live `.github/workflows/<name>.yml` (the path `ci_cd` records), keeping the project's own steps and its filled-in lines; none when `ci_cd` says `none` for it. |
 
 **Show the list**, worst first: fixes (`kind: fix`), then other kit updates oldest first, then
 superseded lessons, then new lessons. One short block per item:
@@ -137,33 +146,47 @@ Otherwise ask, per item or in one answer: **apply**, **decline** (never offered 
 ## 3. Apply what the owner accepts
 
 Work on a branch: `morph/update-<YYYY-MM-DD>` from the integration branch (or the only branch). Never
-commit to the integration or production branch directly. Apply notes oldest first, one commit per
-note (`Apply Morphness update <id>`) and one commit for all lessons.
+commit to the integration or production branch directly.
+
+**Order.** Oldest first: by the note's `release`, then its id, then any note it says it builds on.
+
+**Merge each file once, not once per note.** `BASE` to `HEAD` is one change per file, with every
+note's hunks in it. Do the file merges of all accepted notes in one pass (a file several notes list
+is merged once, and a note that finds it already matching `HEAD` has nothing left to merge for it),
+and commit them as `Apply Morphness kit updates: files`. If the owner declined or put off a note that
+lists the same file, show which hunks belong to which note (their *What changed* sections say) and
+leave the declined note's hunks out by hand. Then do each accepted note's other steps (below), one
+commit per note (`Apply Morphness update <id>`), and one commit for all lessons. A note's steps can
+rely on files another note brings: the file pass comes first for that reason.
 
 For each accepted kit update:
 
 1. **Ask what the note needs first.** Its § How to apply may name questions (a morph-init question
    for a new module): ask them one at a time with a suggestion, as morph-init does. If the answers
    mean nothing should be written (no to every pipeline), record the note as declined and move on.
-2. **Merge each file** by its case from § 2:
+2. **Merge each file** by its case from § 2 (once, in the file pass above):
    - **Edited here:** `git merge-file -p T/<path> <base copy> <HEAD copy>` with the two template
      versions (`read(BASE, …)` and `read(HEAD, …)`, or a deferred note's own base) written to
-     temporary text files outside the repository, deleted afterwards and never run. A clean merge: show the diff against the project's file
+     temporary text files outside the repository, deleted afterwards and never run (`RB` and `RH`
+     of § 2, not the raw template, whenever the file is rendered). A clean merge: show the diff against the project's file
      and write it on the owner's yes. Conflicts: resolve them yourself so the project's own rules
      survive (a rule with provenance such as `(from <feature-slug>, <date>)`, `(feature-slug)` or `(lesson: <id>)` is never dropped)
      and the upstream change is added around them; show the result and the reasoning, and write it
      only on the owner's yes. When the upstream change contradicts a local rule, don't pick: show
      both and let the owner decide.
-   - **Rendered:** take the diff between `read(BASE, template/<path>)` and `read(HEAD, template/<path>)`
-     (`diff -u` of the two temporary copies) and make the same change in the
-     project's file, filling any new `{{key}}` from `harness.config.yml`, `project/*` and
-     `_harness/morph-answers.yml` (the keys are in `skills/morph-init/references/render.md` § 3). Ask
-     for a value you can't find. Show the diff before writing.
+   - **Rendered files** (placeholders, fill comments or module markers): the merge above runs on
+     `RB` and `RH`. A new `{{key}}` is filled from `harness.config.yml`, `project/*` and
+     `_harness/morph-answers.yml` (the keys are in `skills/morph-init/references/render.md` § 3); ask
+     for a value you can't find. In `harness.config.yml` add the upstream's new keys and comments, and
+     never change a value the owner may have chosen (models, branches, checks, `risk_areas`, `modules`) unless the
+     note's own owner question is accepted: a note that only suggests a new default (a model switch) leaves
+     the existing values alone. Show the diff before writing.
    - **New file, unedited file, removal:** as in the table.
 3. **Do the rest of § How to apply:** config keys, rows in `harness/README.md`, a module's
    § On install, deny rules. Adding a module the project didn't install: follow the morph-module
    skill § 2 steps 3 to 6 with `HEAD` as its source (template files from
-   `read(HEAD, template/<path>)`); in short, copy every span the template marks `module:<name>`
+   `read(HEAD, template/<path>)`), and take the marked spans from every file at `HEAD` that holds
+   `module:<name>`, not only the files the note lists; in short, copy every span the template marks `module:<name>`
    (`harness/README.md` § Modules → **Module markers**) into the project's copy of the same file, at the place the template has it, and the unmarked lines its
    § On remove lists. A new config key goes into `harness.config.yml` with the template's
    comment and the value the owner chose.
@@ -173,7 +196,7 @@ this project's better owner per `harness/MORPHING.md` § Where a lesson lands), 
 `(lesson: <id>)`, and add its id to `_harness/morph-answers.yml` § accepted. For a superseded lesson
 the owner wants replaced, swap the rule text in place and change its provenance to the new id.
 
-Never touch `_harness/` history (features, learnings, prunes, releases), and never rewrite a
+Never touch `_harness/` history (features, learnings, prunes, releases); the kit's own files in that folder (the READMEs) merge like any other file. Notes skipped because their module isn't enabled aren't recorded: adding the module later takes its files from `HEAD` whole. `_harness/morph-answers.yml` may not exist yet: create it with the first answer you record. Never rewrite a
 project file's content beyond the change being applied.
 
 ## 4. Record and check

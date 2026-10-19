@@ -32,6 +32,8 @@ files:
   - scripts/prune-counter.sh
 removed:
   - .claude/rules/technical-lead.md
+moved:
+  - .claude/rules/technical-lead.md -> harness/TECHNICAL_LEAD.md
 ---
 
 ## What changed

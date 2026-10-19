@@ -31,6 +31,7 @@ offer_module: ci-cd              # kind module only: the module this note adds, 
 files:                           # every template/ path it adds or changes, relative to template/
   - harness/modules/ci-cd/README.md
 removed: []                      # template/ paths it deletes, if any
+moved: []                        # "old/path -> new/path" for a file that moved; the old path is also under removed, the new one under files
 ---
 
 ## What changed

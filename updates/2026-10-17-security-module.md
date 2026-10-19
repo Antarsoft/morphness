@@ -16,6 +16,10 @@ files:
   - project/CONTROLS.md
   - .claude/rules/technical-lead.md
   - harness.config.yml
+  - harness/HANDOFFS.md
+  - harness/MODES.md
+  - harness/TECHNICAL_LEAD.md
+  - harness/templates/bug-plan.md
 removed: []
 ---
 
