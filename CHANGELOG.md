@@ -4,7 +4,26 @@ Dated releases, newest first. Installed copies pick up kit changes (each with a 
 [updates/](updates/)) and new matching lessons through `/morph-update`; this file lists every change.
 When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
-## Unreleased
+## 2026-10-19.3
+
+- Guard: more of the ways around it now ask or deny instead of running. `scripts/guard.sh` asks before a shell reads
+  its commands from a pipe, a here-string or a here-document, a command name built at run time (`$cmd push`), an
+  `alias`, `xargs` starting a shell, a Python, Node or Ruby one-liner that starts another process, and a file the same
+  command wrote and then runs. It asks before code that `curl` or `wget` fetches and a shell runs (`curl … | sh`,
+  `sh -c "$(curl …)"`, `source <(curl …)`), also from an allowed host; before a package runner downloads a package that
+  is not installed (`npx`, `bunx`, `pnpm dlx`, `uvx`, and `skills add`); before a `make`, package or script file named for a
+  deploy, release or publish; before `ssh`; before `git reset --hard` and `git clean -f`; and before the file tools write
+  outside the project and `/tmp`, a CI definition (`.github/workflows`), `.git/hooks` or `.git/config`. It denies a
+  secret file name stored in a variable (`f=.env; cat $f`), a recursive `grep -r` or `rg --hidden` over a folder that
+  holds a secret file unless it excludes it, and an environment branch in capitals (`git push origin Main`); `timeout`,
+  `nice -n`, `stdbuf` and `sudo -u` no longer hide the command behind them, and `bash -lc '…'` is read like `bash -c`. A new
+  `guard.installs` switch turns the package-runner asks off. `AGENTS.md` § Permissions for this project lists what is still
+  not seen (a script file written in an earlier call, `npm install` of a named package, interpreter code that decodes
+  itself, `WebFetch`).
+
+- Kit self-test checks § references and config keys. `scripts/kit-selftest.sh` now fails when a `file § Heading` reference in the template, skills or docs names a heading (or bold lead-in) that file doesn't have, when a doc or script names a config key (`loop.prune_every`, `config_get guard.deploys`) that `template/harness.config.yml` lacks, and when a key in that file is named nowhere in the kit. `/morph-update` now writes the `installed_from.updates.*` keys by their full path.
+
+- Updating an older install: `/morph-update` now compares and merges against the template rendered for the project (module spans stripped, placeholders filled), so module-marked files no longer look edited or conflict. File merges run once per file in one pass, notes are ordered by release then id, and a note can declare a moved file (`moved:` in `updates/`, used for the Technical Lead rule) so the project's edits follow it to the new path. Files of a module the project doesn't have (such as the legal writer agent) are skipped, a CI workflow scaffold update is applied to the live `.github/workflows` file, config values the owner chose are kept, and a local clone offers released notes only, like the GitHub source. The kit self-test now installs the previous release into each sample project and brings it up to date, with and without local edits.
 
 ## 2026-10-19.2
 
