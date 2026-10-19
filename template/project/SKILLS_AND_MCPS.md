@@ -12,9 +12,9 @@ Generic guidance (when to use a skill, an MCP or the repo's own docs): [harness/
 
 ## Installed (repo)
 
-| Skill | Path |
-|-------|------|
-<!-- morph-init: fill each skill installed in the repo and its path (for example `.agents/skills/<name>/`, with `.claude/skills` as a symlink to it). Write "None yet" when there are none. -->
+| Skill | Path | Source and pinned commit |
+|-------|------|--------------------------|
+<!-- morph-init: fill each skill installed in the repo, its path (for example `.agents/skills/<name>/`, with `.claude/skills` as a symlink to it) and where it came from as `<owner/repo>@<full 40-character commit>` (the commit it was installed from, per morph-init's catalog.md; a skill the owner named themselves gets the commit they confirm, or "unpinned (owner's choice)"). Write "None yet" when there are none. -->
 
 ## MCPs
 

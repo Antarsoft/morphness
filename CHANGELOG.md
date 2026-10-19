@@ -6,6 +6,11 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Supply-chain pins: the catalog lists a pinned commit for every third-party skill and installs from it,
+  `project/SKILLS_AND_MCPS.md` records the commit, `/morph-doctor` diffs installed skills against their
+  source, the CI scaffolds pin `actions/checkout` to a commit, and the self-test checks that every action
+  is pinned and that `ci.on_drafts` renders as a boolean.
+
 ## 2026-10-19
 
 - Retro wording: the retro template has a Cause column and the `cause: environment` and "why not a
