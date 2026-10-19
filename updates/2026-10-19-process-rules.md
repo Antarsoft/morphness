@@ -25,9 +25,9 @@ removed: []
 
 ## Why
 
-In a benchmark run, the retro turned a session's command limits into permanent project rules and
-approved them itself, and two agents counted a different command as a pass after their lint command
-was refused. Across the older features, the rules that held changed how something works; the ones
+In a headless run, the retro turned a session's command limits into permanent project rules and
+approved them itself, and agents counted a different command as a pass after their lint command
+was refused. Across older features, the rules that held changed how something works; the ones
 that were sentences asking an agent to remember something saw the problem return.
 
 ## How to apply

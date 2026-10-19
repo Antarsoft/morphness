@@ -98,7 +98,7 @@ ci_cd:
   migrations: none
   tags: none
 
-# Areas where a change to their behaviour gets full mode, never medium effort (e.g. auth, billing, migrations). A security review before QA comes with `xhigh` effort, or, with the security module, for any change that is a security feature.
+# Areas where a change to their behaviour gets full mode, never medium effort (e.g. auth, billing, migrations). When a security review runs before QA: `harness/SETUP.md` § Code review before QA.
 # A fully specified change that alters none of that behaviour still uses small mode (harness/MODES.md § Small mode).
 risk_areas: []
 

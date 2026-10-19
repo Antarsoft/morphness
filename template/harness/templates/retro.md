@@ -42,13 +42,13 @@ Tag each finding with its cause: `plan gap` | `implementation` | `environment` |
 
 ## Action items (usually up to `loop.retro_max_items`; decided by the TL)
 
-Only as many as the findings call for: "None" is a normal answer, and items are never padded to reach a number. More than `loop.retro_max_items` is fine when each extra item comes from a different finding; add one line under the table saying why this feature needed more (`harness/SETUP.md` § Retrospective → How many items). **Why raised** names the finding the item answers (`What to improve #N`, or an Answers line) and its evidence (a QA round, a human correction, a cost figure, a file). No finding, no item.
+Only as many as the findings call for: "None" is a normal answer, and items are never padded to reach a number. More than `loop.retro_max_items` is fine when each extra item comes from a different finding; add one line under the table saying why this feature needed more (`harness/SETUP.md` § Retrospective → How many items). **Cause** is the tag of the finding the item answers. An item that adds a sentence to a rule, checklist or agent body says in its **Action** why a script, hook, test or check can't do the job instead (`harness/SETUP.md` § Retrospective → Mechanism over memo). **Why raised** names the finding the item answers (`What to improve #N`, or an Answers line) and its evidence (a QA round, a human correction, a cost figure, a file). No finding, no item.
 
-The TL proposes and decides each item (`harness/SETUP.md` § Retrospective → Per-feature review). An item that adds a step for the human, changes product behaviour or customer-facing copy, or costs money still goes to the human. Where each lands: `harness/MORPHING.md` § Where a lesson lands.
+The TL proposes and decides each item (`harness/SETUP.md` § Retrospective → Per-feature review). An item that adds a step for the human, changes product behaviour or customer-facing copy, costs money, or is tagged `cause: environment` still goes to the human (it never becomes a rule on the TL's own yes; the owner writes any `settings.local.json` change themself). Where each lands: `harness/MORPHING.md` § Where a lesson lands.
 
-| # | Type (Code/Doc/Harness/Process) | Action | Why raised | Lands in | Decision |
-|---|------|--------|------------|----------|----------|
-| 1 | | | What to improve #N: <evidence> | | approve · skip (why) · defer |
+| # | Type (Code/Doc/Harness/Process) | Cause | Action | Why raised | Lands in | Decision |
+|---|------|-------|--------|------------|----------|----------|
+| 1 | | plan gap · implementation · environment · process | | What to improve #N: <evidence> | | approve · skip (why) · defer |
 
 Routing:
 

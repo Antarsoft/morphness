@@ -141,4 +141,4 @@ This leaves the same gap a conflict-free PR has (the host merges it without test
 ## Notes
 
 - QA records the checks run, with commands and exit codes, in `qa-result.md`.
-- If a check has no command or a script is missing, mark it **not run**; do not claim coverage. A check the environment refused to run (a denied command, no permission) is **not run** too, with the refusal recorded; never swap in a different command and count it as a pass (learned: two agents counted an "equivalent" for a refused lint command).
+- If a check has no command or a script is missing, mark it **not run**; do not claim coverage. A check the environment refused to run (a denied command, no permission) is **not run** too, with the refusal recorded; never swap in a different command and count it as a pass (learned: an agent counted an "equivalent" for a refused lint command).
