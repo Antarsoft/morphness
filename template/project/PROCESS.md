@@ -4,6 +4,6 @@ The process is the kit's ([harness/SETUP.md](../harness/SETUP.md), [harness/TECH
 
 Group lines under the kit file and section they sharpen, for example:
 
-> **TECHNICAL_LEAD.md § Must do (signs of life).** Check every 10 minutes (5 until <date>; learned in `<feature-slug>`).
+> **TECHNICAL_LEAD.md § Must do (background agents).** Read the plan's phase list before relaunching (learned in `<feature-slug>`).
 
 None yet.

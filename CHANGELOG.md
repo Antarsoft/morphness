@@ -11,6 +11,9 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
   reason instead of letting the call through; `guard: { fail_open: true }` accepts unchecked calls when
   `python3` is missing. `/morph-doctor` says so.
 
+- The prune counter no longer fetches at every hand-off (`PRUNE_FETCH=1` opts in), counts only date-named
+  proposal files, and exits 1 when a size budget is over and no proposal is open; the Technical Lead waits
+  for a background agent's completion notification instead of polling it every 10 minutes.
 - Session start: the toolchain and install commands are pinned per clone. A pulled change to either
   makes `scripts/session-start.sh` run nothing and show the old and new commands; the owner confirms
   in the session and `bash scripts/session-start.sh --accept` records and runs them (an `ask` rule

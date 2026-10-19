@@ -7,6 +7,8 @@
 # into every session (CLAUDE.md, the files it imports with `@`, and each .claude/rules/*.md without a
 # `paths:` line) against loop.rule_budget_kb, and the plan checklists and project/*.md against theirs.
 # Each active trial (_harness/trials/*.md) gets a line with how many of its features have run.
+# Exits 1 when a size budget is over and no prune proposal is open: the hand-off waits for the
+# proposal (harness/SETUP.md § Prune). Every other case exits 0.
 # Usage: bash scripts/prune-counter.sh [--prune]   (from anywhere in the repo; read-only)
 #   --prune  also print what a prune reads (harness/SETUP.md § Prune): one trend line for the window
 #            (rework rounds, QA fails, cost), each trial's numbers, and every rule tagged
@@ -18,9 +20,12 @@ cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)" || exit 1
 threshold="$(config_get loop.prune_every)"
 case "$threshold" in ''|*[!0-9]*) threshold=10 ;; esac
 integration="$(config_get branches.integration)"
+# The integration branch is fetched only when asked for (PRUNE_FETCH=1), so a hand-off never waits on
+# the network; otherwise the last fetched origin/<integration> is used when it exists.
 
 files="$(ls _harness/learnings/*-v*.md 2>/dev/null | sed 's|.*/||')"
-if [ -n "$integration" ] && git fetch -q origin "$integration" 2>/dev/null; then
+if [ -n "$integration" ] && { [ "${PRUNE_FETCH:-}" != 1 ] || git fetch -q origin "$integration" 2>/dev/null; } \
+  && git rev-parse -q --verify "origin/$integration" >/dev/null 2>&1; then
   learnings_at() {
     git ls-tree --name-only "$1" _harness/learnings/ 2>/dev/null | sed 's|.*/||' | grep -E -- '-v.*\.md$'
   }
@@ -32,7 +37,7 @@ if [ -n "$integration" ] && git fetch -q origin "$integration" 2>/dev/null; then
   fi
   files="$(printf '%s\n%s\n' "$files" "$(learnings_at "origin/$integration")")"
 else
-  echo "(integration branch not fetched; counting this branch only)" >&2
+  echo "(origin/$integration not fetched; counting this branch only. PRUNE_FETCH=1 fetches it)" >&2
   integration=""
 fi
 count="$(printf '%s\n' "$files" | grep . | sort -u | wc -l | tr -d ' ')"
@@ -70,12 +75,15 @@ echo "Project docs: $(kb "$dbytes")/$dbudget KB"
 # A proposal still open (proposed: the owner hasn't decided; approved: decided, cuts not applied yet):
 # the hand-off names it instead of writing another. A declined one is closed by prune step 6 (fold, reset).
 waiting=""
-for f in $(ls _harness/prunes/*.md 2>/dev/null | grep -v '/README\.md$' | sort); do
+for f in $(ls _harness/prunes/*.md 2>/dev/null | grep -E '/[0-9]{4}-[0-9]{2}-[0-9]{2}[^/]*\.md$' | sort); do
   if grep -q -E '^\*\*Status:\*\*[[:space:]]*proposed[[:space:]]*$' "$f"; then waiting="$f"
   elif grep -q -E '^\*\*Status:\*\*[[:space:]]*approved[[:space:]]*$' "$f"; then waiting="$f (approved, cuts not applied yet)"
   fi
 done
 due=""
+over=0
+if [ "$bytes" -gt $((budget * 1024)) ] || [ "$cbytes" -gt $((cbudget * 1024)) ] || [ "$dbytes" -gt $((dbudget * 1024)) ]; then over=1; fi
+if [ -f harness/TECHNICAL_LEAD.md ] && [ "$(wc -c < harness/TECHNICAL_LEAD.md)" -gt 20480 ]; then over=1; fi
 if [ "$count" -ge "$threshold" ]; then
   due="Prune is DUE"
 elif [ "$bytes" -gt $((budget * 1024)) ]; then
@@ -97,10 +105,15 @@ if [ -n "$waiting" ]; then
 elif [ -n "$due" ]; then
   echo "$due"
 fi
+rc=0
+if [ "$over" = 1 ] && [ -z "$waiting" ]; then
+  echo "A size budget is over and no prune proposal is open: write it (harness/SETUP.md § Prune) before the hand-off." >&2
+  rc=1
+fi
 
 # Trials, and with --prune the trend, trial numbers and rule tags. A file that is only on the
 # integration branch is read from there.
-command -v python3 >/dev/null 2>&1 || exit 0
+command -v python3 >/dev/null 2>&1 || exit "$rc"
 read -r -d '' program <<'PY' || true
 import glob, re, sys
 
@@ -197,4 +210,4 @@ printf '%s\n' "$files" | grep . | sort -u | while read -r f; do
   elif [ -n "$integration" ]; then git show "origin/$integration:_harness/learnings/$f" 2>/dev/null
   fi
 done | python3 -I -c "$program" "$@"
-exit 0
+exit "$rc"

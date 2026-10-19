@@ -493,6 +493,19 @@ def check(name, fx, t):
             bad(f"prune-counter.sh with a {status} proposal and 10 learnings printed {out!r}")
     for f in made + [pf, os.path.join(pdir, "README.md")]:
         os.remove(f)
+    # an exceeded size budget fails the hand-off until a proposal is open
+    big = os.path.join(t, "project/SELFTEST-BIG.md")
+    open(big, "w").write("x" * (50 * 1024))
+    r = run(["bash", "scripts/prune-counter.sh"], t)
+    if r.returncode != 1 or "Prune is DUE" not in r.stdout:
+        bad(f"prune-counter.sh with the project docs over budget and no proposal exited {r.returncode}: {r.stdout!r}")
+    pf = os.path.join(pdir, "2026-01-01.md")
+    open(pf, "w").write("# Prune\n\n**Status:** proposed\n")
+    r = run(["bash", "scripts/prune-counter.sh"], t)
+    if r.returncode or "Prune proposal waiting" not in r.stdout:
+        bad(f"prune-counter.sh with the project docs over budget and a proposal open exited {r.returncode}: {r.stdout!r}")
+    os.remove(big)
+    os.remove(pf)
     r = run(["bash", "scripts/feature-cost.sh"], t, env=dict(os.environ, HOME=t))
     if r.returncode or "Traceback" in r.stdout + r.stderr:
         bad(f"feature-cost.sh failed: {r.stdout}{r.stderr}")

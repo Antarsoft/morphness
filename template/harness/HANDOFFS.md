@@ -98,7 +98,7 @@ When two plans are built at the same time:
 
 ## Background agents
 
-After launching a background agent, the Technical Lead checks for signs of life every 10 minutes (each check is a full turn over the thread's context) with one shell command (`git status --short` plus the modified time of `Development/progress.md`; don't re-read files), and relaunches one that has gone silent; it doesn't wait for the completion notice. Schedule that check (a cron job or the environment's scheduler) in the same turn the agent launches, and delete it at hand-back (learned: a stalled agent went unnoticed until the human asked). While a long run (the full browser suite, a build) is in flight, say so in the status checklist, so a quiet agent doesn't read as stalled. Start the relaunch prompt with: "Resume from `Development/progress.md` and the last `WIP(<slug>): phase N` commit; do not redo finished phases."
+After launching a background agent, the Technical Lead ends its turn and waits for the completion notification (finished, failed or stopped); it doesn't poll, because each check is a full turn over the thread's context. A notification that reports a failure or a stop is the cue to relaunch. While a long run (the full browser suite, a build) is in flight, say so in the status checklist, so a quiet agent doesn't read as stalled. Start the relaunch prompt with: "Resume from `Development/progress.md` and the last `WIP(<slug>): phase N` commit; do not redo finished phases."
 
 The agents' own local phase checkpoints are separate from the TL's `WIP` commits: [agents/fullstack-engineer.md](./agents/fullstack-engineer.md).
 
