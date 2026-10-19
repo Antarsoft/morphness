@@ -122,6 +122,14 @@ if since:
     for p in sorted(changed_tpl - listed):
         errors.append(f"template/{p}: changed since {since} but no new or changed note in updates/ lists it")
 
+    # Kit changes carry a changelog fragment instead of editing CHANGELOG.md (no merge conflicts).
+    added = {p for p in git("diff", "--name-only", "--diff-filter=AM", since, "--", "changelog.d")
+             + git("ls-files", "--others", "--exclude-standard", "--", "changelog.d")}
+    kit = git("diff", "--name-only", since, "--", "template", "skills") \
+        + git("ls-files", "--others", "--exclude-standard", "--", "template", "skills")
+    if kit and not any(os.path.basename(p) != "README.md" for p in added):
+        errors.append(f"template/ or skills/ changed since {since} but no new changelog.d/<slug>.md fragment (don't edit CHANGELOG.md)")
+
 for e in errors: print(e)
 print(f"{len(notes)} update note(s) checked, {len(errors)} problem(s)")
 sys.exit(1 if errors else 0)
