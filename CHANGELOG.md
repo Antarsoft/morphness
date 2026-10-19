@@ -6,6 +6,8 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- `prune-counter.sh` treats an `approved` prune proposal as open too (no repeated `Prune is DUE`), matches the
+  status on a whole line, and skips `prunes/README.md`; § Prune says a declined proposal is still folded and reset.
 - A check recorded "not run" is not a pass at the merge gate (it runs, or the owner accepts it in
   `plan.md` § Decisions); the refused-check rule is now in the QA and Full-stack agent bodies too.
 - Three process rules: a retro item that adds a sentence says why a script or check can't do the job;
