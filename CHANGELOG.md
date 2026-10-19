@@ -6,6 +6,10 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Guard: one-command exfiltration. The `.env` check sees through `@` and `<` (`curl -d @.env`), a bare
+  `env` or `printenv` and `/proc/<pid>/environ` are denied, and a new `network` group in `guard:` asks
+  before `curl` or `wget` send a body or a non-GET request to a host outside `localhost` and
+  `guard.allow_hosts`, and before `scp`, `sftp`, `rsync` to another machine, `nc`, `socat`, `telnet`, `ftp`.
 - Session start: `scripts/session-start.sh` prints the toolchain and install commands, runs them under
   a timeout (`MORPHNESS_START_TIMEOUT`, default 300 s), prints the command and the last lines of its
   output on failure, and adds `--ignore-scripts` to npm, pnpm, bun and yarn 1 installs. `scripts/install.sh`
