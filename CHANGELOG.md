@@ -6,6 +6,11 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- The prune proposal no longer waits for the owner: when `scripts/prune-counter.sh` prints
+  `Prune is DUE`, the Technical Lead writes `_harness/prunes/<date>.md` before the hand-off, which
+  says `Prune is DUE: proposal written at <path>`. The owner only decides its rows; nothing is
+  applied without that, and the next feature doesn't wait. The Claude Projects coordinator posts once
+  per proposal, and `/morph-doctor` names the proposal waiting for a decision.
 - Trials as files: `_harness/trials/<trial-slug>.md` (template `harness/templates/trial.md`) holds the
   hypothesis, the change, its length in features, the metric and the pass and revert conditions. A
   feature that runs one names it on its learnings file's **Trial** line, the prune counter prints

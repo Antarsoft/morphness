@@ -1,6 +1,6 @@
 # Harness learnings
 
-Trends across features, one short entry per feature retro (`Plan/retro.md`). Each feature writes its entry and its new action items to **its own file**, `_harness/learnings/<feature-slug>-v<version>.md` ([learnings/README.md](./learnings/README.md)), never to this file, so parallel feature branches don't conflict here. The prune folds those files into this one (§ Entries, § Action items) and deletes them. The Technical Lead proposes a prune when it is due (§ Prune status).
+Trends across features, one short entry per feature retro (`Plan/retro.md`). Each feature writes its entry and its new action items to **its own file**, `_harness/learnings/<feature-slug>-v<version>.md` ([learnings/README.md](./learnings/README.md)), never to this file, so parallel feature branches don't conflict here. The prune folds those files into this one (§ Entries, § Action items) and deletes them. When a prune is due (§ Prune status), the Technical Lead writes the proposal without waiting for the owner, who then decides its rows.
 
 ## Prune status
 
