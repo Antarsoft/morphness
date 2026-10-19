@@ -17,6 +17,11 @@
 # Asks (the owner answers a permission prompt):
 #   - `gh api` writes to rulesets, branch protection and repo settings (/morph-init and /morph-doctor
 #     apply branch protection that way, on the owner's yes)
+#   - a `curl` that names a Morphness GitHub address (the update checks' read fallback) and is
+#     anything but a plain read: the allow rules in .claude/settings.json match any trailing flags,
+#     so this hook checks the rest. Only `-f -s -S -L` and URLs under the two Morphness prefixes pass;
+#     `-o`, `-O`, `-X`, `-d`, `-F`, `-T`, `-H`, `-K`, `-u`, a redirect to a file, another URL and
+#     every other flag ask
 #   - every MCP tool whose name doesn't start with a read verb (get, list, search, read, …), so each
 #     connector write waits for the owner's yes (harness/SKILLS_AND_MCPS.md § Connector actions).
 #     `guard.mcp_writes: off` in harness.config.yml turns this off; reads always pass.
@@ -213,7 +218,7 @@ GH_ASK_PATHS = re.compile(r"(rulesets|/protection|/branches/[^/]+/protection|^/?
 
 def check_gh(words):
     if len(words) > 2 and words[1] in ("secret", "variable") and words[2] in ("set", "delete", "remove"):
-        deny("secrets and variables on the code host are the owner’s (AGENTS.md § Shared remote environments).")
+        deny("secrets and variables on the code host are the owner’s (the Shared remote environments golden rule in AGENTS.md).")
     if len(words) > 1 and words[1] == "api":
         rest = words[2:]
         method, path, writes = "", "", False
@@ -233,13 +238,33 @@ def check_gh(words):
             k += 1
         if method in ("POST", "PUT", "PATCH", "DELETE") or (writes and method in ("", "POST")):
             if re.search(r"(secrets|variables)", path):
-                deny("secrets and variables on the code host are the owner’s (AGENTS.md § Shared remote environments).")
+                deny("secrets and variables on the code host are the owner’s (the Shared remote environments golden rule in AGENTS.md).")
             default_method = "POST"
             if GH_ASK_PATHS.search(path):
                 ask(f"`gh api {path}` ({method or default_method}) changes repository settings or protection; only the owner approves it.")
             # Upstream update checks only read Morphness; .claude/settings.json allows those reads.
             if re.search(r"^/?repos/[^/]+/morphness(/|$)", path):
                 ask(f"`gh api {path}` ({method or default_method}) writes to the Morphness repository; update checks only read it.")
+
+MORPHNESS_URLS = ("https://api.github.com/repos/antarsoft/morphness/",
+                  "https://raw.githubusercontent.com/antarsoft/morphness/")
+CURL_READ_FLAG = re.compile(r"^(-[fsSL]+|--fail|--silent|--show-error|--location)$")
+
+def check_curl(words):
+    # .claude/settings.json allows `curl -fsSL <Morphness URL>/*`, and that pattern accepts any
+    # trailing words. Stdout, GET, no body, no headers, no config file, one of the two prefixes.
+    line = " ".join(words[1:]).lower()
+    if not any(u[len("https://"):] in line for u in MORPHNESS_URLS):
+        return
+    for w in words[1:]:
+        if "://" in w:
+            if not w.startswith(MORPHNESS_URLS) or ".." in w or "%2e" in w.lower():
+                ask(f"`curl` with `{w}`: the allowed read is only the two Morphness GitHub prefixes, "
+                    "no `..` in the path, and nothing else on the line.")
+        elif not CURL_READ_FLAG.match(w):
+            ask(f"`curl {w}` is more than a read of the Morphness repository: update checks print to "
+                "the terminal only (no file, method, body, header or config). Use `gh api --method GET` "
+                "or the plain `curl -fsSL <url>`.")
 
 def check_bash(cmd):
     # Heredoc bodies are text (a commit message, a PR body), not commands: keep only their first line.
@@ -255,9 +280,11 @@ def check_bash(cmd):
             check_git(words)
         elif words[0] == "gh":
             check_gh(words)
+        elif words[0] == "curl":
+            check_curl(words)
         for pattern, label in REMOTE_DB:
             if re.search(pattern, line):
-                deny(f"{label} writes a remote database; that is the owner’s step (AGENTS.md § Shared remote environments).")
+                deny(f"{label} writes a remote database; that is the owner’s step (the Shared remote environments golden rule in AGENTS.md).")
 
 # ---- dispatch ------------------------------------------------------------------------------------
 # An MCP tool passes when a word of its name is a read verb and none is a write verb
