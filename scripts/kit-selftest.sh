@@ -419,6 +419,32 @@ def check(name, fx, t):
             bad(f"bash -n {os.path.relpath(f, t)}: {r.stderr.strip()}")
     if not os.access(os.path.join(t, "scripts/session-start.sh"), os.X_OK):
         bad("scripts/session-start.sh is not executable")
+    # session-start.sh: prints the command, reports a failure with the tail of its output, times out, and
+    # adds --ignore-scripts to an npm install; always exits 0
+    src = open(os.path.join(template, "scripts/session-start.sh"), encoding="utf-8").read()
+    def start(tool, install, limit="3"):
+        body = re.sub(r"^TOOLCHAIN_SETUP=.*$", lambda m: f"TOOLCHAIN_SETUP='{tool}'", src, flags=re.M)
+        body = re.sub(r"^INSTALL_CMD=.*$", lambda m: f"INSTALL_CMD='{install}'", body, flags=re.M)
+        f = os.path.join(t, "scripts/.session-start-test.sh")
+        open(f, "w").write(body)
+        env = dict(os.environ, MORPHNESS_START_TIMEOUT=limit, CLAUDE_PROJECT_DIR=t)
+        env.pop("CLAUDE_ENV_FILE", None)
+        r = run(["bash", f], t, env=env)
+        os.remove(f)
+        return r
+    r = start("", "echo one; echo boom >&2; exit 3")
+    if r.returncode or "dependency install failed (exit 3)" not in r.stdout or "| boom" not in r.stdout:
+        bad(f"session-start.sh on a failing install printed {r.stdout!r} (exit {r.returncode})")
+    if shutil.which("timeout") or shutil.which("gtimeout"):
+        r = start("", "sleep 30", "1")
+        if r.returncode or "timed out after 1s" not in r.stdout:
+            bad(f"session-start.sh on a hanging install printed {r.stdout!r} (exit {r.returncode})")
+    r = start("false", "")
+    if r.returncode or "toolchain setup failed (exit 1)" not in r.stdout:
+        bad(f"session-start.sh on a failing toolchain setup printed {r.stdout!r}")
+    r = start("", "npm ci")
+    if r.returncode or "npm ci --ignore-scripts" not in r.stdout:
+        bad(f"session-start.sh did not add --ignore-scripts to npm ci: {r.stdout!r}")
     if cfg("branches.integration") != fx["branches"]["integration"]:
         bad("config_get branches.integration doesn't print the integration branch")
     r = run(["bash", "scripts/prune-counter.sh"], t)
