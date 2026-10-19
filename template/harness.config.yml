@@ -126,10 +126,18 @@ cost: { track: true, prices: harness/MODEL_PRICES.md }
 
 # The guard hook (scripts/guard.sh, wired in .claude/settings.json) runs before tool calls. It always
 # blocks secret .env files, pushes to environment branches, force-pushes, code-host secrets and
-# well-known remote database writes. mcp_writes: ask makes every MCP tool that isn't a read (get,
-# list, search, …) show a permission prompt, so no connector write runs without the owner's yes; off
-# leaves MCP tools to the ask rules in .claude/settings.json.
-guard: { mcp_writes: ask }
+# well-known remote database writes: no switch. The asks below show a permission prompt (the owner
+# answers it); `off` skips that group's prompt, and the settings.json rules still apply. A hook ask
+# beats an allow rule, so `off` is the only way to run these without a prompt, for instance
+# `prisma db push` on a local stack.
+#   mcp_writes     every MCP tool that isn't a read (get, list, search, ...)
+#   deploys        vercel, wrangler/fly/firebase/netlify deploys, platform secrets and variables
+#                  (vercel env add, wrangler secret put, netlify env:set), supabase functions deploy,
+#                  terraform apply, kubectl apply, helm upgrade
+#   publishes      npm/pnpm/yarn/bun publish (also with --filter/--workspace), changeset publish, cargo publish
+#   schema_pushes  prisma db push, drizzle-kit push
+# A command with --dry-run or --help passes in every group. The full list is in scripts/guard.sh.
+guard: { mcp_writes: ask, deploys: ask, publishes: ask, schema_pushes: ask }
 
 loop:
   retro_max_items: 3      # usual action items per retro (soft: more with one line why, none is fine)

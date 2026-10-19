@@ -26,7 +26,8 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
   exists, `python3` is installed (without it the guard lets every call through), and the push test in
   render.md § 7 item 9 exits 2. A copy without the hook: point to `/morph-update` (update note
   `2026-10-17-guard-hook`). `guard.mcp_writes: off`: mention once that connector writes then rely on
-  the named `ask` rules alone.
+  the named `ask` rules alone; `guard.deploys`, `guard.publishes` or `guard.schema_pushes: off` the
+  same for that group (nothing asks before it runs).
 - Module markers (`harness/README.md` § Modules → **Module markers**): no `module:<name>` marker
   for a module missing from `modules` (text left from a removal: offer the removal command), and every
   `<!-- module:<name> -->` opening line has its closing line.

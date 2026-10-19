@@ -125,3 +125,47 @@
 {"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL https://api.github.com/repos/antarsoft/morphness/../../other/repo"}}
 {"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL --location-trusted https://api.github.com/repos/antarsoft/morphness/releases/latest"}}
 {"expect": "ask", "tool": "Bash", "input": {"command": "bash -c 'curl -fsSL https://api.github.com/repos/antarsoft/morphness/releases/latest -o out.json'"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "vercel env add API_KEY production"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "vercel env rm API_KEY"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "vercel domains add x.com"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "vercel alias set a b"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "vercel --prod"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "vercel deploy"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "npx vercel env update X"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "vercel env ls"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "vercel env pull"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "vercel domains ls"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "vercel dns ls x.com"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "vercel project inspect x"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "vercel ls"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "vercel --help"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "wrangler secret put API_KEY"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "wrangler secret delete API_KEY"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "wrangler secret bulk secrets.json"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "npx wrangler secret:put X"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "wrangler secret list"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "netlify env:set KEY val"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "netlify env:unset KEY"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "netlify env:import vars.json"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "netlify env:list"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "pnpm --filter web publish"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "npm --workspace packages/ui publish"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "npx changeset publish"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "pnpm changeset publish"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "yarn workspaces foreach publish"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "npm publish --dry-run"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "cargo publish --dry-run"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "pnpm --filter web publish --dry-run"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "npm run build"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "npm pkg get publishConfig"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "npm publish --dry-run=false"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "kubectl apply -f x.yaml --dry-run=none"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "kubectl apply -f x.yaml --dry-run=server"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "helm upgrade r c --dry-run"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "terraform plan"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "vercel env add X"}, "guard": {"deploys": "off"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "wrangler secret put X"}, "guard": {"deploys": "off"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "pnpm --filter x publish"}, "guard": {"publishes": "off"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "prisma db push"}, "guard": {"schema_pushes": "off"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "drizzle-kit push"}, "guard": {"schema_pushes": "off"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "prisma db push"}, "guard": {"deploys": "off", "publishes": "off"}}
