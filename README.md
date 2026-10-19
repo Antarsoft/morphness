@@ -26,9 +26,10 @@ and gets better every time someone shares a lesson.
 
 ---
 
-**Morphness** is an open-source, multi-agent harness for [Claude Code](https://claude.com/claude-code):
-a set of subagents, `CLAUDE.md` / `AGENTS.md` rules, checklists and a review loop for AI coding
-agents. If you have been writing those by hand (what people now call *harness engineering* or
+**Morphness** is an open-source harness for [Claude Code](https://claude.com/claude-code) that puts
+a process around the model: a plan you approve, a separate QA check with recorded evidence, a guard
+on risky commands, and a retro loop that turns misses into rules. It is a set of subagents,
+`CLAUDE.md` / `AGENTS.md` rules, checklists and a review loop for AI coding agents. If you have been writing those by hand (what people now call *harness engineering* or
 *context engineering*), Morphness is that work packaged, with a loop that keeps it current.
 
 You talk to a **Technical Lead** in the main chat. It plans each feature with testable acceptance
