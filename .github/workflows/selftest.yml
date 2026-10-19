@@ -10,4 +10,14 @@ jobs:
     runs-on: ubuntu-24.04   # pinned: bump it in its own PR
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
-      - run: STRICT=1 scripts/kit-selftest.sh
+        with:
+          fetch-depth: 0
+      # Every guard case replays on every sample project when the guard, its config reader, the cases or the
+      # sample projects change (or the base can't be diffed); otherwise cases that don't read config run once.
+      - run: |
+          base="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [ -z "$base" ] || ! git diff --name-only "$base" HEAD 2>/dev/null >"$RUNNER_TEMP/changed.txt" \
+             || grep -qE '^(template/scripts/guard\.sh|template/scripts/lib/config\.sh|tests/guard-cases\.jsonl|tests/fixtures/)' "$RUNNER_TEMP/changed.txt"; then
+            export GUARD_FULL=1
+          fi
+          STRICT=1 scripts/kit-selftest.sh

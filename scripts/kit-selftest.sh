@@ -12,6 +12,7 @@
 # Usage: scripts/kit-selftest.sh [fixture ...]   (a name such as python-cli, or a path; default: every
 #   tests/fixtures/*.json)
 #   KEEP=1 keeps the rendered copies and prints where they are.
+#   GUARD_FULL=1 replays every guard case on every sample project (default: cases without "every" run once).
 #   STRICT=1 (CI) fails when PyYAML is missing instead of skipping the YAML checks.
 # Needs bash, git, perl and python3. Read-only on the repo: renders into a temporary folder.
 set -euo pipefail
@@ -635,6 +636,8 @@ def check(name, fx, t):
     for case in cases:
         if case.get("only") and case["only"] != name:
             continue   # "only": "<fixture>" runs a case on that sample project alone
+        if not (case.get("every") or case.get("only") or FULL or name == once_on):
+            continue   # a case that doesn't read the project's config runs once, on the canonical sample project
         # "extra" adds top-level event fields (a ConfigChange event has no tool).
         raw = json.dumps({"tool_name": case["tool"], "tool_input": case["input"], **case.get("extra", {})})
         for k, v in branches.items():
@@ -682,6 +685,16 @@ def check(name, fx, t):
         if got != expect:
             bad(f"guard: expected {expect}, got {got} for {raw} on branch {here} ({r.stderr.strip()})")
     run(["git", "checkout", "-q", fx["branches"]["integration"]], t)
+
+# Guard cases marked "every" (branches, environments, guard switches, broken input) or "only" replay on each
+# sample project; the rest test rules that don't read the project's config, so they run once, on
+# nextjs-supabase (closest to the install default; python-cli has integration == production). GUARD_FULL=1,
+# or a run that leaves out nextjs-supabase, replays every case on every sample project.
+FULL = os.environ.get("GUARD_FULL") == "1"
+names = [os.path.splitext(os.path.basename(f))[0] for f in fixtures]
+once_on = "nextjs-supabase"
+if once_on not in names:
+    FULL = True
 
 work = tempfile.mkdtemp(prefix="morphness-selftest-")
 for path in fixtures:
