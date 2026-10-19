@@ -59,7 +59,7 @@ for clear requests so that process costs little when there's nothing to plan.
 | 🧭 **Plan first, then build** | A Technical Lead writes a plan with testable acceptance criteria and waits for your approval before any code is written. |
 | ✅ **QA is never skipped** | Every feature gets a separate QA agent that runs your checks and records the evidence, so "done" means verified, not claimed. |
 | 🔁 **Learns from its own mistakes** | Retros turn real misses (a failed QA round, a review fix, a bug you report after a pass) into rules, and prunes delete rules that never fire, so the instructions your agents read stay short and earned. |
-| 🛡️ **Safe by default** | Secrets and pushes to protected branches are denied in `.claude/settings.json` from the first install, and every merge command asks you first. Environment branches get a host ruleset (PR-only, no force-push). With the data-access module, your database and hosting write tools are denied too. Anything a connector would change runs only after your yes in chat, and every agent reads the rule: never write to a shared remote environment. |
+| 🛡️ **Safe by default** | A guard hook checks agents' tool calls before they run. It blocks pushes to environment branches, force-pushes, reading or writing common secret and credential files by name (`.env*`, keys, cloud credentials) and a set of remote database writes, and it asks you before deploys, cloud and database CLIs that aren't plainly reading, publishes, merges, connector writes and uploads to hosts you haven't listed. It stops accidents, not intent: a script, an interpreter, `curl … \| sh`, `ssh` or a tool it doesn't know isn't seen, so branch protection and environment secrets on the host stay the real guard. [Exact list](template/AGENTS.md#permissions-for-this-project). Every agent also reads the rule: never write to a shared remote environment. |
 | 💲 **Know what each feature costs** | Every feature records an estimated dollar cost from Claude Code's own transcripts, split by agent, so you can compare features and tune effort. Useful as an estimate on a Pro or Max plan too. |
 | 🧰 **Yours to configure** | Branches, environments, checks, modules, risk areas, models, effort and loop limits all live in one `harness.config.yml`. Every rule and checklist is a plain Markdown file in your repo, so you can change anything. |
 | 🧩 **Works on any codebase** | New or existing repos, including ones that already have a `CLAUDE.md`, `AGENTS.md` or their own agent setup, monorepos with several apps, and folders that aren't a git repo or online yet. Any language or framework. |
@@ -120,9 +120,11 @@ shown, and everything lands on a branch for you to review.
 
 - **Claude Code** with plugins, subagents (the Agent tool) and effort levels.
 - **Models:** opus and sonnet. The legal writer prefers fable and falls back to opus.
-- **Tools:** git and bash. `gh` for `/morph-share` to open its PR, and for applying branch
-  protection or creating the repository during setup (each has a manual fallback). python3 for the
-  feature cost estimate.
+- **Tools:** bash, git, python3, awk and perl are required: python3 runs the guard hook, the
+  prune counter and the cost estimate (without it the guard blocks every tool call), awk reads
+  `harness.config.yml` in every script, and perl strips a module's text when you remove it.
+  `/morph-doctor` checks all of them. `gh` is optional: `/morph-share` uses it to open its PR, and
+  setup uses it to apply branch protection or create the repository (each has a manual fallback).
 - **Cost:** each feature is about three agent runs (plan, build, QA), with every role on sonnet by
   default (`/morph-init` offers opus for planning and building). A clear, fully specified request
   runs in small mode: a short plan, medium effort and no retro. Every hand-off ends with a

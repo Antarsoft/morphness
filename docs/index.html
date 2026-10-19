@@ -229,7 +229,7 @@ footer p { margin: 6px 0; }
       <div class="card"><h3>QA is never skipped</h3><p>A separate QA agent runs your checks and records evidence for every criterion, so "done" means verified, not claimed.</p></div>
       <div class="card"><h3>Learns from its mistakes</h3><p>After every feature, a short retro turns what went wrong into rules. Every ten features, a prune audits them: the ones that caught problems stay, the ones that never fired go.</p></div>
       <div class="card"><h3>Works on any codebase</h3><p>New or existing repos, monorepos with several apps, and folders that aren't a git repo or online yet. Any language or framework. It keeps your <code>CLAUDE.md</code>, shows a diff for settings and lands everything on a branch you review.</p></div>
-      <div class="card"><h3>Safe by default</h3><p>Secrets and pushes to protected branches are denied from the first install, and every merge command asks you first. Anything a connector would change runs only after your yes in chat, and every agent reads the rule: never write to a shared remote environment.</p></div>
+      <div class="card"><h3>Safe by default</h3><p>A guard hook blocks pushes to protected branches, force-pushes and reads of common secret files, and asks you first before deploys, publishes, merges and cloud or database commands that aren&rsquo;t plainly reading. It stops accidents, not a determined script, so host-side branch protection stays the real guard. Anything a connector would change runs only after your yes in chat, and every agent reads the rule: never write to a shared remote environment.</p></div>
       <div class="card"><h3>Yours to configure</h3><p>Branches, environments, checks, modules, risk areas, models and effort live in one <code>harness.config.yml</code>. Every rule and checklist is a Markdown file in your repo.</p></div>
     </div>
   </div>
@@ -288,7 +288,7 @@ If Morphness is already installed here, follow its UPDATE.md instead and show me
 /morph-init</pre>
       </div>
     </div>
-    <p class="note">Prefer to copy files yourself? <a href="https://github.com/antarsoft/morphness#-install">scripts/install.sh</a> copies and never overwrites. <b>Needs:</b> Claude Code with plugins, subagents and effort levels; the opus and sonnet models; git and bash (<code>gh</code> and python3 help, each with a fallback). Each feature costs about three agent runs (plan, build, QA) plus a short retro, and every hand-off shows its estimated dollar cost.</p>
+    <p class="note">Prefer to copy files yourself? <a href="https://github.com/antarsoft/morphness#-install">scripts/install.sh</a> copies and never overwrites. <b>Needs:</b> Claude Code with plugins, subagents and effort levels; the opus and sonnet models; bash, git, python3, awk and perl (<code>gh</code> helps, with a fallback). Each feature costs about three agent runs (plan, build, QA) plus a short retro, and every hand-off shows its estimated dollar cost.</p>
 
     <h3 class="sect">Your first feature</h3>
     <ol class="steps">

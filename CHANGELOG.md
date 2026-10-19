@@ -6,6 +6,10 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Docs: the guard hook has one description (`AGENTS.md` § Permissions for this project) listing what it
+  denies, asks and does not see; `CLAUDE.md`, `RELEASE.md` and `SKILLS_AND_MCPS.md` link to it. The README
+  "Safe by default" row and its requirements (bash, git, python3, awk, perl) say what the code does.
+
 - The plan checklist has a group index with skip conditions, so a plan with no UI or no data reads fewer items.
 
 - The prune report prints a `Loop:` line (escapes and rule tags added in the window), so a project can

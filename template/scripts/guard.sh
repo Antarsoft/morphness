@@ -4,57 +4,10 @@
 # patterns miss, because it reads a Bash command the way the shell does (every command in a chain,
 # inside `$(…)`, `bash -c '…'`, `eval`, after `env`, `sudo` or `git -C <dir>`).
 #
-# Blocks (exit 2, the reason goes back to the agent):
-#   - a push that would update an environment branch (branches.* and every environments[].branch):
-#     an explicit refspec, `HEAD` or a bare `git push` while on one, `--all`, `--mirror`, a delete
-#   - a force push (`--force*`, `-f`, a `+` refspec), on any branch
-#   - reading or writing a `.env` file (`.env`, `.env.local`, `.env.production`, …) or another secret
-#     or credential file with any tool: `.envrc`, `*.pem`, `*.key`, `*.p12`, `id_rsa` and its kin,
-#     `.netrc`, `.pgpass`, `.git-credentials`, `credentials.json`, `secrets.yml` and similar, and
-#     anything under `.aws`, `.ssh` (except `*.pub`), `.gnupg`, `.azure`, `.kube`, `.config/gcloud`,
-#     `.config/gh`; `.env.example`, `.env.sample` and `.env.template` are fine. `.npmrc` and `.pypirc`
-#     ask instead (they are often plain config)
-#   - writing secrets or variables on the code host (`gh secret set`, `gh variable set`, `gh api`
-#     writes to …/secrets or …/variables)
-#   - remote database writes from well-known CLIs (`supabase db push`, `prisma migrate deploy`,
-#     `wrangler d1 … --remote`, …)
-#   - writing `.claude/settings.local.json` (the owner writes that file; an agent that could write it
-#     could grant itself permissions that never show in a PR)
-# Asks (the owner answers a permission prompt):
-#   - changing the files the guard itself rests on: scripts/guard.sh, scripts/session-start.sh,
-#     scripts/lib/, .claude/settings.json and harness.config.yml, by an Edit/Write tool or a Bash
-#     write (redirect, `sed -i`, `cp`, `mv`, `rm`, `chmod`, `tee`, `git restore`, an interpreter
-#     one-liner naming the file). /morph-init, /morph-update and the retro change them on the owner's
-#     yes, so the prompt shows the owner each change instead of blocking it.
-#   - deploys, platform secrets and publishes from well-known CLIs, so nothing reaches a shared
-#     environment or registry by accident. Three groups, each with its own switch (`guard.deploys`,
-#     `guard.publishes`, `guard.schema_pushes`: ask or off):
-#       deploys        `vercel` (anything but its read-only subcommands; `vercel env add|rm|update`),
-#                      `wrangler deploy`, `wrangler secret put|delete|bulk`, `fly deploy`,
-#                      `firebase deploy`, `netlify deploy`, `netlify env:set|unset|import`,
-#                      `supabase functions deploy`, `terraform apply`, `kubectl apply`, `helm upgrade`
-#       publishes      `npm|pnpm|yarn|bun … publish` (also with `--filter`/`--workspace`),
-#                      `changeset publish`, `cargo publish`
-#       schema_pushes  `prisma db push`, `drizzle-kit push`
-#     A command with `--dry-run` (not `=none`) or `--help` passes; `terraform plan`, `kubectl get`,
-#     `vercel ls` and the like are not listed at all.
-#   - `gh api` writes to git refs and merges (…/git/refs, …/merges, …/pulls/N/merge)
-#   - `gh api` writes to rulesets, branch protection and repo settings (/morph-init and /morph-doctor
-#     apply branch protection that way, on the owner's yes)
-#   - a `curl` that names a Morphness GitHub address (the update checks' read fallback) and is
-#     anything but a plain read: the allow rules in .claude/settings.json match any trailing flags,
-#     so this hook checks the rest. Only `-f -s -S -L` and URLs under the two Morphness prefixes pass;
-#     `-o`, `-O`, `-X`, `-d`, `-F`, `-T`, `-H`, `-K`, `-u`, a redirect to a file, another URL and
-#     every other flag ask
-#   - every MCP tool whose name doesn't start with a read verb (get, list, search, read, …), so each
-#     connector write waits for the owner's yes (harness/SKILLS_AND_MCPS.md § Connector actions).
-#     `guard.mcp_writes: off` in harness.config.yml turns this off; reads always pass.
-# Secrets, force-pushes, .env files, environment-branch pushes and remote database writes (the Blocks
-# above) have no switch.
-# This stops accidents, not intent: it reads the command text, so a script that runs a deploy, an
-# unlisted tool or a deliberately disguised call gets past it. The settings rules and the owner's
-# review are the other layers.
-# Everything else passes untouched.
+# What it denies (exit 2, the reason goes back to the agent), what it asks (the owner answers a
+# permission prompt), which `guard:` switches in harness.config.yml turn an ask off, and what it does not
+# see are described once, in AGENTS.md § Permissions for this project. This file is the implementation of
+# that list: change the two together, and add a case to tests/guard-cases.jsonl for each rule.
 # The hook fails closed: without python3, without the config reader (scripts/lib/config.sh), when the
 # project folder can't be entered, on input it can't parse and on an internal error, it exits 2
 # with the reason, so a broken guard blocks the call instead of passing it. `guard: { fail_open: true }`
