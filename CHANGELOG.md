@@ -6,6 +6,7 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Agent wrappers always read the ownership and remote-environment sections; the last copies of the old small-mode test, entry format and guard message wording point at their single source; install notes for duplicate deny lines and a refused no-clobber copy.
 - The guard hook checks the allowed Morphness `curl` read: only `-f -s -S -L` and URLs under the two
   Morphness prefixes pass silently; writing a file, another method, a body, headers, a config file or
   another URL asks first.

@@ -218,7 +218,7 @@ GH_ASK_PATHS = re.compile(r"(rulesets|/protection|/branches/[^/]+/protection|^/?
 
 def check_gh(words):
     if len(words) > 2 and words[1] in ("secret", "variable") and words[2] in ("set", "delete", "remove"):
-        deny("secrets and variables on the code host are the owner’s (AGENTS.md § Shared remote environments).")
+        deny("secrets and variables on the code host are the owner’s (the Shared remote environments golden rule in AGENTS.md).")
     if len(words) > 1 and words[1] == "api":
         rest = words[2:]
         method, path, writes = "", "", False
@@ -238,7 +238,7 @@ def check_gh(words):
             k += 1
         if method in ("POST", "PUT", "PATCH", "DELETE") or (writes and method in ("", "POST")):
             if re.search(r"(secrets|variables)", path):
-                deny("secrets and variables on the code host are the owner’s (AGENTS.md § Shared remote environments).")
+                deny("secrets and variables on the code host are the owner’s (the Shared remote environments golden rule in AGENTS.md).")
             default_method = "POST"
             if GH_ASK_PATHS.search(path):
                 ask(f"`gh api {path}` ({method or default_method}) changes repository settings or protection; only the owner approves it.")
@@ -284,7 +284,7 @@ def check_bash(cmd):
             check_curl(words)
         for pattern, label in REMOTE_DB:
             if re.search(pattern, line):
-                deny(f"{label} writes a remote database; that is the owner’s step (AGENTS.md § Shared remote environments).")
+                deny(f"{label} writes a remote database; that is the owner’s step (the Shared remote environments golden rule in AGENTS.md).")
 
 # ---- dispatch ------------------------------------------------------------------------------------
 # An MCP tool passes when a word of its name is a read verb and none is a write verb

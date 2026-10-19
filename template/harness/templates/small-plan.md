@@ -11,7 +11,7 @@ This short plan replaces `feature.md` and the full plan. The sections the agents
 
 ## Why small
 
-One line per test in `harness/MODES.md` § Small mode → Use when: the request says exactly what to build, the files below are the whole change, and the change alters no access, money, stored data's shape or deletion, secrets, dependency or flow.
+One line per test in `harness/MODES.md` § Small mode → Use when: the request says exactly what to build, the files below are the whole change, and the change passes every test in that section.
 
 ## Change
 
@@ -31,7 +31,7 @@ Full-stack stops and hands back, without the change, when it needs: a file not l
 
 ## QA scope
 
-- **UI change:** yes | no. If **yes**, Full-stack provides screenshots and QA runs its layout pass.
+- **UI change:** yes | no. If **yes**, Full-stack provides screenshots; QA runs its layout pass when the change touches styles, layout or a shared component.
 - **Needs live app/services:** none | AC #s, as in `harness/templates/plan.md`.
 - **Apps touched:** n/a | the app names.
 - **Targeted e2e specs:** n/a (browser-e2e module off) | none | spec paths.
