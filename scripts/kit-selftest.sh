@@ -476,6 +476,10 @@ def check(name, fx, t):
         for key in ("name", "description", "model"):
             if not fm or not re.search(rf"^{key}:\s*\S", fm.group(1), re.M):
                 bad(f"{os.path.relpath(f, t)} frontmatter lacks {key}")
+        # an unquoted "word: word" in the description is invalid YAML for any strict reader
+        d = re.search(r"^description:[ \t]*(.*)$", fm.group(1), re.M) if fm else None
+        if d and re.search(r":\s", d.group(1)) and d.group(1)[:1] not in "\"'|>":
+            bad(f"{os.path.relpath(f, t)} description has an unquoted colon: quote it")
     # 6. named checks have commands, and no row names an unknown check
     cfg = lambda key: run(["bash", "-c", f'. scripts/lib/config.sh; config_get {key}'], t).stdout.strip()
     names = set()

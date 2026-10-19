@@ -1,6 +1,6 @@
 ---
 name: morph-module
-description: Add or remove one optional Morphness module (roadmap, data-access, browser-e2e, legal, ci-cd, claude-projects, security) on a project that already has the harness installed. Use when the user asks to add, enable, turn on, remove, disable or turn off a harness module, or runs /morph-module add|remove <name>.
+description: Add or remove one optional Morphness module (roadmap, data-access, browser-e2e, legal, ci-cd, claude-projects, security) on a project that already has the harness installed. Use when the user asks to add, enable, turn on, remove, disable or turn off a harness module, or runs /morph-module add or /morph-module remove with a module name.
 ---
 
 # morph-module

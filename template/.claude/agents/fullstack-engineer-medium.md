@@ -1,6 +1,6 @@
 ---
 name: fullstack-engineer-medium
-description: Harness Full-stack engineer. The Technical Lead uses this agent to implement an approved _harness/features/<slug>/<version>/Plan/plan.md (any "execute / implement / develop / build / fix" request for feature work), and for QA-fail rework. Pass the absolute feature folder path in the prompt. Effort medium: use only when the plan's Agent effort says Full-stack medium.
+description: "Harness Full-stack engineer. The Technical Lead uses this agent to implement an approved _harness/features/<slug>/<version>/Plan/plan.md (any \"execute / implement / develop / build / fix\" request for feature work), and for QA-fail rework. Pass the absolute feature folder path in the prompt. Effort medium: use only when the plan's Agent effort says Full-stack medium."
 model: "{{models.fullstack_medium}}"
 effort: medium
 omitClaudeMd: true
