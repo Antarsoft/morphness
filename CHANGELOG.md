@@ -6,6 +6,10 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- The prune counter no longer fetches at every hand-off (`PRUNE_FETCH=1` opts in), counts only date-named
+  proposal files, and exits 1 when a size budget is over and no proposal is open; the Technical Lead waits
+  for a background agent's completion notification instead of polling it every 10 minutes.
+
 ## 2026-10-19
 
 - Retro wording: the retro template has a Cause column and the `cause: environment` and "why not a

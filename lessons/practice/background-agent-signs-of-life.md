@@ -1,6 +1,6 @@
 ---
 id: background-agent-signs-of-life
-title: Check a background agent for signs of life
+title: Wait for a background agent's notification, don't poll it
 kind: rule
 target: .claude/rules/technical-lead.md
 in_template: true
@@ -9,16 +9,16 @@ evidence: { fired: unknown, features: 153, source: "Twinpage prune audits" }
 added: 2026-10-12
 ---
 
-# Check a background agent for signs of life
+# Wait for a background agent's notification, don't poll it
 
 ## Rule
 
-After launching a background agent, schedule a check every 10 minutes in the same turn: one shell command (`git status --short` plus the modified time of `progress.md`). Relaunch an agent that has gone silent with a resume prompt; delete the schedule at hand-back.
+After launching a background agent, end the turn and wait for its completion notification. Relaunch one that reports a failure or a stop with a resume prompt.
 
 ## Why
 
-An agent stalled silently for about two hours before anyone looked.
+A polling check is a full turn over the thread's context every time it runs, so a long build costs far more than the one notification that says it ended.
 
 ## How to check
 
-A scheduled check exists while an agent runs and is removed at hand-back.
+No scheduled check exists while an agent runs; the hand-off follows the agent's notification.
