@@ -6,6 +6,10 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- The guard hook now asks before deploys and publishes from well-known CLIs (vercel, wrangler, fly,
+  firebase, netlify, `supabase functions deploy`, `prisma db push`, `drizzle-kit push`,
+  `terraform apply`, `kubectl apply`, `helm upgrade`, `npm publish`, `cargo publish`) and before `gh api`
+  writes to git refs and merges. AGENTS.md says plainly that the guard stops accidents, not intent.
 - Small, bug and security wording lined up across the rules, plans and agent bodies (small plan QA scope
   and limit, security review on bug plans, full-mode-only sections marked, lighter agent reads and QA
   layout pass); `prune-counter.sh` shows a waiting prune proposal.

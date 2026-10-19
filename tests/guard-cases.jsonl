@@ -57,3 +57,53 @@
 {"expect": "pass", "tool": "Bash", "input": {"command": "gh api --method GET repos/antarsoft/morphness/releases/latest"}}
 {"expect": "ask", "tool": "Bash", "input": {"command": "gh api --method GET repos/antarsoft/morphness/contents/x -X DELETE"}}
 {"expect": "pass", "tool": "Bash", "input": {"command": "curl -fsSL https://raw.githubusercontent.com/antarsoft/morphness/2026-10-16/CHANGELOG.md"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "vercel --prod"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "vercel deploy"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "npx vercel deploy --prebuilt"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "vercel promote dpl_123"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "wrangler deploy"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "npx wrangler pages deploy dist"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "fly deploy"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "flyctl deploy --remote-only"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "firebase deploy --only hosting"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "firebase hosting:channel:deploy preview"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "netlify deploy --prod"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "supabase functions deploy hello"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "npx prisma db push"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "pnpm exec prisma db push --accept-data-loss"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "drizzle-kit push"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "npx drizzle-kit push"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "terraform apply -auto-approve"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "tofu apply"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "kubectl apply -f k8s/"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "helm upgrade --install app ./chart"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "npm publish"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "pnpm publish --no-git-checks"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "yarn npm publish"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "cargo publish"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "cd app && npm publish --access public"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "bash -c 'fly deploy'"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "gh api -X POST repos/o/r/git/refs -f ref=refs/heads/x -f sha=abc"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "gh api -X PATCH repos/o/r/git/refs/heads/main -f sha=abc"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "gh api -X PUT repos/o/r/pulls/7/merge"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "gh api -X POST repos/o/r/merges -f base=main -f head=x"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "vercel ls"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "vercel logs https://x.vercel.app"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "vercel env ls"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "npx vercel whoami"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "wrangler dev"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "wrangler whoami"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "fly status"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "firebase emulators:start"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "netlify status"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "terraform plan"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "terraform validate"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "kubectl get pods"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "helm template ./chart"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "npm run build"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "npm view left-pad version"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "cargo build"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "drizzle-kit generate"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "npx prisma generate"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "gh api repos/o/r/git/refs/heads/main"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "gh api --method GET repos/o/r/pulls/7/merge"}}
