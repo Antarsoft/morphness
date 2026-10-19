@@ -281,6 +281,9 @@ overwrites your copy. Instead:
   says why each item matters, and applies only what you accept. A file you never edited takes the
   new version; a file you edited gets a merge that keeps your rules, shown before it's written.
 - Every prune runs the same check read-only, so a harness that falls behind gets noticed.
+- No clone needed: the check reads release notes and template text from
+  github.com/antarsoft/morphness; it executes nothing and falls back to a local copy when GitHub
+  can't be reached (or always, with `updates.source: local`).
 - No plugin? Tell your agent: *"Follow https://github.com/antarsoft/morphness/blob/main/UPDATE.md"*.
 
 Each kit change ships with a short note in [`updates/`](updates/), and releases are dated

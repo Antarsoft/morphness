@@ -237,6 +237,9 @@ def check_gh(words):
             default_method = "POST"
             if GH_ASK_PATHS.search(path):
                 ask(f"`gh api {path}` ({method or default_method}) changes repository settings or protection; only the owner approves it.")
+            # Upstream update checks only read Morphness; .claude/settings.json allows those reads.
+            if re.search(r"^/?repos/[^/]+/morphness(/|$)", path):
+                ask(f"`gh api {path}` ({method or default_method}) writes to the Morphness repository; update checks only read it.")
 
 def check_bash(cmd):
     # Heredoc bodies are text (a commit message, a PR body), not commands: keep only their first line.
