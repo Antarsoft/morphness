@@ -1,0 +1,1 @@
+- Settings: the ten `Write(./**/.env…)` deny rules in `template/.claude/settings.json` are removed. Claude Code never consults a `Write(path)` rule (only `Edit(path)` and `Read(path)`), and the same `.env` paths already have `Edit(...)` and `Read(...)` deny rules, so nothing becomes unprotected. Found by the agnix linter.
