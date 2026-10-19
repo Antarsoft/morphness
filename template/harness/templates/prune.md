@@ -20,7 +20,7 @@ Process: `harness/SETUP.md` § Prune; why: `harness/MORPHING.md` § Pruning.
 
 ## 1b. Trials
 
-One row per active trial in `_harness/trials/`: its `Trial …` line from `bash scripts/prune-counter.sh --prune` (features run against its length, rework rounds, QA fails, cost), `keep` or `revert` against its Pass and Revert lines, or `carry on` when it hasn't run its length, with one line of why. When the project tracks plan usage: the owner's usage reading for this prune day, next to the previous prune's.
+One row per active trial in `_harness/trials/`: its `Trial …` line from `bash scripts/prune-counter.sh --prune` (features run against its length, rework rounds, QA fails, cost), `keep` or `revert` against its Pass and Revert lines, or `carry on` when it hasn't run its length or its escape window (one prune window of features after its last trial feature) is still open, with one line of why. Add the `Escaped` lines traced to its features, from bug-mode and fix-PR learnings files. When the project tracks plan usage: the owner's usage reading for this prune day, next to the previous prune's.
 
 | Trial | Features run | Numbers | Proposal |
 |-------|--------------|-------------|----------|
