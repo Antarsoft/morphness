@@ -10,14 +10,14 @@ This folder is the **kit**. It was installed from Morphness, but it now belongs 
 |----------|---------|
 | [SETUP.md](./SETUP.md) | Runbook: lifecycle, QA rounds, code review, after QA pass, retrospective, prune, effort per feature, where QA can run |
 | [STRATEGY.md](./STRATEGY.md) | Agent roles, rules, responsibilities, folder layout |
-| [MODES.md](./MODES.md) | Full harness, light mode, bug mode and research mode |
+| [MODES.md](./MODES.md) | Full harness, small mode, light mode, bug mode and research mode |
 | [HANDOFFS.md](./HANDOFFS.md) | Document ownership, minimum sections, steps file, prompt blocks |
 | [CONTROLS.md](./CONTROLS.md) | When each named check runs, command output discipline, cross-cutting paths, the merge gate |
 | [RELEASE.md](./RELEASE.md) | Release from the integration branch to the production branch: steps, roles, rollback, hotfix |
 | [MORPHING.md](./MORPHING.md) | How this harness changes itself: where lessons land, trials, pruning, sharing upstream |
 | [SKILLS_AND_MCPS.md](./SKILLS_AND_MCPS.md) | When to use skills and MCPs (project details in `project/SKILLS_AND_MCPS.md`) |
 | [PLAN_CHECKLIST.md](./PLAN_CHECKLIST.md) | The Technical Lead's checklist before asking for plan approval |
-| [templates/](./templates/) | `feature.md`, `plan.md`, `bug-plan.md`, `progress.md`, `qa-result.md`, `retro.md`, `prune.md`, `research.md`, `trial.md`, `release-qa-result.md`,<!-- module:roadmap --> `version.md`, `version-checklist.md`,<!-- /module:roadmap --> `learnings-entry.md`, `steps.md` |
+| [templates/](./templates/) | `feature.md`, `plan.md`, `small-plan.md`, `bug-plan.md`, `progress.md`, `qa-result.md`, `retro.md`, `prune.md`, `research.md`, `trial.md`, `release-qa-result.md`,<!-- module:roadmap --> `version.md`, `version-checklist.md`,<!-- /module:roadmap --> `learnings-entry.md`, `steps.md` |
 | [agents/](./agents/) | Generic role bodies for the Full-stack, QA<!-- module:legal -->, legal-writer<!-- /module:legal --> and researcher subagents (project addenda in `project/agents/`) |
 | [modules/](./modules/) | Optional parts, switched on in `harness.config.yml` → `modules` |
 

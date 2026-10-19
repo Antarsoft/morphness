@@ -67,6 +67,9 @@ echo "Prune counter: $count/$threshold"
 echo "Rules: $(kb "$bytes")/$budget KB always loaded"
 echo "Checklists: $(kb "$cbytes")/$cbudget KB"
 echo "Project docs: $(kb "$dbytes")/$dbudget KB"
+# A proposal the owner hasn't decided yet: the hand-off names it instead of writing another.
+waiting="$(grep -l -E '^\*\*Status:\*\*[[:space:]]*proposed' _harness/prunes/*.md 2>/dev/null | sort | tail -n 1)"
+[ -n "$waiting" ] && echo "Prune proposal waiting: $waiting"
 if [ "$count" -ge "$threshold" ]; then
   echo "Prune is DUE"
 elif [ "$bytes" -gt $((budget * 1024)) ]; then

@@ -14,6 +14,8 @@ Process: `harness/SETUP.md` § Prune; why: `harness/MORPHING.md` § Pruning.
 
 **Cost:** window total $… over N measured features, average $… per feature; previous window average $… (or "first window"). Estimates at API list prices (`harness/MODEL_PRICES.md`), so compare windows priced the same way.
 
+**Escaped:** the window's `Escaped` retro lines (bugs found after QA passed), one line each, or "none". A repeat points at a rule row in § 2.
+
 **Trend:** the `Last N features: …` line from `bash scripts/prune-counter.sh --prune` (average rework rounds, QA fails, total cost), then one line: did rework and cost per feature fall against the previous window, and why we think so.
 
 ## 1b. Trials

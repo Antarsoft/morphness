@@ -111,8 +111,7 @@ From `_harness/`:
 - **Prune due:** run `bash scripts/prune-counter.sh` (when the copy lacks it, count the `*-v*.md` files
   in `_harness/learnings/`). When it prints `Prune is DUE`, say "Prune due" and point to
   `harness/SETUP.md` § Prune, naming the `proposed` file in `_harness/prunes/` waiting for the owner, or
-  "no proposal yet" (the TL writes it as its next task). Report its `Rules:` gauge line as is, and name the largest always-loaded
-  files when it is above 90% of `loop.rule_budget_kb`. A copy whose script prints no `Rules:` line:
+  "no proposal yet" (the TL writes it as its next task). Report its `Rules:`, `Checklists:` and `Project docs:` gauge lines as they are, and name the largest files when one is above 90% of its budget (`loop.rule_budget_kb`, `loop.checklist_budget_kb`, `loop.project_docs_budget_kb`). A copy whose script prints no `Rules:` line:
   point to `/morph-update` (update note `2026-10-17-rule-budget`). A missing script is drift worth naming: `/morph-update` adds it.
 - **Feature cost:** with `cost.track` on (or no `cost:` key), `bash scripts/feature-cost.sh` runs and
   prints a `Cost` line (in a fresh session it may say `not measured`, which is fine; a Python error

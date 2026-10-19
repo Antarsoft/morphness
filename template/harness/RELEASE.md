@@ -51,7 +51,7 @@ Only the human changes it on the host (GitHub: Settings → General → Default 
 - **`real_data: true`** means every deploy and migration there waits for the human's approval (the host's protected environment, `project/RELEASE.md`). Production always has it.
 - **Changing the list.** Add, rename or remove an entry in `harness.config.yml`, then run `/morph-doctor`. It reports what is out of step: the `project/RELEASE.md` table, the deploy and migrations workflow choices, the branches on the remote. The host's own environments and secrets are the human's to change.
 
-No agent writes to any of them on its own (`AGENTS.md` § Shared remote environments), whatever the list says; the Technical Lead may through a connector, one approved action at a time ([SKILLS_AND_MCPS.md](./SKILLS_AND_MCPS.md) § Connector actions).
+No agent writes to any of them on its own (the "Shared remote environments" golden rule in `AGENTS.md`), whatever the list says; the Technical Lead may through a connector, one approved action at a time ([SKILLS_AND_MCPS.md](./SKILLS_AND_MCPS.md) § Connector actions).
 
 ## Apps
 

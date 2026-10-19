@@ -22,7 +22,7 @@ A security feature's plan fills `plan.md` § Security before approval. It is sho
 - **Assets:** what an attacker would want from this change (an account, money, another customer's data, a secret).
 - **Entry points:** each new or changed route, handler, job, webhook, form or file upload, and who can reach it (anyone, a signed-in user, an admin, another service).
 - **Identity and ownership:** how each entry point knows who is calling (session check, signed token, webhook signature) and how it checks the caller may touch this record, with the `file:line` of each check.
-- **Threats and mitigations:** one row per threat the entry points open (someone else's id in the request, a replayed or forged webhook, a missing ownership filter, a value that reaches a query, page or shell unescaped, a secret in a log or response, too many attempts). Each mitigation names the acceptance criterion that tests it, and that test covers the rejection path (`.claude/rules/testing.md` § Security boundaries).
+- **Threats and mitigations:** one row per threat the entry points open (someone else's id in the request, a replayed or forged webhook, a missing ownership filter, a value that reaches a query, page or shell unescaped, a secret in a log or response, too many attempts). Each mitigation names the acceptance criterion that tests it, and that test covers the rejection path (the "Security boundaries" rule in `.claude/rules/testing.md`).
 - **Secrets:** each new secret, where it lives (the host's secret store, a local env file that is never committed) and who sets it (the owner, as a human step). Never a value in the plan.
 - **Accepted risks:** anything left open on purpose, with the reason. The owner accepts these with the plan.
 
@@ -32,7 +32,7 @@ The plan's § Inputs and client code still covers new fields, client code and en
 
 | Check | What it proves | Runs |
 |-------|----------------|------|
-| `secrets` | No secret (key, token, password, private key) is in the branch's commits or in the working tree, uncommitted files included | Full-stack before every handoff and QA on the final commit |
+| `secrets` | No secret (key, token, password, private key) is in the branch's commits or in the working tree, uncommitted files included | Full-stack before every handoff, even for a documentation-only diff, and QA on the final commit |
 | `audit` | No dependency with a known high or critical advisory is added or upgraded | Full-stack when the diff touches a dependency manifest or lockfile (a `paths` row in `project/CONTROLS.md` § Check scope); QA on the final commit |
 
 Examples (morph-init fills the real ones from the stack and the installed tools; check the tool's own docs for its version):
@@ -43,16 +43,16 @@ Examples (morph-init fills the real ones from the stack and the installed tools;
 Rules for both:
 
 - **Never print a secret.** The secrets command always redacts, its log stays in the scratchpad, and no agent pastes a finding's value into a file, a commit, a PR or a reply. A finding is named by file, line and rule only.
-- **A real secret is the owner's.** An agent removes it from the change, and the steps file asks the owner to rotate it (a key that reached a pushed commit counts as leaked even after the commit is gone). Rewriting pushed history is the owner's call. Agents never set or rotate secret values (`AGENTS.md` § Shared remote environments).
+- **A real secret is the owner's.** An agent removes it from the change, and the steps file asks the owner to rotate it (a key that reached a pushed commit counts as leaked even after the commit is gone). Rewriting pushed history is the owner's call. Agents never set or rotate secret values (the "Shared remote environments" golden rule in `AGENTS.md`).
 - **A false positive** goes in the tool's ignore file (`.gitleaksignore`, by fingerprint) with a comment saying why, in the same diff, and QA checks each new entry. A test fixture that looks like a key uses an obviously fake value instead where it can.
 - **The audit judges this change, not the world.** Advisories appear without any code change. When `audit` fails, QA compares the flagged packages with the lockfile diff (`git diff <merge-base> -- <lockfile>`): a package the branch added or upgraded is a fail; one it didn't touch is recorded in `qa-result.md` as **pre-existing**, not a fail, and the Technical Lead raises it to the owner as its own bug-mode fix or an accepted advisory.
 - **Accepted advisories** (no fixed version yet, or not reachable from this project's code) are listed in [project/CONTROLS.md](../../../project/CONTROLS.md) § Security exceptions with the reason, the owner's approval and a review date, and the audit command skips exactly those ids. An entry past its review date is reported by `/morph-doctor`.
-- **The audit needs the advisory database.** Offline, it is recorded as **not run** with the reason, never as passed.
+- **The audit needs the advisory database.** Offline, it is recorded as **not run** with the reason, never as passed. A `not run` audit with its reason doesn't block the merge gate; the hand-off names it so the owner can run it.
 - With the `ci-cd` module, CI runs both like any `before_qa` check. The job installs each tool at a pinned version and reads no secret but the built-in token.
 
 ## Security review before QA
 
-For a plan with **Security feature: yes**, the Technical Lead runs the security review in [harness/SETUP.md](../../SETUP.md) § Code review before QA (step 2, then steps 3 to 5) after dev completes and before QA, whatever the plan's effort: `/security-review` with a brief naming the files to read in full, at least 15 tool calls, the count recorded in `Plan/review.md`. Without the `security-review` skill, a read-only subagent with the same brief does it and `review.md` says so; the review is never skipped. The code review in step 1 stays for `xhigh` plans. The brief also names the plan's § Security, so the review checks each mitigation is in the code.
+For a plan with **Security feature: yes**, the Technical Lead (for a bug plan: its **Security review before QA: yes**) runs the security review in [harness/SETUP.md](../../SETUP.md) § Code review before QA (step 2, then steps 3 to 5) after dev completes and before QA, whatever the plan's effort: `/security-review` with a brief naming the files to read in full, at least 15 tool calls, the count recorded in `Plan/review.md`. Without the `security-review` skill, a read-only subagent with the same brief does it and `review.md` says so; the review is never skipped. The code review in step 1 stays for `xhigh` plans. The brief also names the plan's § Security, so the review checks each mitigation is in the code.
 
 QA confirms each `fix` item from `review.md` as usual, and that every mitigation's acceptance criterion passed.
 
@@ -73,7 +73,7 @@ Agents can't do these; they go in `project/RELEASE.md` § Manual steps, and morp
 
 ## On remove
 
-When the project doesn't choose this module, morph-init deletes this folder and the items below. Sentences elsewhere that start "With the `security` module" (the Technical Lead rule, the Full-stack and QA bodies) stay as they are.
+When the project doesn't choose this module, morph-init deletes this folder and the items below. The one unmarked sentence that names the module, in the always-loaded Technical Lead rule (`.claude/rules/technical-lead.md`, the "xhigh, or, with the `security` module" bullet), becomes "When the plan's Full-stack effort is `xhigh`, run …"; the Full-stack and QA body lines are marked and go with the command below.
 
 **Delete these files:** none outside this folder.
 

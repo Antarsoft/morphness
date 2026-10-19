@@ -6,6 +6,9 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Small, bug and security wording lined up across the rules, plans and agent bodies (small plan QA scope
+  and limit, security review on bug plans, full-mode-only sections marked, lighter agent reads and QA
+  layout pass); `prune-counter.sh` shows a waiting prune proposal.
 - The advised Claude Projects settings follow the Sonnet default: coordinator, feature threads and
   one-shot threads on sonnet (medium, high, medium), with opus at high advised for a review, research
   or architecture thread. `/morph-init` still advises opus in all three with the Opus preset.

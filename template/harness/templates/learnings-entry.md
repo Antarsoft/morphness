@@ -11,7 +11,7 @@
 - **Trial:** <trial-slug> (only when this feature ran a trial from `_harness/trials/`; add `, reverted: <why>` when it hit the revert condition; omit otherwise)
 - **Escaped:** <feature that passed QA with this bug, and the AC or check that missed it> (bug-fix features only; omit otherwise)
 - **Lessons:** 1 to 3 one-liners
-- **Retro:** [retro.md](../features/<feature-slug>/<version>/Plan/retro.md)
+- **Retro:** [retro.md](../features/<feature-slug>/<version>/Plan/retro.md) (`none (small mode)` or `none (bug mode)` when no retro file was written)
 
 ## Action items
 
