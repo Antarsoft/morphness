@@ -6,6 +6,10 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- The guard hook now asks before deploys and publishes from well-known CLIs (vercel, wrangler, fly,
+  firebase, netlify, `supabase functions deploy`, `prisma db push`, `drizzle-kit push`,
+  `terraform apply`, `kubectl apply`, `helm upgrade`, `npm publish`, `cargo publish`) and before `gh api`
+  writes to git refs and merges. AGENTS.md says plainly that the guard stops accidents, not intent.
 - Agent wrappers always read the ownership and remote-environment sections; the last copies of the old small-mode test, entry format and guard message wording point at their single source; install notes for duplicate deny lines and a refused no-clobber copy.
 - The guard hook checks the allowed Morphness `curl` read: only `-f -s -S -L` and URLs under the two
   Morphness prefixes pass silently; writing a file, another method, a body, headers, a config file or

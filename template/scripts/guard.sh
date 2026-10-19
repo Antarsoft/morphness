@@ -15,6 +15,11 @@
 #   - remote database writes from well-known CLIs (`supabase db push`, `prisma migrate deploy`,
 #     `wrangler d1 … --remote`, …)
 # Asks (the owner answers a permission prompt):
+#   - deploys and publishes from well-known CLIs (`vercel`, `wrangler deploy`, `fly deploy`,
+#     `firebase deploy`, `netlify deploy`, `supabase functions deploy`, `terraform apply`,
+#     `kubectl apply`, `helm upgrade`, `npm publish`, `cargo publish`) and schema pushes
+#     (`prisma db push`, `drizzle-kit push`), so nothing reaches a shared environment by accident
+#   - `gh api` writes to git refs and merges (…/git/refs, …/merges, …/pulls/N/merge)
 #   - `gh api` writes to rulesets, branch protection and repo settings (/morph-init and /morph-doctor
 #     apply branch protection that way, on the owner's yes)
 #   - a `curl` that names a Morphness GitHub address (the update checks' read fallback) and is
@@ -25,6 +30,9 @@
 #   - every MCP tool whose name doesn't start with a read verb (get, list, search, read, …), so each
 #     connector write waits for the owner's yes (harness/SKILLS_AND_MCPS.md § Connector actions).
 #     `guard.mcp_writes: off` in harness.config.yml turns this off; reads always pass.
+# This stops accidents, not intent: it reads the command text, so a script that runs a deploy, an
+# unlisted tool or a deliberately disguised call gets past it. The settings rules and the owner's
+# review are the other layers.
 # Everything else passes untouched. Without python3 the hook lets the call through (the settings
 # rules still apply) and /morph-doctor reports it.
 #
@@ -214,7 +222,23 @@ REMOTE_DB = [
     (r"^turso\s+db\s+shell\b", "turso db shell"),
     (r"^(heroku|fly|flyctl)\b.*\b(pg:push|pg:reset|postgres\s+connect)\b", "a hosted database command"),
 ]
-GH_ASK_PATHS = re.compile(r"(rulesets|/protection|/branches/[^/]+/protection|^/?repos/[^/]+/[^/]+/?$|collaborators|/hooks|/keys|/environments)")
+DEPLOY_ASK = [
+    (r"^vercel\b(?!\s+(-\S+\s+)*(ls|list|inspect|logs|whoami|login|logout|help|link|pull|build|dev|env|domains|teams|project|projects|certs|dns|alias|bisect|--version|-v|--help|-h)\b)", "vercel deploys to a shared environment"),
+    (r"^wrangler\b.*\b(deploy|publish|rollback)\b", "wrangler deploy"),
+    (r"^(fly|flyctl)\b.*\b(deploy|launch)\b", "fly deploy"),
+    (r"^firebase\b.*\bdeploy\b", "firebase deploy"),
+    (r"^(netlify|ntl)\b.*\bdeploy\b", "netlify deploy"),
+    (r"^supabase\b.*\bfunctions\s+deploy\b", "supabase functions deploy"),
+    (r"\bprisma\s+db\s+push\b", "prisma db push"),
+    (r"^drizzle-kit\b.*\b(push|migrate)\b", "drizzle-kit push"),
+    (r"^(terraform|tofu)\b.*\b(apply|destroy)\b", "terraform apply"),
+    (r"^kubectl\b.*\bapply\b", "kubectl apply"),
+    (r"^helm\b.*\b(upgrade|install)\b", "helm upgrade"),
+    (r"^cargo\b.*\bpublish\b", "cargo publish"),
+]
+# Matched on the command as typed, because the runner strip below removes a leading `npm`.
+PUBLISH_ASK = re.compile(r"^(npm|pnpm|yarn|bun)\s+(-\S+\s+)*(npm\s+)?publish\b")
+GH_ASK_PATHS = re.compile(r"(/git/(refs|tags)|/merges|/pulls/[^/]+/merge|rulesets|/protection|/branches/[^/]+/protection|^/?repos/[^/]+/[^/]+/?$|collaborators|/hooks|/keys|/environments)")
 
 def check_gh(words):
     if len(words) > 2 and words[1] in ("secret", "variable") and words[2] in ("set", "delete", "remove"):
@@ -274,6 +298,8 @@ def check_bash(cmd):
             if env_in_word(w):
                 deny(f"`{w}` is a secret env file; agents never read or write it (AGENTS.md § Golden rules). Use .env.example for names.")
         line = " ".join(words)
+        if PUBLISH_ASK.search(line):
+            ask("`npm publish` releases a package to a shared registry; only the owner approves it (the Shared remote environments golden rule in AGENTS.md).")
         # `npx supabase …`, `pnpm exec prisma …`: match the tool the runner starts.
         line = re.sub(r"^(npx|bunx|pnpx|(pnpm|yarn|bun|npm)(\s+(exec|dlx|x))?)(\s+-\S+)*\s+(--\s+)?", "", line)
         if words[0] == "git":
@@ -285,6 +311,9 @@ def check_bash(cmd):
         for pattern, label in REMOTE_DB:
             if re.search(pattern, line):
                 deny(f"{label} writes a remote database; that is the owner’s step (the Shared remote environments golden rule in AGENTS.md).")
+        for pattern, label in DEPLOY_ASK:
+            if re.search(pattern, line):
+                ask(f"`{label}` changes a shared remote environment or registry; only the owner approves it (the Shared remote environments golden rule in AGENTS.md).")
 
 # ---- dispatch ------------------------------------------------------------------------------------
 # An MCP tool passes when a word of its name is a read verb and none is a write verb
