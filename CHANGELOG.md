@@ -6,6 +6,12 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Guard: git bypass forms. `scripts/guard.sh` follows `git checkout`, `switch`, `symbolic-ref HEAD` and
+  `remote.*.push` through a command, so `git checkout main && git push` is judged as a push to `main`;
+  it denies `git push --prune` and `git branch -D` (also `-f`, `-m`) on an environment branch, reads
+  `HEAD:refs/for/main` and `$(git branch --show-current)`, asks on a push target it cannot read and
+  before any tag push (`guard.publishes: off` turns that ask off).
+
 - Guard: environment branches are protected whether `environments:` is written as one-line maps or as
   a block list. `scripts/lib/config.sh` gains `config_env_branches`, and the self-test renders one
   sample project with a block list.
