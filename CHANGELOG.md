@@ -10,6 +10,11 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
   window of features has finished past its last trial feature, and the decision reads the `Escaped`
   lines of bug-mode and fix-PR learnings files traced to its features.
 
+- Guard: destructive local and persistence asks. `scripts/guard.sh` asks before a recursive `rm` outside the
+  repo (or of the repo folder, its `.git` or a path built at run time; `/tmp` passes), before a write to
+  `~/.bashrc`, `~/.profile`, `~/.zshrc` and other startup files or schedules, before `crontab` (except `-l`),
+  and before any read or change of `~/.claude`.
+
 - Guard: git bypass forms. `scripts/guard.sh` follows `git checkout`, `switch`, `symbolic-ref HEAD` and
   `remote.*.push` through a command, so `git checkout main && git push` is judged as a push to `main`;
   it denies `git push --prune` and `git branch -D` (also `-f`, `-m`) on an environment branch, reads

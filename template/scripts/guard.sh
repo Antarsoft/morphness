@@ -156,9 +156,47 @@ def rels_to_root(word):
                 if cand == base or cand.startswith(base + os.sep):
                     yield os.path.relpath(cand, base)
 
+# ---- files outside the repo: ~/.claude, shell startup files, schedules ----------------------------
+HOME = os.path.expanduser("~")
+CLAUDE_HOME = os.path.normpath(os.environ.get("CLAUDE_CONFIG_DIR") or os.path.join(HOME, ".claude"))
+PERSIST_FILES = [os.path.join(HOME, n) for n in (".bashrc", ".bash_profile", ".bash_login", ".bash_logout", ".profile",
+                 ".zshrc", ".zprofile", ".zshenv", ".zlogin", ".zlogout", ".config/fish/config.fish")] + [
+                 "/etc/profile", "/etc/bash.bashrc", "/etc/environment", "/etc/crontab", "/etc/zshrc", "/etc/zshenv"]
+PERSIST_DIRS = [os.path.join(HOME, n) for n in (".config/systemd/user", ".config/autostart", ".config/fish/conf.d",
+                "Library/LaunchAgents")] + ["/etc/profile.d", "/etc/cron.d", "/etc/cron.daily", "/etc/cron.hourly",
+                "/etc/cron.weekly", "/etc/cron.monthly", "/etc/sudoers.d", "/etc/systemd", "/var/spool/cron"]
+
+def under(path, base):
+    return path == base or path.startswith(base + os.sep)
+
+def expand_home(word):
+    w = str(word).strip("\"\x27")
+    for var in ("${HOME}", "$HOME"):
+        if w == var or w.startswith(var + "/"):
+            w = HOME + w[len(var):]
+    if w == "~" or w.startswith("~/"):
+        w = HOME + w[1:]
+    return w
+
+def home_kind(word):
+    """"home" for a path under ~/.claude, "persist" for a shell startup file or a schedule, "" otherwise."""
+    w = expand_home(word)
+    if not os.path.isabs(w) or "$" in w or "`" in w:
+        return ""
+    p = os.path.normpath(w)
+    for cand in {p, os.path.realpath(p)}:
+        if under(cand, CLAUDE_HOME):
+            return "home"
+        if cand in PERSIST_FILES or any(under(cand, d) for d in PERSIST_DIRS):
+            return "persist"
+    return ""
+
 def protected_kind(word):
-    """"owner" for settings.local.json, "guard" for the guard files, "" for anything else."""
+    """"owner" for settings.local.json, "guard" for the guard files, "persist" for shell startup files and
+    schedules, "" for anything else."""
     for part in re.split(r"[=:<>|,;()]", str(word)):
+        if part and home_kind(part) == "persist":
+            return "persist"
         globbed = any(c in part for c in "*?[")
         for rel in rels_to_root(part) if part else ():
             for kind, names in (("owner", OWNER_FILES), ("guard", GUARD_FILES)):
@@ -173,6 +211,8 @@ def protect(path, how):
         deny(f"`{path}` is the owner\u2019s file ({how}); an agent never writes settings.local.json.")
     if kind == "guard":
         ask(f"`{path}` is one of the files the guard rests on ({how}); the owner approves each change to it.")
+    if kind == "persist":
+        ask(f"`{path}` runs in every later shell or on a schedule ({how}); the owner approves a change to it.")
 
 # ---- secret and credential files ---------------------------------------------------------------
 SAFE_SUFFIX = (".example", ".sample", ".template")
@@ -187,7 +227,11 @@ SECRET_RE = re.compile(r"^(id_(rsa|dsa|ecdsa|ed25519)(_[a-z0-9_]+)?"
 GLOB_PROBES = (".env", ".envrc", ".netrc", ".npmrc", ".pypirc", ".pgpass", ".git-credentials")
 
 def secret_kind(path):
-    """"deny" for a secret or credential file, "ask" for one that is often plain config, "" otherwise."""
+    """"deny" for a secret or credential file, "ask" for one that is often plain config, "home" for a path
+    under ~/.claude, "" otherwise."""
+    return file_secret_kind(path) or ("home" if home_kind(path) == "home" else "")
+
+def file_secret_kind(path):
     parts = [c for c in str(path).strip("\"\x27").split("/") if c]
     if not parts or any(c.isspace() for c in parts[-1]):
         return ""
@@ -222,7 +266,7 @@ def is_secret_env(path):
 def env_in_word(word):
     # Covers plain paths, globs (.env*, .en?), redirections glued to a word, VAR=path and @file forms.
     kinds = [secret_kind(part) for part in re.split(r"[=:<>|,;()@]", word) if part]
-    return "deny" if "deny" in kinds else "ask" if "ask" in kinds else ""
+    return "deny" if "deny" in kinds else "ask" if "ask" in kinds else "home" if "home" in kinds else ""
 
 # ---- Bash parsing ------------------------------------------------------------------------------
 SEPARATORS = {";", "&&", "||", "|", "&", "|&", "\n", "(", ")", "{", "}"}
@@ -610,6 +654,47 @@ def guard_file_write(cmd, words):
     if writes:
         protect(named[0], f"`{name}` writes it")
 
+TMP_DIRS = ["/tmp", "/var/tmp"]
+
+def outside_repo(word):
+    """True when a path word is outside the project (the project folder itself, its .git and anything
+    built at run time count as outside); a path below /tmp does not."""
+    w = expand_home(word)
+    for var in ("${CLAUDE_PROJECT_DIR}", "$CLAUDE_PROJECT_DIR", "${PWD}", "$PWD"):
+        w = w.replace(var, ROOT)
+    if not w:
+        return False
+    if "$" in w or "`" in w:
+        return True
+    root = os.path.realpath(ROOT)
+    for full in [w] if os.path.isabs(w) else [os.path.join(ROOT, d, w) for d in [""] + CD_DIRS]:
+        full = os.path.normpath(full)
+        for cand in {full, os.path.realpath(full)}:
+            if cand in (ROOT, root, os.path.join(ROOT, ".git"), os.path.join(root, ".git")):
+                return True
+            if any(cand != b and under(cand, b) for b in (ROOT, root)):
+                continue
+            if any(cand != t and under(cand, t) for t in TMP_DIRS) and not under(root, cand):
+                continue
+            return True
+    return False
+
+def check_rm(words):
+    """Ask when a recursive rm reaches outside the repo."""
+    flags = [w for w in words[1:] if w.startswith("-") and w != "--"]
+    if not any(re.match(r"^-[A-Za-z]*[rR]", f) or f == "--recursive" for f in flags):
+        return
+    targets = []
+    for k, w in enumerate(words[1:], 1):
+        if w == "--":
+            targets += words[k + 1:]
+            break
+        if not w.startswith("-"):
+            targets.append(w)
+    for t in targets:
+        if outside_repo(t):
+            ask(f"`rm -r` would delete `{t}`, which is outside this repo (or the repo itself, its .git, or a path built at run time); the owner approves it.")
+
 def check_bash(cmd):
     # `$(git branch --show-current)` and its kin are the current branch: read them as HEAD.
     cmd = HEAD_SUBST.sub("HEAD", cmd)
@@ -631,6 +716,8 @@ def check_bash(cmd):
                 deny(f"`{w}` is a secret or credential file; agents never read or write it (AGENTS.md § Golden rules). Use .env.example for names.")
             if kind == "ask":
                 ask(f"`{w}` often holds registry tokens; the owner approves a read or change of it.")
+            if kind == "home":
+                ask(f"`{w}` is under ~/.claude: Claude Code settings, permissions and other projects\u2019 transcripts; the owner approves a read or change of it.")
         line = " ".join(words)
         if GROUP_ASK["publishes"] and PUBLISH_ASK.search(line) and not dry_run(words):
             ask("`publish` releases a package to a shared registry; only the owner approves it (the Shared remote environments golden rule in AGENTS.md). "
@@ -638,6 +725,10 @@ def check_bash(cmd):
         # `npx supabase …`, `pnpm exec prisma …`: match the tool the runner starts.
         line = re.sub(r"^(npx|bunx|pnpx|(pnpm|yarn|bun|npm)(\s+(exec|dlx|x))?)(\s+-\S+)*\s+(--\s+)?", "", line)
         check_network(words)
+        if words[0] == "crontab" and "-l" not in words[1:]:
+            ask("`crontab` installs a schedule that runs commands later; the owner approves it.")
+        if words[0] == "rm":
+            check_rm(words)
         if words[0] == "git":
             check_git(words)
         elif words[0] == "gh":
@@ -683,11 +774,15 @@ elif tool in ("Read", "Edit", "MultiEdit", "Write", "NotebookEdit"):
         deny(f"`{p}` is a secret or credential file; agents never read or write it (AGENTS.md § Golden rules).")
     if kind == "ask":
         ask(f"`{p}` often holds registry tokens; the owner approves a read or change of it.")
+    if kind == "home":
+        ask(f"`{p}` is under ~/.claude: Claude Code settings, permissions and other projects\u2019 transcripts; the owner approves a read or change of it.")
 elif tool == "Grep":
     for key in ("path", "glob"):
         v = str(args.get(key) or "")
         if v and env_in_word(v) == "deny":
             deny(f"`{v}` names a secret or credential file; agents never read it.")
+        if v and env_in_word(v) == "home":
+            ask(f"`{v}` is under ~/.claude: Claude Code settings, permissions and other projects\u2019 transcripts; the owner approves a read or change of it.")
 elif tool.startswith("mcp__") and MCP_ASK:
     short = tool.split("__", 2)[-1]
     words = {w.lower() for w in re.split(r"[_\-.]|(?<=[a-z])(?=[A-Z])", short) if w}
