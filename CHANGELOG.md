@@ -6,6 +6,10 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Docs: the guard hook has one description (`AGENTS.md` § Permissions for this project) listing what it
+  denies, asks and does not see; `CLAUDE.md`, `RELEASE.md` and `SKILLS_AND_MCPS.md` link to it. The README
+  "Safe by default" row and its requirements (bash, git, python3, awk, perl) say what the code does.
+
 - Guard: the CLI guard is inverted. `scripts/guard.sh` asks before any call to a known deploy, cloud or
   database CLI (wrangler, netlify, fly, railway, heroku, gcloud, aws, az, kubectl, helm, pulumi, terraform,
   firebase, stripe, psql, mysql, mongosh, redis-cli and more, also behind npx and pnpm exec) unless a read

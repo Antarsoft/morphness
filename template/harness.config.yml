@@ -125,14 +125,15 @@ claude_projects:
 cost: { track: true, prices: harness/MODEL_PRICES.md }
 
 # The guard hook (scripts/guard.sh, wired in .claude/settings.json) runs before tool calls. It always
-# blocks secret .env files (also behind `@` and `<`), a bare `env` or `printenv`, pushes to environment
-# branches, force-pushes, code-host secrets and well-known remote database writes: no switch. The asks below show a permission prompt (the owner
+# blocks secret and credential files (also behind `@` and `<`), a bare `env` or `printenv`, pushes to environment
+# branches, force-pushes, code-host secrets and the remote database writes listed in AGENTS.md
+# § Permissions for this project: no switch. The asks below show a permission prompt (the owner
 # answers it); `off` skips that group's prompt, and the settings.json rules still apply. A hook ask
 # beats an allow rule, so `off` is the only way to run these without a prompt, for instance
 # `prisma db push` on a local stack.
 #   mcp_writes     every MCP tool that isn't a read (get, list, search, ...)
 #   deploys        any call to a deploy or cloud CLI (vercel, wrangler, netlify, fly, railway, heroku, gcloud, aws,
-#                  az, kubectl, helm, pulumi, terraform, firebase, stripe, supabase ...) unless it only reads
+#                  az, kubectl, helm, pulumi, terraform, firebase, stripe ...) and hosted supabase writes unless it only reads
 #                  (get, list, status, plan ...) or is --dry-run/--help; platform secrets and variables;
 #                  gh pr merge, gh release, gh workflow run, any gh api write
 #   publishes      npm/pnpm/yarn/bun publish (also with --filter/--workspace), changeset publish, cargo publish,
@@ -144,7 +145,8 @@ cost: { track: true, prices: harness/MODEL_PRICES.md }
 #                  scp, sftp, rsync to or from another machine, nc, socat, telnet, ftp
 #   fail_open      true lets calls through when python3 is missing; by default a guard that can't run
 #                  (no python3, no config reader, unreadable input, a crash) blocks the call
-# A command with --dry-run or --help passes in every group. The full list is in scripts/guard.sh.
+# A command with --dry-run or --help passes in every group. What the guard denies, asks and does not see:
+# AGENTS.md § Permissions for this project.
 guard: { mcp_writes: ask, deploys: ask, publishes: ask, schema_pushes: ask, network: ask }
 
 loop:
