@@ -31,6 +31,16 @@ if [ ! -f "$TARGET/harness.config.yml" ] && { [ -f "$TARGET/HARNESS_VERSION" ] |
   exit 1
 fi
 
+# Tools the installed kit calls. A missing one never stops the install; it is named here and in /morph-doctor.
+missing=()
+need() {  # need <tool> <what breaks without it>
+  command -v "$1" >/dev/null 2>&1 || missing+=("$1: $2")
+}
+need git "the branch, PR and release process (the installed scripts call git throughout)"
+need python3 "scripts/guard.sh stops blocking: every tool call passes unchecked, and the prune counter and feature-cost scripts do not run"
+need awk "scripts/lib/config.sh cannot read harness.config.yml, so every script that reads the config fails"
+need perl "removing a module (/morph-module remove) cannot strip its marked text"
+
 copied=0; skipped=()
 while IFS= read -r -d '' f; do
   rel="${f#"$SRC"/}"
@@ -48,6 +58,11 @@ echo "Morphness: $copied file(s) $( [ "$DRY" = 1 ] && echo 'to copy' || echo 'co
 if [ "${#skipped[@]}" -gt 0 ]; then
   echo "Skipped (already exist; /morph-init merges these):"
   printf '  %s\n' "${skipped[@]}"
+fi
+if [ "${#missing[@]}" -gt 0 ]; then
+  echo
+  echo "Missing tools (install them; /morph-doctor checks this again):"
+  printf '  %s\n' "${missing[@]}"
 fi
 cat <<MSG
 
