@@ -422,6 +422,9 @@ def render(fx, t, tpl=None):
         if r.returncode:
             sys.exit(f"git failed in {t}: {r.stderr}")
 
+# KB of always-loaded rules (CLAUDE.md, its imports, unscoped .claude/rules) a fresh install may carry.
+ALWAYS_LOADED_CEILING_KB = 35
+
 # ---- self-checks (render.md § 7) -------------------------------------------------------------
 def strip_code(s):
     s = re.sub(r"^```.*?^```", "", s, flags=re.S | re.M)
@@ -593,6 +596,10 @@ def check(name, fx, t):
         bad(f"prune-counter.sh printed no Rules gauge line: {r.stdout!r}")
     if any(l.startswith("Prune is DUE") for l in lines):
         bad(f"a fresh install is already due a prune: {r.stdout!r}")
+    # the kit's own always-loaded text is paid for in every session: keep it under a ceiling
+    m = next((re.match(r"^Rules: (\d+(?:\.\d)?)/", l) for l in lines if l.startswith("Rules:")), None)
+    if m and float(m.group(1)) > ALWAYS_LOADED_CEILING_KB:
+        bad(f"a fresh install loads {m.group(1)} KB of rules in every session, over the kit ceiling of {ALWAYS_LOADED_CEILING_KB} KB: trim the kit's rule text, or raise the ceiling in scripts/kit-selftest.sh on purpose")
     r = run(["bash", "scripts/prune-counter.sh", "--prune"], t)
     if r.returncode or "Last 0 features: no features" not in r.stdout or "Rule tags: 0 " not in r.stdout or "Loop: 0 escapes and 0 rule tags" not in r.stdout:
         bad(f"prune-counter.sh --prune on a fresh install printed {r.stdout!r} (stderr {r.stderr.strip()!r})")
