@@ -2,7 +2,7 @@
 
 **Author:** Technical Lead  
 **Window:** entries after `<slug> v<n>` through `<slug> v<n>` (N features)  
-**Status:** proposed | approved | applied
+**Status:** proposed | approved | applied | declined
 
 Process: `harness/SETUP.md` § Prune; why: `harness/MORPHING.md` § Pruning.
 
