@@ -26,8 +26,8 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 - QA's layout pass fails any overflow when the request is about layout or screen size.
 - README: what Morphness adds is process (plan, QA record, audit trail, rules from misses), not a
   smarter model.
-- Security module (optional): features touching sign-in, payments or data about people fill a short
-  threat model in `plan.md` § Security, each mitigation tied to a tested acceptance criterion, and get
+- Security module (optional): features that change who can sign in or read or change data, move
+  money, handle secrets or delete people's data (never small-mode changes) fill a short threat model in `plan.md` § Security, each mitigation tied to a tested acceptance criterion, and get
   the security review before QA whatever their effort. Two named checks run on every feature:
   `secrets` (secret scanning, always redacted) and `audit` (the stack's dependency audit, judged only on
   packages the branch added or upgraded). `/morph-init` asks for it (Q11b) and `/morph-doctor` checks

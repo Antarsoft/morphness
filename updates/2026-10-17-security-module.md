@@ -21,8 +21,10 @@ removed: []
 
 ## What changed
 
-A new optional `security` module for products with sign-in, payments or data about people. A plan
-that touches those (or a `risk_areas` entry) is a **security feature**: it fills a short threat model
+A new optional `security` module for products with sign-in, payments or data about people. A change
+that alters who can sign in or read or change data, moves money, handles secrets or deletes people's
+data is a **security feature** (touching user data alone isn't, and a small-mode change never is): it
+fills a short threat model
 in `plan.md` § Security (assets, entry points, how each one checks identity and ownership, threats with
 the mitigation and the acceptance criterion that tests it, new secrets, accepted risks), and gets the
 security review before QA whatever its effort, with the existing subagent fallback when the

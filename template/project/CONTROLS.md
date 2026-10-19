@@ -48,7 +48,7 @@ A change to any of these paths can break pages or flows it doesn't name, so it g
 <!-- module:security -->
 ## Security paths
 
-The code a security feature touches ([harness/modules/security/README.md](../harness/modules/security/README.md) § What counts as a security feature). A plan that changes any of these paths sets **Security feature: yes**.
+The code a security feature touches ([harness/modules/security/README.md](../harness/modules/security/README.md) § What counts as a security feature). A change here is a security feature only when it changes one of the behaviours that module section lists.
 
 <!-- morph-init: fill the paths by kind from the repo scan. Example: "Authentication and sessions: `src/auth/`, `src/middleware.ts`. Payments: `src/billing/`, `src/app/api/webhooks/stripe/`. User data: `src/db/schema/users.ts`, the `profiles` and `uploads` tables." Leave "Not set yet: add paths with the first security feature" for a new project. -->
 

@@ -1,17 +1,19 @@
 # Module: security (threat model, secret scanning, dependency audit)
 
-Optional. Enable it in `harness.config.yml` → `modules` when the product has sign-in, takes payments or stores data about people. It adds three things: a threat model in the plan of every **security feature**, two named checks that run on every feature (`secrets` and `audit`), and a security review before QA for security features. The rules are tool-neutral; the examples use **gitleaks** for secrets. The commands are the `secrets` and `audit` rows in [project/CONTROLS.md](../../../project/CONTROLS.md), the only place they are spelled out.
+Optional. Enable it in `harness.config.yml` → `modules` when the product has sign-in, takes payments or stores data about people. It adds three things: a threat model in the plan of every **security feature** (a change to access, money, secrets or deleting people's data), two named checks that run on every feature (`secrets` and `audit`), and a security review before QA for security features. The rules are tool-neutral; the examples use **gitleaks** for secrets. The commands are the `secrets` and `audit` rows in [project/CONTROLS.md](../../../project/CONTROLS.md), the only place they are spelled out.
 
 ## What counts as a security feature
 
-The Technical Lead sets `plan.md` § Security → **Security feature: yes** when the plan changes how any of these behaves. When unsure, it is yes. Judge by what the change does, as [harness/MODES.md](../../MODES.md) § Small mode does: a change that only passes through this code without changing its behaviour is not one, and such a change can run in small mode, which has no § Security. A change that does alter one of these is never small mode.
+The Technical Lead sets `plan.md` § Security → **Security feature: yes** when the change does one of these, judged by what it does, the same way [harness/MODES.md](../../MODES.md) § Small mode judges a change:
 
-- **Authentication and sessions:** sign-in, sign-up, password or key reset, tokens, session handling, roles and permissions, invitations, impersonation.
-- **Payments and money:** checkout, subscriptions, refunds, credits or balances, payment webhooks, prices a customer is charged.
-- **User data:** fields about people added, shown, exported, shared with a service or deleted; files people upload; anything one account can read of another's.
-- A `risk_areas` entry in `harness.config.yml`.
+- **Changes who can sign in, or who can read or change data:** sign-in, sign-up, password or key reset, tokens and sessions, roles and permissions, invitations, impersonation, access rules, anything that lets one account reach another's data.
+- **Moves money:** checkout, subscriptions, refunds, credits or balances, payment webhooks, the price a customer is charged.
+- **Handles secrets:** adds, reads, stores or passes on a key, token or password.
+- **Deletes people's data,** or exports or shares it with another service.
 
-This project's paths for each are in [project/CONTROLS.md](../../../project/CONTROLS.md) § Security paths, so the check is a grep of the plan's files, not a guess.
+Touching code that holds user data is not enough: a new field shown on a page, a sort order or a label on a screen that reads people's data is not a security feature. A small-mode change is never one (small mode already excludes every change above), so small mode stays available with this module on, and § Security is filled only in full-mode plans.
+
+This project's code for each is listed in [project/CONTROLS.md](../../../project/CONTROLS.md) § Security paths, so the Technical Lead knows where to look; a change there still counts only when it changes one of the behaviours above.
 
 ## Threat model
 
@@ -66,7 +68,7 @@ Agents can't do these; they go in `project/RELEASE.md` § Manual steps, and morp
 
 - Fill the `secrets` and `audit` rows in [project/CONTROLS.md](../../../project/CONTROLS.md) § Named checks from the stack (check each tool is installed with its version command; a missing tool is an owner step above, and the row still gets its command). Add both names to `harness.config.yml` → `checks.before_qa` and `checks.before_signoff`, and a § Check scope row `| audit | paths | <the dependency manifests and lockfile> |`.
 - Fill § Security paths (the auth, payment and user-data code and the database tables that hold personal data) and leave § Security exceptions at "None.".
-- Suggest `auth`, `payments` and `user data` for `risk_areas` when the scan finds them and they aren't listed.
+- Suggest behaviours, not layers, for `risk_areas` when the scan finds them and they aren't listed: "who can read or change people's data", "payments", "secrets" (the same wording as morph-init's Q12a).
 - With the `ci-cd` module, add the two steps to CI (the module's rule: one step per `before_qa` check, word for word).
 
 ## On remove

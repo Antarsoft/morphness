@@ -216,7 +216,8 @@ the agents might change?" Yes unlocks the legal module and the legal-writer agen
 
 Skip for a tool with no sign-in, no payments and no data about people. "Does the product have
 sign-in, take payments or keep data about people? The security module adds a short threat model to
-the plan of every feature that touches those, a security review before testing, and two automatic
+the plan of every feature that changes who can get in or see data, moves money, handles secrets or
+deletes people's data, a security review before testing, and two automatic
 checks on every feature: one looks for passwords and keys left in the code (secret scanning), one
 for libraries with known security holes (dependency audit)." Default yes when the scan finds auth,
 payment or user-data code. Yes unlocks the commands for the two checks: suggest gitleaks for secrets
