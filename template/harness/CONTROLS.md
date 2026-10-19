@@ -50,7 +50,7 @@ Full-stack's `before_qa` run may be narrowed to what the branch changed, so a sm
 
 1. **The diff:** `git diff --name-only $(git merge-base origin/<integration> HEAD)` (it includes uncommitted changes) plus untracked files from `git status --porcelain`. Paste the command into `progress.md`.
 2. **Full when in doubt.** Run every `before_qa` check with its full command when the diff touches a path in § Cross-cutting paths or a dependency manifest or lockfile, when the plan says **Checks: full**, when the merge base can't be found, or when a scoped command fails before any test runs (it can't work out what is affected).
-3. **Documentation only:** when every path in the diff is documentation (§ Documentation paths), record each `before_qa` check as `skipped: docs only` and stop. CI and QA treat the same diff the same way.
+3. **Documentation only:** when every path in the diff is documentation (§ Documentation paths), record each `before_qa` check as `skipped: docs only` and stop<!-- module:security --> (except `secrets`, which still runs: a key pasted into a document is a leak)<!-- /module:security -->. CI and QA treat the same diff the same way.
 4. **Otherwise, per check,** follow its row in `project/CONTROLS.md` § Check scope:
    - `full` (or no row): the full command.
    - `affected`: the scoped command there (the tool's own affected or related-tests mode, for example a monorepo filter on the merge base or a test runner's changed-files option).

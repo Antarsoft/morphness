@@ -19,7 +19,7 @@ Subagents are defined in `.claude/agents/`. Each file sets only `model`, `effort
 | Researcher | `researcher-high` | `{{models.researcher_high}}` | `high` |
 | Legal writer | `legal-writer` | `{{models.legal}}` | `high` | <!-- module:legal -->
 
-<!-- morph-init: fill the default marks from harness.config.yml → agents. Advised models: Technical Lead `opus` at `high`; Full-stack `opus` (the medium variant `sonnet`); QA `sonnet`; researcher `sonnet` (the high variant `opus`); legal writer `fable` (fallback `opus`). Change a row and its `.claude/agents/*.md` file together. Drop the legal writer row when the legal module is off. -->
+<!-- morph-init: fill the default marks from harness.config.yml → agents. Advised models: all `sonnet` by default; the Opus preset sets the Technical Lead, Full-stack (high and xhigh) and the high researcher to `opus`; legal writer `fable` (fallback `opus`). Change a row and its `.claude/agents/*.md` file together. Drop the legal writer row when the legal module is off. -->
 
 Pass the absolute feature folder path (and the `plan.md` / `progress.md` paths) in the prompt. QA-fail rework goes to the same Full-stack variant as the first round.
 
@@ -29,7 +29,7 @@ The Technical Lead runs in the main chat, so its model is the session's, not a f
 
 **Effort:** the Technical Lead runs at `high` effort by default: it plans, reviews and decides retro items, where a miss costs a rework round. Effort is the session's (`/effort high` in a local session; the project default in a hosted one). Handing research to the researcher doesn't change this level: the Technical Lead still frames the question, checks the findings and decides. If usage gets tight, dropping the Technical Lead to `medium` on one-shot threads (a status check, a docs-only PR) is the first saving; feature threads stay at `high`.
 
-**Rule of thumb:** the Technical Lead runs rarely, but a miss there is expensive, so it uses the strongest model. A smaller model is acceptable for the Technical Lead only on small, low-risk features, and never for work in a risk area (§ Effort per feature). When in doubt, the strongest model.
+**Rule of thumb:** the Technical Lead runs rarely, but a miss there is expensive, so it runs at `high` effort on the model the project chose (Sonnet by default; the Opus preset is for projects where a missed edge case is costly).
 
 ## Effort per feature
 

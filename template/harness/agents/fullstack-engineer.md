@@ -25,7 +25,7 @@ You are the **Full-stack engineer** for a harness feature. Ownership and flow: `
 - With browser tests (the `browser-e2e` module), before the first run check that nothing is already listening on the app's test port (a server left from a screenshot or QA build makes the tests run against the old app, and the run is invalid).
 - Use the skills and MCPs listed in `project/SKILLS_AND_MCPS.md` when they match the task.
 - With the `legal` module, when the plan says **Legal wording: yes**, paste each sentence from `<feature>/Legal/legal-copy.md` word for word where it says. You may change the markup around a sentence (links, line breaks, template syntax), never its words. If the code needs a legal sentence the file doesn't have, or one that doesn't fit, stop that part and hand back to the Technical Lead.
-- With the `security` module, when the plan says **Security feature: yes**, build each mitigation in `plan.md` § Security with its test of the rejection path. Never write a secret value into code, a test, a log or `progress.md`; when the `secrets` check finds one, name only the file, line and rule, take the secret out of the change and hand back so the Technical Lead can ask the owner to rotate it (`harness/modules/security/README.md` § Named checks).
+- With the `security` module, when the plan says **Security feature: yes**, build each mitigation in `plan.md` § Security with its test of the rejection path. Never write a secret value into code, a test, a log or `progress.md`; when the `secrets` check finds one, name only the file, line and rule, take the secret out of the change and hand back so the Technical Lead can ask the owner to rotate it (`harness/modules/security/README.md` § Named checks). <!-- module:security -->
 
 ## Bug mode
 

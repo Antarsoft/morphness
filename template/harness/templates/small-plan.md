@@ -3,6 +3,7 @@
 **Mode:** small (`harness/MODES.md` § Small mode)  
 **Status:** draft  <!-- draft | awaiting-approval | approved | passed | failed-escalated (harness/SETUP.md § Lifecycle status) -->  
 **Feature slug:** `<slug>`  
+**Steps file:** set at QA pass: the steps file path | none  
 **Version:** `1`  
 **Created:** YYYY-MM-DD
 
@@ -26,7 +27,15 @@ The paths to change and the function in each, read by the TL itself (`file:line`
 
 ## Limit
 
-Full-stack stops and hands back, without the change, when it needs: a file not listed, a change to who can read or change data, a schema change, a new dependency, or behaviour § Acceptance criteria doesn't name.
+Full-stack stops and hands back, without the change, when it needs: a file not listed, a change to who can read or change data, to what a customer is charged or where money moves, to how secrets are handled, to deleting or sharing people's data, a schema change, a new dependency, a new page or flow, or behaviour § Acceptance criteria doesn't name.
+
+## QA scope
+
+- **UI change:** yes | no. If **yes**, Full-stack provides screenshots and QA runs its layout pass.
+- **Needs live app/services:** none | AC #s, as in `harness/templates/plan.md`.
+- **Apps touched:** n/a | the app names.
+- **Targeted e2e specs:** n/a (browser-e2e module off) | none | spec paths.
+- **Human steps:** none | each step only a human can do, with why no connector did it.
 
 ## Agent effort
 
@@ -35,3 +44,7 @@ Full-stack `medium` · QA `medium` (small mode default; raise one with a one-lin
 ## Approval
 
 **Approver:** · **Date:** · **Answers:**
+
+## Decisions
+
+One dated line per decision the human makes in chat after approval, written the same turn.

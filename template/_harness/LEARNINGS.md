@@ -12,7 +12,7 @@ Procedure: [harness/SETUP.md](../harness/SETUP.md) § Prune. Only a prune edits 
 | Counting from | the start; every file in `_harness/learnings/` counts |
 | Threshold | `loop.prune_every` in `harness.config.yml` |
 
-The prune is `DUE` when `_harness/learnings/` holds Threshold feature files or more, `ok` below that. After a prune is approved and applied: set Last prune to the date and the proposal path (`_harness/prunes/<date>.md`) and Counting from to the newest folded entry; the folded files are deleted, so the count starts again from 0. When this file grows long, a prune may move closed rows and old entries to `LEARNINGS-archive.md` and link it here.
+When the prune is due (the count or a size budget: [harness/SETUP.md](../harness/SETUP.md) § Prune), `scripts/prune-counter.sh` says so. After a prune is approved and applied: set Last prune to the date and the proposal path (`_harness/prunes/<date>.md`) and Counting from to the newest folded entry; the folded files are deleted, so the count starts again from 0. When this file grows long, a prune may move closed rows and old entries to `LEARNINGS-archive.md` and link it here.
 
 ## Entry format
 

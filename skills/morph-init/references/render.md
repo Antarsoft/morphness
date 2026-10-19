@@ -231,8 +231,8 @@ All must pass before committing; fix and re-run on failure.
    `Prune counter: 0/<loop.prune_every>`. `scripts/feature-cost.sh` is executable and runs without a
    Python error (it may print `Cost: not measured`, or this session's cost). Both read
    `harness.config.yml` through `scripts/lib/config.sh`: `bash -c '. scripts/lib/config.sh;
-   config_get branches.integration'` prints the integration branch. The prune counter's second line
-   is `Rules: <size>/<loop.rule_budget_kb> KB always loaded`, with no `Prune is DUE`.
+   config_get branches.integration'` prints the integration branch. The prune counter prints
+   the `Rules:`, `Checklists:` and `Project docs:` gauge lines after the counter, with no `Prune is DUE`.
    `scripts/guard.sh` parses and blocks a push to the integration branch:
    `echo '{"tool_name":"Bash","tool_input":{"command":"git push origin <integration>"}}' | bash scripts/guard.sh`
    exits 2 (python3 must be installed; without it the guard lets everything through, so say so in the

@@ -192,7 +192,7 @@ and advised settings (coordinator sonnet · medium, feature threads sonnet · hi
 | 📄 `AGENTS.md`, `CLAUDE.md`, `.claude/rules/` | The rules every session loads: the Technical Lead plans and delegates and never codes; QA is never skipped. |
 | 🤖 `.claude/agents/` | Full-stack (medium, high, xhigh effort), QA (medium, high), researcher (medium, high) and legal-writer subagents. |
 | 🛡️ `.claude/settings.json` | Deny rules for secrets and protected-branch pushes, ask rules on every merge command. |
-| 🗺️ `harness/` | The process: lifecycle, handoffs, checks, modes (full, light, research), release and environments, the plan checklist, model prices, and how it morphs. |
+| 🗺️ `harness/` | The process: lifecycle, handoffs, checks, modes (full, small, light, bug, research), release and environments, the plan checklist, model prices, and how it morphs. |
 | 🧩 `harness/modules/` | Optional: Claude Projects, data access (local-first, remote read-only), browser e2e, legal wording, roadmap, CI/CD pipelines, security (threat model, secret scanning, dependency audit). |
 | 🏷️ `project/` | Your project's facts: stack, the commands behind each check and their scope, risk areas, effort per area, and the official connector for each service you use. |
 | 🎛️ `harness.config.yml` | Branches, environments, apps, branch protection, who merges, release tags, modules, named checks, CI gate, risk areas, models and effort, cost tracking, loop limits. |
@@ -230,7 +230,7 @@ ci_gate: false              # true: CI on the PR is the gate; false: the QA reco
 risk_areas: [auth, billing, migrations]   # never medium effort, always a careful plan
 
 agents:
-  fullstack: { model: opus, medium_model: sonnet, default: high, variants: [medium, high, xhigh] }
+  fullstack: { model: sonnet, default: high, variants: [medium, high, xhigh] }
   qa: { model: sonnet, default: high, variants: [medium, high] }
   researcher: { model: sonnet, high_model: opus, default: medium, variants: [medium, high] }
 
