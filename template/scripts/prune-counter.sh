@@ -133,6 +133,7 @@ for chunk in sys.stdin.read().split("\036")[1:]:
     heading = re.search(r"^### .*?(" + DATE + ")", text, re.M)
     rounds = re.search(r"QA rounds:\s*(\d+)", text)
     cost = re.search(r"\*\*Cost:\*\*\s*≈\s*\$\s*([0-9][0-9,]*(?:\.[0-9]+)?)", text)
+    escaped = len(re.findall(r"^- \*\*Escaped:\*\*", text, re.M))
     trial = re.search(r"^- \*\*Trial:\*\*\s*`?([a-z0-9][a-z0-9-]*)", text, re.M)
     r = int(rounds.group(1)) if rounds else 1
     features.append({
@@ -142,6 +143,7 @@ for chunk in sys.stdin.read().split("\036")[1:]:
         "failed": r > 1 or "failed-escalated" in text,
         "cost": float(cost.group(1).replace(",", "")) if cost else None,
         "trial": trial.group(1) if trial else "",
+        "escaped": escaped,
     })
 
 def summary(fs):
@@ -200,6 +202,9 @@ for path in paths:
                 slug, day = max(pairs, key=lambda p: p[1])
                 tags.append((path, n, slug, day, sum(d > day for d in dates)))
 young = sum(t[4] < 3 for t in tags)
+start = min((f["date"] for f in features if f["date"]), default="")
+added = sum(1 for t in tags if start and t[3] >= start)
+print(f"Loop: {sum(f['escaped'] for f in features)} escapes and {added} rule tags dated in this window of {len(features)} features")
 print(f"Rule tags: {len(tags)} ({young} too new to judge: fewer than 3 features since)")
 for path, n, slug, day, since in tags:
     print(f"  {path}:{n} from {slug}, {day}: features since: {since}" + (" (too new to judge)" if since < 3 else ""))

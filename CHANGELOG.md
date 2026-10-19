@@ -10,6 +10,11 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
   denies, asks and does not see; `CLAUDE.md`, `RELEASE.md` and `SKILLS_AND_MCPS.md` link to it. The README
   "Safe by default" row and its requirements (bash, git, python3, awk, perl) say what the code does.
 
+- The plan checklist has a group index with skip conditions, so a plan with no UI or no data reads fewer items.
+
+- The prune report prints a `Loop:` line (escapes and rule tags added in the window), so a project can
+  see whether the learning loop does anything.
+
 - Guard: the CLI guard is inverted. `scripts/guard.sh` asks before any call to a known deploy, cloud or
   database CLI (wrangler, netlify, fly, railway, heroku, gcloud, aws, az, kubectl, helm, pulumi, terraform,
   firebase, stripe, psql, mysql, mongosh, redis-cli and more, also behind npx and pnpm exec) unless a read
