@@ -6,6 +6,26 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Small mode, between light and full and the default for a clear request: a fully specified change
+  in a few named files that alters no access, money, stored data's shape or deletion, secrets,
+  dependency or flow gets a short plan (`harness/templates/small-plan.md`) instead of `feature.md`,
+  the full plan and the checklist run; Full-stack and QA still run, at `medium`, and the learnings
+  file replaces `retro.md`. `risk_areas` now means "changing how this behaves needs full mode".
+- Closing an access gap closes every read path too (exports, search, stats), and with the owner
+  away the plan closes it rather than leaving the leak open (plan checklist item 29).
+- QA's layout pass: on a UI change, every page at the narrowest supported width, signed in and out.
+- Sonnet in every role by default; `/morph-init` offers Opus for planning and building as a preset.
+- Retro rules come from misses only, and `scripts/prune-counter.sh` gauges the plan checklists
+  against the new `loop.checklist_budget_kb`.
+- A bug found after a pass always gets a retro item (the rule, check or test that would have caught
+  it, or why none would), and its fix closes the same gap on sibling paths.
+- `scripts/prune-counter.sh` gauges `project/*.md` against the new `loop.project_docs_budget_kb`, and
+  the prune can condense those docs; `PROJECT.md` keeps architecture, not full route lists.
+- `/morph-init` suggests risk areas as behaviours (access, money, deletion, migrations, secrets),
+  not whole layers like API routes.
+- QA's layout pass fails any overflow when the request is about layout or screen size.
+- README: what Morphness adds is process (plan, QA record, audit trail, rules from misses), not a
+  smarter model.
 - Guard hook: `scripts/guard.sh` runs before Bash, file and MCP tool calls and reads commands the way
   the shell does. It blocks pushes to environment branches in every form (a bare `git push` on one,
   `HEAD`, `--all`, inside `bash -c` or `$(…)`), force-pushes, `.env` files other than the example,
