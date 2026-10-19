@@ -2,7 +2,7 @@
 id: 2026-10-17-morph-module
 title: Add or remove a module on a live project with /morph-module
 kind: template
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 files:
   - harness/README.md

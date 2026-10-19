@@ -2,7 +2,7 @@
 id: 2026-10-19-sonnet-default
 title: Sonnet in every role by default, Opus as an install preset
 kind: config
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 files:
   - harness.config.yml

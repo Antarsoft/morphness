@@ -2,7 +2,7 @@
 id: 2026-10-17-prune-trend
 title: One trend line for the prune
 kind: template
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 files:
   - scripts/prune-counter.sh

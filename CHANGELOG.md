@@ -6,6 +6,8 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+## 2026-10-19
+
 - Retro wording: the retro template has a Cause column and the `cause: environment` and "why not a
   script" prompts, SETUP says the owner writes any `settings.local.json` change, two redundant prune
   sentences are gone, counts from private data are out of the "learned:" notes, and the self-test's

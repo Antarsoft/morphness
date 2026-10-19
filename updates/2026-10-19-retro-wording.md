@@ -2,7 +2,7 @@
 id: 2026-10-19-retro-wording
 title: Retro template carries the environment-cause rule, and a few redundant sentences are gone
 kind: rule
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 files:
   - harness/templates/retro.md

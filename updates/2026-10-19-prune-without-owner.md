@@ -2,7 +2,7 @@
 id: 2026-10-19-prune-without-owner
 title: The prune proposal is written without waiting for the owner
 kind: rule
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 files:
   - harness/SETUP.md
@@ -27,8 +27,8 @@ removed: []
 
 ## Why
 
-In 24 unattended features the prune came due at feature 11 and never ran, because the Technical Lead
-waited for the owner to start it. The proposal costs nothing to write and changes nothing until the
+In a long unattended run the prune came due and never ran, because the Technical Lead waited for
+the owner to start it. The proposal costs nothing to write and changes nothing until the
 owner approves rows, so there was no reason to wait.
 
 ## How to apply

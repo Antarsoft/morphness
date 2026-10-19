@@ -2,7 +2,7 @@
 id: 2026-10-19-qa-layout-pass
 title: QA checks every page at the narrowest width on a UI change
 kind: rule
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 files:
   - harness/agents/qa-engineer.md

@@ -2,7 +2,7 @@
 id: 2026-10-19-updates-without-clone
 title: Upstream checks read GitHub directly, no clone needed
 kind: config
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 files:
   - harness.config.yml

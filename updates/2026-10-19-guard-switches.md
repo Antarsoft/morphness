@@ -2,7 +2,7 @@
 id: 2026-10-19-guard-switches
 title: Guard asks cover platform secrets and workspace publishes, and can be switched off
 kind: config
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 files:
   - scripts/guard.sh

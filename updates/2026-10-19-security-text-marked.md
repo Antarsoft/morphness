@@ -2,7 +2,7 @@
 id: 2026-10-19-security-text-marked
 title: Security wording marked so projects without the module don't load it
 kind: rule
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 files:
   - .claude/rules/technical-lead.md

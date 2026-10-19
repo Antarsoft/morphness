@@ -2,7 +2,7 @@
 id: 2026-10-19-refused-check-gate
 title: A check recorded "not run" is not a pass at the merge gate
 kind: rule
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 files:
   - harness/CONTROLS.md

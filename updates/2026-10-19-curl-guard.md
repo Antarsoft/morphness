@@ -2,7 +2,7 @@
 id: 2026-10-19-curl-guard
 title: The allowed Morphness curl can only read to the terminal
 kind: config
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 files:
   - scripts/guard.sh

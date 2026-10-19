@@ -2,7 +2,7 @@
 id: 2026-10-19-projects-sonnet
 title: Advised Claude Projects settings follow the Sonnet default
 kind: config
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [claude-projects] }
 files:
   - harness.config.yml

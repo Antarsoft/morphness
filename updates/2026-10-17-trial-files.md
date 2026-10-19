@@ -2,7 +2,7 @@
 id: 2026-10-17-trial-files
 title: Trials as files, counted by the prune counter
 kind: template
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 files:
   - harness/templates/trial.md

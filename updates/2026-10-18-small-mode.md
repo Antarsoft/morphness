@@ -2,7 +2,7 @@
 id: 2026-10-18-small-mode
 title: Small mode, the default for fully specified requests
 kind: rule
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 files:
   - harness/MODES.md

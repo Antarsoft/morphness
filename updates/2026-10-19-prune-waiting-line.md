@@ -2,7 +2,7 @@
 id: 2026-10-19-prune-waiting-line
 title: A waiting prune proposal no longer prints "Prune is DUE"
 kind: fix
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 files:
   - scripts/prune-counter.sh

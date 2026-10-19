@@ -2,7 +2,7 @@
 id: 2026-10-19-close-read-paths
 title: Closing an access gap closes every read path, even when the owner is away
 kind: rule
-release: unreleased
+release: 2026-10-19
 applies_to: { modules: [] }
 files:
   - harness/PLAN_CHECKLIST.md
