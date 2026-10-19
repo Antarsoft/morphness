@@ -8,6 +8,7 @@ files:
   - scripts/prune-counter.sh
   - harness/SETUP.md
   - harness/templates/prune.md
+  - harness/modules/claude-projects/README.md
   - .claude/rules/technical-lead.md
 removed: []
 ---
@@ -30,4 +31,4 @@ the proposal is written without waiting. The script now enforces "write one prop
 Merge the `scripts/prune-counter.sh` change (the `due` variable and the final block that prints
 either the waiting line or the DUE line). Merge the matching sentences in `harness/SETUP.md` § Retrospective
 (hand-off message and prune counter bullets) and § Prune, the one in `.claude/rules/technical-lead.md`,
-and `declined` in the **Status** line of `harness/templates/prune.md`.
+the playbook line in `harness/modules/claude-projects/README.md`, and `declined` in the **Status** line of `harness/templates/prune.md`.
