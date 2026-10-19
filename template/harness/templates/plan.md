@@ -35,7 +35,7 @@ Each framework or library behaviour the plan depends on, with the source that co
 <!-- module:security -->
 ## Security
 
-- **Security feature:** yes | no. Yes when the plan touches authentication or sessions, payments or money, data about people, or a `risk_areas` entry (`harness/modules/security/README.md` § What counts as a security feature; this project's paths: `project/CONTROLS.md` § Security paths). When unsure, yes. For **no**, delete the rest of this section.
+- **Security feature:** yes | no. Yes when the plan changes how authentication or sessions, payments or money, data about people, or a `risk_areas` entry behave (`harness/modules/security/README.md` § What counts as a security feature; this project's paths: `project/CONTROLS.md` § Security paths). When unsure, yes. For **no**, delete the rest of this section.
 - **Assets:** what an attacker would want from this change.
 - **Entry points:** each new or changed route, handler, job, webhook, form or upload, and who can reach it.
 - **Identity and ownership:** how each entry point knows the caller and checks they may touch the record, with `file:line`.

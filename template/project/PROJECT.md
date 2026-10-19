@@ -2,7 +2,7 @@
 
 {{project.description}}
 
-This file holds the architecture and layout agents need before a structural change. Commands and tooling are in [STACK.md](./STACK.md); the work process is in [harness/SETUP.md](../harness/SETUP.md).
+This file holds the architecture and layout agents need before a structural change. Keep it to architecture and conventions: a list of every route, table or component belongs in the code or a generated file, not here, since every plan reads this file and it counts toward `loop.project_docs_budget_kb`. Commands and tooling are in [STACK.md](./STACK.md); the work process is in [harness/SETUP.md](../harness/SETUP.md).
 
 <!-- morph-init: fill one or two sentences on what the product is and who uses it, and link the product docs (scope, idea, roadmap). Example: "Self-serve invoicing for freelancers. Scope: [docs/IDEA.md](../docs/IDEA.md)." -->
 

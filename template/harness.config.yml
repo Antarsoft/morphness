@@ -98,15 +98,17 @@ ci_cd:
   migrations: none
   tags: none
 
-# Areas that never get medium effort and always get a careful plan (e.g. auth, billing, migrations).
+# Areas where a change to their behaviour gets full mode, never medium effort, and a security review (e.g. auth, billing, migrations).
+# A fully specified change that alters none of that behaviour still uses small mode (harness/MODES.md § Small mode).
 risk_areas: []
 
 agents:
-  technical_lead: { model: opus, effort: high }
-  # Advised defaults (they worked on the project Morphness came from); change any of them.
-  fullstack: { model: opus, medium_model: sonnet, default: high, variants: [medium, high, xhigh] }
+  # Default: Sonnet in every role, at about half the cost of Opus; the plan, QA and checks carry the quality.
+  # The "Opus for planning and building" preset sets technical_lead and fullstack to opus and researcher's high_model to opus.
+  technical_lead: { model: sonnet, effort: high }
+  fullstack: { model: sonnet, medium_model: sonnet, default: high, variants: [medium, high, xhigh] }
   qa: { model: sonnet, medium_model: sonnet, default: high, variants: [medium, high] }
-  researcher: { model: sonnet, high_model: opus, default: medium, variants: [medium, high] }   # read-only; research mode and research before a plan
+  researcher: { model: sonnet, high_model: sonnet, default: medium, variants: [medium, high] }   # read-only; research mode and research before a plan
   legal_writer: { model: fable, effort: high }   # use opus if fable isn't available to you
 
 # Advisory only: Claude Projects settings can't be set from a repo.
@@ -133,6 +135,8 @@ loop:
   retro_max_items: 3      # usual action items per retro (soft: more with one line why, none is fine)
   prune_every: 10         # learnings files between prunes
   rule_budget_kb: 36      # always-loaded rule files (CLAUDE.md, AGENTS.md, .claude/rules/); over it, a prune is due
+  checklist_budget_kb: 36 # harness/PLAN_CHECKLIST.md plus project/PLAN_CHECKLIST.md; over it, a prune is due
+  project_docs_budget_kb: 48 # project/*.md fact docs; over it, a prune is due
   qa_max_rounds: 2        # QA rework rounds before escalating to the owner
 
 # Where this copy came from upstream. Written by /morph-init, updated by /morph-update.
