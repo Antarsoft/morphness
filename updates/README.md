@@ -14,7 +14,7 @@ config key, a fix to a wrong instruction.
 Every PR that changes a file under `template/` adds one note (or extends one written for the same
 release). `scripts/check-updates.sh --since origin/main` fails when a changed template file isn't
 listed in any new note. Changes to the skills (`skills/`) need no note: they reach installs through
-the plugin, and `CHANGELOG.md` covers them.
+the plugin, and their changelog fragment (`changelog.d/`) covers them.
 
 ## File format
 

@@ -48,8 +48,10 @@ the researcher answers questions read-only, legal-writer drafts legal wording, a
 
 Installed harnesses only hear about a kit change through an **update note**: add one to
 [updates/](updates/README.md) in the same PR, listing every `template/` file you changed and how to
-apply the change to a copy that has morphed. Add a line under **Unreleased** in
-[CHANGELOG.md](CHANGELOG.md) for any change to `template/` or `skills/`. Check both with
+apply the change to a copy that has morphed. For any change to `template/` or `skills/`, also
+add a fragment file `changelog.d/<slug>.md` with your changelog entry (see
+[changelog.d/](changelog.d/README.md)); don't edit [CHANGELOG.md](CHANGELOG.md), which is what made
+parallel PRs conflict. Check both with
 `scripts/check-updates.sh --since origin/main`.
 
 Run `scripts/kit-selftest.sh` before opening the PR (the `selftest` check runs it too). It renders
@@ -93,7 +95,7 @@ used the dotted date, `2026.10.13`; the new form sorts above it.) Installs don't
 
 **When to cut one**
 
-- When **Unreleased** has at least one change to `template/` or `skills/`, batched about weekly.
+- When `changelog.d/` has at least one change to `template/` or `skills/`, batched about weekly.
 - The same day for a `kind: fix` update note (a kit instruction that was wrong or unsafe), or a
   skill bug that breaks an install or update.
 - Lessons, profiles, catalog entries and docs alone don't need one:
@@ -101,9 +103,10 @@ used the dotted date, `2026.10.13`; the new form sorts above it.) Installs don't
 
 **How**
 
-1. A PR moves the **Unreleased** entries under `## <release>`, sets each update note's `release` from
-   `unreleased` to that name, and bumps `plugin.json` → `version`. `scripts/check-updates.sh` checks
-   that the three agree.
+1. A PR runs `scripts/release-changelog.sh <release>`, which builds `## <release>` in `CHANGELOG.md` from
+   the `changelog.d/` fragments (and any text left under `## Unreleased`), deletes the fragments and sets
+   each update note's `release` from `unreleased` to that name. The PR also bumps `plugin.json` →
+   `version`. `scripts/check-updates.sh` checks that the three agree.
 2. After it merges, a maintainer creates the GitHub release with tag `<release>` on the merge commit,
    using the changelog section as the release notes.
 

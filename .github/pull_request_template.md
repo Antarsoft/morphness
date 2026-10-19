@@ -12,6 +12,6 @@
 ## Checklist
 
 - [ ] `scripts/check-lessons.sh` passes
-- [ ] Kit changes: an update note in `updates/` and a CHANGELOG line (`scripts/check-updates.sh --since origin/main` passes)
+- [ ] Kit changes: an update note in `updates/` and a `changelog.d/<slug>.md` fragment, not a CHANGELOG.md edit (`scripts/check-updates.sh --since origin/main` passes)
 - [ ] No project, company, person, repo, URL, hostname or id in the text
 - [ ] One rule per lesson; no duplicate of an existing lesson

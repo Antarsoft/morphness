@@ -1,7 +1,7 @@
 name: updates
 on:
   pull_request:
-    paths: ["template/**", "updates/**", "skills/**", "CHANGELOG.md", ".claude-plugin/plugin.json", "scripts/check-updates.sh"]
+    paths: ["template/**", "updates/**", "skills/**", "changelog.d/**", "CHANGELOG.md", ".claude-plugin/plugin.json", "scripts/check-updates.sh"]
   push:
     branches: [main]
     paths: ["template/**", "updates/**", "CHANGELOG.md", ".claude-plugin/plugin.json", "scripts/check-updates.sh"]
