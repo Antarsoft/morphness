@@ -6,6 +6,7 @@ When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
 ## Unreleased
 
+- Agent wrappers always read the ownership and remote-environment sections; the last copies of the old small-mode test, entry format and guard message wording point at their single source; install notes for duplicate deny lines and a refused no-clobber copy.
 - Small, bug and security wording lined up across the rules, plans and agent bodies (small plan QA scope
   and limit, security review on bug plans, full-mode-only sections marked, lighter agent reads and QA
   layout pass); `prune-counter.sh` shows a waiting prune proposal.

@@ -16,18 +16,7 @@ When the prune is due (the count or a size budget: [harness/SETUP.md](../harness
 
 ## Entry format
 
-```markdown
-### <feature-slug> v<version>, YYYY-MM-DD
-- **Verdict:** pass | failed-escalated; QA rounds: N; review round: yes | no
-- **Failure causes:** plan gap ×N, implementation ×N, environment ×N, process ×N (or none)
-- **Cost:** ≈ $<total> (Technical Lead $…, Full-stack $…, QA $…, any other subagent $…), or `not measured (<reason>)`; Full-stack <model> <effort> <duration> / <tool calls>; QA <model> <effort> <duration> / <tool calls>
-- **Trial:** <trial-slug> (only when this feature ran a trial; omit otherwise)
-- **Escaped:** <feature that passed QA with this bug, and the AC or check that missed it> (bug-fix features only; omit otherwise)
-- **Lessons:** 1–3 one-liners
-- **Retro:** [retro.md](./features/<feature-slug>/<version>/Plan/retro.md)
-```
-
-The template is also in [harness/templates/learnings-entry.md](../harness/templates/learnings-entry.md).
+[harness/templates/learnings-entry.md](../harness/templates/learnings-entry.md)
 
 ## Trials
 
