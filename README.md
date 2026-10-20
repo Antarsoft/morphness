@@ -20,7 +20,7 @@ and gets better every time someone shares a lesson.
 [![GitHub stars](https://img.shields.io/github/stars/antarsoft/morphness?style=flat-square&logo=github&color=DB2777)](https://github.com/antarsoft/morphness/stargazers)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-22C55E?style=flat-square)](CONTRIBUTING.md)
 
-🌐 [Website](https://antarsoft.github.io/morphness) · 🚀 [Install](#-install) · ✨ [Why](#-why-use-it) · 🧠 [How it works](#-how-it-works) · 📦 [What you get](#-what-you-get) · 🧰 [Make it yours](#-make-it-yours) · 🦋 [How it morphs](#-how-it-morphs) · 🌍 [Community](#-community-lessons) · 🤝 [Contributing](CONTRIBUTING.md)
+🌐 [Website](https://antarsoft.github.io/morphness) · 🚀 [Install](#-install) · ✨ [Why](#-why-use-it) · 🧠 [How it works](#-how-it-works) · 📦 [What you get](#-what-you-get) · 🧰 [Make it yours](#-make-it-yours) · 🦋 [How it morphs](#-how-it-morphs) · 🌍 [Community](#-community-lessons) · 🤝 [Contributing](CONTRIBUTING.md) · 💬 [Discord](https://discord.gg/zcZTAQq)
 
 </div>
 
@@ -353,7 +353,7 @@ Products and projects that run on a Morphness harness. Add yours with a one-row 
 [![Share on Reddit](https://img.shields.io/badge/Share%20on-Reddit-FF4500?style=for-the-badge&logo=reddit&logoColor=white)](https://www.reddit.com/submit?url=https%3A%2F%2Fgithub.com%2Fantarsoft%2Fmorphness&title=Morphness%3A%20a%20self-improving%20agent%20harness%20for%20Claude%20Code)
 [![Share on Hacker News](https://img.shields.io/badge/Share%20on-Hacker%20News-F0652F?style=for-the-badge&logo=ycombinator&logoColor=white)](https://news.ycombinator.com/submitlink?u=https%3A%2F%2Fgithub.com%2Fantarsoft%2Fmorphness&t=Morphness%3A%20a%20self-improving%20agent%20harness%20for%20Claude%20Code)
 
-⭐ [Star the repo](https://github.com/antarsoft/morphness) · 🐛 [Report an issue](https://github.com/antarsoft/morphness/issues) · 🤝 [Contribute a lesson](CONTRIBUTING.md)
+⭐ [Star the repo](https://github.com/antarsoft/morphness) · 🐛 [Report an issue](https://github.com/antarsoft/morphness/issues) · 🤝 [Contribute a lesson](CONTRIBUTING.md) · 💬 [Join the Discord](https://discord.gg/zcZTAQq)
 
 <sub>Released under the [MIT License](LICENSE) · [Changelog](CHANGELOG.md) · [Code of Conduct](CODE_OF_CONDUCT.md) · [Security](SECURITY.md). Built by [Antarsoft](https://github.com/antarsoft).</sub>
 
