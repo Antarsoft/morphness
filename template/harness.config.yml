@@ -154,7 +154,7 @@ guard: { mcp_writes: ask, deploys: ask, publishes: ask, schema_pushes: ask, netw
 
 loop:
   retro_max_items: 3      # usual action items per retro (soft: more with one line why, none is fine)
-  prune_every: 10         # learnings files between prunes
+  prune_every: 10         # learnings files between prunes (8 to 30; below 8 the prune has too few rules old enough to judge)
   rule_budget_kb: 36      # always-loaded rule files (CLAUDE.md, AGENTS.md, .claude/rules/); over it, a prune is due
   checklist_budget_kb: 36 # harness/PLAN_CHECKLIST.md plus project/PLAN_CHECKLIST.md; over it, a prune is due
   project_docs_budget_kb: 48 # project/*.md fact docs; over it, a prune is due
