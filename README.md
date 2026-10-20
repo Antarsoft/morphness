@@ -286,6 +286,8 @@ Once installed, the harness belongs to your repo, and the loop is what changes i
    look-back on research files. Every hand-off ends with a `Prune counter: N/10` line, so you see a
    prune coming.
 
+See [template/harness/MORPHING.md](template/harness/MORPHING.md).
+
 ### 🌱 How it learns: a real example
 
 The loop corrects itself too. In one project, a run of clean features each ended with a retro that
@@ -301,8 +303,6 @@ caught it.
 
 The fix shipped as a change to Morphness itself, with a short note under [`updates/`](updates/)
 that `/morph-update` offers to every install, so one project's lesson reaches the rest.
-
-See [template/harness/MORPHING.md](template/harness/MORPHING.md).
 
 ### 🔄 Staying up to date
 
