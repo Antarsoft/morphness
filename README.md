@@ -368,7 +368,7 @@ Products and projects that run on a Morphness harness. Add yours with a one-row 
 
 | Project | What it is | Stack | By |
 |---------|------------|-------|----|
-| [**Twinpage**](https://twinpage.app) | Split testing for websites, where Morphness started | Next.js, Supabase | [@ziadantar90](https://github.com/ziadantar90) |
+| [**Twinpage**](https://twinpage.app) | Split testing for websites, where Morphness started ([evidence](showcase/twinpage.md)) | Next.js, Supabase | [@ziadantar90](https://github.com/ziadantar90) |
 
 ---
 
