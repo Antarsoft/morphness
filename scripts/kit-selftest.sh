@@ -640,6 +640,21 @@ def check(name, fx, t):
     r = run(["bash", "scripts/evidence.sh"], t)
     if r.returncode or "# Morphness evidence summary" not in r.stdout or "0 features finished" not in r.stdout or "Traceback" in r.stdout + r.stderr:
         bad(f"evidence.sh on a fresh install printed {r.stdout!r} (stderr {r.stderr.strip()!r})")
+    # evidence.sh reads the older entry form and suffixed prune names, and refuses a history it can't read
+    lf, pf = os.path.join(t, "_harness/LEARNINGS.md"), os.path.join(t, "_harness/prunes/2026-01-02-b.md")
+    keep = open(lf).read()
+    os.makedirs(os.path.dirname(pf), exist_ok=True)
+    open(lf, "w").write(keep.split("## Entries")[0] + "## Entries\n\n- **one v1** (2026-01-01): pass; QA 1; x\n- two v2, 2026-01-02: pass, QA rounds 2, ≈ $1.50; y\n")
+    open(pf, "w").write("# Prune\n\n**Status:** approved by the owner\n\n## 2. Rule audit\n\n| # | Rule | Added by | Evidence | Verdict |\n|---|---|---|---|---|\n| R1 | r | a | fired: x | keep |\n\n## 3. Open\n")
+    r = run(["bash", "scripts/evidence.sh"], t)
+    if r.returncode or "2 features finished" not in r.stdout or "1 of 1 prune files" not in r.stdout or "1 fired" not in r.stdout or "50% passed QA first time" not in r.stdout:
+        bad(f"evidence.sh misread the older record forms: {r.stdout!r} (stderr {r.stderr.strip()!r})")
+    open(lf, "w").write(keep.split("## Entries")[0] + "## Entries\n\n- not an entry\n- nor this\n- **one v1** (2026-01-01): pass; QA 1\n")
+    r = run(["bash", "scripts/evidence.sh"], t)
+    if r.returncode != 3 or r.stdout:
+        bad(f"evidence.sh printed a summary that left most entries out (exit {r.returncode}): {r.stdout!r}")
+    open(lf, "w").write(keep)
+    os.remove(pf)
     # guard hook cases
     # {I^} and {P^} are the same branches in capitals (a guard case for `git push origin Main`).
     branches = {"{I}": fx["branches"]["integration"], "{P}": fx["branches"]["production"],

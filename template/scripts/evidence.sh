@@ -6,10 +6,11 @@
 # Read-only and offline: it sends nothing anywhere. /morph-share shows it to the owner before any
 # of it is shared (harness/MORPHING.md § Sharing evidence).
 #
-# Usage: bash scripts/evidence.sh [--json] [--out]
+# Usage: bash scripts/evidence.sh [--json] [--out] [--force]
 #   (no option)  the summary as Markdown on stdout
 #   --json       the same figures as JSON
 #   --out        also write _harness/evidence/<today>.md and .json
+#   --force      print even when more than a fifth of the folded entries could not be read
 
 . "$(cd "$(dirname "$0")" && pwd)/lib/config.sh" || exit 0
 cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)" || exit 1
@@ -39,8 +40,16 @@ def read(path):
 def num(s):
     return float(s.replace(",", ""))
 
-# Features: the learnings files not yet folded, then the one-line entries a prune folded.
+# Features: the learnings files not yet folded, then the one-line entries a prune folded. Two entry
+# forms are read: the kit's `- <slug> v<n>, <date>: <verdict>, QA rounds N, ≈ $<cost>; …` and the
+# older `- **<slug> v<n>** (<date>): <verdict>; QA N; …` that projects morphed before the template
+# changed still carry. Lines that look like entries but match neither are counted as unread.
 feats, seen = [], set()
+read_files = folded_seen = 0
+
+def none_like(v):
+    return v.strip().strip("`*. ").lower() in ("", "none", "n/a", "-", "no")
+
 for path in sorted(glob.glob("_harness/learnings/*-v*.md")):
     text = read(path)
     head = re.search(r"^### (\S+)(?: v\d+)?.*?(" + DATE + ")", text, re.M)
@@ -52,34 +61,58 @@ for path in sorted(glob.glob("_harness/learnings/*-v*.md")):
     m = re.search(r"\*\*Failure causes:\*\*\s*(.*)", text)
     for label, n in re.findall(r"(plan gap|implementation|environment|process)\s*×\s*(\d+)", m.group(1) if m else ""):
         causes[label] = causes.get(label, 0) + int(n)
+    esc = re.search(r"^- \*\*Escaped:\*\*(.*)$", text, re.M)
     key = (head.group(1), head.group(2)) if head else (path, "")
     seen.add(key)
+    read_files += 1
     feats.append({"date": head.group(2) if head else "", "pass": bool(verdict) and verdict.group(1) == "pass",
                   "rounds": int(rounds.group(1)) if rounds else 1, "cost": num(cost.group(1)) if cost else None,
                   "mode": mode, "causes": causes,
-                  "escaped": len(re.findall(r"^- \*\*Escaped:\*\*", text, re.M)), "folded": False})
+                  "escaped": 1 if esc and not none_like(esc.group(1)) else 0, "folded": False})
+
+ENTRY_KIT = re.compile(r"^- (\S+)(?: v\d+)?, (" + DATE + r"): (.*)$")
+ENTRY_OLD = re.compile(r"^- \*\*(\S+)(?: v[\w.]+)?\*\* \((" + DATE + r")\): (.*)$")
+entry_lines = 0
 for path in ("_harness/LEARNINGS.md", "_harness/LEARNINGS-archive.md"):
     text = read(path)
-    text = text.split("## Entries", 1)[1] if "## Entries" in text else text
-    for slug, day, rest in re.findall(r"^- (\S+)(?: v\d+)?, (" + DATE + r"): (.*)$", text, re.M):
-        if (slug, day) in seen:
+    for part in re.split(r"(?m)^## ", text)[1:]:
+        if not part.startswith("Entries"):
             continue
-        seen.add((slug, day))
-        rounds = re.search(r"QA rounds\s*(\d+)", rest)
-        cost = re.search(r"≈\s*\$\s*([0-9][0-9,]*(?:\.[0-9]+)?)", rest)
-        feats.append({"date": day, "pass": rest.lstrip().startswith("pass"),
-                      "rounds": int(rounds.group(1)) if rounds else 1,
-                      "cost": num(cost.group(1)) if cost else None, "mode": "", "causes": {}, "escaped": 0, "folded": True})
+        for line in part.splitlines():
+            if not line.startswith("- ") or line.startswith("- None"):
+                continue
+            entry_lines += 1
+            m = ENTRY_KIT.match(line) or ENTRY_OLD.match(line)
+            if not m:
+                continue
+            slug, day, rest = m.groups()
+            if slug == "release":   # a release entry is not a feature
+                folded_seen += 1
+                continue
+            if (slug, day) in seen:
+                continue
+            seen.add((slug, day))
+            folded_seen += 1
+            rounds = re.search(r"QA(?: rounds)?\s*(\d+)", rest)
+            cost = re.search(r"≈\s*\$\s*([0-9][0-9,]*(?:\.[0-9]+)?)", rest)
+            feats.append({"date": day, "pass": rest.lstrip().startswith("pass"),
+                          "rounds": int(rounds.group(1)) if rounds else 1,
+                          "cost": num(cost.group(1)) if cost else None, "mode": "", "causes": {}, "escaped": 0, "folded": True})
+unread_entries = entry_lines - folded_seen
 feats.sort(key=lambda f: f["date"])
 
-# Windows: a prune's date closes the window of the features finished on or before it.
-prunes = []
+# Windows: a prune's date closes the window of the features finished on or before it. A prune file
+# is named for its date, with a letter after it when there were several that day (2026-09-29-b).
+prunes, prune_files = [], 0
 for path in sorted(glob.glob("_harness/prunes/*.md")):
-    name = os.path.basename(path)[:-3]
+    m = re.fullmatch(r"(" + DATE + r")(?:-[a-z0-9]+)?", os.path.basename(path)[:-3])
+    if not m:
+        continue
+    prune_files += 1
     status = re.search(r"^\*\*Status:\*\*\s*(\w+)", read(path), re.M)
-    if re.fullmatch(DATE, name) and status and status.group(1) in ("approved", "applied"):
-        prunes.append((name, read(path)))
-edges = [d for d, _ in prunes]
+    if status and status.group(1) in ("approved", "applied"):
+        prunes.append((m.group(1), read(path)))
+edges = sorted(d for d, _ in prunes)
 
 def window(f):
     for i, e in enumerate(edges):
@@ -99,9 +132,10 @@ windows = []
 for i in range(len(edges) + 1):
     fs = [f for f in feats if window(f) == i]
     if fs:
-        windows.append(dict(stats(fs), window=i + 1, ends=edges[i] if i < len(edges) else "open"))
+        windows.append(dict(stats(fs), window=len(windows) + 1, ends=edges[i] if i < len(edges) else "open"))
 
-# Rule audits and decisions from the prune records.
+# Rule audits and decisions from the prune records. The audit's last column is the verdict and the one
+# before it the evidence, whether the table has an id column or not.
 def section(text, start, end):
     m = re.search(r"^## " + re.escape(start) + r".*?\n(.*?)(?=^## " + re.escape(end) + r"|\Z)", text, re.M | re.S)
     return m.group(1) if m else ""
@@ -110,22 +144,25 @@ def rows(block):
     for line in block.splitlines():
         if line.startswith("|") and not re.match(r"^\|[\s|:-]+$", line):
             cells = [c.strip() for c in line.strip().strip("|").split("|")]
-            if cells and cells[0] not in ("Rule / item (file)", "Row", "Trial", "Item"):
+            if cells and cells[0] not in ("Rule / item (file)", "Row", "Trial", "Item", "#", "From retro"):
                 yield cells
 
-audit = {"fired": 0, "insurance": 0, "never fired": 0, "too new": 0}
+audit = {"fired": 0, "insurance": 0, "never fired": 0, "too new": 0, "other": 0}
 decisions = {}
+audit_rows = 0
 for _, text in prunes:
-    for cells in rows(section(text, "2. Rule audit", "3.")):
-        if len(cells) >= 3 and " · " not in cells[2]:
-            for k in audit:
-                if cells[2].lower().startswith(k):
-                    audit[k] += 1
-    for cells in rows(section(text, "4. Decision", "5.")):
-        if len(cells) >= 2 and cells[1]:
-            word = re.split(r"[\s,:;]+", cells[1].lower())[0]
-            if word in ("keep", "merge", "shorten", "move", "remove", "revert", "carry", "apply", "decline", "later"):
-                decisions[word] = decisions.get(word, 0) + 1
+    for cells in rows(section(text, "2.", "3")):
+        if len(cells) < 3 or " · " in cells[-2]:
+            continue
+        audit_rows += 1
+        evidence, verdict = cells[-2].lower(), cells[-1].lower()
+        kind = ("insurance" if "insurance" in verdict else "too new" if "too new" in verdict
+                else "never fired" if evidence.startswith("never fired")
+                else "fired" if evidence.startswith("fired") or "fired" in verdict else "other")
+        audit[kind] += 1
+        word = re.split(r"[\s,:;(]+", re.sub(r"[`*]", "", verdict).strip())[0]
+        if word in ("keep", "merge", "shorten", "move", "remove", "revert"):
+            decisions[word] = decisions.get(word, 0) + 1
 
 # Retro action items: folded tables plus unfolded learnings files.
 items = {"applied": 0, "skipped": 0, "open": 0, "deferred": 0}
@@ -134,6 +171,12 @@ for name, key in (("Applied", "applied"), ("Skipped", "skipped"), ("Open", "open
     m = re.search(r"^### " + name + r"\n(.*?)(?=^### |^## |\Z)", text, re.M | re.S)
     for cells in rows(m.group(1) if m else ""):
         if cells[0] != "From retro" and "<" not in cells[0]:
+            items[key] += 1
+arch = read("_harness/LEARNINGS-archive.md")
+for name, key in (("Applied action items", "applied"), ("Skipped action items", "skipped")):
+    m = re.search(r"^## " + name + r"\n(.*?)(?=^## |\Z)", arch, re.M | re.S)
+    for cells in rows(m.group(1) if m else ""):
+        if len(cells) >= 5 and "<" not in cells[0]:
             items[key] += 1
 for path in glob.glob("_harness/learnings/*-v*.md"):
     for cells in rows(section(read(path), "Action items", "\x00")):
@@ -171,6 +214,13 @@ def git_counts(since):
     return None
 
 allstats = stats(feats)
+# A summary that silently skips most of a project's history looks complete and isn't. Entries that look
+# like entries but match neither known form are counted; past a fifth of them the script stops.
+if entry_lines and unread_entries > entry_lines * 0.2 and "--force" not in args:
+    sys.stderr.write(f"Evidence: read {folded_seen} of {entry_lines} folded entries; the rest do not match a known "
+                     "entry format, so the summary would leave most of this project's history out. Nothing was "
+                     "written. Fix the entry format, or pass --force to print it anyway (it then says so).\n")
+    sys.exit(3)
 escaped = sum(f["escaped"] for f in feats)
 unfolded = [f for f in feats if not f["folded"]]
 causes = {}
@@ -190,6 +240,8 @@ data = {
     "failure_causes_unfolded": causes, "modes_unfolded": modes,
     "retro_items": items, "prunes": len(prunes), "rule_audit": audit, "prune_decisions": decisions,
     "trials": trials, "lessons_adopted": adopted,
+    "records": {"learnings_files": read_files, "folded_entries": folded_seen, "unread_entries": unread_entries,
+                "prune_files": prune_files, "prunes_read": len(prunes), "audit_rows": audit_rows},
     "git": git_counts(feats[0]["date"]) if feats and feats[0]["date"] else None,
 }
 
@@ -211,7 +263,7 @@ md = ["# Morphness evidence summary", "",
       (f"- **Git history:** {data['git']['commits']} commits on the integration branch since the first feature, {data['git']['fix_titles']} titled fix and {data['git']['reverts']} reverts (by commit title only; titles are a convention, not a measure of escapes)"
        if data["git"] else "- **Git history:** not read (no git history or no features dated)"),
       f"- **Retro items:** {items['applied']} applied, {items['skipped']} skipped, {items['open'] + items['deferred']} open or deferred",
-      f"- **Prunes:** {len(prunes)}; rule audit rows: {audit['fired']} fired, {audit['insurance']} insurance, {audit['never fired']} never fired, {audit['too new']} too new; "
+      f"- **Prunes:** {len(prunes)}; rule audit rows: {audit['fired']} fired, {audit['insurance']} insurance, {audit['never fired']} never fired, {audit['too new']} too new, {audit['other']} other; "
       "decisions: " + (", ".join(f"{n} {w}" for w, n in sorted(decisions.items())) or "none yet"),
       f"- **Trials:** " + (", ".join(f"{n} {s}" for s, n in sorted(trials.items())) or "none"),
       f"- **Lessons adopted from the catalog:** {adopted}", ""]
@@ -223,6 +275,9 @@ if windows:
         few = "" if w["enough_data"] else f" (fewer than {MIN_WINDOW}: too few to read a trend)"
         md.append(f"| {w['window']} | {w['ends']} | {w['features']}{few} | {pct(w['first_time_pass'])} | {w['avg_qa_rounds']} | {usd(w['avg_cost_usd'])} |")
     md.append("")
+md += [f"Records read: {read_files} learnings files, {folded_seen} folded entries"
+       + (f" ({unread_entries} entry lines not read)" if unread_entries else "")
+       + f", {len(prunes)} of {prune_files} prune files (approved or applied), {audit_rows} rule audit rows.", ""]
 md += ["## Read with care", "",
        "- Every figure is recorded by the project's own agents and has not been audited.",
        "- Escapes are under-counted: a bug found by a fix PR only counts once someone records its `Escaped` line.",
