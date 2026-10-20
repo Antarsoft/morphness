@@ -626,6 +626,9 @@ def check(name, fx, t):
     r = run(["bash", "scripts/feature-cost.sh"], t, env=dict(os.environ, HOME=t))
     if r.returncode or "Traceback" in r.stdout + r.stderr:
         bad(f"feature-cost.sh failed: {r.stdout}{r.stderr}")
+    r = run(["bash", "scripts/evidence.sh"], t)
+    if r.returncode or "# Morphness evidence summary" not in r.stdout or "0 features finished" not in r.stdout or "Traceback" in r.stdout + r.stderr:
+        bad(f"evidence.sh on a fresh install printed {r.stdout!r} (stderr {r.stderr.strip()!r})")
     # guard hook cases
     # {I^} and {P^} are the same branches in capitals (a guard case for `git push origin Main`).
     branches = {"{I}": fx["branches"]["integration"], "{P}": fx["branches"]["production"],
