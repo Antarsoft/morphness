@@ -4,6 +4,14 @@
   "permissions": {
     "defaultMode": "acceptEdits",
     "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(gh api --method GET repos/antarsoft/morphness/*)",
+      "Bash(curl -fsSL https://api.github.com/repos/antarsoft/morphness/*)",
+      "Bash(curl -fsSL https://raw.githubusercontent.com/antarsoft/morphness/*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git fetch:*)",
@@ -20,15 +28,7 @@
       "Bash(tail:*)",
       "Bash(bash scripts/feature-cost.sh:*)",
       "Bash(bash scripts/prune-counter.sh:*)",
-      "Bash(bash scripts/evidence.sh:*)",
-      "Bash(git status:*)",
-      "Bash(git diff:*)",
-      "Bash(git log:*)",
-      "WebFetch(domain:api.github.com)",
-      "WebFetch(domain:raw.githubusercontent.com)",
-      "Bash(gh api --method GET repos/antarsoft/morphness/*)",
-      "Bash(curl -fsSL https://api.github.com/repos/antarsoft/morphness/*)",
-      "Bash(curl -fsSL https://raw.githubusercontent.com/antarsoft/morphness/*)"
+      "Bash(bash scripts/evidence.sh:*)"
     ],
     "deny": [
       "Read(./**/.env)",
