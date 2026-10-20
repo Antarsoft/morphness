@@ -212,8 +212,25 @@ footer p { margin: 6px 0; }
     <div class="cta">
       <a class="btn primary" href="#install">Install in one line</a>
       <a class="btn star" href="https://github.com/antarsoft/morphness" aria-label="Star Morphness on GitHub"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>Star on GitHub<span class="count" data-stars hidden></span></a>
+      <a class="btn" href="trust.html">See the test results</a>
     </div>
     <p class="facts"><span>Open source, MIT</span><span>Any language or framework</span><span>Built and run for about 150 features on Twinpage</span></p>
+    <p class="facts" id="trust-strip"><span><a href="trust.html">Test results are public, with the known limits listed.</a></span></p>
+    <script>
+    fetch("trust/results.json").then(function (r) { return r.json(); }).then(function (d) {
+      var own = d.rows.filter(function (r) { return r.group === "own"; });
+      var ok = own.filter(function (r) { return r.status === "pass"; }).length;
+      var leaks = d.rows.filter(function (r) { return r.name === "gitleaks"; })[0];
+      var parts = [ok + " of " + own.length + " own checks pass"];
+      if (leaks) parts.push(leaks.status === "did-not-run" ? "secret scan did not run" : leaks.findings.length + " secrets found");
+      parts.push("run " + d.generated.slice(0, 10));
+      var el = document.getElementById("trust-strip");
+      el.textContent = "";
+      var a = document.createElement("a"); a.href = "trust.html";
+      a.textContent = "Tested: " + parts.join(" · ") + " · limits listed";
+      var sp = document.createElement("span"); sp.appendChild(a); el.appendChild(sp);
+    }).catch(function () {});
+    </script>
     <ol class="loop" aria-label="The Morphness loop">
       <li><span>Plan</span></li><li><span>Build</span></li><li><span>QA</span></li><li><span>Retro</span></li><li><span>Prune</span></li><li><span>Share</span></li>
     </ol>

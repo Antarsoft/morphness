@@ -20,11 +20,13 @@ check bad "did not run: boom"
 check bad "This run has problems: crashed, noisy, selftest"
 check bad 'class="untriaged">untriaged'
 check bad "A limit."
+grep -q "problem(s)" "$tmp/out/trust/badge.json" && grep -q red "$tmp/out/trust/badge.json" || { echo "FAIL bad: badge does not show the problems"; fail=1; }
 # 2. everything fine
 echo "{\"schema\":1,\"generated\":\"2026-01-01 00:00 UTC\",\"commit\":\"0000000000000000000000000000000000000000\",\"release\":\"x\",\"dirty\":false,\"limits\":[],\"rows\":[
 $(row selftest own pass "all fine" "")]}" >"$tmp/good.json"
 "$ROOT/scripts/trust-report.sh" --render-only "$tmp/good.json" --out "$tmp/out" >/dev/null
 check good "Every check in this run finished"
+grep -q brightgreen "$tmp/out/trust/badge.json" || { echo "FAIL good: badge is not green"; fail=1; }
 if grep -q "This run has problems" "$tmp/out/trust.html"; then echo "FAIL good: page claims problems"; fail=1; fi
 [ "$fail" = 0 ] && echo "trust-report render test: ok"
 exit "$fail"
