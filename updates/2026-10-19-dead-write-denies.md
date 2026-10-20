@@ -2,7 +2,7 @@
 id: 2026-10-19-dead-write-denies
 title: Dead Write deny rules for .env files removed
 kind: fix
-release: 2026-10-19.4
+release: 2026-10-20
 applies_to: { modules: [] }
 files:
   - .claude/settings.json
