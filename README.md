@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src=".github/assets/logo.svg" alt="Morphness logo" width="112" height="112">
+<img src="docs/logo.svg" alt="Morphness logo" width="112" height="112">
 
 # Morphness
 
@@ -61,7 +61,8 @@ for clear requests so that process costs little when there's nothing to plan.
 | 🧭 **Plan first, then build** | A Technical Lead writes a plan with testable acceptance criteria and waits for your approval before any code is written. |
 | ✅ **QA is never skipped** | Every feature gets a separate QA agent that runs your checks and records the evidence, so "done" means verified, not claimed. |
 | 🔁 **Learns from its own mistakes** | Retros turn real misses (a failed QA round, a review fix, a bug you report after a pass) into rules, and prunes delete rules that never fire, so the instructions your agents read stay short and earned. |
-| 🛡️ **Safe by default** | A guard hook checks agents' tool calls before they run. It blocks pushes to environment branches, force-pushes, reading or writing common secret and credential files by name (`.env*`, keys, cloud credentials) and a set of remote database writes, and it asks you before deploys, cloud and database CLIs that aren't plainly reading, publishes, merges, connector writes and uploads to hosts you haven't listed. It also asks before it runs code it can't read (`curl … \| sh`, a shell fed from a pipe, an interpreter one-liner that starts a process, a deploy-named script, `ssh`, a package runner downloading something new). It stops accidents, not intent: what a script file or a tool it doesn't know does isn't seen, so branch protection and environment secrets on the host stay the real guard. [Exact list](template/AGENTS.md#permissions-for-this-project). Every agent also reads the rule: never write to a shared remote environment. |
+| 🛡️ **Safe by default** | A guard hook checks agents' tool calls before they run. It blocks pushes to environment branches, force-pushes, reading or writing common secret and credential files by name (`.env*`, keys, cloud credentials), a bare `env` or `printenv` and a set of remote database writes, and it asks you before deploys, cloud and database CLIs that aren't plainly reading, publishes, merges, connector writes and uploads to hosts you haven't listed. It asks before an agent changes the guard's own files or `harness.config.yml`, and before it runs code it can't read (`curl … \| sh`, a shell fed from a pipe, an interpreter one-liner that starts a process, a deploy-named script, `ssh`, a package runner downloading something new). If it can't run, it blocks the call instead of waving it through. It stops accidents, not intent: what a script file or a tool it doesn't know does isn't seen, so branch protection and environment secrets on the host stay the real guard. [Exact list](template/AGENTS.md#permissions-for-this-project). Every agent also reads the rule: never write to a shared remote environment. |
+| 🧪 **Tested as a kit** | Every change to the kit runs a self-test that installs it into sample projects (Next.js with Supabase among them), replays the guard's cases and brings the previous release up to date, so an update doesn't break an install that already works. |
 | 💲 **Know what each feature costs** | Every feature records an estimated dollar cost from Claude Code's own transcripts, split by agent, so you can compare features and tune effort. Useful as an estimate on a Pro or Max plan too. |
 | 🧰 **Yours to configure** | Branches, environments, checks, modules, risk areas, models, effort and loop limits all live in one `harness.config.yml`. Every rule and checklist is a plain Markdown file in your repo, so you can change anything. |
 | 🧩 **Works on any codebase** | New or existing repos, including ones that already have a `CLAUDE.md`, `AGENTS.md` or their own agent setup, monorepos with several apps, and folders that aren't a git repo or online yet. Any language or framework. |
@@ -281,7 +282,7 @@ See [template/harness/MORPHING.md](template/harness/MORPHING.md).
 Upstream keeps improving too: new modules, sharper process rules, fixes. Nothing upstream ever
 overwrites your copy. Instead:
 
-- `/morph-update` lists what changed in Morphness since your copy last synced and fits your project,
+- `/morph-update` lists what changed in Morphness since your copy last synced (released changes only) and fits your project,
   says why each item matters, and applies only what you accept. A file you never edited takes the
   new version; a file you edited gets a merge that keeps your rules, shown before it's written.
 - Every prune runs the same check read-only, so a harness that falls behind gets noticed.
