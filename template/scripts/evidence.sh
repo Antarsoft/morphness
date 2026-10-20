@@ -20,9 +20,10 @@ if ! command -v python3 >/dev/null 2>&1; then
 fi
 export EVIDENCE_RELEASE="$(config_get installed_from.release)"
 export EVIDENCE_PRUNE_EVERY="$(config_get loop.prune_every)"
+export EVIDENCE_BRANCH="$(config_get branches.integration)"
 
 python3 -I - "$@" <<'PY'
-import glob, json, os, re, statistics, sys
+import glob, json, os, re, statistics, subprocess, sys
 from datetime import date
 
 DATE = r"\d{4}-\d{2}-\d{2}"
@@ -153,6 +154,22 @@ for path in ["CLAUDE.md", "AGENTS.md"] + glob.glob(".claude/rules/*.md") + glob.
     for line in read(path).splitlines():
         adopted += len(re.findall(r"\(lesson: [a-z0-9-]+\)", re.sub(r"`[^`]*`", "", line)))
 
+# Git history of the integration branch since the first feature: how many commits are fixes or
+# reverts by title. A convention, not a measure of escapes, so the summary labels it that way.
+def git_counts(since):
+    branch = os.environ.get("EVIDENCE_BRANCH") or "main"
+    for ref in ("origin/" + branch, branch, "HEAD"):
+        try:
+            out = subprocess.run(["git", "log", ref, "--no-merges", "--since", since, "--format=%s"],
+                                 capture_output=True, text=True, check=True).stdout
+        except (OSError, subprocess.CalledProcessError):
+            continue
+        subjects = [l for l in out.splitlines() if l.strip()]
+        return {"commits": len(subjects),
+                "fix_titles": sum(bool(re.match(r"(?i)(fix|hotfix|bugfix)\b", s)) for s in subjects),
+                "reverts": sum(bool(re.match(r"(?i)revert\b", s)) for s in subjects)}
+    return None
+
 allstats = stats(feats)
 escaped = sum(f["escaped"] for f in feats)
 unfolded = [f for f in feats if not f["folded"]]
@@ -173,6 +190,7 @@ data = {
     "failure_causes_unfolded": causes, "modes_unfolded": modes,
     "retro_items": items, "prunes": len(prunes), "rule_audit": audit, "prune_decisions": decisions,
     "trials": trials, "lessons_adopted": adopted,
+    "git": git_counts(feats[0]["date"]) if feats and feats[0]["date"] else None,
 }
 
 def pct(x):
@@ -190,6 +208,8 @@ md = ["# Morphness evidence summary", "",
       f"- **Quality:** {pct(o['first_time_pass'])} passed QA first time; {o['avg_qa_rounds'] if o['avg_qa_rounds'] is not None else 'n/a'} QA rounds per feature on average",
       f"- **Escapes:** {escaped} bugs recorded as found after QA passed (counted from `Escaped` lines in learnings files not yet folded by a prune)",
       f"- **Cost:** average {usd(o['avg_cost_usd'])}, median {usd(o['median_cost_usd'])} per feature over {o['cost_measured']} measured; estimates at API list prices",
+      (f"- **Git history:** {data['git']['commits']} commits on the integration branch since the first feature, {data['git']['fix_titles']} titled fix and {data['git']['reverts']} reverts (by commit title only; titles are a convention, not a measure of escapes)"
+       if data["git"] else "- **Git history:** not read (no git history or no features dated)"),
       f"- **Retro items:** {items['applied']} applied, {items['skipped']} skipped, {items['open'] + items['deferred']} open or deferred",
       f"- **Prunes:** {len(prunes)}; rule audit rows: {audit['fired']} fired, {audit['insurance']} insurance, {audit['never fired']} never fired, {audit['too new']} too new; "
       "decisions: " + (", ".join(f"{n} {w}" for w, n in sorted(decisions.items())) or "none yet"),
