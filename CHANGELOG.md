@@ -4,7 +4,7 @@ Dated releases, newest first. Installed copies pick up kit changes (each with a 
 [updates/](updates/)) and new matching lessons through `/morph-update`; this file lists every change.
 When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
-## 2026-10-19.4
+## 2026-10-20
 
 - Agent files: the `description:` of every agent in `template/.claude/agents/` is now a quoted string. Unquoted, the `Default (effort high): use when…` text was invalid YAML for any strict reader (found by running the agnix linter on the kit). The self-test now fails an agent description with an unquoted colon. The `/morph-module` skill description no longer contains `<name>`, which claude.ai and the API reject on upload.
 
