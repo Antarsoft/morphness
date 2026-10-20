@@ -4,6 +4,12 @@ Dated releases, newest first. Installed copies pick up kit changes (each with a 
 [updates/](updates/)) and new matching lessons through `/morph-update`; this file lists every change.
 When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
+## 2026-10-20.2
+
+- **Evidence summary.** `scripts/evidence.sh` builds an anonymous summary of how the harness worked in a project (features finished, first-time QA pass rate, rework by prune window, escapes, estimated cost, retro items, rule audit results, trials, lessons adopted, and commit counts from the integration branch: fix-titled commits and reverts) from its own run records, with a "Read with care" list of what the figures can't show. It is read-only and sends nothing. `/morph-share` gains an optional step 7 that shows the summary and, only on the owner's yes, opens a pull request adding it under `showcase/`.
+
+- **Prune interval range.** `loop.prune_every` is limited to 8 to 30 features. `scripts/prune-counter.sh` uses 8 or 30 for a value outside the range and says so, because a window under 8 features leaves most rules "too new to judge" and decides trials before their escapes show.
+
 ## 2026-10-20
 
 - Agent files: the `description:` of every agent in `template/.claude/agents/` is now a quoted string. Unquoted, the `Default (effort high): use when…` text was invalid YAML for any strict reader (found by running the agnix linter on the kit). The self-test now fails an agent description with an unquoted colon. The `/morph-module` skill description no longer contains `<name>`, which claude.ai and the API reject on upload.

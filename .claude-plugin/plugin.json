@@ -1,6 +1,6 @@
 {
   "name": "morphness",
-  "version": "20261020.1.0",
+  "version": "20261020.2.0",
   "description": "Self-improving multi-agent harness for Claude Code: a Technical Lead plans, Full-stack builds, QA verifies, and a retro and prune loop turns lessons into rules that fit your project. Stack-agnostic AI coding workflow.",
   "author": {
     "name": "Morphness contributors"
