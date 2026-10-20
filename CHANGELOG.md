@@ -4,6 +4,10 @@ Dated releases, newest first. Installed copies pick up kit changes (each with a 
 [updates/](updates/)) and new matching lessons through `/morph-update`; this file lists every change.
 When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
+## 2026-10-20.3
+
+- **Evidence summary reads older records.** `scripts/evidence.sh` now reads the older one-line entry form, prune files named with a letter after the date, rule audit tables with an id column and archived action-item tables, and ignores `Escaped: none`. It prints a "Records read" line and stops with an error, instead of printing a summary that looks complete, when more than a fifth of the folded entries match no known form. Found when the first version printed 6 features for a project with 150.
+
 ## 2026-10-20.2
 
 - **Evidence summary.** `scripts/evidence.sh` builds an anonymous summary of how the harness worked in a project (features finished, first-time QA pass rate, rework by prune window, escapes, estimated cost, retro items, rule audit results, trials, lessons adopted, and commit counts from the integration branch: fix-titled commits and reverts) from its own run records, with a "Read with care" list of what the figures can't show. It is read-only and sends nothing. `/morph-share` gains an optional step 7 that shows the summary and, only on the owner's yes, opens a pull request adding it under `showcase/`.

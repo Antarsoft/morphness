@@ -2,7 +2,7 @@
 id: 2026-10-20-evidence-formats
 title: evidence.sh reads older entry and prune forms and stops on history it can't read
 kind: fix
-release: unreleased
+release: 2026-10-20.3
 applies_to: { modules: [] }
 files:
   - scripts/evidence.sh
