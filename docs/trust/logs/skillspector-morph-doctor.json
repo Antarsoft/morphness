@@ -1,0 +1,1568 @@
+{
+ "skill": {
+  "name": "morph-doctor",
+  "source": "<repo>/skills/morph-doctor",
+  "scanned_at": "2026-10-20T17:14:13.378982+00:00"
+ },
+ "risk_assessment": {
+  "score": 0,
+  "severity": "LOW",
+  "recommendation": "CAUTION",
+  "max_issue_severity": "NONE"
+ },
+ "components": [
+  {
+   "path": "SKILL.md",
+   "type": "markdown",
+   "lines": 167,
+   "executable": false,
+   "size_bytes": 14623,
+   "source_url": null,
+   "source_identity": null,
+   "source_digest": null
+  }
+ ],
+ "structured_summaries": [],
+ "issues": [],
+ "suppressed_count": 0,
+ "suppressed": [],
+ "metadata": {
+  "has_executable_scripts": false,
+  "skillspector_version": "2.12.0",
+  "llm_requested": false,
+  "llm_available": false,
+  "meta_analysis_applied": false,
+  "inference_usage": [],
+  "llm_provenance": {
+   "schema_version": 1,
+   "provider": {
+    "configured_adapter": "unknown",
+    "resolved_adapter": "unknown",
+    "effective_adapter": "not_applicable",
+    "effective_adapters": [],
+    "service": "unknown",
+    "routing": {
+     "deployment_override": null,
+     "deployment_source": "unknown",
+     "api_version": null,
+     "api_version_source": "unknown"
+    }
+   },
+   "analyzers": [
+    {
+     "analyzer_id": "mcp_tool_poisoning",
+     "model": "z-ai/glm-5.3",
+     "model_source": "resolved_configuration",
+     "analyzer_revision": {
+      "value": "2.12.0",
+      "source": "skillspector_package",
+      "source_revision": {
+       "value": "95a52d89fa16f608f0b18ccee76b0918ea4b7eef",
+       "source": "package_vcs_metadata"
+      }
+     }
+    },
+    {
+     "analyzer_id": "semantic_developer_intent",
+     "model": "z-ai/glm-5.3",
+     "model_source": "resolved_configuration",
+     "analyzer_revision": {
+      "value": "2.12.0",
+      "source": "skillspector_package",
+      "source_revision": {
+       "value": "95a52d89fa16f608f0b18ccee76b0918ea4b7eef",
+       "source": "package_vcs_metadata"
+      }
+     }
+    },
+    {
+     "analyzer_id": "semantic_quality_policy",
+     "model": "z-ai/glm-5.3",
+     "model_source": "resolved_configuration",
+     "analyzer_revision": {
+      "value": "2.12.0",
+      "source": "skillspector_package",
+      "source_revision": {
+       "value": "95a52d89fa16f608f0b18ccee76b0918ea4b7eef",
+       "source": "package_vcs_metadata"
+      }
+     }
+    },
+    {
+     "analyzer_id": "semantic_security_discovery",
+     "model": "z-ai/glm-5.3",
+     "model_source": "resolved_configuration",
+     "analyzer_revision": {
+      "value": "2.12.0",
+      "source": "skillspector_package",
+      "source_revision": {
+       "value": "95a52d89fa16f608f0b18ccee76b0918ea4b7eef",
+       "source": "package_vcs_metadata"
+      }
+     }
+    },
+    {
+     "analyzer_id": "meta_analyzer",
+     "model": "z-ai/glm-5.3",
+     "model_source": "resolved_configuration",
+     "analyzer_revision": {
+      "value": "2.12.0",
+      "source": "skillspector_package",
+      "source_revision": {
+       "value": "95a52d89fa16f608f0b18ccee76b0918ea4b7eef",
+       "source": "package_vcs_metadata"
+      }
+     }
+    }
+   ],
+   "sampling": {
+    "temperature": {
+     "requested": null,
+     "source": "provider_default",
+     "forwarded_to_client": null,
+     "adapter_support": false,
+     "provider_support": "unknown"
+    },
+    "seed": {
+     "requested": null,
+     "source": "unset",
+     "forwarded_to_client": null,
+     "adapter_support": false,
+     "provider_support": "unknown"
+    },
+    "reasoning_effort": {
+     "requested": null,
+     "source": "provider_default",
+     "forwarded_to_client": null,
+     "adapter_support": false,
+     "provider_support": "unknown"
+    }
+   },
+   "determinism": {
+    "classification": "not_applicable",
+    "control_status": "not_applied",
+    "provider_guarantee": false,
+    "reason": "LLM analysis was not executed for this scan."
+   }
+  },
+  "filtering_mode": "heuristic"
+ },
+ "execution_successful": true,
+ "analysis_completeness": {
+  "total_components": 1,
+  "scanned_components": 1,
+  "coverage_percent": 100.0,
+  "is_complete": false,
+  "status": "partial",
+  "execution_successful": true,
+  "fully_inspected_files": 1,
+  "partially_inspected_files": 0,
+  "entirely_uninspected_files": 0,
+  "ledger_exceptions": [
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 15,
+    "end_line": 15,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 16,
+    "end_line": 16,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 18,
+    "end_line": 18,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 27,
+    "end_line": 27,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 28,
+    "end_line": 28,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 30,
+    "end_line": 30,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 32,
+    "end_line": 32,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 34,
+    "end_line": 34,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 35,
+    "end_line": 35,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 39,
+    "end_line": 39,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 41,
+    "end_line": 41,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 53,
+    "end_line": 53,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 55,
+    "end_line": 55,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 56,
+    "end_line": 56,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 57,
+    "end_line": 57,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 58,
+    "end_line": 58,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 59,
+    "end_line": 59,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 66,
+    "end_line": 66,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 71,
+    "end_line": 71,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 73,
+    "end_line": 73,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 83,
+    "end_line": 83,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 89,
+    "end_line": 89,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 92,
+    "end_line": 92,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 94,
+    "end_line": 94,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 97,
+    "end_line": 97,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 98,
+    "end_line": 98,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 99,
+    "end_line": 99,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 101,
+    "end_line": 101,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 102,
+    "end_line": 102,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 103,
+    "end_line": 103,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 109,
+    "end_line": 109,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 116,
+    "end_line": 116,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 118,
+    "end_line": 118,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 119,
+    "end_line": 119,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 120,
+    "end_line": 120,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 123,
+    "end_line": 123,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 130,
+    "end_line": 130,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 132,
+    "end_line": 132,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 135,
+    "end_line": 135,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 138,
+    "end_line": 138,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 141,
+    "end_line": 141,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 143,
+    "end_line": 143,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 144,
+    "end_line": 144,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 145,
+    "end_line": 145,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 150,
+    "end_line": 150,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 157,
+    "end_line": 157,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 162,
+    "end_line": 162,
+    "fatal": false
+   }
+  ],
+  "scope_exclusions": [],
+  "analyzer_statuses": [
+   {
+    "analyzer_id": "artifact_integrity",
+    "status": "completed",
+    "planned_work": 1,
+    "completed": 1,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0
+   },
+   {
+    "analyzer_id": "behavioral_ast",
+    "status": "not_applicable",
+    "planned_work": 0,
+    "completed": 0,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0,
+    "reason_code": "no_applicable_files",
+    "message": "No files matched this analyzer's applicability contract."
+   },
+   {
+    "analyzer_id": "behavioral_taint_tracking",
+    "status": "not_applicable",
+    "planned_work": 0,
+    "completed": 0,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0,
+    "reason_code": "no_applicable_files",
+    "message": "No files matched this analyzer's applicability contract."
+   },
+   {
+    "analyzer_id": "bundled_execution_surface",
+    "status": "not_applicable",
+    "planned_work": 0,
+    "completed": 0,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0,
+    "reason_code": "no_applicable_files",
+    "message": "No files matched this analyzer's applicability contract."
+   },
+   {
+    "analyzer_id": "mcp_least_privilege",
+    "status": "not_applicable",
+    "planned_work": 0,
+    "completed": 0,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0,
+    "reason_code": "no_applicable_files",
+    "message": "No files matched this analyzer's applicability contract."
+   },
+   {
+    "analyzer_id": "mcp_rug_pull",
+    "status": "completed",
+    "planned_work": 1,
+    "completed": 1,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0
+   },
+   {
+    "analyzer_id": "mcp_tool_poisoning",
+    "status": "completed",
+    "planned_work": 1,
+    "completed": 1,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0
+   },
+   {
+    "analyzer_id": "meta_analyzer",
+    "status": "not_applicable",
+    "planned_work": 0,
+    "completed": 0,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0,
+    "reason_code": "no_applicable_files",
+    "message": "No files matched this analyzer's applicability contract."
+   },
+   {
+    "analyzer_id": "semantic_developer_intent",
+    "status": "disabled",
+    "planned_work": 0,
+    "completed": 0,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0,
+    "reason_code": "disabled_by_configuration",
+    "message": "Analyzer was disabled by the requested configuration."
+   },
+   {
+    "analyzer_id": "semantic_quality_policy",
+    "status": "disabled",
+    "planned_work": 0,
+    "completed": 0,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0,
+    "reason_code": "disabled_by_configuration",
+    "message": "Analyzer was disabled by the requested configuration."
+   },
+   {
+    "analyzer_id": "semantic_security_discovery",
+    "status": "disabled",
+    "planned_work": 0,
+    "completed": 0,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0,
+    "reason_code": "disabled_by_configuration",
+    "message": "Analyzer was disabled by the requested configuration."
+   },
+   {
+    "analyzer_id": "static_patterns_agent_snooping",
+    "status": "completed",
+    "planned_work": 1,
+    "completed": 1,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0
+   },
+   {
+    "analyzer_id": "static_patterns_anti_refusal",
+    "status": "completed",
+    "planned_work": 1,
+    "completed": 1,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0
+   },
+   {
+    "analyzer_id": "static_patterns_data_exfiltration",
+    "status": "completed",
+    "planned_work": 1,
+    "completed": 1,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0
+   },
+   {
+    "analyzer_id": "static_patterns_deserialization",
+    "status": "completed",
+    "planned_work": 1,
+    "completed": 1,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0
+   },
+   {
+    "analyzer_id": "static_patterns_excessive_agency",
+    "status": "completed",
+    "planned_work": 1,
+    "completed": 1,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0
+   },
+   {
+    "analyzer_id": "static_patterns_harmful_content",
+    "status": "completed",
+    "planned_work": 1,
+    "completed": 1,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0
+   },
+   {
+    "analyzer_id": "static_patterns_memory_poisoning",
+    "status": "completed",
+    "planned_work": 1,
+    "completed": 1,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0
+   },
+   {
+    "analyzer_id": "static_patterns_output_handling",
+    "status": "completed",
+    "planned_work": 1,
+    "completed": 1,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0
+   },
+   {
+    "analyzer_id": "static_patterns_privilege_escalation",
+    "status": "completed",
+    "planned_work": 1,
+    "completed": 1,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0
+   },
+   {
+    "analyzer_id": "static_patterns_prompt_injection",
+    "status": "completed",
+    "planned_work": 1,
+    "completed": 1,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0
+   },
+   {
+    "analyzer_id": "static_patterns_rogue_agent",
+    "status": "completed",
+    "planned_work": 1,
+    "completed": 1,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0
+   },
+   {
+    "analyzer_id": "static_patterns_ssrf",
+    "status": "completed",
+    "planned_work": 1,
+    "completed": 1,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0
+   },
+   {
+    "analyzer_id": "static_patterns_supply_chain",
+    "status": "completed",
+    "planned_work": 1,
+    "completed": 1,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0
+   },
+   {
+    "analyzer_id": "static_patterns_system_prompt_leakage",
+    "status": "completed",
+    "planned_work": 1,
+    "completed": 1,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0
+   },
+   {
+    "analyzer_id": "static_patterns_tool_misuse",
+    "status": "completed",
+    "planned_work": 1,
+    "completed": 1,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0
+   },
+   {
+    "analyzer_id": "static_yara",
+    "status": "completed",
+    "planned_work": 1,
+    "completed": 1,
+    "partial": 0,
+    "skipped": 0,
+    "failed": 0,
+    "unaccounted": 0
+   }
+  ],
+  "references": [
+   {
+    "source_path": "SKILL.md",
+    "line": 15,
+    "column": 2,
+    "evidence": "`harness.config.yml` \u00a7 checks has a command in `project/CONTROLS.md`, `scripts/session-start.sh` is",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 15,
+    "column": 49,
+    "evidence": "`harness.config.yml` \u00a7 checks has a command in `project/CONTROLS.md`, `scripts/session-start.sh` is",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 15,
+    "column": 72,
+    "evidence": "`harness.config.yml` \u00a7 checks has a command in `project/CONTROLS.md`, `scripts/session-start.sh` is",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 16,
+    "column": 51,
+    "evidence": "executable and parses with `bash -n`). Never run `scripts/session-start.sh` itself: it installs",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 18,
+    "column": 57,
+    "evidence": "(written by an older install): offer to delete it, its `project/STACK.md` row and its name from",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 27,
+    "column": 43,
+    "evidence": "what stops working: no `python3` makes `scripts/guard.sh` block every tool call (it fails closed; `guard.fail_open: true` lets them through) and stops the prune",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 28,
+    "column": 69,
+    "evidence": "counter and cost scripts; no `awk` stops every script that reads `harness.config.yml`; no `perl` stops",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 30,
+    "column": 4,
+    "evidence": "`scripts/session-start.sh` then runs without a time limit.",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 32,
+    "column": 4,
+    "evidence": "`scripts/session-start.sh`. A mismatch means the commands changed since this clone last ran them and",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 34,
+    "column": 9,
+    "evidence": "`bash scripts/session-start.sh --accept`. A copy whose script lacks the pin: point to `/morph-update`.",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "inline_command"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 35,
+    "column": 20,
+    "evidence": "- **Guard hook:** `.claude/settings.json` \u2192 `hooks.PreToolUse` runs `scripts/guard.sh`, the script",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 35,
+    "column": 46,
+    "evidence": "- **Guard hook:** `.claude/settings.json` \u2192 `hooks.PreToolUse` runs `scripts/guard.sh`, the script",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 35,
+    "column": 70,
+    "evidence": "- **Guard hook:** `.claude/settings.json` \u2192 `hooks.PreToolUse` runs `scripts/guard.sh`, the script",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 39,
+    "column": 33,
+    "evidence": "the named `ask` rules alone; `guard.deploys`, `guard.publishes`, `guard.schema_pushes`, `guard.network` or `guard.installs: off` the",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 39,
+    "column": 50,
+    "evidence": "the named `ask` rules alone; `guard.deploys`, `guard.publishes`, `guard.schema_pushes`, `guard.network` or `guard.installs: off` the",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 39,
+    "column": 92,
+    "evidence": "the named `ask` rules alone; `guard.deploys`, `guard.publishes`, `guard.schema_pushes`, `guard.network` or `guard.installs: off` the",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 41,
+    "column": 20,
+    "evidence": "- Module markers (`harness/README.md` \u00a7 Modules \u2192 **Module markers**): no `module:<name>` marker",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 53,
+    "column": 4,
+    "evidence": "`.github/rulesets/environment-branches.json` and the `harness/RELEASE.md` sections that point to it),",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 53,
+    "column": 57,
+    "evidence": "`.github/rulesets/environment-branches.json` and the `harness/RELEASE.md` sections that point to it),",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 55,
+    "column": 20,
+    "evidence": "- The branches in `harness.config.yml` exist on the remote (`git ls-remote --heads origin <name>`).",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 56,
+    "column": 81,
+    "evidence": "- `environments` (when the key exists): names are unique; the first entry runs `branches.integration`",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 57,
+    "column": 22,
+    "evidence": "and the last runs `branches.production`; every entry's branch exists on the remote; `deploy` is one",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 58,
+    "column": 70,
+    "evidence": "of `host`, `workflow`, `manual`, `none`, and `workflow` only when `ci_cd.deploy` is a path; the last",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 59,
+    "column": 33,
+    "evidence": "entry has `real_data: true`; `project/RELEASE.md` \u00a7 Where things deploy has one row per entry, in",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 66,
+    "column": 78,
+    "evidence": "`environments` and every value is `host`, `workflow`, `manual` or `none`; `project/STACK.md` \u00a7 Apps",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 71,
+    "column": 4,
+    "evidence": "- `branches.default` matches the host's default branch (`git remote show origin | sed -n 's/.*HEAD branch: //p'`, or `gh repo view --json defaultBranchRef`). A ",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 71,
+    "column": 191,
+    "evidence": "'`, or `gh repo view --json defaultBranchRef`). A mismatch is the owner's step (harness/RELEASE.md \u00a7 Default branch). A copy without the key: point to `/morph-u",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "plain_path"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 73,
+    "column": 33,
+    "evidence": "and has `git push` denies in `.claude/settings.json`. When `gh` can read it, check each branch's",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 83,
+    "column": 32,
+    "evidence": "check whose command matches `project/CONTROLS.md` (report each missing or differing step); no runner",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 89,
+    "column": 23,
+    "evidence": "are `ask` rules in `.claude/settings.json`, not `deny`: a deny blocks render.md \u00a7 7b. Offer to move",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 92,
+    "column": 45,
+    "evidence": "`checks.before_signoff` with commands in `project/CONTROLS.md`; each tool the commands start is",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 94,
+    "column": 44,
+    "evidence": "command redacts (gitleaks: `--redact`); `project/CONTROLS.md` \u00a7 Security paths is filled; and each",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 97,
+    "column": 62,
+    "evidence": "- `release_tags: per-package`: the versioning tool named in `project/RELEASE.md` \u00a7 Versions has its",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 98,
+    "column": 24,
+    "evidence": "config in the repo (`.changeset/config.json`, `nx.json` \u2192 `release`, `release-please-config.json`,",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 98,
+    "column": 50,
+    "evidence": "config in the repo (`.changeset/config.json`, `nx.json` \u2192 `release`, `release-please-config.json`,",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 98,
+    "column": 73,
+    "evidence": "config in the repo (`.changeset/config.json`, `nx.json` \u2192 `release`, `release-please-config.json`,",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 99,
+    "column": 4,
+    "evidence": "`lerna.json`), and no Morphness tag workflow is in `ci_cd.tags`. Any other value than `true`,",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 99,
+    "column": 55,
+    "evidence": "`lerna.json`), and no Morphness tag workflow is in `ci_cd.tags`. Any other value than `true`,",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 101,
+    "column": 59,
+    "evidence": "- `merge_by_agent`: `never` has the merge `ask` rules in `.claude/settings.json` (`gh pr merge`,",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 102,
+    "column": 53,
+    "evidence": "the code host's merge tools); `integration` with `branches.integration` equal to",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 103,
+    "column": 4,
+    "evidence": "`branches.production` is reported, because it acts as `never` there.",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 109,
+    "column": 54,
+    "evidence": "- **Installed skills match their pin:** each row in `project/SKILLS_AND_MCPS.md` \u00a7 Installed (repo)",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 116,
+    "column": 17,
+    "evidence": "the upstream `catalog.md` as available to review through `/morph-update`, not as a fault.",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 118,
+    "column": 51,
+    "evidence": "each missing one with its fallback (morph-init `references/catalog.md` \u00a7 Built-in skills).",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 119,
+    "column": 23,
+    "evidence": "- **Service tools:** `project/SKILLS_AND_MCPS.md` \u00a7 Service tools has a row for every external service",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 120,
+    "column": 13,
+    "evidence": "named in `project/STACK.md` and `project/RELEASE.md`. Compare each row's \"Connected as\" with the MCP",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 120,
+    "column": 36,
+    "evidence": "named in `project/STACK.md` and `project/RELEASE.md`. Compare each row's \"Connected as\" with the MCP",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 123,
+    "column": 39,
+    "evidence": "a remote database, `deny`) rule in `.claude/settings.json`; report each one without. A copy without",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 130,
+    "column": 28,
+    "evidence": "- **Prune due:** run `bash scripts/prune-counter.sh` (when the copy lacks it, count the `*-v*.md` files",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "inline_command"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 132,
+    "column": 4,
+    "evidence": "`harness/SETUP.md` \u00a7 Prune, naming the `proposed` file in `_harness/prunes/` waiting for the owner, or",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 135,
+    "column": 27,
+    "evidence": "- **Feature cost:** with `cost.track` on (or no `cost:` key), `bash scripts/feature-cost.sh` runs and",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 135,
+    "column": 69,
+    "evidence": "- **Feature cost:** with `cost.track` on (or no `cost:` key), `bash scripts/feature-cost.sh` runs and",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "inline_command"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 138,
+    "column": 49,
+    "evidence": "`claude-\u2026` id, has a row in the price table (`cost.prices`, default `harness/MODEL_PRICES.md`).",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 138,
+    "column": 72,
+    "evidence": "`claude-\u2026` id, has a row in the price table (`cost.prices`, default `harness/MODEL_PRICES.md`).",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 141,
+    "column": 42,
+    "evidence": "- **Open action items:** retro items in `_harness/LEARNINGS.md` still `open` or `approved` but not",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 143,
+    "column": 71,
+    "evidence": "- **Trials:** active trials in `_harness/trials/` (the `Trial` lines `scripts/prune-counter.sh` prints) that have run their length with no decision. A copy that",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 143,
+    "column": 193,
+    "evidence": "e run their length with no decision. A copy that still keeps trials as rows in `_harness/LEARNINGS.md` \u00a7 Trials: check those, and point to `/morph-update` (upda",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 144,
+    "column": 46,
+    "evidence": "- **Stuck features:** feature folders whose `plan.md` Status is `approved` with no `progress.md`, or",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 144,
+    "column": 85,
+    "evidence": "- **Stuck features:** feature folders whose `plan.md` Status is `approved` with no `progress.md`, or",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 145,
+    "column": 4,
+    "evidence": "`progress.md` marked complete with no `qa-result.md`.",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 145,
+    "column": 42,
+    "evidence": "`progress.md` marked complete with no `qa-result.md`.",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 150,
+    "column": 2,
+    "evidence": "`harness.config.yml` \u00a7 installed_from, the commit this copy last synced to) and summarise how the copy has morphed: rules added, removed or",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 157,
+    "column": 40,
+    "evidence": "matching lessons added upstream since `installed_from.commit` that this project hasn't applied or",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 162,
+    "column": 2,
+    "evidence": "`updates.source` is `local`, and falls back to a local copy; with neither, say \"upstream not checked\".",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   }
+  ],
+  "limitations": [],
+  "findings_before_filtering": 0,
+  "findings_after_filtering": 0
+ }
+}

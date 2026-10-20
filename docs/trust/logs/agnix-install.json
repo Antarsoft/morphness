@@ -1,0 +1,116 @@
+{
+ "version": "0.59.0",
+ "files_checked": 58,
+ "diagnostics": [
+  {
+   "level": "warning",
+   "rule": "CDX-AG-005",
+   "file": "<install-root>/nextjs-supabase/AGENTS.md",
+   "line": 33,
+   "column": 1,
+   "message": "AGENTS.md references missing file `QA/qa-result.md`",
+   "suggestion": "Remove the reference or create the file - Codex will fail to open it during a session",
+   "category": "codex",
+   "rule_severity": "MEDIUM",
+   "applies_to_tool": "codex"
+  },
+  {
+   "level": "warning",
+   "rule": "PE-004",
+   "file": "<install-root>/nextjs-supabase/AGENTS.md",
+   "line": 35,
+   "column": 11,
+   "message": "Ambiguous term 'usually' creates unclear instruction",
+   "suggestion": "Replace the hedge with a condition Claude can check (e.g., 'when the change touches src/api/'), or state the rule without it",
+   "category": "prompt-engineering",
+   "rule_severity": "MEDIUM"
+  },
+  {
+   "level": "warning",
+   "rule": "XML-001",
+   "file": "<install-root>/nextjs-supabase/harness/templates/steps.md",
+   "line": 11,
+   "column": 3,
+   "message": "Unclosed XML tag '<Service>'",
+   "suggestion": "Add closing tag '</Service>'",
+   "category": "xml",
+   "rule_severity": "MEDIUM"
+  },
+  {
+   "level": "info",
+   "rule": "VER-001",
+   "file": "<install-root>/nextjs-supabase",
+   "line": 1,
+   "column": 1,
+   "message": "No tool or spec versions pinned. Version-dependent rules will use default assumptions.",
+   "suggestion": "Pin versions in .agnix.toml [tool_versions] or [spec_revisions] for deterministic validation.",
+   "category": "version-awareness",
+   "rule_severity": "LOW"
+  },
+  {
+   "level": "info",
+   "rule": "CC-AG-022",
+   "file": "<install-root>/nextjs-supabase/.claude/agents/fullstack-engineer-medium.md",
+   "line": 2,
+   "column": 1,
+   "message": "This subagent sets neither tools nor disallowedTools, so it inherits every tool available to subagents",
+   "suggestion": "List only the tools it needs in 'tools', or remove the risky ones with 'disallowedTools'",
+   "category": "claude-agents",
+   "rule_severity": "LOW",
+   "applies_to_tool": "claude-code"
+  },
+  {
+   "level": "info",
+   "rule": "CC-AG-022",
+   "file": "<install-root>/nextjs-supabase/.claude/agents/fullstack-engineer-xhigh.md",
+   "line": 2,
+   "column": 1,
+   "message": "This subagent sets neither tools nor disallowedTools, so it inherits every tool available to subagents",
+   "suggestion": "List only the tools it needs in 'tools', or remove the risky ones with 'disallowedTools'",
+   "category": "claude-agents",
+   "rule_severity": "LOW",
+   "applies_to_tool": "claude-code"
+  },
+  {
+   "level": "info",
+   "rule": "CC-AG-022",
+   "file": "<install-root>/nextjs-supabase/.claude/agents/fullstack-engineer.md",
+   "line": 2,
+   "column": 1,
+   "message": "This subagent sets neither tools nor disallowedTools, so it inherits every tool available to subagents",
+   "suggestion": "List only the tools it needs in 'tools', or remove the risky ones with 'disallowedTools'",
+   "category": "claude-agents",
+   "rule_severity": "LOW",
+   "applies_to_tool": "claude-code"
+  },
+  {
+   "level": "info",
+   "rule": "CC-AG-022",
+   "file": "<install-root>/nextjs-supabase/.claude/agents/qa-engineer-medium.md",
+   "line": 2,
+   "column": 1,
+   "message": "This subagent sets neither tools nor disallowedTools, so it inherits every tool available to subagents",
+   "suggestion": "List only the tools it needs in 'tools', or remove the risky ones with 'disallowedTools'",
+   "category": "claude-agents",
+   "rule_severity": "LOW",
+   "applies_to_tool": "claude-code"
+  },
+  {
+   "level": "info",
+   "rule": "CC-AG-022",
+   "file": "<install-root>/nextjs-supabase/.claude/agents/qa-engineer.md",
+   "line": 2,
+   "column": 1,
+   "message": "This subagent sets neither tools nor disallowedTools, so it inherits every tool available to subagents",
+   "suggestion": "List only the tools it needs in 'tools', or remove the risky ones with 'disallowedTools'",
+   "category": "claude-agents",
+   "rule_severity": "LOW",
+   "applies_to_tool": "claude-code"
+  }
+ ],
+ "summary": {
+  "errors": 0,
+  "warnings": 3,
+  "info": 6
+ }
+}

@@ -1,0 +1,258 @@
+{
+ "schema": 1,
+ "generated": "2026-10-20 17:14 UTC",
+ "commit": "98324c826a5c1215c083fffd9a49b37a0f202f48",
+ "release": "2026-10-20.4 + later commits",
+ "dirty": false,
+ "rows": [
+  {
+   "group": "own",
+   "name": "Kit self-test",
+   "url": "https://github.com/antarsoft/morphness/blob/main/scripts/kit-selftest.sh",
+   "version": "",
+   "what": "Renders the template as /morph-init would for sample projects, runs its own consistency checks, replays every guard case and runs the template scripts.",
+   "command": "STRICT=1 GUARD_FULL=1 scripts/kit-selftest.sh",
+   "status": "pass",
+   "summary": "4 of 4 sample projects pass; 616 guard cases replayed on each (2464 replays; per project 203 allowed, 272 asked, 141 denied, all as expected)",
+   "findings": [],
+   "logs": [
+    "kit-selftest.txt"
+   ],
+   "finished": "2026-10-20 17:14 UTC",
+   "notes": "Sample projects: go-service, monorepo-apps, nextjs-supabase, python-cli."
+  },
+  {
+   "group": "own",
+   "name": "Update notes",
+   "url": "https://github.com/antarsoft/morphness/blob/main/scripts/check-updates.sh",
+   "version": "",
+   "what": "Every kit change has an update note, and every note is well formed.",
+   "command": "scripts/check-updates.sh",
+   "status": "pass",
+   "summary": "85 update note(s) checked, 0 problem(s)",
+   "findings": [],
+   "logs": [
+    "check-updates.txt"
+   ],
+   "finished": "2026-10-20 17:14 UTC"
+  },
+  {
+   "group": "own",
+   "name": "Lesson catalog",
+   "url": "https://github.com/antarsoft/morphness/blob/main/scripts/check-lessons.sh",
+   "version": "",
+   "what": "Every lesson file follows the catalog format.",
+   "command": "scripts/check-lessons.sh",
+   "status": "pass",
+   "summary": "112 lesson file(s) checked, 0 problem(s)",
+   "findings": [],
+   "logs": [
+    "check-lessons.txt"
+   ],
+   "finished": "2026-10-20 17:14 UTC"
+  },
+  {
+   "group": "public",
+   "name": "agnix",
+   "url": "https://github.com/agent-sh/agnix",
+   "version": "0.59.0",
+   "what": "Config correctness of CLAUDE.md, AGENTS.md, rules, agents, settings, hooks and skills, on a rendered sample install and on the kit's skills.",
+   "command": "npx agnix@0.59.0 --format json <path>",
+   "status": "triaged",
+   "summary": "3 finding(s), all judged (8 informational)",
+   "findings": [
+    {
+     "rule": "CDX-AG-005",
+     "path": "install/AGENTS.md",
+     "line": 33,
+     "level": "warning",
+     "message": "AGENTS.md references missing file `QA/qa-result.md`",
+     "triage": {
+      "status": "false-positive",
+      "reason": "QA/qa-result.md is created by the first QA run, so it does not exist in a fresh install."
+     }
+    },
+    {
+     "rule": "PE-004",
+     "path": "install/AGENTS.md",
+     "line": 35,
+     "level": "warning",
+     "message": "Ambiguous term 'usually' creates unclear instruction",
+     "triage": {
+      "status": "accepted",
+      "reason": "'usually' is a deliberate hedge in a role description; the rule is a style check."
+     }
+    },
+    {
+     "rule": "XML-001",
+     "path": "install/harness/templates/steps.md",
+     "line": 11,
+     "level": "warning",
+     "message": "Unclosed XML tag '<Service>'",
+     "triage": {
+      "status": "false-positive",
+      "reason": "<Service> and <tool> are placeholders in an example sentence, not XML."
+     }
+    }
+   ],
+   "logs": [
+    "agnix-install.json",
+    "agnix-skills.json"
+   ],
+   "finished": "2026-10-20 17:14 UTC",
+   "notes": "66 files checked. Errors and warnings need a verdict; info notes are only counted."
+  },
+  {
+   "group": "public",
+   "name": "ShellCheck",
+   "url": "https://github.com/koalaman/shellcheck",
+   "version": "0.11.0",
+   "what": "The kit's bash scripts and the scripts installed into projects, including the guard hook.",
+   "command": "shellcheck -x -f json $(git ls-files '*.sh')",
+   "status": "triaged",
+   "summary": "8 finding(s), all judged (9 informational)",
+   "findings": [
+    {
+     "rule": "SC2010",
+     "path": "template/scripts/prune-counter.sh",
+     "line": 85,
+     "level": "warning",
+     "message": "Don't use ls | grep. Use a glob or a for loop with a condition to allow non-alphanumeric filenames.",
+     "triage": {
+      "status": "accepted",
+      "reason": "Lists the kit's own prune files, whose names are dated slugs; style warning."
+     }
+    },
+    {
+     "rule": "SC1112",
+     "path": "template/scripts/guard.sh",
+     "line": 619,
+     "level": "warning",
+     "message": "This is a unicode quote. Delete and retype it (or ignore/doublequote for literal).",
+     "triage": {
+      "status": "false-positive",
+      "reason": "A typographic apostrophe inside the text of a user-facing message, on purpose."
+     }
+    },
+    {
+     "rule": "SC1112",
+     "path": "template/scripts/guard.sh",
+     "line": 639,
+     "level": "warning",
+     "message": "This is a unicode quote. Delete and retype it (or ignore/doublequote for literal).",
+     "triage": {
+      "status": "false-positive",
+      "reason": "A typographic apostrophe inside the text of a user-facing message, on purpose."
+     }
+    },
+    {
+     "rule": "SC1112",
+     "path": "template/scripts/guard.sh",
+     "line": 1183,
+     "level": "warning",
+     "message": "This is a unicode quote. Delete and retype it (or ignore/doublequote for literal).",
+     "triage": {
+      "status": "false-positive",
+      "reason": "A typographic apostrophe inside the text of a user-facing message, on purpose."
+     }
+    },
+    {
+     "rule": "SC1112",
+     "path": "template/scripts/guard.sh",
+     "line": 1236,
+     "level": "warning",
+     "message": "This is a unicode quote. Delete and retype it (or ignore/doublequote for literal).",
+     "triage": {
+      "status": "false-positive",
+      "reason": "A typographic apostrophe inside the text of a user-facing message, on purpose."
+     }
+    },
+    {
+     "rule": "SC2155",
+     "path": "template/scripts/evidence.sh",
+     "line": 22,
+     "level": "warning",
+     "message": "Declare and assign separately to avoid masking return values.",
+     "triage": {
+      "status": "accepted",
+      "reason": "Declare-and-assign of config values that cannot fail in a way the script needs to see; style warning."
+     }
+    },
+    {
+     "rule": "SC2155",
+     "path": "template/scripts/evidence.sh",
+     "line": 23,
+     "level": "warning",
+     "message": "Declare and assign separately to avoid masking return values.",
+     "triage": {
+      "status": "accepted",
+      "reason": "Declare-and-assign of config values that cannot fail in a way the script needs to see; style warning."
+     }
+    },
+    {
+     "rule": "SC2155",
+     "path": "template/scripts/evidence.sh",
+     "line": 24,
+     "level": "warning",
+     "message": "Declare and assign separately to avoid masking return values.",
+     "triage": {
+      "status": "accepted",
+      "reason": "Declare-and-assign of config values that cannot fail in a way the script needs to see; style warning."
+     }
+    }
+   ],
+   "logs": [
+    "shellcheck.json"
+   ],
+   "finished": "2026-10-20 17:14 UTC",
+   "notes": "13 scripts. Errors and warnings need a verdict; style notes and info are only counted."
+  },
+  {
+   "group": "public",
+   "name": "gitleaks",
+   "url": "https://github.com/gitleaks/gitleaks",
+   "version": "8.28.0",
+   "what": "Secrets in the files and in the whole git history (matches are redacted in the log).",
+   "command": "gitleaks detect --redact",
+   "status": "clean",
+   "summary": "0 findings",
+   "findings": [],
+   "logs": [
+    "gitleaks.json"
+   ],
+   "finished": "2026-10-20 17:14 UTC",
+   "notes": "95 commits scanned."
+  },
+  {
+   "group": "public",
+   "name": "SkillSpector",
+   "url": "https://github.com/NVIDIA/SkillSpector",
+   "version": "2.12.0",
+   "what": "Prompt injection, exfiltration and tool poisoning patterns in the five /morph-* skills. Static mode only, no model is called.",
+   "command": "skillspector scan skills/<name> --no-llm",
+   "status": "clean",
+   "summary": "0 findings",
+   "findings": [],
+   "logs": [
+    "skillspector-morph-doctor.json",
+    "skillspector-morph-init.json",
+    "skillspector-morph-module.json",
+    "skillspector-morph-share.json",
+    "skillspector-morph-update.json"
+   ],
+   "finished": "2026-10-20 17:14 UTC",
+   "notes": "Risk scores (0 is best): morph-doctor 0/100, morph-init 0/100, morph-module 0/100, morph-share 0/100, morph-update 0/100."
+  }
+ ],
+ "limits": [
+  "The guard hook is a safety net for an agent that makes mistakes. It is not a sandbox, and it does not stop an agent or script that is determined to get around it.",
+  "The guard reads Bash commands as the shell does, but it does not see inside a script file or Makefile target that an earlier call wrote, code that an interpreter decodes or builds at run time, or a command-line tool it has no rule for.",
+  "Secrets are recognised by file name and by common commands. A secret stored in a file with an unusual name is not seen.",
+  "Only Bash, file tools, Grep and MCP tool calls are checked. Other tools are left to Claude Code's own permission prompts.",
+  "The test suite is the kit's own: it shows the guard does what the kit says it does on the cases listed. No tool on this page tests the guard against hostile input beyond those cases.",
+  "No tool on this page measures quality or cost compared with plain Claude Code. Morphness adds process, and process costs tokens.",
+  "The real protection for shared environments is the host: branch protection, and environment secrets that only the owner holds.",
+  "Static scanners read the kit's text and scripts. They do not run an agent, so they say nothing about how a model behaves with these rules."
+ ],
+ "stale_triage": []
+}

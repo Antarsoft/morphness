@@ -1,0 +1,6 @@
+go-service: ok
+monorepo-apps: ok
+nextjs-supabase: ok
+python-cli: ok
+rendered copies kept in <install-root>
+kit self-test: 4 sample project(s), 0 problem(s)

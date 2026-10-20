@@ -1,0 +1,189 @@
+[
+ {
+  "file": "template/scripts/session-start.sh",
+  "line": 64,
+  "endLine": 64,
+  "column": 31,
+  "endColumn": 92,
+  "level": "info",
+  "code": 2016,
+  "message": "Expressions don't expand in single quotes, use double quotes for that.",
+  "fix": null
+ },
+ {
+  "file": "template/scripts/prune-counter.sh",
+  "line": 17,
+  "endLine": 17,
+  "column": 3,
+  "endColumn": 49,
+  "level": "info",
+  "code": 1091,
+  "message": "Not following: ./lib/config.sh: openBinaryFile: does not exist (No such file or directory)",
+  "fix": null
+ },
+ {
+  "file": "template/scripts/prune-counter.sh",
+  "line": 33,
+  "endLine": 33,
+  "column": 10,
+  "endColumn": 51,
+  "level": "info",
+  "code": 2012,
+  "message": "Use find instead of ls to better handle non-alphanumeric filenames.",
+  "fix": null
+ },
+ {
+  "file": "template/scripts/prune-counter.sh",
+  "line": 85,
+  "endLine": 85,
+  "column": 12,
+  "endColumn": 14,
+  "level": "warning",
+  "code": 2010,
+  "message": "Don't use ls | grep. Use a glob or a for loop with a condition to allow non-alphanumeric filenames.",
+  "fix": null
+ },
+ {
+  "file": "template/scripts/guard.sh",
+  "line": 25,
+  "endLine": 25,
+  "column": 3,
+  "endColumn": 49,
+  "level": "info",
+  "code": 1091,
+  "message": "Not following: ./lib/config.sh: openBinaryFile: does not exist (No such file or directory)",
+  "fix": null
+ },
+ {
+  "file": "template/scripts/guard.sh",
+  "line": 28,
+  "endLine": 28,
+  "column": 43,
+  "endColumn": 48,
+  "level": "info",
+  "code": 2019,
+  "message": "Use '[:upper:]' to support accents and foreign alphabets.",
+  "fix": null
+ },
+ {
+  "file": "template/scripts/guard.sh",
+  "line": 28,
+  "endLine": 28,
+  "column": 49,
+  "endColumn": 54,
+  "level": "info",
+  "code": 2018,
+  "message": "Use '[:lower:]' to support accents and foreign alphabets.",
+  "fix": null
+ },
+ {
+  "file": "template/scripts/guard.sh",
+  "line": 50,
+  "endLine": 1239,
+  "column": 15,
+  "endColumn": 2,
+  "level": "info",
+  "code": 2016,
+  "message": "Expressions don't expand in single quotes, use double quotes for that.",
+  "fix": null
+ },
+ {
+  "file": "template/scripts/guard.sh",
+  "line": 619,
+  "endLine": 619,
+  "column": 67,
+  "endColumn": 67,
+  "level": "warning",
+  "code": 1112,
+  "message": "This is a unicode quote. Delete and retype it (or ignore/doublequote for literal).",
+  "fix": null
+ },
+ {
+  "file": "template/scripts/guard.sh",
+  "line": 639,
+  "endLine": 639,
+  "column": 75,
+  "endColumn": 75,
+  "level": "warning",
+  "code": 1112,
+  "message": "This is a unicode quote. Delete and retype it (or ignore/doublequote for literal).",
+  "fix": null
+ },
+ {
+  "file": "template/scripts/guard.sh",
+  "line": 1183,
+  "endLine": 1183,
+  "column": 75,
+  "endColumn": 75,
+  "level": "warning",
+  "code": 1112,
+  "message": "This is a unicode quote. Delete and retype it (or ignore/doublequote for literal).",
+  "fix": null
+ },
+ {
+  "file": "template/scripts/guard.sh",
+  "line": 1236,
+  "endLine": 1236,
+  "column": 101,
+  "endColumn": 101,
+  "level": "warning",
+  "code": 1112,
+  "message": "This is a unicode quote. Delete and retype it (or ignore/doublequote for literal).",
+  "fix": null
+ },
+ {
+  "file": "template/scripts/feature-cost.sh",
+  "line": 19,
+  "endLine": 19,
+  "column": 3,
+  "endColumn": 49,
+  "level": "info",
+  "code": 1091,
+  "message": "Not following: ./lib/config.sh: openBinaryFile: does not exist (No such file or directory)",
+  "fix": null
+ },
+ {
+  "file": "template/scripts/evidence.sh",
+  "line": 15,
+  "endLine": 15,
+  "column": 3,
+  "endColumn": 49,
+  "level": "info",
+  "code": 1091,
+  "message": "Not following: ./lib/config.sh: openBinaryFile: does not exist (No such file or directory)",
+  "fix": null
+ },
+ {
+  "file": "template/scripts/evidence.sh",
+  "line": 22,
+  "endLine": 22,
+  "column": 8,
+  "endColumn": 24,
+  "level": "warning",
+  "code": 2155,
+  "message": "Declare and assign separately to avoid masking return values.",
+  "fix": null
+ },
+ {
+  "file": "template/scripts/evidence.sh",
+  "line": 23,
+  "endLine": 23,
+  "column": 8,
+  "endColumn": 28,
+  "level": "warning",
+  "code": 2155,
+  "message": "Declare and assign separately to avoid masking return values.",
+  "fix": null
+ },
+ {
+  "file": "template/scripts/evidence.sh",
+  "line": 24,
+  "endLine": 24,
+  "column": 8,
+  "endColumn": 23,
+  "level": "warning",
+  "code": 2155,
+  "message": "Declare and assign separately to avoid masking return values.",
+  "fix": null
+ }
+]
