@@ -99,18 +99,24 @@ traced back to the project. Row format and rules: `CONTRIBUTING.md` § Showcase.
 Separately from lessons, ask once whether the user wants to share how the harness has worked here.
 Needs `scripts/evidence.sh` in the project (`/morph-update` adds it); without it say so and stop.
 
-1. Run `bash scripts/evidence.sh --out`. It reads only the project's run records and prints counts
+1. **Ask the name first**, before any file or branch exists: publish under the project's name
+   (linked from the showcase row), or anonymously. Name the branch, the file and the PR from that
+   answer only. Named: `showcase/<project>` and `showcase/<project>.md`. Anonymous: a neutral random
+   slug such as `showcase/anon-4f2k` for both; never invent a descriptive alias (a phrase like
+   "ab-testing-saas" points back at the project), and keep the PR title and body free of what the
+   project is or does.
+2. Run `bash scripts/evidence.sh --out`. It reads only the project's run records and prints counts
    and rates (features finished, first-time QA pass rate, rework by prune window, escapes, estimated
    cost, retro items, rule audit results, trials, lessons adopted) with a "Read with care" list.
-2. Show the user the **whole** file. Add nothing to it and take nothing out, except to remove a line
+   When it stops with "Records read … the rest do not match a known entry format", do not pass
+   `--force` to get past it: tell the user their entry format needs fixing first.
+3. Show the user the **whole** file. Add nothing to it and take nothing out, except to remove a line
    the user doesn't want public. Say what it can't show: it's agent-recorded, escapes are
    under-counted, and there is no control run.
-3. Grep it for the project's name, the owner's name, repo name, domain and any id from
-   `project/STACK.md`; there must be none. Ask whether to publish it under the project's name
-   (linked from the showcase row) or anonymously (`showcase/<alias>.md`).
-4. Only on the user's yes, open it as its own PR (branch `showcase/<project-or-alias>`, file
-   `showcase/<project-or-alias>.md`), never in the lessons PR. With a showcase row (§ 6), the row's
-   "What it is" cell ends with `([evidence](showcase/<file>.md))`. The `gh`-less fallback in § 5
-   applies.
+4. Grep it for the project's name, the owner's name, repo name, domain and any id from
+   `project/STACK.md`; for an anonymous share there must be none.
+5. Only on the user's yes, open it as its own PR, never in the lessons PR. With a showcase row
+   (§ 6), the row's "What it is" cell ends with `([evidence](showcase/<file>.md))`. The `gh`-less
+   fallback in § 5 applies.
 
 Nothing is sent without that yes; the file in `_harness/evidence/` stays local otherwise.
