@@ -272,9 +272,10 @@ else:
         env = dict(os.environ, KEEP="1", STRICT="1", GUARD_FULL="1")
         r = sh(["bash", "scripts/kit-selftest.sh"], env=env)
         text = r.stdout + r.stderr
-        log = save_log("kit-selftest.txt", text)
         m = re.search(r"rendered copies kept in (\S+)", text)
         keep = m.group(1) if m else None
+        if keep: redact.append((keep, "<install-root>"))
+        log = save_log("kit-selftest.txt", text)
         ok_projects = re.findall(r"^(\S+): ok$", text, re.M)
         fails = [l for l in text.splitlines() if l.startswith("FAIL")]
         tail = [l for l in text.splitlines() if l.startswith("kit self-test:")]
@@ -414,6 +415,7 @@ os.makedirs(data_dir, exist_ok=True)
 open(os.path.join(data_dir, "results.json"), "w", encoding="utf-8").write(json.dumps(data, indent=1) + "\n")
 write_page(data)
 shutil.rmtree(tmp, ignore_errors=True)
+if install_dir: shutil.rmtree(os.path.dirname(install_dir), ignore_errors=True)
 
 bad = [r for r in rows if r["status"] in ("fail", "did-not-run") or (r["status"] == "untriaged" and not allow_untriaged)]
 for r in rows:
