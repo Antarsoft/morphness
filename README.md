@@ -288,6 +288,22 @@ Once installed, the harness belongs to your repo, and the loop is what changes i
 
 See [template/harness/MORPHING.md](template/harness/MORPHING.md).
 
+### 🌱 How it learns: a real example
+
+The loop corrects itself too. In one project, a run of clean features each ended with a retro that
+added a rule "just in case". Nothing had failed, yet the checklists the agents read kept growing,
+and the always-loaded size gauge never noticed because checklists aren't always loaded. The prune
+caught it.
+
+| | Before | After |
+| --- | --- | --- |
+| **Retro rule** | Any finding could add or tighten a rule. | A rule must name a miss in that feature it would have caught: a failed QA round, a review fix, a human correction, rework, or a bug after a pass. A clean feature adds no rule. |
+| **Size** | Only the always-loaded files were measured. | The checklists get their own budget, and the prune counter prints `Checklists: X/Y KB` and says when a prune is due. |
+| **Over budget** | Rules kept being added. | An approved rule removes at least as much text as it adds, or waits for the prune. |
+
+The fix shipped as a change to Morphness itself, with a short note under [`updates/`](updates/)
+that `/morph-update` offers to every install, so one project's lesson reaches the rest.
+
 ### 🔄 Staying up to date
 
 Upstream keeps improving too: new modules, sharper process rules, fixes. Nothing upstream ever
