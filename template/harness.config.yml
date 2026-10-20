@@ -132,6 +132,9 @@ cost: { track: true, prices: harness/MODEL_PRICES.md }
 # beats an allow rule, so `off` is the only way to run these without a prompt, for instance
 # `prisma db push` on a local stack.
 #   mcp_writes     every MCP tool that isn't a read (get, list, search, ...)
+#   pr_writes      `allow` (default) skips the prompt for the GitHub connector's pull request tools in this
+#                  project's own repo (open, update, comment; never merge, auto-merge or file writes);
+#                  `ask` brings the prompt back. Only has an effect while mcp_writes is ask.
 #   deploys        any call to a deploy or cloud CLI (vercel, wrangler, netlify, fly, railway, heroku, gcloud, aws,
 #                  az, kubectl, helm, pulumi, terraform, firebase, stripe ...) and hosted supabase writes unless it only reads
 #                  (get, list, status, plan ...) or is --dry-run/--help; platform secrets and variables;
@@ -150,7 +153,7 @@ cost: { track: true, prices: harness/MODEL_PRICES.md }
 #                  (no python3, no config reader, unreadable input, a crash) blocks the call
 # A command with --dry-run or --help passes in every group. What the guard denies, asks and does not see:
 # AGENTS.md § Permissions for this project.
-guard: { mcp_writes: ask, deploys: ask, publishes: ask, schema_pushes: ask, network: ask, installs: ask }
+guard: { mcp_writes: ask, pr_writes: allow, deploys: ask, publishes: ask, schema_pushes: ask, network: ask, installs: ask }
 
 loop:
   retro_max_items: 3      # usual action items per retro (soft: more with one line why, none is fine)

@@ -121,6 +121,14 @@ App column to `project/RELEASE.md` § Where things deploy, and add each shared p
 depend on to `project/CONTROLS.md` § Cross-cutting paths. With the ci-cd module, write one deploy job
 per app that has `workflow` for some environment (the deploy scaffold's fill comment).
 
+`permissions` (answers file only, not a config key): with `accept_edits: false`, delete
+`permissions.defaultMode` from `.claude/settings.json`. With `allow_checks: true`, add one `allow` rule
+per command in `project/CONTROLS.md` § Named checks: `Bash(<command up to its first quote, redirect or
+pipe>:*)`, one per `&&` or `;` part (`Bash(npx vitest run:*)`, `Bash(pnpm test:*)`). Never for a command that
+deploys, publishes, migrates a remote database or pushes, and never a bare interpreter or shell
+(`Bash(bash:*)`, `Bash(npx:*)`). List them in `project/SKILLS_AND_MCPS.md` § Permission rules added. The
+guard still runs first, and a hook ask or a `deny` rule beats an allow rule.
+
 `check_scope` (answers file only, not a config key): one row per entry in `project/CONTROLS.md`
 § Check scope (`paths` entries list their globs in the last column); an empty list writes the "None:
 every check runs in full." line.

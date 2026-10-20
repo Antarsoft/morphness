@@ -32,7 +32,7 @@ Log location for every check (the discipline itself is in [harness/CONTROLS.md](
 
 ```bash
 mkdir -p "$SCRATCH/logs"            # the session scratchpad; never the repo root
-rm -f "$SCRATCH/logs/<check>.exit"
+echo running > "$SCRATCH/logs/<check>.exit"
 <command> > "$SCRATCH/logs/<check>.log" 2>&1; echo "exit $?" | tee "$SCRATCH/logs/<check>.exit"
 tail -n 30 "$SCRATCH/logs/<check>.log"
 ```

@@ -692,6 +692,11 @@ def check(name, fx, t):
             # "guard": {"deploys": "off"} switches that ask off for this case only.
             pairs = ", ".join(f"{k}: {v}" for k, v in case["guard"].items())
             open(cfg_path, "w", encoding="utf-8").write(re.sub(r"(?m)^guard:.*$", "guard: { " + pairs + " }", saved))
+        # "origin": "<url>" points the remote at that address for this case only (a PR tool must name the project's own repo).
+        old_origin = run(["git", "remote", "get-url", "origin"], t).stdout.strip() if case.get("origin") else ""
+        if case.get("origin"):
+            run(["git", "remote", "remove", "origin"], t)
+            run(["git", "remote", "add", "origin", case["origin"]], t)
         env = dict(os.environ, CLAUDE_PROJECT_DIR=t)
         lib = os.path.join(t, "scripts/lib/config.sh")
         if case.get("without") == "python3":
@@ -706,6 +711,10 @@ def check(name, fx, t):
         if case.get("without") == "config":
             os.rename(lib, lib + ".off")
         r = run(["bash", "scripts/guard.sh"], t, input=raw, env=env)
+        if case.get("origin"):
+            run(["git", "remote", "remove", "origin"], t)
+            if old_origin:
+                run(["git", "remote", "add", "origin", old_origin], t)
         if case.get("without") == "config":
             os.rename(lib + ".off", lib)
         open(cfg_path, "w", encoding="utf-8").write(saved)

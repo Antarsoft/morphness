@@ -38,6 +38,12 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
   `2026-10-17-guard-hook`). `guard.mcp_writes: off`: mention once that connector writes then rely on
   the named `ask` rules alone; `guard.deploys`, `guard.publishes`, `guard.schema_pushes`, `guard.network` or `guard.installs: off` the
   same for that group (nothing asks before it runs).
+- **Permission prompts:** `.claude/settings.json` has `permissions.defaultMode` and the check allow rules
+  (`/morph-init` Q14). Missing in an installed copy: say that file edits and every check command prompt in
+  Claude Code's default mode, and offer to add them from the template's `.claude/settings.json` and
+  `project/CONTROLS.md` (update note `2026-10-20-fewer-permission-prompts`). A project that answered no
+  keeps its prompts; don't offer again. A `Bash(<interpreter>:*)` allow rule (`bash`, `sh`, `npx`, `node`,
+  `python`) lets any code through without a prompt: report it.
 - Module markers (`harness/README.md` § Modules → **Module markers**): no `module:<name>` marker
   for a module missing from `modules` (text left from a removal: offer the removal command), and every
   `<!-- module:<name> -->` opening line has its closing line.

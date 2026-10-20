@@ -270,6 +270,16 @@ names. → `agents.*`
 with a reason), and a prune every 10 learnings files. QA gets 2 rework rounds before it escalates
 to you. Keep these?" → `loop.*`
 
+## Q14. Permission prompts
+
+"Agents write plan files, code and harness docs inside the project all day, and run the same checks every
+feature. Without help, Claude Code asks you about each one and you end up approving by habit, which
+hides the prompts that matter. Auto-approve file edits inside the project, and the check commands you
+just gave me? The guard's prompts (deploys, publishes, remote databases, secrets, merges, its own files)
+and the deny rules stay either way." Default yes for both, asked as one yes/no. No keeps the plain
+Claude Code prompts: remove `permissions.defaultMode` from `.claude/settings.json` and add no check
+allow rules. → `permissions.accept_edits`, `permissions.allow_checks`
+
 ## Answers file
 
 The same keys, as YAML. A user can fill this by hand and point morph-init at it.
@@ -295,6 +305,7 @@ create_remote: { repo: "", visibility: private }   # only when there's no remote
 ci_gate: false
 merge_by_agent: never
 branch_protection: { enabled: true, required_approvals: 0, delete_merged_branches: true }
+permissions: { accept_edits: true, allow_checks: true }   # Q14
 release_tags: true                # true | false | per-package
 ci_cd: { ci: none, on_drafts: false, deploy: host, migrations: none, tags: none, docs_regex: "" }   # ci-cd module; paths of accepted workflows
 roadmap: { enabled: true, file: docs/ROADMAP.md, versions_dir: docs/versions, first_version: { id: v1, goal: "" } }
