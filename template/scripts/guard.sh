@@ -194,9 +194,25 @@ SECRET_RE = re.compile(r"^(id_(rsa|dsa|ecdsa|ed25519)(_[a-z0-9_]+)?"
                        r"|[a-z0-9_.-]+\.(secrets?|credentials?))$")
 GLOB_PROBES = (".env", ".envrc", ".netrc", ".npmrc", ".pypirc", ".pgpass", ".git-credentials")
 
-def secret_kind(path):
+def own_tool_results(path):
+    """True for a file in the tool-results folder of this project (~/.claude/projects/<this project>/<session>/tool-results/),
+    where Claude Code saves the output of a call that was too long to show."""
+    w = expand_home(path)
+    if not os.path.isabs(w) or "$" in w or "`" in w:
+        return False
+    base = os.path.join(CLAUDE_HOME, "projects", re.sub(r"[^A-Za-z0-9]", "-", ROOT))
+    p = os.path.normpath(w)
+    for cand in {p, os.path.realpath(p)}:
+        rel = os.path.relpath(cand, base).split(os.sep) if under(cand, base) else []
+        if len(rel) < 2 or rel[1] != "tool-results" or rel[0] in ("", ".", ".."):
+            return False
+    return True
+
+def secret_kind(path, read=False):
     """"deny" for a secret or credential file, "ask" for one that is often plain config, "home" for a path
-    under ~/.claude, "" otherwise."""
+    under ~/.claude, "" otherwise. `read`: the caller only reads the path, so the tool-results folder of this project is fine."""
+    if read and own_tool_results(path):
+        return ""
     return file_secret_kind(path) or ("home" if home_kind(path) == "home" else "")
 
 def file_secret_kind(path):
@@ -231,9 +247,11 @@ def file_secret_kind(path):
 def is_secret_env(path):
     return secret_kind(path) == "deny"
 
-def env_in_word(word):
+READ_ONLY_CMDS = {"cat", "head", "tail", "sed", "grep", "egrep", "fgrep", "rg", "wc", "less", "more", "nl", "ls", "stat", "file"}
+
+def env_in_word(word, read=False):
     # Covers plain paths, globs (.env*, .en?), redirections glued to a word, VAR=path and @file forms.
-    kinds = [secret_kind(part) for part in re.split(r"[=:<>|,;()@]", word) if part]
+    kinds = [secret_kind(part, read and not re.search(r"[<>]", word)) for part in re.split(r"[=:<>|,;()@]", word) if part]
     return "deny" if "deny" in kinds else "ask" if "ask" in kinds else "home" if "home" in kinds else ""
 
 # ---- Bash parsing ------------------------------------------------------------------------------
@@ -260,9 +278,12 @@ def simple_commands(cmd, depth=0):
         return
     for inner in re.findall(r"\$\(([^()]*(?:\([^()]*\)[^()]*)*)\)", cmd) + re.findall(r"`([^`]*)`", cmd):
         yield from simple_commands(inner, depth + 1)
-    cur = []
+    cur, last, last2 = [], "", ""
     for t in tokens(cmd.replace("\n", " ; ")) + [";"]:
+        prev_t, last, last2 = last2, t, last
         if t in SEPARATORS or set(t) <= set(";&|()"):
+            if t == "(" and cur == ["$"] and prev_t == ")":
+                cur = []   # the `$` of a second `$(` right after a substitution: not a command named `$`
             if cur:
                 yield from expand(cur, depth)
             cur = []
@@ -1167,7 +1188,7 @@ def check_bash(cmd):
                 continue   # an exclude pattern such as --exclude=.env* names a secret in order to leave it out
             if re.search(r"^/proc/[^/]+/environ$", w):
                 deny("`/proc/<pid>/environ` is the whole environment, secrets included.")
-            kind = env_in_word(w)
+            kind = env_in_word(w, words[0] in READ_ONLY_CMDS and not any(re.match(r"^(\d*>|&>)" if words[0] != "sed" else r"^(\d*>|&>|-i|--in-place)", x) for x in words[1:]))
             if kind == "deny":
                 deny(f"`{w}` is a secret or credential file; agents never read or write it (AGENTS.md § Golden rules). Use .env.example for names.")
             if kind == "ask":
@@ -1241,7 +1262,7 @@ elif tool in ("Read", "Edit", "MultiEdit", "Write", "NotebookEdit"):
     p = args.get("file_path") or args.get("notebook_path") or ""
     if tool != "Read":
         protect(p, f"{tool} writes it")
-    kind = secret_kind(p)
+    kind = secret_kind(p, tool == "Read")
     if kind == "deny":
         deny(f"`{p}` is a secret or credential file; agents never read or write it (AGENTS.md § Golden rules).")
     if kind == "ask":
@@ -1255,7 +1276,7 @@ elif tool == "Grep":
         v = str(args.get(key) or "")
         if v and env_in_word(v) == "deny":
             deny(f"`{v}` names a secret or credential file; agents never read it.")
-        if v and env_in_word(v) == "home":
+        if v and env_in_word(v, True) == "home":
             ask(f"`{v}` is under ~/.claude: Claude Code settings, permissions and other projects\u2019 transcripts; the owner approves a read or change of it.")
 elif tool.startswith("mcp__") and MCP_ASK:
     short = tool.split("__", 2)[-1]

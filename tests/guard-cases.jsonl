@@ -628,3 +628,22 @@
 {"expect": "ask", "tool": "Bash", "input": {"command": "npx --yes firebase-tools@15.32.1 deploy --only hosting"}}
 {"expect": "ask", "tool": "Bash", "input": {"command": "npx -y netlify-cli@17 deploy --prod"}}
 {"expect": "ask", "tool": "Bash", "input": {"command": "npx --yes left-pad-cli@1.0.0 run"}}
+{"expect": "pass", "tool": "Read", "input": {"file_path": "~/.claude/projects/{ENC}/s1/tool-results/a.txt"}}
+{"expect": "pass", "tool": "Grep", "input": {"path": "~/.claude/projects/{ENC}/s1/tool-results", "pattern": "x"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "sed -n 1,5p ~/.claude/projects/{ENC}/s1/tool-results/a.txt"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "sed -n 1,200p ~/.claude/projects/{ENC}/s1/tool-results/a.txt | sed -n 20,40p"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "tail -20 ~/.claude/projects/{ENC}/s1/tool-results/a.txt"}}
+{"expect": "ask", "tool": "Read", "input": {"file_path": "~/.claude/projects/other-project/s1/tool-results/a.txt"}}
+{"expect": "ask", "tool": "Read", "input": {"file_path": "~/.claude/projects/{ENC}/s1.jsonl"}}
+{"expect": "ask", "tool": "Read", "input": {"file_path": "~/.claude/projects/{ENC}/s1/tool-results/../../../../settings.json"}}
+{"expect": "ask", "tool": "Read", "input": {"file_path": "~/.claude/settings.json"}}
+{"expect": "ask", "tool": "Write", "input": {"file_path": "~/.claude/projects/{ENC}/s1/tool-results/a.txt", "content": "x"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "sed -i 's/a/b/' ~/.claude/projects/{ENC}/s1/tool-results/a.txt"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "cat x > ~/.claude/projects/{ENC}/s1/tool-results/a.txt"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "cp x ~/.claude/projects/{ENC}/s1/tool-results/a.txt"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "cat ~/.claude/projects/other-project/s1/tool-results/a.txt"}}
+{"expect": "ask", "tool": "Grep", "input": {"path": "~/.claude/projects/{ENC}", "pattern": "x"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "for r in a b; do echo $r $(cat /tmp/x/$r.start) $(cat /tmp/x/$r.end); done"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "echo $(git rev-parse HEAD) $(git status --short)"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "echo $(git status) $cmd push origin main"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "x=1; $x push origin main"}}
