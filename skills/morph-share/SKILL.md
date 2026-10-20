@@ -78,6 +78,8 @@ maintainer turns into a PR.
 
 ## 6. Offer a showcase listing (optional)
 
+(Evidence summaries are § 7; ask about both together so the owner answers once.)
+
 Lessons stay anonymous. Separately, ask once whether the user wants their project in the README's
 **Built with Morphness** table. On a yes, prefill the row and show it for approval:
 
@@ -91,3 +93,24 @@ Lessons stay anonymous. Separately, ask once whether the user wants their projec
 
 Open it as its own PR (branch `showcase/<project>`), never in the lessons PR, so the lessons can't be
 traced back to the project. Row format and rules: `CONTRIBUTING.md` § Showcase.
+
+## 7. Offer an evidence summary (optional)
+
+Separately from lessons, ask once whether the user wants to share how the harness has worked here.
+Needs `scripts/evidence.sh` in the project (`/morph-update` adds it); without it say so and stop.
+
+1. Run `bash scripts/evidence.sh --out`. It reads only the project's run records and prints counts
+   and rates (features finished, first-time QA pass rate, rework by prune window, escapes, estimated
+   cost, retro items, rule audit results, trials, lessons adopted) with a "Read with care" list.
+2. Show the user the **whole** file. Add nothing to it and take nothing out, except to remove a line
+   the user doesn't want public. Say what it can't show: it's agent-recorded, escapes are
+   under-counted, and there is no control run.
+3. Grep it for the project's name, the owner's name, repo name, domain and any id from
+   `project/STACK.md`; there must be none. Ask whether to publish it under the project's name
+   (linked from the showcase row) or anonymously (`showcase/<alias>.md`).
+4. Only on the user's yes, open it as its own PR (branch `showcase/<project-or-alias>`, file
+   `showcase/<project-or-alias>.md`), never in the lessons PR. With a showcase row (§ 6), the row's
+   "What it is" cell ends with `([evidence](showcase/<file>.md))`. The `gh`-less fallback in § 5
+   applies.
+
+Nothing is sent without that yes; the file in `_harness/evidence/` stays local otherwise.

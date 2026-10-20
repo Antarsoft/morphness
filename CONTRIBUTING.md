@@ -80,6 +80,11 @@ one row with:
 | [**Acme**](https://acme.example) | Invoicing for freelancers | Django, Postgres | [@your-user](https://github.com/your-user) |
 ```
 
+An optional evidence summary goes in `showcase/<project>.md` (or `showcase/<alias>.md` for an
+anonymous one), made with `/morph-share` from `bash scripts/evidence.sh`: counts and rates only, with
+its "Read with care" list kept. Maintainers don't edit the figures; a summary that hides that it is
+agent-recorded or leaves out the caveats is sent back. The row then ends with `([evidence](showcase/<file>.md))`.
+
 Keep it factual; no taglines or badges. Listing is optional and you can ask to be removed
 any time. Lessons you contribute stay anonymous whether or not you're listed.
 

@@ -70,6 +70,13 @@ Morphness keeps a community catalog of lessons (`lessons/` in the Morphness repo
 - **How:** run `/morph-share` with the rule. It drafts the lesson file: a neutral rule text with project names, feature slugs, people and private paths removed; the target file in an installed harness; tags (stack, service, area); and evidence from the prune audits. It shows the draft and asks the owner.
 - **Only with the owner's yes.** Sharing is optional and nothing leaves the repository without that yes. The owner may edit the draft, or decline and keep the lesson local.
 
+## Sharing evidence
+
+Lessons are single rules. To show that the harness worked in this project, `bash scripts/evidence.sh` builds a summary from the run records: features finished, how often QA passed first time, rework by prune window, escapes, estimated cost per feature, retro items applied or skipped, rule audit results, trials and lessons adopted. It prints counts and rates only, from a fixed list of fields: no feature names, retro text, paths or people. `--out` also writes it to `_harness/evidence/<date>.md` and `.json`; commit it or not. It is read-only, sends nothing, and says in its own text what the figures can't show (agent-recorded, escapes under-counted, no control).
+
+- **Only with the owner's yes.** `/morph-share` runs it, shows the full summary and opens a pull request with it to Morphness (`showcase/`) only when the owner agrees. The owner may also paste it anywhere on their own.
+- **Not a benchmark.** It shows what the process produced in this project, not what it saved against working without it.
+
 ## Health check and upstream updates
 
 `/morph-doctor` checks that the installed harness is still wired and consistent:
