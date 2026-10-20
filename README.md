@@ -13,6 +13,7 @@ and gets better every time someone shares a lesson.
 
 💜 **From the community, for the community** 💜
 
+[![Tests](https://img.shields.io/endpoint?style=flat-square&url=https%3A%2F%2Fantarsoft.github.io%2Fmorphness%2Ftrust%2Fbadge.json)](https://antarsoft.github.io/morphness/trust.html)
 [![License: MIT](https://img.shields.io/badge/license-MIT-7C3AED?style=flat-square)](LICENSE)
 [![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-D97757?style=flat-square&logo=claude&logoColor=white)](#-install)
 [![Stack agnostic](https://img.shields.io/badge/stack-agnostic-0EA5E9?style=flat-square)](#-what-you-get)
@@ -32,6 +33,8 @@ a process around the model: a plan you approve, a separate QA check with recorde
 on risky commands, and a retro loop that turns misses into rules. It is a set of subagents,
 `CLAUDE.md` / `AGENTS.md` rules, checklists and a review loop for AI coding agents. If you have been writing those by hand (what people now call *harness engineering* or
 *context engineering*), Morphness is that work packaged, with a loop that keeps it current.
+
+Every release is tested, and the results are public, including the known limits: [see the latest run](https://antarsoft.github.io/morphness/trust.html).
 
 You talk to a **Technical Lead** in the main chat. It plans each feature with testable acceptance
 criteria and waits for your approval, then hands the work to a **Full-stack** agent and a mandatory

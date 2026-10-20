@@ -190,6 +190,14 @@ scripts/trust-report.sh --out /tmp/trust   # everything on this page, written to
 def write_page(data):
     os.makedirs(os.path.dirname(html_path), exist_ok=True)
     open(html_path, "w", encoding="utf-8").write(render_page(data))
+    # shields.io endpoint data for the README badge: derived from the same rows as the page
+    problems = [r for r in data["rows"] if r["status"] in ("fail", "did-not-run", "untriaged")]
+    day = data["generated"][:10]
+    badge = {"schemaVersion": 1, "label": "tests",
+             "message": (f"{len(problems)} problem(s) · {day}" if problems else f"all checks pass · {day}"),
+             "color": "red" if problems else "brightgreen"}
+    os.makedirs(data_dir, exist_ok=True)
+    open(os.path.join(data_dir, "badge.json"), "w", encoding="utf-8").write(json.dumps(badge) + "\n")
 
 if render_only:
     data = json.load(open(render_only, encoding="utf-8"))
