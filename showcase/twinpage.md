@@ -37,3 +37,7 @@ Records read: 6 learnings files, 149 folded entries, 15 of 15 prune files (appro
 - Windows that mix different models, effort levels or feature sizes are not like for like.
 - Cost is an estimate at public API prices, not a bill.
 - Without a control, these figures show what the process produced, not what it saved.
+
+## Owner note on cost
+
+Not produced by `scripts/evidence.sh`, which reports n/a because the run records hold no dollar figures. From Claude Code session records (API-equivalent cost, not what was paid): about $3,930 across the whole build from 2026-09-28 to 2026-10-19, covering the project threads, their coordinators and the early command-line sessions. It is a lower bound, since session records start on 2026-09-28, and it is a project total, not a per-feature figure.
