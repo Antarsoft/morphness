@@ -2,7 +2,7 @@
 id: 2026-10-20-fewer-permission-prompts
 title: Fewer permission prompts for routine work
 kind: config
-release: unreleased
+release: 2026-10-20.5
 applies_to: { modules: [] }
 files:
   - scripts/guard.sh
