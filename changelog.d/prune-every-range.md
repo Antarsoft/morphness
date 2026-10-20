@@ -1,0 +1,1 @@
+**Prune interval range.** `loop.prune_every` is limited to 8 to 30 features. `scripts/prune-counter.sh` uses 8 or 30 for a value outside the range and says so, because a window under 8 features leaves most rules "too new to judge" and decides trials before their escapes show.

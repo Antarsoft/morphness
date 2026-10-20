@@ -254,7 +254,7 @@ cost: { track: true, prices: harness/MODEL_PRICES.md }   # estimated $ per featu
 
 loop:
   retro_max_items: 3        # usual action items per retro (soft limit)
-  prune_every: 10           # features between prunes
+  prune_every: 10           # features between prunes (8 to 30)
   qa_max_rounds: 2          # QA rework rounds before asking you
 ```
 

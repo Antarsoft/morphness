@@ -19,6 +19,13 @@ cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)" || exit 1
 
 threshold="$(config_get loop.prune_every)"
 case "$threshold" in ''|*[!0-9]*) threshold=10 ;; esac
+# A window under 8 features leaves most rules "too new to judge" (landed in the last 3 features) and
+# decides trials before their escapes show; above 30 a prune comes too late to matter.
+if [ "$threshold" -lt 8 ]; then
+  echo "(loop.prune_every is $threshold; the allowed range is 8 to 30, so 8 is used)" >&2; threshold=8
+elif [ "$threshold" -gt 30 ]; then
+  echo "(loop.prune_every is $threshold; the allowed range is 8 to 30, so 30 is used)" >&2; threshold=30
+fi
 integration="$(config_get branches.integration)"
 # The integration branch is fetched only when asked for (PRUNE_FETCH=1), so a hand-off never waits on
 # the network; otherwise the last fetched origin/<integration> is used when it exists.
