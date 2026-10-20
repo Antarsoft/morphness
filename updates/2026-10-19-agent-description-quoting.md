@@ -2,7 +2,7 @@
 id: 2026-10-19-agent-description-quoting
 title: Agent descriptions are quoted so strict YAML readers accept them
 kind: fix
-release: unreleased
+release: 2026-10-19.4
 applies_to: { modules: [] }
 files:
   - .claude/agents/fullstack-engineer.md

@@ -4,6 +4,16 @@ Dated releases, newest first. Installed copies pick up kit changes (each with a 
 [updates/](updates/)) and new matching lessons through `/morph-update`; this file lists every change.
 When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
+## 2026-10-19.4
+
+- Agent files: the `description:` of every agent in `template/.claude/agents/` is now a quoted string. Unquoted, the `Default (effort high): use when…` text was invalid YAML for any strict reader (found by running the agnix linter on the kit). The self-test now fails an agent description with an unquoted colon. The `/morph-module` skill description no longer contains `<name>`, which claude.ai and the API reject on upload.
+
+- Self-test: a fresh install may carry at most 35 KB of always-loaded rules (`CLAUDE.md`, the files it imports and the unscoped `.claude/rules/`), the text every session pays for. Today a fresh install is 33.6 to 34.3 KB. A change that pushes it over fails the kit self-test, so growth is a deliberate choice (trim the text, or raise `ALWAYS_LOADED_CEILING_KB` in `scripts/kit-selftest.sh` on purpose).
+
+- Settings: the ten `Write(./**/.env…)` deny rules in `template/.claude/settings.json` are removed. Claude Code never consults a `Write(path)` rule (only `Edit(path)` and `Read(path)`), and the same `.env` paths already have `Edit(...)` and `Read(...)` deny rules, so nothing becomes unprotected. Found by the agnix linter.
+
+- Skills: `/morph-update` names the GitHub hosts once and lists its read endpoints as paths, and records an already-present note as "a bookkeeping entry; no file changes" instead of "applied without asking". `/morph-doctor` points at `/morph-update` § 1 and § 2 without the words that read as a skill editing itself. The meaning and the read-only limits are unchanged; the SkillSpector static scan now scores all five skills 0/100.
+
 ## 2026-10-19.3
 
 - Guard: more of the ways around it now ask or deny instead of running. `scripts/guard.sh` asks before a shell reads
