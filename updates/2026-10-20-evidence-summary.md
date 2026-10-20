@@ -2,7 +2,7 @@
 id: 2026-10-20-evidence-summary
 title: Evidence summary script for showing how the harness worked
 kind: rule
-release: unreleased
+release: 2026-10-20.2
 applies_to: { modules: [] }
 files:
   - scripts/evidence.sh

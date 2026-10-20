@@ -2,7 +2,7 @@
 id: 2026-10-20-prune-every-range
 title: loop.prune_every is limited to 8 to 30
 kind: rule
-release: unreleased
+release: 2026-10-20.2
 applies_to: { modules: [] }
 files:
   - scripts/prune-counter.sh
