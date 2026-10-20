@@ -3,7 +3,7 @@ id: nextjs-long-steps-not-inline-in-renders
 title: Steps that take minutes don't run inline in a page render
 kind: checklist-item
 target: harness/PLAN_CHECKLIST.md
-tags: { stack: [nextjs], service: [], area: [concurrency, background-jobs] }
+tags: { stack: [nextjs], service: [], area: [concurrency, background-jobs, performance] }
 evidence: { fired: 2, features: 14, source: "prune audits" }
 added: 2026-10-20
 reports:
@@ -19,7 +19,7 @@ status: active
 
 ## Why
 
-Two features ran a push or a commit inline in page renders; code and security review found races and double runs in both, and the problem came back once after the first fix because the wording named only one kind of step.
+Two features ran a push or a commit inline in page renders; code and security review found races and double runs in both.
 
 ## How to check
 
