@@ -14,7 +14,8 @@ removed: []
 
 `scripts/evidence.sh` prints an anonymous summary of this project's run records: features finished,
 how often QA passed first time, rework by prune window, escapes, estimated cost per feature, retro
-items, rule audit results, trials and lessons adopted. `--out` also saves it under
+items, rule audit results, trials and lessons adopted, plus commit counts from the integration
+branch (fix-titled commits and reverts, by title only). `--out` also saves it under
 `_harness/evidence/`. `harness/MORPHING.md` gains a short § Sharing evidence. `/morph-share` (plugin)
 offers to share the summary; nothing is sent without the owner's yes.
 
