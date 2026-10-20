@@ -2,6 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "model": "{{models.tl}}",
   "permissions": {
+    "defaultMode": "acceptEdits",
     "allow": [
       "Bash(git status:*)",
       "Bash(git diff:*)",
@@ -10,7 +11,24 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(gh api --method GET repos/antarsoft/morphness/*)",
       "Bash(curl -fsSL https://api.github.com/repos/antarsoft/morphness/*)",
-      "Bash(curl -fsSL https://raw.githubusercontent.com/antarsoft/morphness/*)"
+      "Bash(curl -fsSL https://raw.githubusercontent.com/antarsoft/morphness/*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git fetch:*)",
+      "Bash(git switch:*)",
+      "Bash(git push -u origin:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr ready:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh pr comment:*)",
+      "Bash(gh pr edit:*)",
+      "Bash(mkdir -p:*)",
+      "Bash(tail:*)",
+      "Bash(bash scripts/feature-cost.sh:*)",
+      "Bash(bash scripts/prune-counter.sh:*)",
+      "Bash(bash scripts/evidence.sh:*)"
     ],
     "deny": [
       "Read(./**/.env)",

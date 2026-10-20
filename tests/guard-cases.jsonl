@@ -614,3 +614,17 @@
 {"expect": "pass", "tool": "Write", "input": {"file_path": ".github/workflows/ci.yml", "content": "x"}, "guard": {"deploys": "off"}, "every": true}
 {"expect": "ask", "tool": "Write", "input": {"file_path": ".git/hooks/pre-push", "content": "#!/bin/sh"}}
 {"expect": "ask", "tool": "Bash", "input": {"command": "echo x > .git/config"}}
+{"expect": "pass", "tool": "mcp__github__create_pull_request", "input": {"owner": "acme", "repo": "shop", "title": "x"}, "origin": "https://github.com/acme/shop.git", "every": true}
+{"expect": "pass", "tool": "mcp__github__update_pull_request", "input": {"owner": "Acme", "repo": "shop", "pullNumber": 3, "draft": false}, "origin": "git@github.com:acme/shop.git", "every": true}
+{"expect": "pass", "tool": "mcp__github__add_issue_comment", "input": {"owner": "acme", "repo": "shop", "issue_number": 3, "body": "x"}, "origin": "https://github.com/acme/shop.git"}
+{"expect": "ask", "tool": "mcp__github__create_pull_request", "input": {"owner": "acme", "repo": "other", "title": "x"}, "origin": "https://github.com/acme/shop.git"}
+{"expect": "ask", "tool": "mcp__github__create_pull_request", "input": {"owner": "acme", "repo": "shop", "title": "x"}}
+{"expect": "ask", "tool": "mcp__github__update_pull_request", "input": {"owner": "acme", "repo": "shop", "pullNumber": 3, "state": "closed"}, "origin": "https://github.com/acme/shop.git"}
+{"expect": "ask", "tool": "mcp__github__merge_pull_request", "input": {"owner": "acme", "repo": "shop", "pullNumber": 3}, "origin": "https://github.com/acme/shop.git"}
+{"expect": "ask", "tool": "mcp__github__enable_pr_auto_merge", "input": {"owner": "acme", "repo": "shop", "pullNumber": 3}, "origin": "https://github.com/acme/shop.git"}
+{"expect": "ask", "tool": "mcp__github__create_or_update_file", "input": {"owner": "acme", "repo": "shop", "path": "a"}, "origin": "https://github.com/acme/shop.git"}
+{"expect": "ask", "tool": "mcp__github__create_pull_request", "input": {"owner": "acme", "repo": "shop", "title": "x"}, "origin": "https://github.com/acme/shop.git", "guard": {"mcp_writes": "ask", "pr_writes": "ask"}, "every": true}
+{"expect": "pass", "tool": "Bash", "input": {"command": "timeout 600 npx --yes firebase-tools@15.32.1 emulators:exec --only auth,firestore --project demo-x \"npx vitest run\" > /tmp/x.log 2>&1"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "npx --yes firebase-tools@15.32.1 deploy --only hosting"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "npx -y netlify-cli@17 deploy --prod"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "npx --yes left-pad-cli@1.0.0 run"}}

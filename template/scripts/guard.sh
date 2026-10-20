@@ -44,8 +44,9 @@ GUARD_PUBLISHES="$(config_get guard.publishes)"
 GUARD_SCHEMA_PUSHES="$(config_get guard.schema_pushes)"
 GUARD_NETWORK="$(config_get guard.network)"
 GUARD_INSTALLS="$(config_get guard.installs)"
+GUARD_PR_WRITES="$(config_get guard.pr_writes)"
 GUARD_ALLOW_HOSTS="$(config_get guard.allow_hosts)"
-export GUARD_BRANCHES GUARD_MCP_WRITES GUARD_DEPLOYS GUARD_PUBLISHES GUARD_SCHEMA_PUSHES GUARD_NETWORK GUARD_INSTALLS GUARD_ALLOW_HOSTS
+export GUARD_BRANCHES GUARD_MCP_WRITES GUARD_DEPLOYS GUARD_PUBLISHES GUARD_SCHEMA_PUSHES GUARD_NETWORK GUARD_INSTALLS GUARD_PR_WRITES GUARD_ALLOW_HOSTS
 
 python3 -I -c '
 import fnmatch, json, os, re, shlex, subprocess, sys, tempfile
@@ -59,6 +60,9 @@ def switch(name):
     return os.environ.get(name, "ask").strip().lower() not in ("off", "false", "no")
 
 MCP_ASK = switch("GUARD_MCP_WRITES")
+# `pr_writes: allow` (the default, also when the key is missing) lets a pull request be opened, updated and commented on
+# in this project own repo without a prompt; `ask` brings the prompt back for those tools.
+PR_ALLOW = os.environ.get("GUARD_PR_WRITES", "allow").strip().lower() not in ("ask", "no", "false")
 GROUP_ASK = {"deploys": switch("GUARD_DEPLOYS"), "publishes": switch("GUARD_PUBLISHES"),
              "schema_pushes": switch("GUARD_SCHEMA_PUSHES"), "network": switch("GUARD_NETWORK"),
              "installs": switch("GUARD_INSTALLS")}
@@ -860,6 +864,16 @@ def check_db(name, words):
             return
     cli_asks(name + " on a remote host")
 
+# Packages whose command has another name: `npx firebase-tools@15 …` starts `firebase`.
+PKG_BIN = {"firebase-tools": "firebase", "netlify-cli": "netlify", "eas-cli": "eas", "@railway/cli": "railway",
+           "@aws-amplify/cli": "amplify", "@angular/cli": "ng", "@nestjs/cli": "nest", "@sentry/cli": "sentry-cli"}
+
+def pkg_bin(word):
+    """The command a package name starts, version and path dropped: `firebase-tools@15.32.1` -> `firebase`."""
+    m = re.match(r"^(@[^/@]+/)?([^@/]+)(@.*)?$", str(word))
+    name = (m.group(1) or "") + m.group(2) if m else str(word)
+    return PKG_BIN.get(name, m.group(2) if m else os.path.basename(str(word)))
+
 def runner_words(words):
     """The command a package runner starts: `npx wrangler deploy` -> wrangler deploy."""
     w = list(words)
@@ -873,7 +887,7 @@ def runner_words(words):
         w = w[1:]
     if w and w[0] == "--":
         w = w[1:]
-    return w[:1] and [os.path.basename(w[0])] + w[1:] or w
+    return w[:1] and [pkg_bin(w[0]) if "@" in w[0] or w[0] in PKG_BIN else os.path.basename(w[0])] + w[1:] or w
 
 def check_cli(words):
     name = words[0]
@@ -1007,8 +1021,7 @@ def check_fetched_package(words):
     if not got or not GROUP_ASK["installs"]:
         return
     pkg, after = got
-    m = re.match(r"^(@[^/@]+/)?([^@/]+)(@.*)?$", pkg)
-    short = m.group(2) if m else pkg
+    short = pkg_bin(pkg)
     for base in [ROOT] + [os.path.join(ROOT, d) for d in CD_DIRS]:
         if any(os.path.exists(os.path.join(base, d, short)) for d in ("node_modules/.bin", ".venv/bin")):
             return
@@ -1167,6 +1180,7 @@ def check_bash(cmd):
                 "`guard.publishes: off` in harness.config.yml turns this prompt off.")
         # `npx supabase …`, `pnpm exec prisma …`: match the tool the runner starts.
         line = re.sub(r"^(npx|bunx|pnpx|(pnpm|yarn|bun|npm)(\s+(exec|dlx|x))?)(\s+-\S+)*\s+(--\s+)?", "", line)
+        line = re.sub(r"^\S+", lambda m: pkg_bin(m.group(0)) if m.group(0) in PKG_BIN or re.match(r"^(@[^/@]+/[^@/]+|[^@/]+)@", m.group(0)) else m.group(0), line)
         check_network(words)
         if words[0] == "crontab" and "-l" not in words[1:]:
             ask("`crontab` installs a schedule that runs commands later; the owner approves it.")
@@ -1207,6 +1221,20 @@ WRITE_VERBS = {"create", "update", "delete", "remove", "write", "set", "put", "p
                "import", "connect", "disconnect", "activate", "accept", "drop", "truncate", "grant",
                "register", "archive", "unarchive", "promote", "resolve", "unresolve", "react"}
 
+# The pull request tools of the GitHub connector that never merge or change files; the kit own process
+# opens a draft PR at the first push and marks it ready after QA, so these do not need the owner each time.
+PR_TOOLS = {"create_pull_request", "update_pull_request", "add_issue_comment", "update_issue_comment",
+            "add_reply_to_pull_request_comment", "add_comment_to_pending_review"}
+
+def own_repo(a):
+    """True when the call names this project own repository (origin), so a PR tool never reaches another repo."""
+    try:
+        url = subprocess.run(["git", "remote", "get-url", "origin"], capture_output=True, text=True, timeout=5).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return False
+    m = re.search(r"[:/]([^/:]+)/([^/]+?)(\.git)?/?$", url)
+    return bool(m) and str(a.get("owner", "")).lower() == m.group(1).lower() and str(a.get("repo", "")).lower() == m.group(2).lower()
+
 if tool == "Bash":
     check_bash(str(args.get("command", "")))
 elif tool in ("Read", "Edit", "MultiEdit", "Write", "NotebookEdit"):
@@ -1231,6 +1259,9 @@ elif tool == "Grep":
             ask(f"`{v}` is under ~/.claude: Claude Code settings, permissions and other projects\u2019 transcripts; the owner approves a read or change of it.")
 elif tool.startswith("mcp__") and MCP_ASK:
     short = tool.split("__", 2)[-1]
+    if PR_ALLOW and tool.startswith("mcp__github__") and short in PR_TOOLS and own_repo(args) \
+            and not (short == "update_pull_request" and str(args.get("state", "")).lower() == "closed"):
+        sys.exit(0)
     words = {w.lower() for w in re.split(r"[_\-.]|(?<=[a-z])(?=[A-Z])", short) if w}
     if words & WRITE_VERBS or not words & READ_VERBS:
         ask(f"`{tool}` can change something outside this repo; every connector write needs the owner’s yes "

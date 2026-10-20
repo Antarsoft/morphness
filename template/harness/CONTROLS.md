@@ -67,13 +67,13 @@ Every check writes its full output to a log file and prints only the exit code a
 
 ```bash
 LOGS="<scratchpad>/logs"; mkdir -p "$LOGS"
-rm -f "$LOGS/unit.exit"
+echo running > "$LOGS/unit.exit"
 <unit command from project/CONTROLS.md> > "$LOGS/unit.log" 2>&1; echo "exit $?" | tee "$LOGS/unit.exit"
 tail -n 30 "$LOGS/unit.log"
 ```
 
 - Take the exit code from the command itself (`$?` right after it), never from a pipe (`<cmd> | tail` reports `tail`'s exit code) and never from the log's last line.
-- Remove the check's old `.exit` file before the run (the logs folder may be shared with earlier runs in the same container), and report a run only once its new `.exit` file exists; a run still going in the background has no result yet (learned: QA once reported an earlier targeted exit file and a partial log as its full run).
+- Reset the check's `.exit` file to `running` before the run (the logs folder may be shared with earlier runs in the same container; this also avoids an `rm`, which can trip a permission prompt), and report a run only once its `.exit` file reads `exit <n>`; a run still going in the background has no result yet (learned: QA once reported an earlier targeted exit file and a partial log as its full run).
 - On a failure, read only the failing parts: `grep -nE 'Error|FAIL|failed' "$LOGS/<check>.log" | head -n 40`, then `sed -n` around those lines. Don't `cat` the whole log.
 - One log per check.
 
