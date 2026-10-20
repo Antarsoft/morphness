@@ -1,6 +1,6 @@
 ---
 id: fakes-confirmed-against-real-service
-title: Confirm fakes of outside services against the real service
+title: Confirm platform variables and fakes against the real thing
 kind: checklist-item
 target: harness/PLAN_CHECKLIST.md
 tags: { stack: [], service: [], area: [testing, vendors] }
@@ -11,11 +11,11 @@ reports:
 status: active
 ---
 
-# Confirm fakes of outside services against the real service
+# Confirm platform variables and fakes against the real thing
 
 ## Rule
 
-**Platform variables and fakes.** A plan whose code reads hosting-platform variables lists the ones the platform sets itself, cited from its docs with the date read, and the tests run with the full set. Every answer a fake of an outside service gives that the code branches on is confirmed against the real service first (a spike or a read-only live check) and cited. A feature driving such a service gets one live run on a preview before it is called done.
+**Platform variables and fakes** (the plan's reading of vendor facts is in `third-party-facts-readable-source`; this is about what the tests run against). A plan whose code reads hosting-platform variables lists the ones the platform sets itself, cited from its docs with the date read, and the tests run with the full set. Every answer a fake of an outside service gives that the code branches on is confirmed against the real service first (a spike or a read-only live check) and cited. A feature driving such a service gets one live run on a preview before it is called done.
 
 ## Why
 
