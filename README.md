@@ -4,11 +4,11 @@
 
 # Morphness
 
-**A self-improving agent harness for Claude Code**
+**The process and safety layer around Claude Code**
 
 🧭 **Plan** → 🛠️ **Build** → ✅ **QA** → 🔁 **Retro** → ✂️ **Prune** → 🌍 **Share**
 
-A ready-made AI coding workflow that starts generic, morphs into your project's own,<br>
+A self-improving agent harness: it starts generic, morphs into your project's own,<br>
 and gets better every time someone shares a lesson.
 
 💜 **From the community, for the community** 💜
@@ -61,7 +61,7 @@ for clear requests so that process costs little when there's nothing to plan.
 | 🧭 **Plan first, then build** | A Technical Lead writes a plan with testable acceptance criteria and waits for your approval before any code is written. |
 | ✅ **QA is never skipped** | Every feature gets a separate QA agent that runs your checks and records the evidence, so "done" means verified, not claimed. |
 | 🔁 **Learns from its own mistakes** | Retros turn real misses (a failed QA round, a review fix, a bug you report after a pass) into rules, and prunes delete rules that never fire, so the instructions your agents read stay short and earned. |
-| 🛡️ **Safe by default** | A guard hook checks agents' tool calls before they run. It blocks pushes to environment branches, force-pushes, reading or writing common secret and credential files by name (`.env*`, keys, cloud credentials), a bare `env` or `printenv` and a set of remote database writes, and it asks you before deploys, cloud and database CLIs that aren't plainly reading, publishes, merges, connector writes and uploads to hosts you haven't listed. It asks before an agent changes the guard's own files or `harness.config.yml`, and before it runs code it can't read (`curl … \| sh`, a shell fed from a pipe, an interpreter one-liner that starts a process, a deploy-named script, `ssh`, a package runner downloading something new). If it can't run, it blocks the call instead of waving it through. It stops accidents, not intent: what a script file or a tool it doesn't know does isn't seen, so branch protection and environment secrets on the host stay the real guard. [Exact list](template/AGENTS.md#permissions-for-this-project). Every agent also reads the rule: never write to a shared remote environment. |
+| 🛡️ **Safe by default** | A guard hook checks every tool call before it runs. It blocks pushes to environment branches, force-pushes, secret and credential files (`.env*`, keys, cloud credentials), a bare `env`, and remote database writes. It asks you before deploys, publishes, merges, connector writes, unknown downloads and edits to its own files, and blocks everything if it can't run. It stops accidents, not intent, so branch protection and environment secrets on the host stay the real guard. [Exact list](template/AGENTS.md#permissions-for-this-project). |
 | 🧪 **Tested as a kit** | Every change to the kit runs a self-test that installs it into sample projects (Next.js with Supabase among them), replays the guard's cases and brings the previous release up to date, so an update doesn't break an install that already works. |
 | 💲 **Know what each feature costs** | Every feature records an estimated dollar cost from Claude Code's own transcripts, split by agent, so you can compare features and tune effort. Useful as an estimate on a Pro or Max plan too. |
 | 🧰 **Yours to configure** | Branches, environments, checks, modules, risk areas, models, effort and loop limits all live in one `harness.config.yml`. Every rule and checklist is a plain Markdown file in your repo, so you can change anything. |
@@ -136,6 +136,12 @@ shown, and everything lands on a branch for you to review.
 
 </details>
 
+### What setup leaves in your repo
+
+On a new branch: `harness.config.yml` with your answers, `AGENTS.md`, `CLAUDE.md` and `.claude/`
+(rules, agents, guard settings), the `harness/` process docs, a `project/` folder with your stack
+and check commands, and `scripts/`. Nothing is overwritten, and you review it as a normal PR.
+
 ### Your first feature
 
 1. Ask the Technical Lead: `plan <feature>`.
@@ -151,6 +157,11 @@ For a small change, ask for **light mode** (no feature folder or retro). For som
 Technical Lead uses **bug mode**: QA writes a failing test first, then Full-stack finds the cause and
 makes the smallest fix. When you want an answer rather than a change, ask a question and the
 Technical Lead uses **research mode**.
+
+> [!NOTE]
+> **What it isn't.** Not a sandbox: the guard stops accidents, not a determined script. It doesn't
+> make the model smarter. It adds process, and process costs tokens (about three agent runs per
+> feature), so clear small requests use a lean path.
 
 > [!TIP]
 > ⭐ If Morphness saves you a rework round, [star the repo](https://github.com/antarsoft/morphness) so more teams find it.
@@ -303,10 +314,9 @@ Each Morphness project runs its own retro and prune loop. When a prune shows a r
 **fired** (it caught a real problem), that rule can leave your repo and help every other team on
 a similar stack.
 
-The catalog starts with **112 lessons** from Twinpage, the product Morphness was built on. 83 of
-them already ship inside the kit as its default rules; the other 29 are stack- and service-specific
-and get offered when they match your project. It grows with every PR, and **yours would be the
-second project in it**.
+The catalog starts with **112 lessons** from Twinpage, the product Morphness was built on. 83 ship
+inside the kit as its default rules, and the rest are offered when they match your stack. It grows
+with every PR, and **yours would be the second project in it**.
 
 ```mermaid
 flowchart TB
@@ -316,13 +326,13 @@ flowchart TB
     D -.->|their rules fire too| C
 ```
 
-| Catalog | Lessons | Offered on match | What's in it |
-|---------|:-------:|:----------------:|--------------|
-| 🧠 [`practice/`](lessons/practice) | 68 | 7 | Process rules for any stack: planning, QA, handoffs, agent hygiene |
-| 🧱 [`stack/`](lessons/stack) | 24 | 14 | Framework and tool traps: Next.js, Drizzle, Playwright, pnpm, Chromium |
-| ☁️ [`service/`](lessons/service) | 20 | 9 | Hosted-service gotchas: Supabase, Vercel, Paddle, GitHub Actions, Claude Code web |
+| Catalog | Lessons | What's in it |
+|---------|:-------:|--------------|
+| 🧠 [`practice/`](lessons/practice) | 68 | Process rules for any stack: planning, QA, handoffs, agent hygiene |
+| 🧱 [`stack/`](lessons/stack) | 24 | Framework and tool traps: Next.js, Drizzle, Playwright, pnpm, Chromium |
+| ☁️ [`service/`](lessons/service) | 20 | Hosted-service gotchas: Supabase, Vercel, Paddle, GitHub Actions, Claude Code web |
 
-The rest are the kit's built-in rules, kept in the catalog so other projects can add their evidence.
+Built-in rules stay in the catalog so other projects can add their evidence.
 
 **How to contribute**
 
@@ -352,8 +362,6 @@ Products and projects that run on a Morphness harness. Add yours with a one-row 
 
 [![Share on X](https://img.shields.io/badge/Share%20on-X-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/intent/post?text=Morphness%3A%20a%20self-improving%20agent%20harness%20for%20Claude%20Code&url=https%3A%2F%2Fgithub.com%2Fantarsoft%2Fmorphness)
 [![Share on LinkedIn](https://img.shields.io/badge/Share%20on-LinkedIn-0A66C2?style=for-the-badge)](https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgithub.com%2Fantarsoft%2Fmorphness)
-[![Share on Reddit](https://img.shields.io/badge/Share%20on-Reddit-FF4500?style=for-the-badge&logo=reddit&logoColor=white)](https://www.reddit.com/submit?url=https%3A%2F%2Fgithub.com%2Fantarsoft%2Fmorphness&title=Morphness%3A%20a%20self-improving%20agent%20harness%20for%20Claude%20Code)
-[![Share on Hacker News](https://img.shields.io/badge/Share%20on-Hacker%20News-F0652F?style=for-the-badge&logo=ycombinator&logoColor=white)](https://news.ycombinator.com/submitlink?u=https%3A%2F%2Fgithub.com%2Fantarsoft%2Fmorphness&t=Morphness%3A%20a%20self-improving%20agent%20harness%20for%20Claude%20Code)
 
 ⭐ [Star the repo](https://github.com/antarsoft/morphness) · 🐛 [Report an issue](https://github.com/antarsoft/morphness/issues) · 🤝 [Contribute a lesson](CONTRIBUTING.md) · <img src="https://cdn.simpleicons.org/discord/5865F2" alt="" height="14"> [Join the Discord](https://discord.gg/zcZTAQq)
 
