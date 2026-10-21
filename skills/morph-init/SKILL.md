@@ -117,7 +117,8 @@ Tell the user, in a few lines:
   `.claude/agents/*.md`. For Claude Projects (when used): the coordinator and thread settings from
   `harness.config.yml` § claude_projects, and the playbook in
   `harness/modules/claude-projects/README.md` to paste into the project instructions. These are advice;
-  the user may change any of them.
+  the user may change any of them. Say that each feature's hand-off ends with its measured cost
+  (`scripts/feature-cost.sh`), so the model and effort choice can be judged on the project's own numbers.
 - How to start the first feature: "Ask the Technical Lead: plan <feature>."
 - That the harness will change itself through retros and prunes (`harness/MORPHING.md`), that
   `/morph-update` (also run at every prune) offers upstream kit updates and lessons, and that
