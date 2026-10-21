@@ -726,11 +726,12 @@ def check(name, fx, t):
             bad(f"guard: expected {expect}, got {got} for {raw} on branch {here} ({r.stderr.strip()})")
     run(["git", "checkout", "-q", fx["branches"]["integration"]], t)
 
-# ---- update from the previous release ---------------------------------------------------------
-# A project installed from the newest release tag, brought up to date the way skills/morph-update does
-# it: the kit updates added since (updates/ notes) merged against the template at that release.
-# Without local edits the result must equal a fresh install; with edits, they must survive with no
-# conflict. The merged project then goes through the same self-checks as a fresh one.
+# ---- update from the previous release and the oldest supported one ----------------------------
+# A project installed from the newest release tag (and from OLDEST_SUPPORTED, below), brought up to
+# date the way skills/morph-update does it: the kit updates added since (updates/ notes) merged
+# against the template at that release. Without local edits the result must equal a fresh install;
+# with edits, they must survive with no conflict. The merged project then goes through the same
+# self-checks as a fresh one.
 RELEASE_NAME = re.compile(r"v\d+\.\d+\.\d+|\d{4}-\d{2}-\d{2}(?:\.[2-9]|\.[1-9]\d+)?")
 
 def release_key(tag):
@@ -758,11 +759,20 @@ def frontmatter(text):
             out[key] = [] if kv.group(2) in ("", "[]") else kv.group(2)
     return out
 
+def release_tags():
+    return sorted((t for t in run(["git", "tag", "--list"], root).stdout.split() if RELEASE_NAME.fullmatch(t)), key=release_key)
+
 def previous_release():
     if os.environ.get("UPDATE_FROM"):
         return os.environ["UPDATE_FROM"]
-    tags = sorted((t for t in run(["git", "tag", "--list"], root).stdout.split() if RELEASE_NAME.fullmatch(t)), key=release_key)
+    tags = release_tags()
     return tags[-1] if tags else None
+
+# The oldest release an install may update from (STABILITY.md § Supported releases). Its update is
+# replayed too, once the tag exists; before that release is tagged there is nothing to replay.
+OLDEST_SUPPORTED = "v0.13.0"
+if f"| {OLDEST_SUPPORTED} and later |" not in read(os.path.join(root, "STABILITY.md")):
+    failures.append(f"update: STABILITY.md § Supported releases doesn't start at {OLDEST_SUPPORTED}, the release the self-test replays")
 
 def old_template(tag, dest):
     r = subprocess.run(["git", "-C", root, "archive", tag, "template"], capture_output=True)
@@ -887,6 +897,11 @@ if not old_tpl:
         failures.append("update: " + msg)
     else:
         print("note: " + msg + "; the update-from-the-previous-release case is skipped")
+starts = [(prev_tag, old_tpl)] if prev_tag and old_tpl else []
+if not os.environ.get("UPDATE_FROM") and OLDEST_SUPPORTED != prev_tag and OLDEST_SUPPORTED in release_tags():
+    tpl_dir = tempfile.mkdtemp(prefix="morphness-oldest-")
+    if old_template(OLDEST_SUPPORTED, tpl_dir):
+        starts.append((OLDEST_SUPPORTED, os.path.join(tpl_dir, "template")))
 for path in fixtures:
     name = os.path.splitext(os.path.basename(path))[0]
     fx = json.load(open(path))
@@ -894,11 +909,11 @@ for path in fixtures:
     render(fx, t)
     before = len(failures)
     check(name, fx, t)
-    if prev_tag and old_tpl:
+    for tag, base_tpl in starts:
         for edits in (False, True):
-            proj, work_u = update_case(name, fx, prev_tag, old_tpl, edits)
+            proj, work_u = update_case(name, fx, tag, base_tpl, edits)
             if edits:
-                check(f"{name} (updated from {prev_tag})", fx, proj)
+                check(f"{name} (updated from {tag})", fx, proj)
             shutil.rmtree(work_u, ignore_errors=True)
     print(f"{name}: {'ok' if len(failures) == before else str(len(failures) - before) + ' problem(s)'}")
 if os.environ.get("KEEP") == "1":
