@@ -67,9 +67,9 @@ in `project/agents/<role>.md` keep applying on top.
 `scripts/evidence.sh` (`--json`, `--out`, `--force`) with the field names of its JSON output, which
 `/morph-share` publishes.
 
-**8. Schema number.** Before 1.0, `harness.config.yml` gets a `harness_schema` key: `1` for the 1.0
-surface. It rises only with a major version. `/morph-doctor` reports a copy whose number is older than
-the kit's and points to the update note that migrates it.
+**8. Schema number.** `harness.config.yml` → `harness_schema` is `1` for this surface. It rises only
+with a major version, and that version's update note migrates the copy and sets the new number.
+`/morph-doctor` reports a copy without the key, or with a number other than the one it knows.
 
 ## May change in any release
 

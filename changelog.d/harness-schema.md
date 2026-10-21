@@ -1,0 +1,1 @@
+**Config: `harness_schema`.** `harness.config.yml` now carries `harness_schema: 1`, the version of the config keys and `_harness/` record formats listed in `STABILITY.md`. It rises only with a major release. `/morph-doctor` reports a copy without it, or with a number it doesn't know, and points to `/morph-update` or a plugin update.
