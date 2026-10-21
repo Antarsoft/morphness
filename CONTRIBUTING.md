@@ -59,7 +59,8 @@ Run `scripts/kit-selftest.sh` before opening the PR (the `selftest` check runs i
 render.md's self-checks, a link check, the template scripts and the guard hook cases in
 `tests/guard-cases.jsonl` (a case that reads the project's config, such as branches or environments,
 needs `"every": true` to replay on each copy; the others run once; `GUARD_FULL=1` replays all). A new placeholder needs a line in render.md § 3; a new
-guard rule needs a case.
+guard rule needs a case. A new README promise (a row in "Why use it", an install route) needs an entry in
+`tests/claims.jsonl` ([tests/claims.md](tests/claims.md)); the self-test fails without one.
 
 ## Catalog entries
 

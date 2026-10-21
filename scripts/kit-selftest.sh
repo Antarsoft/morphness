@@ -234,6 +234,70 @@ if yaml:
     if reads < 30 or len(config_keys) < 40:
         failures.append(f"kit: only {reads} config key mentions and {len(config_keys)} config keys found; the key check no longer reads the kit")
 
+# ---- once: every README promise has a ledger entry, and every entry's proof still exists -------------
+# tests/claims.jsonl maps each README promise (a "Why use it" row, "What it isn't", the install routes and
+# "Requirements and cost") to the guard cases, self-test checks and files that back it. tests/claims.md
+# explains the format. A promise without an entry, an entry whose promise left the README, and a proof
+# that no longer exists are all failures; the summary line counts how much is tested, present or judgement.
+def readme_promises():
+    text = read(os.path.join(root, "README.md"))
+    strip = lambda s: re.sub(r"^[^\w]+", "", s).strip().rstrip(".:").strip()
+    keys = []
+    why = re.search(r"## \S+ Why use it\n(.*?)\n## ", text, re.S)
+    for row in (why.group(1).splitlines() if why else []):
+        m = re.match(r"\|\s*\S+\s+\*\*(.+?)\*\*\s*\|", row)
+        if m:
+            keys.append(strip(m.group(1)))
+    isnt = re.search(r"\*\*(What it isn't)\.\*\*", text)
+    if isnt:
+        keys.append(strip(isnt.group(1)))
+    inst = re.search(r"## \S+ Install\n(.*?)\n### ", text, re.S)
+    for m in re.finditer(r"(?m)^\*\*(.+?)\*\*|<summary><b>(.+?)</b>", inst.group(1) if inst else ""):
+        keys.append(strip(m.group(1) or m.group(2)))
+    return keys
+
+claims_path = os.path.join(root, "tests/claims.jsonl")
+claims = [json.loads(l) for l in read(claims_path).splitlines() if l.strip()]
+promises = readme_promises()
+if len(promises) < 12:
+    failures.append(f"claims: only {len(promises)} README promises found; the parser no longer reads README.md")
+entry_ids = [c.get("id") for c in claims]
+for dup in sorted({i for i in entry_ids if entry_ids.count(i) > 1}):
+    failures.append(f"claims: id {dup} appears twice in tests/claims.jsonl")
+for p in promises:
+    if not any(c.get("readme") == p for c in claims):
+        failures.append(f"claims: the README promises \"{p}\" but tests/claims.jsonl has no entry for it (add one, see tests/claims.md)")
+for c in claims:
+    cid = c.get("id", "?")
+    bad_c = lambda msg: failures.append(f"claims: {cid}: {msg}")
+    if c.get("readme") not in promises:
+        bad_c(f"names the README promise \"{c.get('readme')}\", which README.md no longer has")
+    if c.get("status") not in ("tested", "present", "judgement"):
+        bad_c("status must be tested, present or judgement")
+    if not c.get("claim") or not c.get("note"):
+        bad_c("needs a claim (what the README says) and a note (what the proof does not cover)")
+    kinds = {p.get("kind") for p in c.get("proofs", [])}
+    if c.get("status") == "tested" and not kinds & {"guard", "selftest"}:
+        bad_c("is marked tested but has no guard case or self-test proof")
+    if c.get("status") != "judgement" and not c.get("proofs"):
+        bad_c("has no proofs")
+    for p in c.get("proofs", []):
+        if p.get("kind") == "guard":
+            hit = [k for k in cases if k["expect"] == p["expect"] and p["contains"] in json.dumps(k["input"])
+                   and p.get("tool", k["tool"]) == k["tool"] and bool(p.get("raw")) == ("raw" in k)]
+            if not hit:
+                bad_c(f"no guard case expects {p['expect']} for {p.get('tool') or 'any tool'} containing {p['contains']!r}")
+        elif p.get("kind") in ("check", "selftest"):
+            fp = os.path.join(root, p.get("path", ""))
+            if not os.path.isfile(fp):
+                bad_c(f"proof file {p.get('path')} does not exist")
+            elif p["contains"].lower() not in read(fp).lower():
+                bad_c(f"proof file {p['path']} no longer contains {p['contains']!r}")
+        else:
+            bad_c(f"unknown proof kind {p.get('kind')!r}")
+tally = {s: sum(c.get("status") == s for c in claims) for s in ("tested", "present", "judgement")}
+print(f"claims ledger: {len(promises)} README promises, {tally['tested']} tested, {tally['present']} present in the kit text, {tally['judgement']} judgement")
+
 # ---- render ------------------------------------------------------------------------------------
 def remove_module(t, name):
     readme = read(os.path.join(t, f"harness/modules/{name}/README.md"))
