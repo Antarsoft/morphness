@@ -416,6 +416,12 @@
 {"expect": "ask", "tool": "Bash", "input": {"command": "rm -rf $HOME/projects"}}
 {"expect": "ask", "tool": "Bash", "input": {"command": "rm -r ../../../../etc/sibling"}}
 {"expect": "ask", "tool": "Bash", "input": {"command": "rm -rf ."}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "find . -delete"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "find -type f -exec rm {} +"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "find ~ -exec /bin/rm -rf {} \\;"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "find . -name '*.log' -delete"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "find build -delete"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "find . -type f -name '*.ts'"}}
 {"expect": "ask", "tool": "Bash", "input": {"command": "rm -rf ./"}}
 {"expect": "ask", "tool": "Bash", "input": {"command": "rm -rf .."}}
 {"expect": "ask", "tool": "Bash", "input": {"command": "rm -rf .git"}}
