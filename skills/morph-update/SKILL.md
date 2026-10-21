@@ -74,8 +74,8 @@ asks "what's new?"), do § 1 and § 2 and stop: change nothing, write nothing.
    <ref>^{commit}`.
 3. **Check the skills are current.** This skill came from the Morphness plugin; its version is in
    `.claude-plugin/plugin.json` two folders above this file. Compare it with
-   `read(HEAD, .claude-plugin/plugin.json)` → `version` (`YYYYMMDD.N.0`; a legacy `2026.10.12` counts as
-   `20261012.1.0`). When the plugin is older, the notes may expect steps these instructions don't
+   `read(HEAD, .claude-plugin/plugin.json)` → `version` (`YYYYMMDD.N.0`, the plugin's build number, which stays date-shaped so Claude Code keeps offering plugin updates; the release's
+   version, `v0.13.0`, is its tag; a legacy `2026.10.12` counts as `20261012.1.0`). When the plugin is older, the notes may expect steps these instructions don't
    have: say "Update the Morphness plugin first (`/plugin`, then update Morphness) and run this
    again", and stop a full run there; a listing goes on and ends with the same line. Without the
    plugin (following UPDATE.md), the skill is read from upstream at `HEAD`, so skip this step.
@@ -85,9 +85,10 @@ asks "what's new?"), do § 1 and § 2 and stop: change nothing, write nothing.
 5. **Resolve the base** (`BASE`, the commit whose `template/` this copy was last synced to):
    - `installed_from.commit` when `exists(<commit>)`.
    - Else the tag named by `installed_from.release`, when `exists(<tag>)`.
-   - Else the oldest release tag (the first public release). Release tags are `YYYY-MM-DD`, and a later
-     release the same day adds `.N` (`2026-10-14.2`); order them by date, then by that number (none
-     counts as 1), not as plain strings. This covers copies installed from a
+   - Else the oldest release tag (the first public release). Release tags are `vMAJOR.MINOR.PATCH` (`v0.13.0`) from the first
+     semantic release on, and `YYYY-MM-DD` before it (a later release the same day added `.N`, as in
+     `2026-10-14.2`). Every dated tag is older than every `v` tag. Order dated tags by date, then by that number (none
+     counts as 1), and versions by their three numbers (`v0.10.0` is newer than `v0.9.0`), never as plain strings. This covers copies installed from a
      staging or forked repository whose commits aren't upstream. Say which base you used and why.
 
 ## 2. List what's pending
@@ -204,8 +205,9 @@ project file's content beyond the change being applied.
 1. **Update `harness.config.yml` → `installed_from`**, converting the one-line form to the block
    form in `read(HEAD, template/harness.config.yml)` when needed:
    - `commit`: `HEAD`'s commit (on GitHub, the `sha` the commits request gives for the tag).
-     `release`: the newest release heading in `read(HEAD, CHANGELOG.md)` (the first `## YYYY-MM-DD`
-     or `## YYYY-MM-DD.N` heading below `## Unreleased`).
+     `release`: the newest release heading in `read(HEAD, CHANGELOG.md)`: the first heading that
+     names a release, `## v0.13.0 (2026-10-21)` (record `v0.13.0`), or `## 2026-10-20.5` for an older one (skip `## Unreleased`, and the
+     version map at the bottom).
    - `installed_from.updates.applied` and `installed_from.updates.declined`: append this run's ids (and the "already here" ones
      to `applied`).
    - `installed_from.updates.deferred`: set to the notes answered **later**, each as `{ id, base }` where `base` is
