@@ -2,7 +2,7 @@
 id: 2026-10-21-trial-baseline
 title: Trial baselines and a no-outside-answers rule for agents
 kind: rule
-release: unreleased
+release: v0.13.0
 applies_to: { modules: [] }
 files:
   - harness/templates/trial.md

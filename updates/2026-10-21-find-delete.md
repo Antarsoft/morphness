@@ -2,7 +2,7 @@
 id: 2026-10-21-find-delete
 title: The guard asks before find deletes the whole repo
 kind: fix
-release: unreleased
+release: v0.13.0
 applies_to: { modules: [] }
 files:
   - scripts/guard.sh

@@ -2,7 +2,7 @@
 id: 2026-10-21-harness-schema
 title: harness_schema key records the config and records layout version
 kind: config
-release: unreleased
+release: v0.13.0
 applies_to: { modules: [] }
 files:
   - harness.config.yml
