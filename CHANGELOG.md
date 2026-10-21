@@ -6,6 +6,20 @@ its version. Installed copies pick up kit changes (each with a note in
 [updates/](updates/)) and new matching lessons through `/morph-update`; this file lists every change.
 When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
+## v0.14.0 (2026-10-21)
+
+- **Claims ledger in the self-test.** `tests/claims.jsonl` and `tests/claims.md` list each promise the README makes next to the check that proves it, and `scripts/kit-selftest.sh` fails when a listed promise has no proof. The self-test workflow now also runs when the ledger changes.
+
+- **Config: `loop.feature_budget_usd`.** An optional soft spend cap per feature, off by default (`0`). With a number set, `scripts/feature-cost.sh` prints a `Budget:` line before its `Cost ≈ $…` line, and the Technical Lead runs it after each subagent returns; when the estimate is over, it stops, says where the feature stands and asks the owner whether to continue, raise the cap or stop. The figure is an estimate at API list prices checked between steps, so a step already running isn't cut off. `/morph-doctor` reports the value.
+
+- **Learned rules list.** `bash scripts/learned-rules.sh` prints every rule that carries provenance (`(from <slug>, <date>)`, `(lesson: <id>)`, `(trial: <slug>)`): where it is, the finding it came from, the day it landed, the last day a learnings entry said it fired, and its text. Rules without a tag are counted per file, and `--all` lists them with blank columns. Last fired comes from a new optional `**Fired:**` line in the learnings entry (the source slugs of tagged rules that caught something), which the prune keeps when it folds the entry. `/morph-doctor` runs the script as a new section and reports the counts. Read-only.
+
+- **Lesson age and counts.** `/morph-init` and `/morph-update` now show each offered lesson's report count, the date it was added and last reported, and `fired` of `features`, defined in `lessons/README.md` § Listing a lesson. The numbers are context for reading a rule: lessons are not sorted or filtered by them and are never described as popular.
+
+- **Release PRs run the public tool report.** A new `release-check.yml` workflow runs on pull requests that change `.claude-plugin/plugin.json` (release PRs) and prints the public tool report in the check output. It reports only and never blocks the merge.
+
+- **Trials by default.** A retro item that changes how a role works (an agent file, a role's model or effort, a rule a role follows) is now approved as a trial by default: the rule lands tagged `(trial: <slug>)` with a trial file and Baseline, runs its length, and is decided at the prune only after the escape window of one prune window has closed. Project facts, mechanisms and owner-marked permanent items skip the trial. The retro template's Decision gains `approve (trial)` and `approve (permanent, why)`.
+
 ## v0.13.0 (2026-10-21)
 
 - **Guard: `find` that deletes the repo asks.** `find . -delete` or `find -exec rm {} +` from the repo root or outside it, with no name, path or age filter, now asks like `rm -rf .` does. Filtered clean-ups such as `find . -name '*.log' -delete` still run. AGENTS.md and the known limits on the results page also say that a project-wide search can print lines from a secret file and that reads outside the project aren't blocked.
