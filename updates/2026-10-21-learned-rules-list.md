@@ -2,7 +2,7 @@
 id: 2026-10-21-learned-rules-list
 title: List what the harness has learned, with source and last fired
 kind: rule
-release: unreleased
+release: v0.14.0
 applies_to: { modules: [] }
 files:
   - scripts/learned-rules.sh

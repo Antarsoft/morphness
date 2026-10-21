@@ -2,7 +2,7 @@
 id: 2026-10-21-trials-by-default
 title: Retro items that change how a role works run as trials by default
 kind: rule
-release: unreleased
+release: v0.14.0
 applies_to: { modules: [] }
 files:
   - harness/MORPHING.md

@@ -2,7 +2,7 @@
 id: 2026-10-21-feature-budget
 title: Optional soft spend cap per feature (loop.feature_budget_usd)
 kind: config
-release: unreleased
+release: v0.14.0
 applies_to: { modules: [] }
 files:
   - harness.config.yml
