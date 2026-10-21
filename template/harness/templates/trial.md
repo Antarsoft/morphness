@@ -25,7 +25,7 @@ Written when the trial starts, so the decision compares like with like: the last
 
 ## Escape window
 
-A trial is decided only after one prune window (`loop.prune_every` features) has finished past its last qualifying feature. The decision reads the `Escaped` lines of fix PRs traced to its features as well as the numbers below (`harness/MORPHING.md` § Trials, step 4).
+A trial is decided only after one prune window (`loop.prune_every` features, default 10) has finished past its last qualifying feature. A trial started by a retro item uses this window as is. The decision reads the `Escaped` lines of fix PRs traced to its features as well as the numbers below (`harness/MORPHING.md` § Trials, step 4).
 
 ## Results
 
