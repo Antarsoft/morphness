@@ -79,7 +79,9 @@ Using `references/catalog.md`, build three short lists from the answers:
    connector. Only official ones: for a service in the stack that the catalog doesn't cover, check the
    vendor's own docs first (catalog.md § Connectors, "Official only").
 3. **Community lessons** from the source's `lessons/` folder whose tags match the stack, services and
-   areas, each with its title and evidence line.
+   areas, each with its title and evidence line: how many reports it has, when it was added and last
+   reported, and `fired` of `features` (`lessons/README.md` § Listing a lesson). Keep the order by
+   fit; these are context, not a ranking, and never call a lesson popular.
    Leave out a lesson whose `evidence.source` (or a `reports` entry) names this project: it came from
    here, so its rule is already in the project's files. Say how many you left out and why.
 
