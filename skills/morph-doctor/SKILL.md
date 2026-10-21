@@ -155,14 +155,23 @@ From `_harness/`:
 - **Stuck features:** feature folders whose `plan.md` Status is `approved` with no `progress.md`, or
   `progress.md` marked complete with no `qa-result.md`.
 
-## 3. Drift
+## 3. Learned rules
+
+Run `bash scripts/learned-rules.sh` (read-only; a copy without it: `/morph-update`, update note
+`2026-10-21-learned-rules-list`). It lists every rule with provenance: where it is, the finding it came from,
+when it landed, the last day a learnings entry said it fired (blank if never recorded) and its text;
+untagged rules are counted per file (`--all` lists them with blank columns). Report the counts and
+show the table on request. Tagged rules never recorded as fired are what the next prune audits, not a
+problem by themselves.
+
+## 4. Drift
 
 Compare the harness files to their template (`template/` in the Morphness source at the commit in
 `harness.config.yml` § installed_from, the commit this copy last synced to) and summarise how the copy has morphed: rules added, removed or
 changed, with their provenance where given. This is information, not a problem: the copy is meant to
 diverge. Flag only contradictions (two rules that say opposite things) and links to removed files.
 
-## 4. Upstream
+## 5. Upstream
 
 List what is newer upstream, read-only, by following § 1 and § 2 of `/morph-update` (they write nothing): kit updates and
 matching lessons added upstream since `installed_from.commit` that this project hasn't applied or
@@ -172,7 +181,7 @@ change `installed_from`; that is `/morph-update`'s job. The listing reads releas
 text from github.com/antarsoft/morphness (read-only, executes nothing, no clone needed) unless
 `updates.source` is `local`, and falls back to a local copy; with neither, say "upstream not checked".
 
-## 5. Report
+## 6. Report
 
 One short list, worst first: broken wiring, then a due prune and stuck items, then contradictions,
 then the counts of pending upstream updates and lessons (pointing to `/morph-update`). End with the fixes you can make and ask which to apply.

@@ -667,6 +667,21 @@ def check(name, fx, t):
     r = run(["bash", "scripts/prune-counter.sh", "--prune"], t)
     if r.returncode or "Last 0 features: no features" not in r.stdout or "Rule tags: 0 " not in r.stdout or "Loop: 0 escapes and 0 rule tags" not in r.stdout:
         bad(f"prune-counter.sh --prune on a fresh install printed {r.stdout!r} (stderr {r.stderr.strip()!r})")
+    # learned-rules.sh: a tagged rule shows its source, landed day and last fired; untagged ones are counted
+    r = run(["bash", "scripts/learned-rules.sh"], t)
+    if r.returncode or not r.stdout.startswith("Learned rules: 0 with provenance"):
+        bad(f"learned-rules.sh on a fresh install printed {r.stdout!r} (stderr {r.stderr.strip()!r})")
+    ldir = os.path.join(t, "_harness/learnings")
+    os.makedirs(ldir, exist_ok=True)
+    rules_md = os.path.join(t, "project/PROJECT.md")
+    saved = open(rules_md).read()
+    open(rules_md, "a").write("\n- Run every migration twice before QA signs off. (from retry-flow, 2026-10-10)\n")
+    open(os.path.join(ldir, "selftest-v1.md"), "w").write("### retry-flow v1, 2026-10-15\n- **Fired:** `retry-flow`\n")
+    r = run(["bash", "scripts/learned-rules.sh"], t)
+    if r.returncode or "| retry-flow | 2026-10-10 | 2026-10-15 | Run every migration twice" not in r.stdout:
+        bad(f"learned-rules.sh did not list the tagged rule with its source and last fired day: {r.stdout!r}")
+    open(rules_md, "w").write(saved)
+    os.remove(os.path.join(ldir, "selftest-v1.md"))
     # prune states: proposed and approved are open (named, no DUE); declined, applied and README are not
     pdir, ldir = os.path.join(t, "_harness/prunes"), os.path.join(t, "_harness/learnings")
     os.makedirs(pdir, exist_ok=True)

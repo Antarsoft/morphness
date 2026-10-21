@@ -53,6 +53,6 @@ A new state gets its own table under this heading, with a row added to the list 
 
 ## Entries
 
-Entries since the last prune are in `_harness/learnings/` (one file per feature, format above). The lines below are the condensed ones a prune folded in, one each: `- <feature-slug> v<version>, YYYY-MM-DD: <verdict>, QA rounds N, ≈ $<cost>; <lesson> ([retro](…))`. Keep the date: `scripts/prune-counter.sh --prune` counts features since a rule landed from it.
+Entries since the last prune are in `_harness/learnings/` (one file per feature, format above). The lines below are the condensed ones a prune folded in, one each: `- <feature-slug> v<version>, YYYY-MM-DD: <verdict>, QA rounds N, ≈ $<cost>; <lesson> ([retro](…))`. Keep the date and any `Fired: <slug>` (`; Fired: retry-flow`): `scripts/prune-counter.sh --prune` counts features since a rule landed from the date, and `scripts/learned-rules.sh` takes last fired from the slug.
 
 None yet.

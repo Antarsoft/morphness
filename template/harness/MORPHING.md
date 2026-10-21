@@ -40,7 +40,7 @@ Every rule ends with where it came from, so a prune can find its evidence and a 
 - A rule that came with the kit ends with a short reason, `(learned: <the failure it prevents>)`, or with nothing when it is plain process.
 - A rule adopted from an upstream lesson ends with `(lesson: <id>)`.
 
-The prune's rule audit (step 2) reads these to find when a rule landed and whether it has fired since. `bash scripts/prune-counter.sh --prune` lists every `(from …)` tag with the number of features finished since its date, so `too new to judge` and "did the problem come back after this date?" are a lookup, not a hunt. A rule with no provenance that the TL can't trace is audited like any other; `never fired` across two windows moves it to on-demand.
+The prune's rule audit (step 2) reads these to find when a rule landed and whether it has fired since. `bash scripts/prune-counter.sh --prune` lists every `(from …)` tag with the number of features finished since its date, so `too new to judge` and "did the problem come back after this date?" are a lookup, not a hunt. `bash scripts/learned-rules.sh` (read-only; `--all` adds the untagged rules) lists the same tags as a table: file and line, source finding, the day it landed, the last day a learnings entry's `Fired:` line named that source (blank if none) and the rule text. `/morph-doctor` runs it. A rule with no provenance that the TL can't trace is audited like any other; `never fired` across two windows moves it to on-demand.
 
 ## Trials
 

@@ -29,6 +29,7 @@
       "Bash(bash scripts/feature-cost.sh:*)",
       "Bash(bash scripts/prune-counter.sh:*)",
       "Bash(bash scripts/evidence.sh:*)",
+      "Bash(bash scripts/learned-rules.sh:*)",
       "Bash(cat > /tmp/*)"
     ],
     "deny": [
