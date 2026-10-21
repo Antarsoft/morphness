@@ -1,0 +1,34 @@
+name: release-check
+# Runs the public tools (agnix, SkillSpector, ShellCheck, gitleaks) through scripts/trust-report.sh on a release PR,
+# so findings show before the tag is made. Report only: the job never fails the PR (continue-on-error) and the
+# page it writes goes to a temporary folder, not the repo. Release PRs are the ones that bump the plugin build number.
+# Everything runs on the runner: agnix and SkillSpector use their static modes, no model is called.
+on:
+  pull_request:
+    paths: [".claude-plugin/plugin.json"]
+permissions:
+  contents: read
+jobs:
+  report:
+    runs-on: ubuntu-24.04   # pinned: bump it in its own PR
+    timeout-minutes: 45
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
+        with:
+          fetch-depth: 0
+      - run: python3 -m pip install --quiet pyyaml uv
+      - name: Run the report
+        run: |
+          set +e
+          scripts/trust-report.sh --out "$RUNNER_TEMP/trust" --skip-selftest | tee "$RUNNER_TEMP/report.txt"
+          rc=${PIPESTATUS[0]}
+          {
+            echo "## Public tool results (report only)"
+            echo
+            echo '```'
+            cat "$RUNNER_TEMP/report.txt"
+            echo '```'
+            [ "$rc" = 0 ] || echo "The report exited $rc: a check failed, a tool did not run, or a finding has no verdict in tests/triage.jsonl. This does not block the PR."
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 0
