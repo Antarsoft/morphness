@@ -1,13 +1,16 @@
 name: lessons
 on:
   pull_request:
-    paths: ["lessons/**", "scripts/check-lessons.sh"]
+    paths: ["lessons/**", "scripts/check-lessons.sh", "scripts/lesson-stats.sh", "README.md", "docs/index.html"]
   push:
     branches: [main]
-    paths: ["lessons/**", "scripts/check-lessons.sh"]
+    paths: ["lessons/**", "scripts/check-lessons.sh", "scripts/lesson-stats.sh", "README.md", "docs/index.html"]
 jobs:
   check:
     runs-on: ubuntu-24.04   # pinned: bump it in its own PR
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
       - run: scripts/check-lessons.sh
+      - name: Counts on the README and site match (after a merge, so contributors are not blocked)
+        if: github.event_name == 'push'
+        run: scripts/lesson-stats.sh --check

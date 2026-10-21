@@ -27,7 +27,7 @@ What gets merged:
 A maintainer runs the `morph-review` skill (`.claude/skills/morph-review/`, maintainers only) on
 each PR. It classifies every lesson as new, an amendment, a supersede, conditional or a conflict;
 fixes wording and tags for portability; and posts a review. When your PR allows maintainer edits, it
-may push those fixes to your branch. A maintainer decides the merge. The same skill sweeps the
+may push those fixes to your branch. A maintainer decides the merge, then runs `scripts/lesson-stats.sh --write` so the lesson counts on the README and the site match the catalog (the kit self-test fails when they differ). The same skill sweeps the
 catalog now and then to merge duplicates and mark outdated lessons superseded.
 
 ## Profiles
