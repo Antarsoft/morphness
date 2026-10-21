@@ -333,9 +333,9 @@ Each Morphness project runs its own retro and prune loop. When a prune shows a r
 **fired** (it caught a real problem), that rule can leave your repo and help every other team on
 a similar stack.
 
-The catalog starts with **114 lessons** from Twinpage, the product Morphness was built on. 83 ship
-inside the kit as its default rules, and the rest are offered when they match your stack. It grows
-with every PR, and **yours would be the second project in it**.
+The catalog starts with lessons from the product Morphness was built on, and has grown with others
+since. About 80 ship inside the kit as its default rules, and the rest are offered when they match
+your stack. It grows with every PR, and **yours could be the next project in it**.
 
 ```mermaid
 flowchart TB
