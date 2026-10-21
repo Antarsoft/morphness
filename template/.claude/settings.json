@@ -28,7 +28,8 @@
       "Bash(tail:*)",
       "Bash(bash scripts/feature-cost.sh:*)",
       "Bash(bash scripts/prune-counter.sh:*)",
-      "Bash(bash scripts/evidence.sh:*)"
+      "Bash(bash scripts/evidence.sh:*)",
+      "Bash(cat > /tmp/*)"
     ],
     "deny": [
       "Read(./**/.env)",
