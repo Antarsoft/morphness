@@ -2,7 +2,7 @@
 id: 2026-10-21-init-cost-comparison
 title: Init shows a relative cost comparison for the model choice
 kind: rule
-release: unreleased
+release: v0.13.0
 applies_to: { modules: [] }
 files:
   - harness/MODEL_PRICES.md

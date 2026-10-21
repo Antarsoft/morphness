@@ -2,7 +2,7 @@
 id: 2026-10-20-guard-own-tool-results
 title: The guard no longer asks to read its own saved output, or on two substitutions in one echo
 kind: fix
-release: unreleased
+release: v0.13.0
 applies_to: { modules: [] }
 files:
   - scripts/guard.sh
