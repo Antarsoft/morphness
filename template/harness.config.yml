@@ -166,6 +166,7 @@ loop:
   checklist_budget_kb: 36 # harness/PLAN_CHECKLIST.md plus project/PLAN_CHECKLIST.md; over it, a prune is due
   project_docs_budget_kb: 48 # project/*.md fact docs; over it, a prune is due
   qa_max_rounds: 2        # QA rework rounds before escalating to the owner
+  feature_budget_usd: 0   # soft cap per feature in dollars at API list prices (feature-cost.sh); 0 = off. Over it, the Technical Lead stops and asks you
 
 # Where /morph-update, /morph-doctor and the prune's upstream check read Morphness from.
 # github: release notes and template text straight from installed_from.repo on GitHub (read-only,

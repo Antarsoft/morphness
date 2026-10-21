@@ -716,6 +716,27 @@ def check(name, fx, t):
     r = run(["bash", "scripts/feature-cost.sh"], t, env=dict(os.environ, HOME=t))
     if r.returncode or "Traceback" in r.stdout + r.stderr:
         bad(f"feature-cost.sh failed: {r.stdout}{r.stderr}")
+    # loop.feature_budget_usd: with a cap, a session over it prints the Budget line before the Cost line
+    cfg = os.path.join(t, "harness.config.yml")
+    keep_cfg = open(cfg).read()
+    home = os.path.join(t, "cost-home")
+    proj = os.path.join(home, ".claude/projects", re.sub(r"[^A-Za-z0-9]", "-", os.path.realpath(t)))
+    os.makedirs(proj)
+    usage = {"input_tokens": 1000000, "output_tokens": 100000, "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0}
+    entry = {"type": "assistant", "timestamp": "2026-10-21T09:00:00Z", "gitBranch": "main", "uuid": "u1", "requestId": "r1",
+             "message": {"id": "m1", "model": "claude-sonnet-5-5", "usage": usage}}
+    open(os.path.join(proj, "s1.jsonl"), "w").write(json.dumps(entry) + "\n")
+    for cap, want in (("0.01", "OVER"), ("100000", "within"), ("0", None)):
+        open(cfg, "w").write(re.sub(r"feature_budget_usd: *\S+", f"feature_budget_usd: {cap}", keep_cfg))
+        r = run(["bash", "scripts/feature-cost.sh", "--session", "s1"], t, env=dict(os.environ, HOME=home))
+        lines = r.stdout.strip().splitlines()
+        if want is None:
+            ok = "Budget:" not in r.stdout
+        else:
+            ok = any(l.startswith("Budget:") and want in l for l in lines) and lines[-1].startswith("Cost ≈")
+        if r.returncode or not ok:
+            bad(f"feature-cost.sh with feature_budget_usd {cap} printed {r.stdout!r} (stderr {r.stderr.strip()!r})")
+    open(cfg, "w").write(keep_cfg)
     r = run(["bash", "scripts/evidence.sh"], t)
     if r.returncode or "# Morphness evidence summary" not in r.stdout or "0 features finished" not in r.stdout or "Traceback" in r.stdout + r.stderr:
         bad(f"evidence.sh on a fresh install printed {r.stdout!r} (stderr {r.stderr.strip()!r})")

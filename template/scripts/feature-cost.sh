@@ -26,6 +26,9 @@ if [ "$(config_get cost.track | tr '[:upper:]' '[:lower:]')" = false ]; then
 fi
 COST_PRICES="$(config_get cost.prices)"
 export COST_PRICES="${COST_PRICES:-harness/MODEL_PRICES.md}"
+# loop.feature_budget_usd: the owner's soft cap per feature in dollars; 0, empty or missing means no cap.
+FEATURE_BUDGET="$(config_get loop.feature_budget_usd)"
+export FEATURE_BUDGET="${FEATURE_BUDGET:-0}"
 
 if ! command -v python3 >/dev/null 2>&1; then
   echo "Cost: not measured (python3 not found)"
@@ -245,6 +248,15 @@ split = ", ".join(f"{role} ${usd:.2f}" for role, usd in sorted(by_role.items(), 
 extra = f"; unpriced models: {', '.join(sorted(unpriced))}" if unpriced else ""
 if missing:
     extra += f"; sessions not found: {', '.join(missing)}"
+try:
+    budget = float(os.environ.get("FEATURE_BUDGET") or 0)
+except ValueError:
+    budget = 0.0
+    print(f"Budget: loop.feature_budget_usd is not a number ({os.environ['FEATURE_BUDGET']}); no cap applied")
+if budget > 0:
+    # Printed before the Cost line, which stays last for the retro and hand-off to paste.
+    over = "OVER, stop and ask the owner" if total > budget else "within"
+    print(f"Budget: ${total:.2f} of ${budget:.2f} ({total / budget * 100:.0f}%), {over}")
 print(f"Cost ≈ ${total:.2f} ({split}); API list prices as of {as_of}{extra}")
 PY
 exit 0
