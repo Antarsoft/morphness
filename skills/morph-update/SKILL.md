@@ -138,6 +138,8 @@ superseded lessons, then new lessons. One short block per item:
 - the title and kind, and the release it shipped in;
 - what changed and why, in a sentence each from the note's sections;
 - why it fits this project (its modules, stack or services);
+- for a lesson, its evidence line (reports, added and last report dates, `fired` of `features`;
+  `lessons/README.md` § Listing a lesson), as context only: don't order or recommend by it;
 - the files it touches here, marking each as new, unedited, edited (merge) or rendered.
 
 End with the counts (`3 kit updates, 2 lessons, 1 already here`). In listing mode, stop here.

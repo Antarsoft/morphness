@@ -77,6 +77,23 @@ Lessons are amended, never replaced.
 
 Superseded lessons are never offered to new installs.
 
+## Listing a lesson
+
+`/morph-init` and `/morph-update` show each offered lesson with its evidence and its age, computed
+from the file, not stored in it:
+
+- **Reports:** the number of `reports` entries (1 when the field is absent). It counts projects
+  that sent evidence, not installs or votes.
+- **Age:** `added`, and the latest `reports` date when it differs, as `added 2026-10-12, last
+  report 2026-10-20`.
+- **Evidence:** `fired` of `features`, as in the file.
+
+Example: `3 reports · added 2026-10-12, last report 2026-10-20 · caught a problem in 2 of 153 features`.
+
+These are context for reading a rule, not a ranking. A new lesson with one report can be right and
+an old one with many can be stale, so the listing never sorts or filters on them, and nothing in the
+wording calls a lesson popular or recommended.
+
 ## Evidence
 
 `fired` is how many features the rule caught a real problem on, from a prune's rule audit;

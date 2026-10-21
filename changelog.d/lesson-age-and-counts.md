@@ -1,0 +1,1 @@
+`/morph-init` and `/morph-update` now show each offered lesson's report count, the date it was added and last reported, and `fired` of `features`, defined in `lessons/README.md` § Listing a lesson. The numbers are context for reading a rule: lessons are not sorted or filtered by them and are never described as popular.
