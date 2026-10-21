@@ -676,7 +676,7 @@ def check(name, fx, t):
         here = case.get("branch", "feature/selftest")
         for k, v in branches.items():
             here = here.replace(k, v)
-        raw = raw.replace("{ROOT}", t)
+        raw = raw.replace("{ROOT}", t).replace("{ENC}", re.sub(r"[^A-Za-z0-9]", "-", t))   # {ENC}: how Claude Code names this project's folder under ~/.claude/projects
         if "raw" in case:
             raw = case["raw"]   # input that is not a tool event at all (broken JSON)
         run(["git", "checkout", "-q", "-B", here], t)
