@@ -149,6 +149,8 @@ From `_harness/`:
   `claude-…` id, has a row in the price table (`cost.prices`, default `harness/MODEL_PRICES.md`).
   Report a missing row and a `Prices as of` date more than six months old. A missing script or table
   is drift: `/morph-update` adds them.
+  Also `loop.feature_budget_usd` (the soft cap): report its value (`0` or missing means off), flag a
+  value that isn't a number of at least 0, and say the cap does nothing while `cost.track` is false.
 - **Open action items:** retro items in `_harness/LEARNINGS.md` still `open` or `approved` but not
   `applied` for more than two features.
 - **Trials:** active trials in `_harness/trials/` (the `Trial` lines `scripts/prune-counter.sh` prints) that have run their length with no decision. A copy that still keeps trials as rows in `_harness/LEARNINGS.md` § Trials: check those, and point to `/morph-update` (update note `2026-10-17-trial-files`).
