@@ -731,11 +731,18 @@ def check(name, fx, t):
 # it: the kit updates added since (updates/ notes) merged against the template at that release.
 # Without local edits the result must equal a fresh install; with edits, they must survive with no
 # conflict. The merged project then goes through the same self-checks as a fresh one.
-RELEASE_NAME = re.compile(r"\d{4}-\d{2}-\d{2}(?:\.[2-9]|\.[1-9]\d+)?")
+RELEASE_NAME = re.compile(r"v\d+\.\d+\.\d+|\d{4}-\d{2}-\d{2}(?:\.[2-9]|\.[1-9]\d+)?")
 
 def release_key(tag):
+    # Dated tags (the first sixteen releases) sort before every semantic version; versions compare as numbers.
+    if tag.startswith("v"):
+        return (1, tuple(int(x) for x in tag[1:].split(".")))
     date, _, n = tag.partition(".")
-    return (date, int(n or 1))
+    return (0, (int(date.replace("-", "")), int(n or 1)))
+
+_order = sorted(["v0.10.0", "2026-10-20.5", "v0.9.0", "2026-10-14.2", "2026-10-14", "2026-10-14.10", "v1.0.0"], key=release_key)
+if _order != ["2026-10-14", "2026-10-14.2", "2026-10-14.10", "2026-10-20.5", "v0.9.0", "v0.10.0", "v1.0.0"]:
+    failures.append(f"update: release tags sort wrong: {_order}")
 
 def frontmatter(text):
     m = re.match(r"^---\n(.*?)\n---\n", text, re.S)

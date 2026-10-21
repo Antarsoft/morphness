@@ -90,14 +90,37 @@ any time. Lessons you contribute stay anonymous whether or not you're listed.
 
 ## Releases
 
-Releases are named by date. The release name, its tag and its `CHANGELOG.md` heading are the date
-(`2026-10-14`); a later release the same day adds its number (`2026-10-14.2`, `2026-10-14.3`).
-`.claude-plugin/plugin.json` → `version` is the date as one number, then the release number of the
-day: `20261014.1.0`, then `20261014.2.0`. Claude Code compares that version as semver and only offers
-a plugin update when it goes up, so every release bumps it; a suffix like `2026.10.14-2` would read as
-a pre-release and sort *below* `2026.10.14`. (The first two releases, `2026-10-12` and `2026-10-13`,
-used the dotted date, `2026.10.13`; the new form sorts above it.) Installs don't carry a version: they record the commit they last synced to, and
-`/morph-update` works out what changed from there.
+Releases are named by semantic version while Morphness is pre-1.0: `v0.13.0`. The tag, the GitHub
+release and the `CHANGELOG.md` heading (`## v0.13.0 (2026-10-21)`) carry that name. The first sixteen
+releases (`2026-10-12` to `2026-10-20.5`) were named by date and keep those tags; the version map at
+the bottom of `CHANGELOG.md` says which version each one is. Installs don't carry a version: they
+record the commit they last synced to, and `/morph-update` works out what changed from there.
+
+**Bump rules.** The public surface is the `harness.config.yml` keys, the `_harness/` record formats, the
+update-note format, the skill names and the four agent roles.
+
+- Patch (`v0.13.1`): only fixes (`kind: fix` notes), wording and script fixes.
+- Minor (`v0.14.0`): everything else that reaches installs: a new module, skill or config key, a changed
+  rule. Before 1.0 a minor may also change the public surface, and we still write the migration note.
+- Major: from 1.0 on, a change to the public surface that needs manual migration.
+
+`scripts/release-changelog.sh --suggest` proposes the next version from the unreleased notes; the
+maintainer decides.
+
+**1.0.** 1.0 is a promise of stability, not a feature list. It ships when: the public surface is
+frozen (changes need a major bump and a migration note); an install from the oldest supported release
+updates cleanly to current (the self-test replays it); the guard's accepted gaps are closed or
+documented as known limits; a few installs besides ours have run a full retro and prune cycle and a
+`/morph-update` across two releases without kit-caused data loss; the plugin directory listing is
+approved; and no safety fix (guard, secrets, destructive commands) has been needed for 30 days. The
+GitHub milestone "1.0" tracks it. Everything else is 0.x work.
+
+**The plugin build number.** `.claude-plugin/plugin.json` → `version` is not the release version. Claude
+Code offers a plugin update only when that number rises as semver, and `0.13.0` is below the dated
+`20261020.5.0`, so it stays the date as one number plus the release number of the day
+(`20261021.1.0`, then `20261021.2.0`). `scripts/release-changelog.sh` sets it; `check-updates.sh`
+checks that it carries the release date and is above every earlier one. (The first two releases used the
+dotted date, `2026.10.13`; the new form sorts above it.)
 
 **When to cut one**
 
@@ -109,11 +132,11 @@ used the dotted date, `2026.10.13`; the new form sorts above it.) Installs don't
 
 **How**
 
-1. A PR runs `scripts/release-changelog.sh <release>`, which builds `## <release>` in `CHANGELOG.md` from
-   the `changelog.d/` fragments (and any text left under `## Unreleased`), deletes the fragments and sets
-   each update note's `release` from `unreleased` to that name. The PR also bumps `plugin.json` →
-   `version`. `scripts/check-updates.sh` checks that the three agree.
-2. After it merges, a maintainer creates the GitHub release with tag `<release>` on the merge commit,
+1. A PR runs `scripts/release-changelog.sh <vX.Y.Z>`, which builds `## <vX.Y.Z> (<date>)` in `CHANGELOG.md`
+   from the `changelog.d/` fragments (and any text left under `## Unreleased`), deletes the fragments,
+   sets each update note's `release` from `unreleased` to that name and bumps `plugin.json` → `version`
+   to the plugin build number. `scripts/check-updates.sh` checks that the three agree.
+2. After it merges, a maintainer creates the GitHub release with tag `<vX.Y.Z>` on the merge commit,
    using the changelog section as the release notes.
 
 By taking part you agree to the [Code of Conduct](CODE_OF_CONDUCT.md). Security issues go through

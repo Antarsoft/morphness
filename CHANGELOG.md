@@ -1,6 +1,8 @@
 # Changelog
 
-Dated releases, newest first. Installed copies pick up kit changes (each with a note in
+Releases, newest first. They are named by semantic version (`v0.13.0`); the releases before that were
+named by date, and the [version map](#version-map-for-the-dated-releases) at the bottom gives each one
+its version. Installed copies pick up kit changes (each with a note in
 [updates/](updates/)) and new matching lessons through `/morph-update`; this file lists every change.
 When releases are cut: [CONTRIBUTING.md](CONTRIBUTING.md) § Releases.
 
@@ -433,3 +435,27 @@ First public release.
 - Catalog: 112 lessons from Twinpage (68 practice, 24 stack, 20 service); profile
   `web-saas-nextjs-supabase`.
 - Repo: README, contributing guide, code of conduct, security policy and issue templates.
+
+## Version map for the dated releases
+
+The first releases were named by date. Their tags, GitHub releases and headings above keep those names;
+this table says which version each one is. Everything below 1.0 is pre-1.0 (CONTRIBUTING.md § Releases).
+
+| Release | Version | What it was |
+|---|---|---|
+| 2026-10-12 | v0.1.0 | First public release |
+| 2026-10-13 | v0.2.0 | Upstream updates, `/morph-update` |
+| 2026-10-13.2 | v0.3.0 | Environments, branch protection, draft PRs, PR template, release tags |
+| 2026-10-14 | v0.4.0 | `merge_by_agent`, default branch, prune counter, apps |
+| 2026-10-14.2 | v0.4.1 | Apply branch protection, delete merged branches |
+| 2026-10-15 | v0.5.0 | Plain-language setup, research mode |
+| 2026-10-15.2 | v0.6.0 | Feature cost, connector actions, retro soft limit |
+| 2026-10-16 | v0.7.0 | Structure-review fixes |
+| 2026-10-19 | v0.8.0 | Post-merge review fixes, guard, trials |
+| 2026-10-19.2 | v0.9.0 | Hostile-audit fixes |
+| 2026-10-19.3 | v0.9.1 | Guard batch 2, self-test, older-install update fixes |
+| 2026-10-20 | v0.9.2 | Agent YAML fix, always-loaded size ceiling |
+| 2026-10-20.2 | v0.10.0 | Evidence summary |
+| 2026-10-20.3 | v0.10.1 | Evidence reads older records |
+| 2026-10-20.4 | v0.11.0 | `/morph-share` named or anonymous |
+| 2026-10-20.5 | v0.12.0 | Fewer permission prompts, `guard.pr_writes` |
