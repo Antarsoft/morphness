@@ -5,7 +5,10 @@ kind: checklist-item
 target: harness/PLAN_CHECKLIST.md
 in_template: true
 tags: { stack: [], service: [], area: [ui, layout] }
-evidence: { fired: 2, features: 153, source: "Twinpage prune audits" }
+evidence: { fired: 3, features: 167, source: "prune audits" }
+reports:
+  - { fired: 2, features: 153, source: "Twinpage prune audits", added: 2026-10-12 }
+  - { fired: 1, features: 14, source: "prune audits", added: 2026-10-21 }
 added: 2026-10-12
 ---
 
@@ -15,11 +18,11 @@ Seed checklist item 20 in `harness/PLAN_CHECKLIST.md`. Install it there, or in `
 
 ## Rule
 
-**Measured layout.** A size, overflow or wrapping AC names the worst-case input (schema maximum, unbroken and spaced) and the viewports, measures the existing element first, and is run once in the same browser build CI or the deploy uses. Tables and multi-column layouts get each column's width per breakpoint. "Nothing is cut off" is asserted with box measurements, not text content. An AC that asserts browser behavior (CSS, CSP, focus, opener) makes a spike the Full-stack engineer's first step.
+**Measured layout.** A size, overflow or wrapping AC names the worst-case input (schema maximum, unbroken and spaced) and the viewports, measures the existing element first, and is run once in the same browser build CI or the deploy uses. An AC that counts elements (rows, cards, items shown) names the viewport, since counts differ by viewport. Tables and multi-column layouts get each column's width per breakpoint. "Nothing is cut off" is asserted with box measurements, not text content. An AC that asserts browser behavior (CSS, CSP, focus, opener) makes a spike the Full-stack engineer's first step.
 
 ## Why
 
-A table was 2 px too wide only on CI's browser build; a size AC asked for a box larger than the element could be.
+A table was 2 px too wide only on CI's browser build; a size AC asked for a box larger than the element could be; a count AC passed at one viewport and failed at another.
 
 ## How to check
 
