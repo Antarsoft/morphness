@@ -256,6 +256,11 @@ def readme_promises():
         keys.append(strip(m.group(1) or m.group(2)))
     return keys
 
+# The lesson counts on the README and the site are hardcoded; they must match lessons/.
+stats = subprocess.run([os.path.join(root, "scripts/lesson-stats.sh"), "--check"], capture_output=True, text=True)
+if stats.returncode != 0:
+    failures.append("lesson counts are stale: " + stats.stderr.strip().replace("\n", "; "))
+
 claims_path = os.path.join(root, "tests/claims.jsonl")
 claims = [json.loads(l) for l in read(claims_path).splitlines() if l.strip()]
 promises = readme_promises()
