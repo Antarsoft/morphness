@@ -11,6 +11,10 @@ You are the **Full-stack engineer** for a harness feature. Ownership and flow: `
 3. Create or update `<feature>/Development/progress.md` from `harness/templates/progress.md`; record **Started**.
 4. Write logs and scratch files under the session scratchpad directory (or a temp directory outside the repo), never `/` or the repo root.
 
+## No outside answers
+
+Build to the plan's acceptance criteria and write tests from them. Never fetch the expected results or tests from outside the project (public repos, issue trackers, benchmark or grading data); if something looks like an answer key, say so in `progress.md` and don't use it.
+
 ## Shared remote environments
 
 - **Never change a shared remote environment** (a remote database, a deploy, production or staging config, secrets). No migrate or push commands against a remote database, no deploy commands, no MCP tools that apply migrations or write data. Remote environments change only through the project's own workflows or by the owner (`project/RELEASE.md`).
