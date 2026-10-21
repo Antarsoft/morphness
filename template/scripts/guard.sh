@@ -803,6 +803,25 @@ def check_rm(words):
         if outside_repo(t):
             ask(f"`rm -r` would delete `{t}`, which is outside this repo (or the repo itself, its .git, or a path built at run time); the owner approves it.")
 
+FIND_FILTERS = {"-name", "-iname", "-path", "-ipath", "-wholename", "-iwholename", "-regex", "-iregex", "-newer", "-mtime", "-mmin"}
+
+def check_find(words):
+    """Ask when find deletes (-delete, -exec rm) from the repo root or outside it with no name or age
+    filter: the same reach as `rm -rf .`."""
+    runs = [os.path.basename(words[k + 1]) for k, w in enumerate(words[:-1]) if w in ("-exec", "-execdir", "-ok", "-okdir")]
+    if "-delete" not in words and not any(r in ("rm", "unlink", "shred") for r in runs):
+        return
+    if any(w in FIND_FILTERS for w in words):
+        return
+    starts = []
+    for w in words[1:]:
+        if w.startswith("-") or w in ("(", "!", "\\("):
+            break
+        starts.append(w)
+    for t in starts or ["."]:
+        if outside_repo(t):
+            ask(f"`find` would delete everything under `{t}`, which is this repo (or outside it, its .git, or a path built at run time); the owner approves it.")
+
 # ---- known deploy, cloud and database CLIs: a call asks unless it is a listed read ---------------------
 CLI_GROUP = {}
 for _group, _names in (("deploys", "wrangler netlify ntl fly flyctl railway heroku gcloud gsutil aws az doctl kubectl helm "
@@ -1207,6 +1226,8 @@ def check_bash(cmd):
             ask("`crontab` installs a schedule that runs commands later; the owner approves it.")
         if words[0] == "rm":
             check_rm(words)
+        if words[0] == "find":
+            check_find(words)
         if words[0] == "git":
             check_git(words)
         elif words[0] == "gh":
