@@ -4,7 +4,7 @@ title: Steps that take minutes don't run inline in a page render
 kind: checklist-item
 target: harness/PLAN_CHECKLIST.md
 tags: { stack: [nextjs], service: [], area: [concurrency, background-jobs, performance] }
-evidence: { fired: 3, features: 28, source: "prune audits" }
+evidence: { fired: 3, features: 14, source: "prune audits" }
 added: 2026-10-20
 reports:
   - { fired: 2, features: 14, source: "prune audits", added: 2026-10-20 }
