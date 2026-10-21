@@ -96,8 +96,9 @@ releases (`2026-10-12` to `2026-10-20.5`) were named by date and keep those tags
 the bottom of `CHANGELOG.md` says which version each one is. Installs don't carry a version: they
 record the commit they last synced to, and `/morph-update` works out what changed from there.
 
-**Bump rules.** The public surface is the `harness.config.yml` keys, the `_harness/` record formats, the
-update-note format, the skill names and the four agent roles.
+**Bump rules.** The public surface is what [STABILITY.md](STABILITY.md) § Stable lists: the
+`harness.config.yml` keys, the `_harness/` record formats, the update-note format, the skill names, the
+agent roles and the script entry points.
 
 - Patch (`v0.13.1`): only fixes (`kind: fix` notes), wording and script fixes.
 - Minor (`v0.14.0`): everything else that reaches installs: a new module, skill or config key, a changed
@@ -107,13 +108,32 @@ update-note format, the skill names and the four agent roles.
 `scripts/release-changelog.sh --suggest` proposes the next version from the unreleased notes; the
 maintainer decides.
 
-**1.0.** 1.0 is a promise of stability, not a feature list. It ships when: the public surface is
-frozen (changes need a major bump and a migration note); an install from the oldest supported release
-updates cleanly to current (the self-test replays it); the guard's accepted gaps are closed or
-documented as known limits; a few installs besides ours have run a full retro and prune cycle and a
-`/morph-update` across two releases without kit-caused data loss; the plugin directory listing is
-approved; and no safety fix (guard, secrets, destructive commands) has been needed for 30 days. The
-GitHub milestone "1.0" tracks it. Everything else is 0.x work.
+**1.0.** 1.0 is a promise of stability, not a feature list: [STABILITY.md](STABILITY.md) says what it
+covers. It ships when all six of these hold. This list is the tracker.
+
+Work in the kit:
+
+1. **Surface frozen.** STABILITY.md lists every stable key, record form and entry point, and
+   `harness.config.yml` carries `harness_schema: 1`, which `/morph-doctor` checks.
+2. **Update tested.** The self-test renders an install at v0.13.0, the oldest supported release,
+   updates it to the current kit and runs the doctor's checks and the self-test on the result.
+3. **Guard gaps accounted for.** Every finding of the guard audit is fixed or listed in
+   `tests/known-gaps.md`, which the trust page shows.
+
+Then a release candidate: a 0.x release named as the candidate in its notes. Fixes to it are
+patches. The last three need time and other people, and run against it:
+
+4. **Outside installs.** Three projects not run by the maintainers, on at least two stacks, have
+   each done 20 or more features, a retro and a prune, and a `/morph-update` across two releases,
+   with no data lost because of the kit. A `/morph-share` summary (named or anonymous) is the proof.
+5. **Plugin directory.** The plugin is listed, or the review declined it and the reason is written
+   down here.
+6. **No open safety bug.** The candidate has been out for 30 days, and on release day no known bug
+   in the guard, secret handling or destructive-command rules is open. A safety fix shipped in that
+   window doesn't restart the clock unless it changes the stable surface.
+
+After 1.0, v0.13.0 and later get safety fixes for 60 days; dated releases get none
+(STABILITY.md § Supported releases). Everything not on this list is 0.x work.
 
 **The plugin build number.** `.claude-plugin/plugin.json` → `version` is not the release version. Claude
 Code offers a plugin update only when that number rises as semver, and `0.13.0` is below the dated
