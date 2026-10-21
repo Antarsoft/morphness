@@ -2,6 +2,10 @@
 # Prose (stack, commands, risk notes) lives in project/*.md. /morph-init writes this file;
 # edit it by hand any time, then run /morph-doctor. /morph-update brings in upstream changes.
 
+# The layout version of this file and of _harness/ (STABILITY.md in the Morphness repo). It rises only
+# with a major Morphness release, whose update note migrates the copy and sets it. Don't edit it by hand.
+harness_schema: 1
+
 project:
   name: "{{project.name}}"
   description: "{{project.description}}"

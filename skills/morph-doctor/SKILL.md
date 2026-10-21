@@ -18,6 +18,11 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
 (written by an older install): offer to delete it, its `project/STACK.md` row and its name from
 `checks`, as render.md § 3b now does. Also:
 
+- **Schema:** `harness.config.yml` → `harness_schema` is `1`, the number this skill knows. Missing: a
+  copy installed before the key existed; point to `/morph-update` (update note `2026-10-21-harness-schema`).
+  Lower: the kit has moved to a new major version and this copy hasn't; point to `/morph-update`, whose
+  migration note sets the new number. Higher: the copy is newer than this plugin; say so and suggest
+  updating the plugin before trusting the rest of this report.
 - Every module in `modules` has its folder; no folder under `harness/modules/` is missing from
   `modules` (stale rules agents would read). Offer the fix through `/morph-module add <name>` (a
   module listed but never installed) or `/morph-module remove <name>` (a folder left behind).
