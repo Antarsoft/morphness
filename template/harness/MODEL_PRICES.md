@@ -2,6 +2,8 @@
 
 What `scripts/feature-cost.sh` multiplies token counts by to estimate what a feature would cost on the API (`harness/SETUP.md` § Retrospective → Feature cost). The figure is an estimate for comparing features, not a bill: it is the same whether the owner pays per call, uses a Pro or Max plan, or runs through another provider.
 
+`/morph-init` reads the ratio between models from this table to tell the owner how the Opus preset compares with All Sonnet (relative, never dollars).
+
 Prices as of: 2026-10-06
 
 The public Anthropic API list prices, in US dollars per million tokens. Kit updates refresh this table when prices change or a model is added. To use your own rates instead (Amazon Bedrock, Google Cloud, a negotiated discount), edit the numbers and the date above; `/morph-update` keeps your edits when it merges a later price update. A model that isn't listed shows as "unpriced", never as $0. A model cell ending in `(prompt > N)` is the rate for requests whose whole prompt (input plus cache) is above N tokens.

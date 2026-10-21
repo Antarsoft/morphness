@@ -237,6 +237,16 @@ and ask "Keep it?" (any cell can change).
   the high researcher; Sonnet elsewhere. For projects where a missed edge case is costly and cost
   matters less.
 
+Say how the two compare on cost, in relative terms only, never as dollars: "All Sonnet = 1x. The Opus
+preset costs roughly 1.5x to 2x per feature: only the Technical Lead, Full-stack and the high researcher
+change, and Opus is about twice Sonnet per token at the list prices in `harness/MODEL_PRICES.md`
+(read the ratio from that table, don't quote it from memory). A rough comparison, not a quote: real
+cost depends on the feature, the codebase and how many QA rounds it takes. `xhigh` effort costs
+noticeably more than `high`, which is why it is only for risky cores." Then add: "After every feature
+the hand-off shows what it actually cost on your project (`scripts/feature-cost.sh`); after about three
+features the prune shows your own average, and you can switch presets then." Leave this paragraph out
+when `cost.track` is off.
+
 | Role | Model (All Sonnet / Opus preset) | Effort |
 |------|-------|--------|
 | Technical Lead (main chat) | sonnet / opus | high |
