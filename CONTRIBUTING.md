@@ -2,6 +2,15 @@
 
 Morphness gets better when people send back what worked. The easiest contribution is a lesson.
 
+## Start here
+
+New to the project? These each take under an hour:
+
+- **Write a lesson** for a stack we don't cover yet: see the issues labeled [`good first lesson`](https://github.com/Antarsoft/morphness/labels/good%20first%20lesson).
+- **Anything else small** (a profile, a docs page, a test case, a showcase row, a catalog entry): see [`good first issue`](https://github.com/Antarsoft/morphness/labels/good%20first%20issue).
+
+Comment on the issue before you start so we don't double up. If there's no PR after 7 days we'll hand it to someone else, no hard feelings. Run `scripts/kit-selftest.sh` before you open the PR.
+
 ## Lessons
 
 1. In your project, run `/morph-share` after a prune. It picks rules your audit shows **fired**,
