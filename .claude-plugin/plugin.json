@@ -25,7 +25,7 @@
     "self-improving",
     "developer-tools"
   ],
-  "homepage": "https://antarsoft.github.io/morphness",
-  "privacyPolicyUrl": "https://antarsoft.github.io/morphness/privacy.html",
+  "homepage": "https://morphness.dev",
+  "privacyPolicyUrl": "https://morphness.dev/privacy.html",
   "repository": "https://github.com/antarsoft/morphness"
 }

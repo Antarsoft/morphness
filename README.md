@@ -13,7 +13,7 @@ and gets better every time someone shares a lesson.
 
 💜 **From the community, for the community** 💜
 
-[![Tests](https://img.shields.io/endpoint?style=flat-square&url=https%3A%2F%2Fantarsoft.github.io%2Fmorphness%2Ftrust%2Fbadge.json)](https://antarsoft.github.io/morphness/trust.html)
+[![Tests](https://img.shields.io/endpoint?style=flat-square&url=https%3A%2F%2Fmorphness.dev%2Ftrust%2Fbadge.json)](https://morphness.dev/trust.html)
 [![License: MIT](https://img.shields.io/badge/license-MIT-7C3AED?style=flat-square)](LICENSE)
 [![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-D97757?style=flat-square&logo=claude&logoColor=white)](#-install)
 [![Stack agnostic](https://img.shields.io/badge/stack-agnostic-0EA5E9?style=flat-square)](#-what-you-get)
@@ -22,7 +22,7 @@ and gets better every time someone shares a lesson.
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-22C55E?style=flat-square)](CONTRIBUTING.md)
 [![Discord](https://img.shields.io/badge/Discord-join-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/zcZTAQq)
 
-🌐 [Website](https://antarsoft.github.io/morphness) · 🚀 [Install](#-install) · ✨ [Why](#-why-use-it) · 🧠 [How it works](#-how-it-works) · 📦 [What you get](#-what-you-get) · 🧰 [Make it yours](#-make-it-yours) · 🦋 [How it morphs](#-how-it-morphs) · 🌍 [Community](#-community-lessons) · 🤝 [Contributing](CONTRIBUTING.md) · <img src="https://cdn.simpleicons.org/discord/5865F2" alt="" height="14"> [Discord](https://discord.gg/zcZTAQq)
+🌐 [Website](https://morphness.dev) · 🚀 [Install](#-install) · ✨ [Why](#-why-use-it) · 🧠 [How it works](#-how-it-works) · 📦 [What you get](#-what-you-get) · 🧰 [Make it yours](#-make-it-yours) · 🦋 [How it morphs](#-how-it-morphs) · 🌍 [Community](#-community-lessons) · 🤝 [Contributing](CONTRIBUTING.md) · <img src="https://cdn.simpleicons.org/discord/5865F2" alt="" height="14"> [Discord](https://discord.gg/zcZTAQq)
 
 </div>
 
@@ -34,7 +34,7 @@ on risky commands, and a retro loop that turns misses into rules. It is a set of
 `CLAUDE.md` / `AGENTS.md` rules, checklists and a review loop for AI coding agents. If you have been writing those by hand (what people now call *harness engineering* or
 *context engineering*), Morphness is that work packaged, with a loop that keeps it current.
 
-Every release is tested, and the results are public, including the known limits: [see the latest run](https://antarsoft.github.io/morphness/trust.html).
+Every release is tested, and the results are public, including the known limits: [see the latest run](https://morphness.dev/trust.html).
 
 You talk to a **Technical Lead** in the main chat. It plans each feature with testable acceptance
 criteria and waits for your approval, then hands the work to a **Full-stack** agent and a mandatory
@@ -65,7 +65,7 @@ for clear requests so that process costs little when there's nothing to plan.
 | ✅ **QA is never skipped** | Every feature gets a separate QA agent that runs your checks and records the evidence, so "done" means verified, not claimed. |
 | 🔁 **Learns from its own mistakes** | Retros turn real misses (a failed QA round, a review fix, a bug you report after a pass) into rules, and prunes delete rules that never fire, so the instructions your agents read stay short and earned. |
 | 🛡️ **Safe by default** | A guard hook checks every tool call before it runs. It blocks pushes to environment branches, force-pushes, secret and credential files (`.env*`, keys, cloud credentials), a bare `env`, and remote database writes. It asks you before deploys, publishes, merges, connector writes, unknown downloads and edits to its own files, and blocks everything if it can't run. It stops accidents, not intent, so branch protection and environment secrets on the host stay the real guard. [Exact list](template/AGENTS.md#permissions-for-this-project). |
-| 🧪 **Tested as a kit** | Every change to the kit runs a self-test that installs it into sample projects (Next.js with Supabase among them), replays the guard's cases and brings the previous release up to date, so an update doesn't break an install that already works. The [results page](https://antarsoft.github.io/morphness/trust.html) shows the latest run, with public scanners and the known limits. |
+| 🧪 **Tested as a kit** | Every change to the kit runs a self-test that installs it into sample projects (Next.js with Supabase among them), replays the guard's cases and brings the previous release up to date, so an update doesn't break an install that already works. The [results page](https://morphness.dev/trust.html) shows the latest run, with public scanners and the known limits. |
 | 💲 **Know what each feature costs** | Every feature records an estimated dollar cost from Claude Code's own transcripts, split by agent, so you can compare features and tune effort. Useful as an estimate on a Pro or Max plan too. |
 | 🧰 **Yours to configure** | Branches, environments, checks, modules, risk areas, models, effort and loop limits all live in one `harness.config.yml`. Every rule and checklist is a plain Markdown file in your repo, so you can change anything. |
 | 🧩 **Works on any codebase** | New or existing repos, including ones that already have a `CLAUDE.md`, `AGENTS.md` or their own agent setup, monorepos with several apps, and folders that aren't a git repo or online yet. Any language or framework. |

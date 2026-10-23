@@ -34,7 +34,7 @@ URLS = {
     "gitleaks": "https://github.com/gitleaks/gitleaks",
     "skillspector": "https://github.com/NVIDIA/SkillSpector",
 }
-SITE = "https://antarsoft.github.io/morphness/"
+SITE = "https://morphness.dev/"
 REPO = "https://github.com/antarsoft/morphness"
 
 out_dir = os.path.join(root, "docs")
