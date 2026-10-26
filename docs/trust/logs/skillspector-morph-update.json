@@ -2,7 +2,7 @@
  "skill": {
   "name": "morph-update",
   "source": "<repo>/skills/morph-update",
-  "scanned_at": "2026-10-20T17:14:42.459011+00:00"
+  "scanned_at": "2026-10-26T04:41:11.443774+00:00"
  },
  "risk_assessment": {
   "score": 0,
@@ -14,9 +14,9 @@
   {
    "path": "SKILL.md",
    "type": "markdown",
-   "lines": 228,
+   "lines": 232,
    "executable": false,
-   "size_bytes": 18310,
+   "size_bytes": 18967,
    "source_url": null,
    "source_identity": null,
    "source_digest": null
@@ -150,15 +150,40 @@
  "execution_successful": true,
  "analysis_completeness": {
   "total_components": 1,
-  "scanned_components": 1,
-  "coverage_percent": 100.0,
+  "scanned_components": 0,
+  "coverage_percent": 0.0,
   "is_complete": false,
   "status": "partial",
   "execution_successful": true,
-  "fully_inspected_files": 1,
-  "partially_inspected_files": 0,
+  "fully_inspected_files": 0,
+  "partially_inspected_files": 1,
   "entirely_uninspected_files": 0,
   "ledger_exceptions": [
+   {
+    "outcome": "partial",
+    "phase": "static",
+    "reason_code": "obfuscated_instruction_text",
+    "message": "Obfuscated instruction text could not be fully evaluated by the deterministic layer.",
+    "path": "SKILL.md",
+    "start_line": null,
+    "end_line": null,
+    "fatal": false,
+    "analyzers": [
+     "static_patterns_agent_snooping",
+     "static_patterns_anti_refusal",
+     "static_patterns_deserialization",
+     "static_patterns_excessive_agency",
+     "static_patterns_harmful_content",
+     "static_patterns_memory_poisoning",
+     "static_patterns_privilege_escalation",
+     "static_patterns_prompt_injection",
+     "static_patterns_rogue_agent",
+     "static_patterns_ssrf",
+     "static_patterns_supply_chain",
+     "static_patterns_system_prompt_leakage",
+     "static_patterns_tool_misuse"
+    ]
+   },
    {
     "outcome": "partial",
     "phase": "reference_resolution",
@@ -355,8 +380,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 89,
-    "end_line": 89,
+    "start_line": 88,
+    "end_line": 88,
     "fatal": false
    },
    {
@@ -365,8 +390,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 95,
-    "end_line": 95,
+    "start_line": 90,
+    "end_line": 90,
     "fatal": false
    },
    {
@@ -375,8 +400,18 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 98,
-    "end_line": 98,
+    "start_line": 91,
+    "end_line": 91,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 96,
+    "end_line": 96,
     "fatal": false
    },
    {
@@ -405,8 +440,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 108,
-    "end_line": 108,
+    "start_line": 101,
+    "end_line": 101,
     "fatal": false
    },
    {
@@ -425,8 +460,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 111,
-    "end_line": 111,
+    "start_line": 110,
+    "end_line": 110,
     "fatal": false
    },
    {
@@ -435,8 +470,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 117,
-    "end_line": 117,
+    "start_line": 112,
+    "end_line": 112,
     "fatal": false
    },
    {
@@ -465,8 +500,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 178,
-    "end_line": 178,
+    "start_line": 120,
+    "end_line": 120,
     "fatal": false
    },
    {
@@ -475,8 +510,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 179,
-    "end_line": 179,
+    "start_line": 142,
+    "end_line": 142,
     "fatal": false
    },
    {
@@ -485,8 +520,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 180,
-    "end_line": 180,
+    "start_line": 181,
+    "end_line": 181,
     "fatal": false
    },
    {
@@ -495,8 +530,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 185,
-    "end_line": 185,
+    "start_line": 182,
+    "end_line": 182,
     "fatal": false
    },
    {
@@ -505,8 +540,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 190,
-    "end_line": 190,
+    "start_line": 183,
+    "end_line": 183,
     "fatal": false
    },
    {
@@ -515,8 +550,18 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 191,
-    "end_line": 191,
+    "start_line": 188,
+    "end_line": 188,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 193,
+    "end_line": 193,
     "fatal": false
    },
    {
@@ -535,8 +580,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 195,
-    "end_line": 195,
+    "start_line": 197,
+    "end_line": 197,
     "fatal": false
    },
    {
@@ -545,8 +590,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 196,
-    "end_line": 196,
+    "start_line": 198,
+    "end_line": 198,
     "fatal": false
    },
    {
@@ -565,8 +610,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 204,
-    "end_line": 204,
+    "start_line": 202,
+    "end_line": 202,
     "fatal": false
    },
    {
@@ -575,8 +620,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 205,
-    "end_line": 205,
+    "start_line": 207,
+    "end_line": 207,
     "fatal": false
    },
    {
@@ -585,8 +630,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 209,
-    "end_line": 209,
+    "start_line": 208,
+    "end_line": 208,
     "fatal": false
    },
    {
@@ -605,8 +650,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 216,
-    "end_line": 216,
+    "start_line": 213,
+    "end_line": 213,
     "fatal": false
    },
    {
@@ -615,8 +660,28 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 228,
-    "end_line": 228,
+    "start_line": 215,
+    "end_line": 215,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 220,
+    "end_line": 220,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 232,
+    "end_line": 232,
     "fatal": false
    }
   ],
@@ -750,20 +815,20 @@
    },
    {
     "analyzer_id": "static_patterns_agent_snooping",
-    "status": "completed",
+    "status": "degraded",
     "planned_work": 1,
-    "completed": 1,
-    "partial": 0,
+    "completed": 0,
+    "partial": 1,
     "skipped": 0,
     "failed": 0,
     "unaccounted": 0
    },
    {
     "analyzer_id": "static_patterns_anti_refusal",
-    "status": "completed",
+    "status": "degraded",
     "planned_work": 1,
-    "completed": 1,
-    "partial": 0,
+    "completed": 0,
+    "partial": 1,
     "skipped": 0,
     "failed": 0,
     "unaccounted": 0
@@ -780,40 +845,40 @@
    },
    {
     "analyzer_id": "static_patterns_deserialization",
-    "status": "completed",
+    "status": "degraded",
     "planned_work": 1,
-    "completed": 1,
-    "partial": 0,
+    "completed": 0,
+    "partial": 1,
     "skipped": 0,
     "failed": 0,
     "unaccounted": 0
    },
    {
     "analyzer_id": "static_patterns_excessive_agency",
-    "status": "completed",
+    "status": "degraded",
     "planned_work": 1,
-    "completed": 1,
-    "partial": 0,
+    "completed": 0,
+    "partial": 1,
     "skipped": 0,
     "failed": 0,
     "unaccounted": 0
    },
    {
     "analyzer_id": "static_patterns_harmful_content",
-    "status": "completed",
+    "status": "degraded",
     "planned_work": 1,
-    "completed": 1,
-    "partial": 0,
+    "completed": 0,
+    "partial": 1,
     "skipped": 0,
     "failed": 0,
     "unaccounted": 0
    },
    {
     "analyzer_id": "static_patterns_memory_poisoning",
-    "status": "completed",
+    "status": "degraded",
     "planned_work": 1,
-    "completed": 1,
-    "partial": 0,
+    "completed": 0,
+    "partial": 1,
     "skipped": 0,
     "failed": 0,
     "unaccounted": 0
@@ -830,70 +895,70 @@
    },
    {
     "analyzer_id": "static_patterns_privilege_escalation",
-    "status": "completed",
+    "status": "degraded",
     "planned_work": 1,
-    "completed": 1,
-    "partial": 0,
+    "completed": 0,
+    "partial": 1,
     "skipped": 0,
     "failed": 0,
     "unaccounted": 0
    },
    {
     "analyzer_id": "static_patterns_prompt_injection",
-    "status": "completed",
+    "status": "degraded",
     "planned_work": 1,
-    "completed": 1,
-    "partial": 0,
+    "completed": 0,
+    "partial": 1,
     "skipped": 0,
     "failed": 0,
     "unaccounted": 0
    },
    {
     "analyzer_id": "static_patterns_rogue_agent",
-    "status": "completed",
+    "status": "degraded",
     "planned_work": 1,
-    "completed": 1,
-    "partial": 0,
+    "completed": 0,
+    "partial": 1,
     "skipped": 0,
     "failed": 0,
     "unaccounted": 0
    },
    {
     "analyzer_id": "static_patterns_ssrf",
-    "status": "completed",
+    "status": "degraded",
     "planned_work": 1,
-    "completed": 1,
-    "partial": 0,
+    "completed": 0,
+    "partial": 1,
     "skipped": 0,
     "failed": 0,
     "unaccounted": 0
    },
    {
     "analyzer_id": "static_patterns_supply_chain",
-    "status": "completed",
+    "status": "degraded",
     "planned_work": 1,
-    "completed": 1,
-    "partial": 0,
+    "completed": 0,
+    "partial": 1,
     "skipped": 0,
     "failed": 0,
     "unaccounted": 0
    },
    {
     "analyzer_id": "static_patterns_system_prompt_leakage",
-    "status": "completed",
+    "status": "degraded",
     "planned_work": 1,
-    "completed": 1,
-    "partial": 0,
+    "completed": 0,
+    "partial": 1,
     "skipped": 0,
     "failed": 0,
     "unaccounted": 0
    },
    {
     "analyzer_id": "static_patterns_tool_misuse",
-    "status": "completed",
+    "status": "degraded",
     "planned_work": 1,
-    "completed": 1,
-    "partial": 0,
+    "completed": 0,
+    "partial": 1,
     "skipped": 0,
     "failed": 0,
     "unaccounted": 0
@@ -1084,7 +1149,7 @@
     "source_path": "SKILL.md",
     "line": 77,
     "column": 16,
-    "evidence": "`read(HEAD, .claude-plugin/plugin.json)` \u2192 `version` (`YYYYMMDD.N.0`; a legacy `2026.10.12` counts as",
+    "evidence": "`read(HEAD, .claude-plugin/plugin.json)` \u2192 `version` (`YYYYMMDD.N.0`, the plugin's build number, which stays date-shaped so Claude Code keeps offering plugin up",
     "target_path": null,
     "status": "missing",
     "disposition": "partial",
@@ -1094,17 +1159,7 @@
     "source_path": "SKILL.md",
     "line": 77,
     "column": 59,
-    "evidence": "`read(HEAD, .claude-plugin/plugin.json)` \u2192 `version` (`YYYYMMDD.N.0`; a legacy `2026.10.12` counts as",
-    "target_path": null,
-    "status": "missing",
-    "disposition": "partial",
-    "reference_kind": "quoted_or_code"
-   },
-   {
-    "source_path": "SKILL.md",
-    "line": 77,
-    "column": 84,
-    "evidence": "`read(HEAD, .claude-plugin/plugin.json)` \u2192 `version` (`YYYYMMDD.N.0`; a legacy `2026.10.12` counts as",
+    "evidence": "`read(HEAD, .claude-plugin/plugin.json)` \u2192 `version` (`YYYYMMDD.N.0`, the plugin's build number, which stays date-shaped so Claude Code keeps offering plugin up",
     "target_path": null,
     "status": "missing",
     "disposition": "partial",
@@ -1113,8 +1168,28 @@
    {
     "source_path": "SKILL.md",
     "line": 78,
-    "column": 5,
-    "evidence": "`20261012.1.0`). When the plugin is older, the notes may expect steps these instructions don't",
+    "column": 14,
+    "evidence": "version, `v0.13.0`, is its tag; a legacy `2026.10.12` counts as `20261012.1.0`). When the plugin is older, the notes may expect steps these instructions don't",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 78,
+    "column": 46,
+    "evidence": "version, `v0.13.0`, is its tag; a legacy `2026.10.12` counts as `20261012.1.0`). When the plugin is older, the notes may expect steps these instructions don't",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 78,
+    "column": 69,
+    "evidence": "version, `v0.13.0`, is its tag; a legacy `2026.10.12` counts as `20261012.1.0`). When the plugin is older, the notes may expect steps these instructions don't",
     "target_path": null,
     "status": "missing",
     "disposition": "partial",
@@ -1152,9 +1227,9 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 89,
-    "column": 39,
-    "evidence": "release the same day adds `.N` (`2026-10-14.2`); order them by date, then by that number (none",
+    "line": 88,
+    "column": 80,
+    "evidence": "- Else the oldest release tag (the first public release). Release tags are `vMAJOR.MINOR.PATCH` (`v0.13.0`) from the first",
     "target_path": null,
     "status": "missing",
     "disposition": "partial",
@@ -1162,7 +1237,47 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 95,
+    "line": 88,
+    "column": 102,
+    "evidence": "- Else the oldest release tag (the first public release). Release tags are `vMAJOR.MINOR.PATCH` (`v0.13.0`) from the first",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 90,
+    "column": 7,
+    "evidence": "`2026-10-14.2`). Every dated tag is older than every `v` tag. Order dated tags by date, then by that number (none",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 91,
+    "column": 58,
+    "evidence": "counts as 1), and versions by their three numbers (`v0.10.0` is newer than `v0.9.0`), never as plain strings. This covers copies installed from a",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 91,
+    "column": 82,
+    "evidence": "counts as 1), and versions by their three numbers (`v0.10.0` is newer than `v0.9.0`), never as plain strings. This covers copies installed from a",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 96,
     "column": 57,
     "evidence": "**Kit updates.** The notes in upstream `updates/` (not `README.md`) that are:",
     "target_path": null,
@@ -1172,7 +1287,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 98,
+    "line": 99,
     "column": 10,
     "evidence": "id in `installed_from.updates.deferred`; read each with `read(HEAD, updates/<id>.md)`;",
     "target_path": null,
@@ -1182,7 +1297,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 99,
+    "line": 100,
     "column": 11,
     "evidence": "- not in `installed_from.updates.applied` or `installed_from.updates.declined`;",
     "target_path": null,
@@ -1192,7 +1307,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 99,
+    "line": 100,
     "column": 47,
     "evidence": "- not in `installed_from.updates.applied` or `installed_from.updates.declined`;",
     "target_path": null,
@@ -1202,7 +1317,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 100,
+    "line": 101,
     "column": 14,
     "evidence": "- relevant: `applies_to.modules` empty, or overlapping `harness.config.yml` \u2192 `modules`. A",
     "target_path": null,
@@ -1212,7 +1327,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 100,
+    "line": 101,
     "column": 57,
     "evidence": "- relevant: `applies_to.modules` empty, or overlapping `harness.config.yml` \u2192 `modules`. A",
     "target_path": null,
@@ -1222,18 +1337,8 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 108,
+    "line": 109,
     "column": 2,
-    "evidence": "`lessons/README.md` \u00a7 Matching (stack, services, risk areas, modules from `harness.config.yml` and",
-    "target_path": null,
-    "status": "missing",
-    "disposition": "partial",
-    "reference_kind": "quoted_or_code"
-   },
-   {
-    "source_path": "SKILL.md",
-    "line": 108,
-    "column": 76,
     "evidence": "`lessons/README.md` \u00a7 Matching (stack, services, risk areas, modules from `harness.config.yml` and",
     "target_path": null,
     "status": "missing",
@@ -1243,6 +1348,16 @@
    {
     "source_path": "SKILL.md",
     "line": 109,
+    "column": 76,
+    "evidence": "`lessons/README.md` \u00a7 Matching (stack, services, risk areas, modules from `harness.config.yml` and",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 110,
     "column": 2,
     "evidence": "`project/STACK.md`), with `status: active`, no `in_template: true`, and no rule already present in",
     "target_path": null,
@@ -1252,7 +1367,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 111,
+    "line": 112,
     "column": 2,
     "evidence": "`_harness/morph-answers.yml` \u00a7 accepted, or `(lesson: <id>)` in its files) that are now",
     "target_path": null,
@@ -1262,7 +1377,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 117,
+    "line": 118,
     "column": 47,
     "evidence": "(render.md \u00a7 3 and \u00a7 3b: fill `{{key}}` from `harness.config.yml`, `project/*` and",
     "target_path": null,
@@ -1272,7 +1387,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 118,
+    "line": 119,
     "column": 2,
     "evidence": "`_harness/morph-answers.yml`; strip the spans marked for modules the project doesn't have with the",
     "target_path": null,
@@ -1282,7 +1397,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 119,
+    "line": 120,
     "column": 13,
     "evidence": "command in `harness/README.md` \u00a7 Modules \u2192 **Module markers**, and unlink their links; drop rows of",
     "target_path": null,
@@ -1292,7 +1407,17 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 178,
+    "line": 142,
+    "column": 4,
+    "evidence": "`lessons/README.md` \u00a7 Listing a lesson), as context only: don't order or recommend by it;",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 181,
     "column": 53,
     "evidence": "`RB` and `RH`. A new `{{key}}` is filled from `harness.config.yml`, `project/*` and",
     "target_path": null,
@@ -1302,7 +1427,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 179,
+    "line": 182,
     "column": 7,
     "evidence": "`_harness/morph-answers.yml` (the keys are in `skills/morph-init/references/render.md` \u00a7 3); ask",
     "target_path": null,
@@ -1312,7 +1437,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 179,
+    "line": 182,
     "column": 53,
     "evidence": "`_harness/morph-answers.yml` (the keys are in `skills/morph-init/references/render.md` \u00a7 3); ask",
     "target_path": null,
@@ -1322,7 +1447,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 180,
+    "line": 183,
     "column": 38,
     "evidence": "for a value you can't find. In `harness.config.yml` add the upstream's new keys and comments, and",
     "target_path": null,
@@ -1332,7 +1457,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 185,
+    "line": 188,
     "column": 61,
     "evidence": "3. **Do the rest of \u00a7 How to apply:** config keys, rows in `harness/README.md`, a module's",
     "target_path": null,
@@ -1342,7 +1467,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 190,
+    "line": 193,
     "column": 6,
     "evidence": "(`harness/README.md` \u00a7 Modules \u2192 **Module markers**) into the project's copy of the same file, at the place the template has it, and the unmarked lines its",
     "target_path": null,
@@ -1352,7 +1477,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 191,
+    "line": 194,
     "column": 51,
     "evidence": "\u00a7 On remove lists. A new config key goes into `harness.config.yml` with the template's",
     "target_path": null,
@@ -1362,7 +1487,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 194,
+    "line": 197,
     "column": 35,
     "evidence": "For each accepted lesson, follow `skills/morph-init/references/render.md` \u00a7 5 (its target file, or",
     "target_path": null,
@@ -1372,7 +1497,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 195,
+    "line": 198,
     "column": 34,
     "evidence": "this project's better owner per `harness/MORPHING.md` \u00a7 Where a lesson lands), ending the rule with",
     "target_path": null,
@@ -1382,7 +1507,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 196,
+    "line": 199,
     "column": 38,
     "evidence": "`(lesson: <id>)`, and add its id to `_harness/morph-answers.yml` \u00a7 accepted. For a superseded lesson",
     "target_path": null,
@@ -1392,7 +1517,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 199,
+    "line": 202,
     "column": 276,
     "evidence": "ed aren't recorded: adding the module later takes its files from `HEAD` whole. `_harness/morph-answers.yml` may not exist yet: create it with the first answer y",
     "target_path": null,
@@ -1402,7 +1527,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 204,
+    "line": 207,
     "column": 14,
     "evidence": "1. **Update `harness.config.yml` \u2192 `installed_from`**, converting the one-line form to the block",
     "target_path": null,
@@ -1412,7 +1537,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 205,
+    "line": 208,
     "column": 24,
     "evidence": "form in `read(HEAD, template/harness.config.yml)` when needed:",
     "target_path": null,
@@ -1422,7 +1547,17 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 209,
+    "line": 211,
+    "column": 58,
+    "evidence": "names a release, `## v0.13.0 (2026-10-21)` (record `v0.13.0`), or `## 2026-10-20.5` for an older one (skip `## Unreleased`, and the",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 213,
     "column": 7,
     "evidence": "- `installed_from.updates.applied` and `installed_from.updates.declined`: append this run's ids (and the \"already here\" ones",
     "target_path": null,
@@ -1432,7 +1567,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 209,
+    "line": 213,
     "column": 44,
     "evidence": "- `installed_from.updates.applied` and `installed_from.updates.declined`: append this run's ids (and the \"already here\" ones",
     "target_path": null,
@@ -1442,7 +1577,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 211,
+    "line": 215,
     "column": 7,
     "evidence": "- `installed_from.updates.deferred`: set to the notes answered **later**, each as `{ id, base }` where `base` is",
     "target_path": null,
@@ -1452,7 +1587,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 216,
+    "line": 220,
     "column": 34,
     "evidence": "2. **Run the self-checks** from `skills/morph-init/references/render.md` \u00a7 7 and fix what fails.",
     "target_path": null,
@@ -1462,7 +1597,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 228,
+    "line": 232,
     "column": 29,
     "evidence": "skill. Without the plugin, `UPDATE.md` always reads the newest skills from the repository.",
     "target_path": null,
@@ -1471,7 +1606,21 @@
     "reference_kind": "quoted_or_code"
    }
   ],
-  "limitations": [],
+  "limitations": [
+   "Analyzer static_patterns_agent_snooping status: degraded.",
+   "Analyzer static_patterns_anti_refusal status: degraded.",
+   "Analyzer static_patterns_deserialization status: degraded.",
+   "Analyzer static_patterns_excessive_agency status: degraded.",
+   "Analyzer static_patterns_harmful_content status: degraded.",
+   "Analyzer static_patterns_memory_poisoning status: degraded.",
+   "Analyzer static_patterns_privilege_escalation status: degraded.",
+   "Analyzer static_patterns_prompt_injection status: degraded.",
+   "Analyzer static_patterns_rogue_agent status: degraded.",
+   "Analyzer static_patterns_ssrf status: degraded.",
+   "Analyzer static_patterns_supply_chain status: degraded.",
+   "Analyzer static_patterns_system_prompt_leakage status: degraded.",
+   "Analyzer static_patterns_tool_misuse status: degraded."
+  ],
   "findings_before_filtering": 0,
   "findings_after_filtering": 0
  }

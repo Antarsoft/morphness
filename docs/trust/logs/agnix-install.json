@@ -4,6 +4,54 @@
  "diagnostics": [
   {
    "level": "warning",
+   "rule": "CC-SET-036",
+   "file": "<install-root>/nextjs-supabase/.claude/settings.json",
+   "line": 29,
+   "column": 7,
+   "message": "Allow rule 'Bash(bash scripts/feature-cost.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+   "suggestion": "Allow the specific commands instead, for example Bash(npm run test) or Bash(devbox run npm test).",
+   "category": "claude-settings",
+   "rule_severity": "MEDIUM",
+   "applies_to_tool": "claude-code"
+  },
+  {
+   "level": "warning",
+   "rule": "CC-SET-036",
+   "file": "<install-root>/nextjs-supabase/.claude/settings.json",
+   "line": 30,
+   "column": 7,
+   "message": "Allow rule 'Bash(bash scripts/prune-counter.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+   "suggestion": "Allow the specific commands instead, for example Bash(npm run test) or Bash(devbox run npm test).",
+   "category": "claude-settings",
+   "rule_severity": "MEDIUM",
+   "applies_to_tool": "claude-code"
+  },
+  {
+   "level": "warning",
+   "rule": "CC-SET-036",
+   "file": "<install-root>/nextjs-supabase/.claude/settings.json",
+   "line": 31,
+   "column": 7,
+   "message": "Allow rule 'Bash(bash scripts/evidence.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+   "suggestion": "Allow the specific commands instead, for example Bash(npm run test) or Bash(devbox run npm test).",
+   "category": "claude-settings",
+   "rule_severity": "MEDIUM",
+   "applies_to_tool": "claude-code"
+  },
+  {
+   "level": "warning",
+   "rule": "CC-SET-036",
+   "file": "<install-root>/nextjs-supabase/.claude/settings.json",
+   "line": 32,
+   "column": 7,
+   "message": "Allow rule 'Bash(bash scripts/learned-rules.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+   "suggestion": "Allow the specific commands instead, for example Bash(npm run test) or Bash(devbox run npm test).",
+   "category": "claude-settings",
+   "rule_severity": "MEDIUM",
+   "applies_to_tool": "claude-code"
+  },
+  {
+   "level": "warning",
    "rule": "CDX-AG-005",
    "file": "<install-root>/nextjs-supabase/AGENTS.md",
    "line": 33,
@@ -110,7 +158,7 @@
  ],
  "summary": {
   "errors": 0,
-  "warnings": 3,
+  "warnings": 7,
   "info": 6
  }
 }

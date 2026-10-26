@@ -1,5 +1,16 @@
 [
  {
+  "file": "tests/trust-report-test.sh",
+  "line": 23,
+  "endLine": 23,
+  "column": 50,
+  "endColumn": 52,
+  "level": "info",
+  "code": 2015,
+  "message": "Note that A && B || C is not if-then-else. C may run when A is true.",
+  "fix": null
+ },
+ {
   "file": "template/scripts/session-start.sh",
   "line": 64,
   "endLine": 64,
@@ -78,8 +89,8 @@
  },
  {
   "file": "template/scripts/guard.sh",
-  "line": 50,
-  "endLine": 1239,
+  "line": 51,
+  "endLine": 1312,
   "column": 15,
   "endColumn": 2,
   "level": "info",
@@ -89,8 +100,8 @@
  },
  {
   "file": "template/scripts/guard.sh",
-  "line": 619,
-  "endLine": 619,
+  "line": 644,
+  "endLine": 644,
   "column": 67,
   "endColumn": 67,
   "level": "warning",
@@ -100,8 +111,8 @@
  },
  {
   "file": "template/scripts/guard.sh",
-  "line": 639,
-  "endLine": 639,
+  "line": 664,
+  "endLine": 664,
   "column": 75,
   "endColumn": 75,
   "level": "warning",
@@ -111,8 +122,8 @@
  },
  {
   "file": "template/scripts/guard.sh",
-  "line": 1183,
-  "endLine": 1183,
+  "line": 1239,
+  "endLine": 1239,
   "column": 75,
   "endColumn": 75,
   "level": "warning",
@@ -122,8 +133,8 @@
  },
  {
   "file": "template/scripts/guard.sh",
-  "line": 1236,
-  "endLine": 1236,
+  "line": 1309,
+  "endLine": 1309,
   "column": 101,
   "endColumn": 101,
   "level": "warning",

@@ -19,7 +19,7 @@
    "file": "skills/morph-init/references/questions.md",
    "line": 1,
    "column": 1,
-   "message": "Reference file has 314 lines and no table of contents near the top (Anthropic's skill guidance asks for one above 300 lines)",
+   "message": "Reference file has 335 lines and no table of contents near the top (Anthropic's skill guidance asks for one above 300 lines)",
    "suggestion": "Add a short contents list at the top so Claude can see the whole file's scope when it previews it",
    "category": "claude-skills",
    "rule_severity": "LOW",

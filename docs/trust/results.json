@@ -1,9 +1,9 @@
 {
  "schema": 1,
- "generated": "2026-10-20 17:14 UTC",
- "commit": "98324c826a5c1215c083fffd9a49b37a0f202f48",
- "release": "2026-10-20.4 + later commits",
- "dirty": false,
+ "generated": "2026-10-26 04:41 UTC",
+ "commit": "eed76b44151f755e2863e0633a18cc224a0e9bb9",
+ "release": "v0.14.0 + later commits",
+ "dirty": true,
  "rows": [
   {
    "group": "own",
@@ -13,12 +13,12 @@
    "what": "Renders the template as /morph-init would for sample projects, runs its own consistency checks, replays every guard case and runs the template scripts.",
    "command": "STRICT=1 GUARD_FULL=1 scripts/kit-selftest.sh",
    "status": "pass",
-   "summary": "4 of 4 sample projects pass; 616 guard cases replayed on each (2464 replays; per project 203 allowed, 272 asked, 141 denied, all as expected)",
+   "summary": "4 of 4 sample projects pass; 655 guard cases replayed on each (2620 replays; per project 217 allowed, 297 asked, 141 denied, all as expected)",
    "findings": [],
    "logs": [
     "kit-selftest.txt"
    ],
-   "finished": "2026-10-20 17:14 UTC",
+   "finished": "2026-10-26 04:40 UTC",
    "notes": "Sample projects: go-service, monorepo-apps, nextjs-supabase, python-cli."
   },
   {
@@ -29,12 +29,12 @@
    "what": "Every kit change has an update note, and every note is well formed.",
    "command": "scripts/check-updates.sh",
    "status": "pass",
-   "summary": "85 update note(s) checked, 0 problem(s)",
+   "summary": "95 update note(s) checked, 0 problem(s)",
    "findings": [],
    "logs": [
     "check-updates.txt"
    ],
-   "finished": "2026-10-20 17:14 UTC"
+   "finished": "2026-10-26 04:40 UTC"
   },
   {
    "group": "own",
@@ -44,12 +44,12 @@
    "what": "Every lesson file follows the catalog format.",
    "command": "scripts/check-lessons.sh",
    "status": "pass",
-   "summary": "112 lesson file(s) checked, 0 problem(s)",
+   "summary": "116 lesson file(s) checked, 0 problem(s)",
    "findings": [],
    "logs": [
     "check-lessons.txt"
    ],
-   "finished": "2026-10-20 17:14 UTC"
+   "finished": "2026-10-26 04:40 UTC"
   },
   {
    "group": "public",
@@ -58,9 +58,41 @@
    "version": "0.59.0",
    "what": "Config correctness of CLAUDE.md, AGENTS.md, rules, agents, settings, hooks and skills, on a rendered sample install and on the kit's skills.",
    "command": "npx agnix@0.59.0 --format json <path>",
-   "status": "triaged",
-   "summary": "3 finding(s), all judged (8 informational)",
+   "status": "untriaged",
+   "summary": "7 finding(s), 4 untriaged",
    "findings": [
+    {
+     "rule": "CC-SET-036",
+     "path": "install/.claude/settings.json",
+     "line": 29,
+     "level": "warning",
+     "message": "Allow rule 'Bash(bash scripts/feature-cost.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+     "triage": null
+    },
+    {
+     "rule": "CC-SET-036",
+     "path": "install/.claude/settings.json",
+     "line": 30,
+     "level": "warning",
+     "message": "Allow rule 'Bash(bash scripts/prune-counter.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+     "triage": null
+    },
+    {
+     "rule": "CC-SET-036",
+     "path": "install/.claude/settings.json",
+     "line": 31,
+     "level": "warning",
+     "message": "Allow rule 'Bash(bash scripts/evidence.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+     "triage": null
+    },
+    {
+     "rule": "CC-SET-036",
+     "path": "install/.claude/settings.json",
+     "line": 32,
+     "level": "warning",
+     "message": "Allow rule 'Bash(bash scripts/learned-rules.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+     "triage": null
+    },
     {
      "rule": "CDX-AG-005",
      "path": "install/AGENTS.md",
@@ -99,7 +131,7 @@
     "agnix-install.json",
     "agnix-skills.json"
    ],
-   "finished": "2026-10-20 17:14 UTC",
+   "finished": "2026-10-26 04:40 UTC",
    "notes": "66 files checked. Errors and warnings need a verdict; info notes are only counted."
   },
   {
@@ -110,7 +142,7 @@
    "what": "The kit's bash scripts and the scripts installed into projects, including the guard hook.",
    "command": "shellcheck -x -f json $(git ls-files '*.sh')",
    "status": "triaged",
-   "summary": "8 finding(s), all judged (9 informational)",
+   "summary": "8 finding(s), all judged (10 informational)",
    "findings": [
     {
      "rule": "SC2010",
@@ -126,7 +158,7 @@
     {
      "rule": "SC1112",
      "path": "template/scripts/guard.sh",
-     "line": 619,
+     "line": 644,
      "level": "warning",
      "message": "This is a unicode quote. Delete and retype it (or ignore/doublequote for literal).",
      "triage": {
@@ -137,7 +169,7 @@
     {
      "rule": "SC1112",
      "path": "template/scripts/guard.sh",
-     "line": 639,
+     "line": 664,
      "level": "warning",
      "message": "This is a unicode quote. Delete and retype it (or ignore/doublequote for literal).",
      "triage": {
@@ -148,7 +180,7 @@
     {
      "rule": "SC1112",
      "path": "template/scripts/guard.sh",
-     "line": 1183,
+     "line": 1239,
      "level": "warning",
      "message": "This is a unicode quote. Delete and retype it (or ignore/doublequote for literal).",
      "triage": {
@@ -159,7 +191,7 @@
     {
      "rule": "SC1112",
      "path": "template/scripts/guard.sh",
-     "line": 1236,
+     "line": 1309,
      "level": "warning",
      "message": "This is a unicode quote. Delete and retype it (or ignore/doublequote for literal).",
      "triage": {
@@ -204,8 +236,8 @@
    "logs": [
     "shellcheck.json"
    ],
-   "finished": "2026-10-20 17:14 UTC",
-   "notes": "13 scripts. Errors and warnings need a verdict; style notes and info are only counted."
+   "finished": "2026-10-26 04:40 UTC",
+   "notes": "15 scripts. Errors and warnings need a verdict; style notes and info are only counted."
   },
   {
    "group": "public",
@@ -220,8 +252,8 @@
    "logs": [
     "gitleaks.json"
    ],
-   "finished": "2026-10-20 17:14 UTC",
-   "notes": "95 commits scanned."
+   "finished": "2026-10-26 04:40 UTC",
+   "notes": "149 commits scanned."
   },
   {
    "group": "public",
@@ -230,9 +262,26 @@
    "version": "2.12.0",
    "what": "Prompt injection, exfiltration and tool poisoning patterns in the five /morph-* skills. Static mode only, no model is called.",
    "command": "skillspector scan skills/<name> --no-llm",
-   "status": "clean",
-   "summary": "0 findings",
-   "findings": [],
+   "status": "untriaged",
+   "summary": "2 finding(s), 2 untriaged",
+   "findings": [
+    {
+     "rule": "EA2",
+     "path": "skills/morph-init/SKILL.md",
+     "line": null,
+     "level": "MEDIUM",
+     "message": "",
+     "triage": null
+    },
+    {
+     "rule": "RP1",
+     "path": "skills/morph-init/SKILL.md",
+     "line": null,
+     "level": "MEDIUM",
+     "message": "",
+     "triage": null
+    }
+   ],
    "logs": [
     "skillspector-morph-doctor.json",
     "skillspector-morph-init.json",
@@ -240,14 +289,16 @@
     "skillspector-morph-share.json",
     "skillspector-morph-update.json"
    ],
-   "finished": "2026-10-20 17:14 UTC",
-   "notes": "Risk scores (0 is best): morph-doctor 0/100, morph-init 0/100, morph-module 0/100, morph-share 0/100, morph-update 0/100."
+   "finished": "2026-10-26 04:41 UTC",
+   "notes": "Risk scores (0 is best): morph-doctor 0/100, morph-init 15/100, morph-module 0/100, morph-share 0/100, morph-update 0/100."
   }
  ],
  "limits": [
   "The guard hook is a safety net for an agent that makes mistakes. It is not a sandbox, and it does not stop an agent or script that is determined to get around it.",
   "The guard reads Bash commands as the shell does, but it does not see inside a script file or Makefile target that an earlier call wrote, code that an interpreter decodes or builds at run time, or a command-line tool it has no rule for.",
   "Secrets are recognised by file name and by common commands. A secret stored in a file with an unusual name is not seen.",
+  "A search over the whole project (grep, or Claude Code's Grep tool) is not stopped, so it can print lines from a secret file that a direct read would be blocked from.",
+  "Reading files outside the project is not blocked, except known credential files such as SSH and cloud keys.",
   "Only Bash, file tools, Grep and MCP tool calls are checked. Other tools are left to Claude Code's own permission prompts.",
   "The test suite is the kit's own: it shows the guard does what the kit says it does on the cases listed. No tool on this page tests the guard against hostile input beyond those cases.",
   "No tool on this page measures quality or cost compared with plain Claude Code. Morphness adds process, and process costs tokens.",

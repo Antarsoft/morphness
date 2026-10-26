@@ -2,21 +2,21 @@
  "skill": {
   "name": "morph-init",
   "source": "<repo>/skills/morph-init",
-  "scanned_at": "2026-10-20T17:14:24.189843+00:00"
+  "scanned_at": "2026-10-26T04:41:02.256387+00:00"
  },
  "risk_assessment": {
-  "score": 0,
+  "score": 15,
   "severity": "LOW",
   "recommendation": "CAUTION",
-  "max_issue_severity": "NONE"
+  "max_issue_severity": "MEDIUM"
  },
  "components": [
   {
    "path": "SKILL.md",
    "type": "markdown",
-   "lines": 127,
+   "lines": 130,
    "executable": false,
-   "size_bytes": 8800,
+   "size_bytes": 9194,
    "source_url": null,
    "source_identity": null,
    "source_digest": null
@@ -34,9 +34,9 @@
   {
    "path": "references/questions.md",
    "type": "markdown",
-   "lines": 314,
+   "lines": 335,
    "executable": false,
-   "size_bytes": 20798,
+   "size_bytes": 22410,
    "source_url": null,
    "source_identity": null,
    "source_digest": null
@@ -44,16 +44,79 @@
   {
    "path": "references/render.md",
    "type": "markdown",
-   "lines": 282,
+   "lines": 290,
    "executable": false,
-   "size_bytes": 21735,
+   "size_bytes": 22421,
    "source_url": null,
    "source_identity": null,
    "source_digest": null
   }
  ],
  "structured_summaries": [],
- "issues": [],
+ "issues": [
+  {
+   "id": "EA2",
+   "finding_id": "finding-8f8137a3afca4a359352e1630fd847ab",
+   "category": "Excessive Agency",
+   "pattern": "Autonomous Decision Making",
+   "severity": "MEDIUM",
+   "confidence": 0.85,
+   "location": {
+    "file": "references/questions.md",
+    "start_line": 287,
+    "end_line": null,
+    "start_column": 31
+   },
+   "finding": "Auto-approve",
+   "explanation": "Skill enables autonomous high-impact decisions without human-in-the-loop verification. Critical operations (destructive commands, financial transactions, data deletion) should require explicit user confirmation.",
+   "remediation": "Add human-in-the-loop confirmation for destructive, irreversible, or high-impact operations. Never auto-execute commands that modify files, send data, or alter system state.",
+   "code_snippet": "\n\"Agents write plan files, code and harness docs inside the project all day, and run the same checks every\nfeature. Without help, Claude Code asks you about each one and you end up approving by habit, which\nhides the prompts that matter. Auto-approve file edits inside the project, and the check commands you\njust gave me? The guard's prompts (deploys, publishes, remote databases, secrets, merges, its own files)\nand the deny rules stay either way.\" Default yes for both, asked as one yes/no. No keeps the plain\nClaude Code prompts: remove `permissions.defaultMode` from `.claude/settings.json` and add no check",
+   "intent": null,
+   "tags": [
+    "Excessive Agency"
+   ],
+   "evidence": {},
+   "match_fingerprint": "2bc2097f5a24b7a009cb4f5943903c6bd4ce6a54c787f7b7b355553150219a5a",
+   "occurrences": [
+    {
+     "file": "references/questions.md",
+     "start_line": 287,
+     "end_line": null,
+     "start_column": 31
+    }
+   ]
+  },
+  {
+   "id": "RP1",
+   "finding_id": "finding-cdec3009ee5a42b2b9355cbdca152132",
+   "category": "MCP Rug Pull",
+   "pattern": "MCP server referenced without pinned version: 'npx vitest'.",
+   "severity": "MEDIUM",
+   "confidence": 0.7,
+   "location": {
+    "file": "references/render.md",
+    "start_line": 127,
+    "end_line": null
+   },
+   "finding": "npx vitest",
+   "explanation": "npx commands without a version suffix (e.g. @1.0.0) create a rug-pull risk if the upstream server is compromised and publishes a malicious update.",
+   "remediation": "Pin the version: npx @scope/server@1.2.3",
+   "code_snippet": null,
+   "intent": null,
+   "tags": [
+    "ASI16"
+   ],
+   "evidence": {},
+   "match_fingerprint": "6649a3cb9740edab54a15b4223ea395c08f96163f29327395615564af5bbcf11",
+   "occurrences": [
+    {
+     "file": "references/render.md",
+     "start_line": 127,
+     "end_line": null
+    }
+   ]
+  }
+ ],
  "suppressed_count": 0,
  "suppressed": [],
  "metadata": {
@@ -315,8 +378,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 101,
-    "end_line": 101,
+    "start_line": 85,
+    "end_line": 85,
     "fatal": false
    },
    {
@@ -325,8 +388,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 118,
-    "end_line": 118,
+    "start_line": 103,
+    "end_line": 103,
     "fatal": false
    },
    {
@@ -335,8 +398,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 119,
-    "end_line": 119,
+    "start_line": 120,
+    "end_line": 120,
     "fatal": false
    },
    {
@@ -345,8 +408,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 122,
-    "end_line": 122,
+    "start_line": 121,
+    "end_line": 121,
     "fatal": false
    },
    {
@@ -355,8 +418,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 126,
-    "end_line": 126,
+    "start_line": 123,
+    "end_line": 123,
     "fatal": false
    },
    {
@@ -365,8 +428,28 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 127,
-    "end_line": 127,
+    "start_line": 125,
+    "end_line": 125,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 129,
+    "end_line": 129,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 130,
+    "end_line": 130,
     "fatal": false
    }
   ],
@@ -452,15 +535,15 @@
    },
    {
     "analyzer_id": "meta_analyzer",
-    "status": "not_applicable",
+    "status": "disabled",
     "planned_work": 0,
     "completed": 0,
     "partial": 0,
     "skipped": 0,
     "failed": 0,
     "unaccounted": 0,
-    "reason_code": "no_applicable_files",
-    "message": "No files matched this analyzer's applicability contract."
+    "reason_code": "disabled_by_configuration",
+    "message": "Analyzer was disabled by the requested configuration."
    },
    {
     "analyzer_id": "semantic_developer_intent",
@@ -833,6 +916,16 @@
    {
     "source_path": "SKILL.md",
     "line": 83,
+    "column": 42,
+    "evidence": "reported, and `fired` of `features` (`lessons/README.md` \u00a7 Listing a lesson). Keep the order by",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 85,
     "column": 30,
     "evidence": "Leave out a lesson whose `evidence.source` (or a `reports` entry) names this project: it came from",
     "target_path": null,
@@ -842,7 +935,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 91,
+    "line": 93,
     "column": 18,
     "evidence": "only items from `references/catalog.md` or that the user names. If an install command fails, say so and",
     "target_path": "references/catalog.md",
@@ -852,7 +945,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 101,
+    "line": 103,
     "column": 2,
     "evidence": "`morph-answers.yml`.",
     "target_path": null,
@@ -862,7 +955,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 105,
+    "line": 107,
     "column": 9,
     "evidence": "Follow `references/render.md`: create a branch, copy `template/` without overwriting, fill placeholders,",
     "target_path": "references/render.md",
@@ -872,7 +965,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 118,
+    "line": 120,
     "column": 4,
     "evidence": "`harness.config.yml` \u00a7 claude_projects, and the playbook in",
     "target_path": null,
@@ -882,7 +975,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 119,
+    "line": 121,
     "column": 4,
     "evidence": "`harness/modules/claude-projects/README.md` to paste into the project instructions. These are advice;",
     "target_path": null,
@@ -892,7 +985,17 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 122,
+    "line": 123,
+    "column": 5,
+    "evidence": "(`scripts/feature-cost.sh`), so the model and effort choice can be judged on the project's own numbers.",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 125,
     "column": 67,
     "evidence": "- That the harness will change itself through retros and prunes (`harness/MORPHING.md`), that",
     "target_path": null,
@@ -902,7 +1005,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 126,
+    "line": 129,
     "column": 9,
     "evidence": "Delete `morph-answers.yml` from the target only if the user says so; otherwise move it to",
     "target_path": null,
@@ -912,7 +1015,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 127,
+    "line": 130,
     "column": 2,
     "evidence": "`_harness/morph-answers.yml` so the doctor and later prunes can read the original intent.",
     "target_path": null,
@@ -922,7 +1025,7 @@
    }
   ],
   "limitations": [],
-  "findings_before_filtering": 0,
-  "findings_after_filtering": 0
+  "findings_before_filtering": 2,
+  "findings_after_filtering": 2
  }
 }

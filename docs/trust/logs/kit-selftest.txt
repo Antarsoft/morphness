@@ -1,3 +1,4 @@
+claims ledger: 14 README promises, 5 tested, 7 present in the kit text, 2 judgement
 go-service: ok
 monorepo-apps: ok
 nextjs-supabase: ok
