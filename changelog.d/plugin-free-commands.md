@@ -1,0 +1,1 @@
+Root `DOCTOR.md`, `MODULE.md` and `SHARE.md` mirror `UPDATE.md`, so `/morph-doctor`, `/morph-module` and `/morph-share` work without the plugin (for example in a Claude Projects thread). `INSTALL.md` gains a "Running without the plugin" table and the README links the files.
