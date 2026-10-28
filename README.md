@@ -200,6 +200,8 @@ These are defaults; change any of them (see [Make it yours](#-make-it-yours)).
 | `/morph-module` | Add or remove an optional module (`add security`, `remove ci-cd`) on a project that already has the harness. |
 | `/morph-share` | Turn rules that fired into a PR to the lessons catalog. |
 
+No plugin, or a Claude Projects thread where `/plugin` can't be typed? Each command has a root file an agent can follow: [INSTALL.md](INSTALL.md), [UPDATE.md](UPDATE.md), [DOCTOR.md](DOCTOR.md), [MODULE.md](MODULE.md), [SHARE.md](SHARE.md).
+
 Morphness runs in plain Claude Code (CLI, desktop, web). If you use a **Claude Project** with a
 coordinator and threads, the `claude-projects` module adds a playbook for the Project instructions
 and advised settings (coordinator sonnet · medium, feature threads sonnet · high).
