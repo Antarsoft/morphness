@@ -457,7 +457,43 @@ def expand(words, depth):
     yield Cmd([name] + words[1:], words[0])
 
 # ---- git push --------------------------------------------------------------------------------
-GIT_OPTS_WITH_VALUE = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path"}
+GIT_OPTS_WITH_VALUE = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path", "--config-env"}
+# git config keys whose value is a command, a script folder or another config file that git runs or reads later, out of
+# the guard\u2019s sight: setting one (`git config`, `git -c`, `--config-env`) asks. Matched without letter case.
+CMD_CONFIG_KEYS = ("core.hookspath", "core.sshcommand", "core.pager", "core.editor", "core.fsmonitor", "core.askpass",
+                   "core.gitproxy", "core.alternaterefscommand", "credential.helper", "credential.*.helper",
+                   "sequence.editor", "diff.external", "diff.*.textconv", "diff.*.command", "difftool.*.cmd",
+                   "mergetool.*.cmd", "merge.*.driver", "filter.*.clean", "filter.*.smudge", "filter.*.process", "alias.*",
+                   "pager.*", "gpg.program", "gpg.*.program", "init.templatedir", "include.path", "includeif.*.path",
+                   "remote.*.uploadpack", "remote.*.receivepack", "protocol.allow", "protocol.ext.allow", "uploadpack.packobjectshook",
+                   "submodule.*.update", "sendemail.sendmailcmd", "sendemail.smtpserver", "web.browser", "browser.*.cmd",
+                   "browser.*.path", "man.*.cmd", "man.*.path", "interactive.difffilter", "trailer.*.command", "trailer.*.cmd",
+                   "gpg.ssh.defaultkeycommand", "mergetool.*.path", "difftool.*.path", "imap.tunnel", "sendemail.tocmd",
+                   "sendemail.cccmd", "sendemail.headercmd")
+# An editor or pager that only quiets git (`git -c core.editor=true rebase --continue`, `-c core.pager=cat`) is fine.
+QUIET_VALUE = re.compile(r"^(true|false|:|cat|more|less( -[A-Za-z]+)*)$")
+CONFIG_READS = {"--get", "--get-all", "--get-regexp", "--get-urlmatch", "--get-color", "--get-colorbool", "-l", "--list",
+                "--unset", "--unset-all", "--remove-section", "-e", "--edit"}
+
+def config_ask(key, how):
+    ask(f"`{key}` ({how}) names a command, hook folder or config file that git runs or reads later, out of the guard\u2019s "
+        "sight (hooks, ssh, pager, editor, credential helper, alias, filter); the owner approves it.")
+
+def check_config_key(key, value, how):
+    k = str(key).strip("\"\x27").lower()
+    if "$" in k or "`" in k:
+        ask(f"`{key}` ({how}) is a config key built at run time, so the guard cannot see which key is set. Write the key out.")
+    if not any(fnmatch.fnmatchcase(k, p) for p in CMD_CONFIG_KEYS):
+        return
+    if (k in ("core.pager", "core.editor", "sequence.editor") or k.startswith("pager.")) and QUIET_VALUE.match(str(value).strip()):
+        return
+    config_ask(key, how)
+
+def check_config_section(name, how):
+    """Renaming a section into one whose keys run commands (`alias`, `core`, `filter.x`) sets those keys."""
+    n = str(name).strip("\"\x27").lower()
+    if "$" in n or "`" in n or any(fnmatch.fnmatchcase(n, p.rsplit(".", 1)[0]) for p in CMD_CONFIG_KEYS):
+        config_ask(name, how)
 PUSH_OPTS_WITH_VALUE = {"--repo", "--receive-pack", "--exec", "-o", "--push-option", "--signed", "--recurse-submodules"}
 
 # State a command chain leaves behind for the next git command: where HEAD points after a checkout,
@@ -525,6 +561,31 @@ def follow_git(sub, rest, git_dir_args):
     elif sub == "config":
         if len(positional) >= 2 and re.match(r"^remote\..+\.push$", positional[0]):
             SIM["push"].append(positional[1])
+        pos, verb = positional, ""
+        if pos and pos[0] in ("set", "get", "list", "unset", "remove-section", "rename-section", "edit"):
+            verb, pos = pos[0], pos[1:]
+        if verb == "rename-section" or "--rename-section" in flags:
+            for w in pos[1:]:
+                check_config_section(w, "git config renames a section to it")
+        # a read flag counts only when no `--no-…` flag (`--no-list`) cancels it
+        reads = any(f.split("=", 1)[0] in CONFIG_READS for f in flags) and not any(f.startswith("--no-") for f in flags)
+        if verb in ("", "set") and "--rename-section" not in flags and not reads:
+            if pos and ("$" in pos[0] or "`" in pos[0]):
+                check_config_key(pos[0], "", "git config sets it")
+            # `git config [-f file] <key> <value>`: a key with a value after it is set (a key alone is a read).
+            for k, w in enumerate(pos[:-1]):
+                check_config_key(w, pos[k + 1], "git config sets it")
+    elif sub in ("clone", "init", "submodule"):
+        # `git clone -c key=value` / `--config` sets config in the new repository, and `--template` copies its hooks.
+        for k, w in enumerate(rest):
+            if w in ("-c", "--config") and k + 1 < len(rest):
+                key, _, value = rest[k + 1].partition("=")
+                check_config_key(key, value, f"git {sub} {w} sets it")
+            elif w.startswith("--config="):
+                key, _, value = w.split("=", 1)[1].partition("=")
+                check_config_key(key, value, f"git {sub} --config sets it")
+            elif w == "--template" or w.startswith("--template="):
+                config_ask("--template", f"git {sub} copies hooks from a template folder")
     elif sub == "tag":
         if positional and not any(f in ("-d", "--delete", "-l", "--list") for f in flags):
             SIM["tags"].add(positional[0])
@@ -550,7 +611,12 @@ def check_git(words):
     i, git_dir_args, cfg_push = 1, [], []
     while i < len(words) and words[i].startswith("-"):
         opt = words[i]
+        if opt.startswith("--config-env="):
+            check_config_key(opt.split("=")[1], "", "git --config-env sets it")
         if opt in GIT_OPTS_WITH_VALUE and i + 1 < len(words):
+            if opt in ("-c", "--config-env"):
+                key, _, value = words[i + 1].partition("=")
+                check_config_key(key, "" if opt == "--config-env" else value, f"git {opt} sets it")
             if opt == "-C":
                 git_dir_args += ["-C", words[i + 1]]
             m = re.match(r"^remote\..+\.push=(.*)$", words[i + 1]) if opt == "-c" else None

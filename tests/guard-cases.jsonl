@@ -653,3 +653,53 @@
 {"expect": "pass", "tool": "Bash", "input": {"command": "echo $(git rev-parse HEAD) $(git status --short)"}}
 {"expect": "ask", "tool": "Bash", "input": {"command": "echo $(git status) $cmd push origin main"}}
 {"expect": "ask", "tool": "Bash", "input": {"command": "x=1; $x push origin main"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config core.hooksPath /tmp/evilhooks"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config core.sshCommand 'ssh -i /tmp/key'"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config credential.helper '!echo password=x'"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config alias.pushup '!git push origin {P}'"}, "every": true}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config --global core.pager '!sh -c id'"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git -c alias.p='!git push origin {P}' p"}, "every": true}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git -c core.sshCommand='/tmp/x' fetch"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config set core.hooksPath .hooks"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config -f .gitmodules submodule.lib.update '!sh x.sh'"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config --add include.path /tmp/more.cfg"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config filter.lfs.smudge 'sh /tmp/x'"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config Core.HooksPath /tmp/h"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git --config-env=core.sshCommand=CMD fetch"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git -c core.pager='less; id' log"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git -C sub -c alias.s='!sh x' s"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git -c core.editor=true rebase --continue"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git -c core.pager=cat log -3"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git config user.name 'Sam Owner'"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git config --get core.hooksPath"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git config core.hooksPath"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git config --unset alias.pushup"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git config core.autocrlf false"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git -c color.ui=always log --oneline"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git config --list --show-origin"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config --rename-section foo alias"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config --rename-section bar core"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config rename-section bar filter.x"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git config --rename-section branch.old branch.new"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git -c protocol.allow=always clone ext::x d"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git -c protocol.file.allow=always submodule update --init"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git clone -c core.hooksPath=/tmp/h r c"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git clone --config core.sshCommand=x r c"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git clone --config=alias.p=!sh r c"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git clone --template=/tmp/evil r c"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git init --template /tmp/evil"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git clone https://github.com/sam/app.git"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config trailer.sign.command 'sh x'"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config gpg.ssh.defaultKeyCommand x"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config mergetool.m.path /tmp/x"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config imap.tunnel x"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config sendemail.toCmd x"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config --list --no-list core.hooksPath /tmp/NL"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config --unset --no-unset alias.zz '!x'"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config $K '!sh x'"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config alias.$(echo p) '!sh'"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config --replace-all alias.x '!sh'"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git config --file=.git/config core.hooksPath /tmp/h"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git --config-env core.sshCommand=X fetch"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git config --get-regexp alias"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git config user.email \"$EMAIL\""}}
