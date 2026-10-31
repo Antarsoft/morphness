@@ -703,3 +703,63 @@
 {"expect": "ask", "tool": "Bash", "input": {"command": "git --config-env core.sshCommand=X fetch"}}
 {"expect": "pass", "tool": "Bash", "input": {"command": "git config --get-regexp alias"}}
 {"expect": "pass", "tool": "Bash", "input": {"command": "git config user.email \"$EMAIL\""}}
+{"expect": "deny", "tool": "Read", "input": {"file_path": "prod.tfvars"}}
+{"expect": "deny", "tool": "Read", "input": {"file_path": "terraform.tfvars"}}
+{"expect": "deny", "tool": "Read", "input": {"file_path": ".dev.vars"}}
+{"expect": "deny", "tool": "Read", "input": {"file_path": "kubeconfig"}}
+{"expect": "deny", "tool": "Read", "input": {"file_path": "firebase-adminsdk.json"}}
+{"expect": "deny", "tool": "Read", "input": {"file_path": "gcp-service-account-key.json"}}
+{"expect": "deny", "tool": "Read", "input": {"file_path": "supabase/.temp/pooler-url"}}
+{"expect": "deny", "tool": "Read", "input": {"file_path": ".dockercfg"}}
+{"expect": "ask", "tool": "Grep", "input": {"pattern": "SECRET", "path": "."}, "files": {".env": "K=1"}}
+{"expect": "ask", "tool": "Write", "input": {"file_path": "Scripts/guard.sh", "content": "exit 0"}}
+{"expect": "deny", "tool": "Write", "input": {"file_path": ".claude/Settings.local.json", "content": "{}"}}
+{"expect": "deny", "tool": "Read", "input": {"file_path": "notes.txt"}, "files": {".env": "K=1"}, "links": {"notes.txt": ".env"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "cat notes.txt"}, "files": {".env": "K=1"}, "links": {"notes.txt": ".env"}}
+{"expect": "deny", "tool": "Read", "input": {"file_path": "keys/config"}, "files": {"selftest-home/.ssh/config": "Host x"}, "links": {"keys": "selftest-home/.ssh"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "grep -r K src"}, "files": {"src/a.ts": "x", ".env": "K=1"}, "links": {"src/notes.txt": "../.env"}}
+{"expect": "ask", "tool": "Grep", "input": {"pattern": "K", "path": "src"}, "files": {"src/a.ts": "x", ".env": "K=1"}, "links": {"src/notes.txt": "../.env"}}
+{"expect": "pass", "tool": "Grep", "input": {"pattern": "SECRET", "path": ".", "glob": "*.ts"}, "files": {".env": "K=1"}}
+{"expect": "pass", "tool": "Grep", "input": {"pattern": "SECRET", "path": ".", "type": "py"}, "files": {".env": "K=1"}}
+{"expect": "ask", "tool": "Grep", "input": {"pattern": "SECRET", "path": ".", "glob": "*.{ts,env}"}, "files": {".env": "K=1"}}
+{"expect": "pass", "tool": "Grep", "input": {"pattern": "SECRET", "path": "src"}, "files": {"src/a.ts": "x", ".env": "K=1"}}
+{"expect": "deny", "tool": "Read", "input": {"file_path": "infra/prod.auto.tfvars"}}
+{"expect": "deny", "tool": "Read", "input": {"file_path": "secrets.sops.yaml"}}
+{"expect": "deny", "tool": "Read", "input": {"file_path": ".dev.vars.staging"}}
+{"expect": "deny", "tool": "Read", "input": {"file_path": "acme-prod-firebase-adminsdk-x1y2z-0a1b2c3d4e.json"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "cat supabase/.temp/pooler-url"}}
+{"expect": "pass", "tool": "Read", "input": {"file_path": "terraform.tfvars.example"}}
+{"expect": "pass", "tool": "Read", "input": {"file_path": "src/kubeconfig.ts"}}
+{"expect": "pass", "tool": "Read", "input": {"file_path": "supabase/migrations/001_init.sql"}}
+{"expect": "pass", "tool": "Read", "input": {"file_path": ".dev.vars.example"}}
+{"expect": "ask", "tool": "Edit", "input": {"file_path": "HARNESS.CONFIG.YML", "old_string": "a", "new_string": "b"}}
+{"expect": "ask", "tool": "Write", "input": {"file_path": ".GITHUB/workflows/ci.yml", "content": "x"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "echo {} > .CLAUDE/settings.local.json"}}
+{"expect": "pass", "tool": "Write", "input": {"file_path": "src/guard.sh", "content": "x"}}
+{"expect": "ask", "tool": "Grep", "input": {"pattern": "a", "path": ".", "glob": "!*.ts"}, "files": {"secrets.json": "{}"}}
+{"expect": "pass", "tool": "Grep", "input": {"pattern": "a", "path": ".", "glob": "!*.json"}, "files": {"secrets.json": "{}", "src/a.ts": "x"}}
+{"expect": "deny", "tool": "Grep", "input": {"pattern": "a", "path": "~/.ssh"}}
+{"expect": "ask", "tool": "Grep", "input": {"pattern": "a", "path": ".", "type": "txt"}, "files": {"secrets.txt": "x"}}
+{"expect": "ask", "tool": "Grep", "input": {"pattern": "a", "path": ".", "type": "tf"}, "files": {"terraform.tfvars": "x"}}
+{"expect": "pass", "tool": "Grep", "input": {"pattern": "a", "path": ".", "type": "ts"}, "files": {"secrets.json": "{}", "src/a.ts": "x"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "ln -s ~/.ssh kk && cat kk/config"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "ln -s .env notes.txt"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "ln -s ../shared/config.ts src/config.ts"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "cat note?.txt"}, "links": {"notes.txt": ".env"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "cat notes.tx*"}, "links": {"notes.txt": ".env"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "grep -R K w/src"}, "files": {"w/.env": "K=1", "w/src/a.ts": "x"}, "links": {"w/src/up": ".."}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "grep -r K w/src"}, "files": {"w/.env": "K=1", "w/src/a.ts": "x"}, "links": {"w/src/up": ".."}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "cd supabase && cat .temp/pooler-url"}, "files": {"supabase/.temp/pooler-url": "x"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "cd supabase/.temp && cat pooler-url"}, "files": {"supabase/.temp/pooler-url": "x"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "pushd supabase && cat .temp/pooler-url"}, "files": {"supabase/.temp/pooler-url": "x"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "ls pkg/kubeconfig"}, "files": {"pkg/kubeconfig/load.go": "x"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "grep -r x pkg"}, "files": {"pkg/kubeconfig/load.go": "x"}}
+{"expect": "pass", "tool": "Grep", "input": {"pattern": "x", "path": "pkg"}, "files": {"pkg/kubeconfig/load.go": "x"}}
+{"expect": "pass", "tool": "Read", "input": {"file_path": "k8s/controller-service-account.yaml"}}
+{"expect": "deny", "tool": "Read", "input": {"file_path": "keys/controller-service-account.json"}}
+{"expect": "deny", "tool": "Read", "input": {"file_path": "serviceAccountKey.json"}}
+{"expect": "deny", "tool": "Read", "input": {"file_path": ".secrets"}}
+{"expect": "deny", "tool": "Read", "input": {"file_path": "a\u0000b/.env"}}
+{"expect": "pass", "tool": "Read", "input": {"file_path": "a\u0000b"}}
+{"expect": "deny", "tool": "Grep", "input": {"pattern": "a", "path": "sshdir"}, "files": {"deploy/.ssh/id_rsa": "k"}, "links": {"sshdir": "deploy/.ssh"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "ln -s deploy/.ssh kk && cat kk/id_rsa"}, "files": {"deploy/.ssh/id_rsa": "k"}}

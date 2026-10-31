@@ -54,7 +54,7 @@ GUARD_ALLOW_HOSTS="$(config_get guard.allow_hosts)"
 export GUARD_CONFIG_READABLE GUARD_INTEGRATION GUARD_PRODUCTION GUARD_ENV_BRANCHES GUARD_MCP_WRITES GUARD_DEPLOYS GUARD_PUBLISHES GUARD_SCHEMA_PUSHES GUARD_NETWORK GUARD_INSTALLS GUARD_PR_WRITES GUARD_ALLOW_HOSTS
 
 python3 -I -c '
-import fnmatch, json, os, re, shlex, subprocess, sys, tempfile, threading
+import fnmatch, glob as globmod, json, os, re, shlex, subprocess, sys, tempfile, threading
 
 # Claude Code lets a call through when a hook runs past its timeout (60 s in .claude/settings.json), so the guard
 # stops its own check after 15 s and blocks the call. GUARD_TIME_LIMIT can only lower the limit (the self-test uses it).
@@ -211,7 +211,9 @@ def protected_kind(word):
         for rel in rels_to_root(part) if part else ():
             for kind, names in (("owner", OWNER_FILES), ("guard", GUARD_FILES), ("ci", CI_FILES if GROUP_ASK["deploys"] else [])):
                 for name in names:
-                    if fnmatch.fnmatch(rel, name) or (globbed and fnmatch.fnmatch(name.replace("/*", "/x"), rel)):
+                    # Without letter case: on macOS and Windows `Scripts/Guard.sh` is the guard itself.
+                    low, pat = rel.lower(), name.lower()
+                    if fnmatch.fnmatchcase(low, pat) or (globbed and fnmatch.fnmatchcase(pat.replace("/*", "/x"), low)):
                         return kind
     return ""
 
@@ -230,12 +232,16 @@ def protect(path, how):
 # ---- secret and credential files ---------------------------------------------------------------
 SAFE_SUFFIX = (".example", ".sample", ".template")
 SECRET_DIRS = {".aws", ".ssh", ".gnupg", ".azure", ".kube"}
-SECRET_NAMES = {".envrc", ".netrc", "_netrc", ".pgpass", ".git-credentials", ".my.cnf", ".htpasswd"}
+SECRET_NAMES = {".envrc", ".netrc", "_netrc", ".pgpass", ".git-credentials", ".my.cnf", ".htpasswd", ".dockercfg", ".dev.vars", ".secrets"}
 ASK_NAMES = {".npmrc", ".pypirc"}
-SECRET_SUFFIX = (".pem", ".key", ".p12", ".pfx", ".jks", ".keystore", ".ppk", ".tfstate")
+SECRET_SUFFIX = (".pem", ".key", ".p12", ".pfx", ".jks", ".keystore", ".ppk", ".tfstate", ".tfvars", ".tfvars.json")
 SECRET_RE = re.compile(r"^(id_(rsa|dsa|ecdsa|ed25519)(_[a-z0-9_]+)?"
                        r"|(credentials?|client_secrets?|service[-_]account[-_a-z0-9]*|[a-z0-9_-]+[-_]credentials?)\.(json|ya?ml|toml|ini|xml|csv|txt)"
-                       r"|(secrets?|[a-z0-9_-]+[-_.]secrets?)\.(json|ya?ml|toml|env|ini|txt|properties|cfg|conf)"
+                       r"|([a-z0-9_.-]+[-_])?service[-_]?account[-_a-z0-9]*\.json"
+                       r"|[a-z0-9_.-]*firebase-adminsdk[-_a-z0-9]*\.json"
+                       r"|(secrets?|[a-z0-9_-]+[-_.]secrets?)(\.sops)?\.(json|ya?ml|toml|env|ini|txt|properties|cfg|conf)"
+                       r"|\.dev\.vars\.[a-z0-9_-]+"
+                       r"|kubeconfig([-_][a-z0-9_-]+)?(\.(ya?ml|json))?|[a-z0-9_.-]+[-_.]kubeconfig(\.ya?ml)?"
                        r"|[a-z0-9_.-]+\.(secrets?|credentials?))$")
 GLOB_PROBES = (".env", ".envrc", ".netrc", ".npmrc", ".pypirc", ".pgpass", ".git-credentials")
 
@@ -258,7 +264,37 @@ def secret_kind(path, read=False):
     under ~/.claude, "" otherwise. `read`: the caller only reads the path, so the tool-results folder of this project is fine."""
     if read and own_tool_results(path):
         return ""
-    return file_secret_kind(path) or ("home" if home_kind(path) == "home" else "")
+    w = expand_home(str(path).strip("\"\x27"))
+    try:
+        folder = bool(w) and "$" not in w and os.path.isdir(os.path.join(ROOT, w))
+    except (ValueError, OSError):
+        folder = False
+    # a folder is read only through the files in it: `pkg/kubeconfig/` is code, `.ssh/` is not
+    named = file_secret_kind(os.path.join(w, "x") if folder else path)
+    return named or link_kind(path) or ("home" if home_kind(path) == "home" else "")
+
+def link_kind(path):
+    """file_secret_kind of what a path resolves to, when a symlink (the file or a folder above it) makes that a
+    different path: `notes.txt -> .env` reads the secret under another name."""
+    w = expand_home(str(path).strip("\"\x27"))
+    if not w or any(c in w for c in "$`"):
+        return ""
+    bases = [""] if os.path.isabs(w) else [ROOT] + [os.path.join(ROOT, d) for d in CD_DIRS]
+    try:
+        for base in bases:
+            full = os.path.normpath(os.path.join(base, w))
+            # a glob (`note?.txt`) is checked on each file it matches
+            for cand in sorted(globmod.glob(full))[:200] if any(c in w for c in "*?[") else [full]:
+                real = os.path.realpath(cand)
+                kind = file_secret_kind(os.path.join(real, "x") if os.path.isdir(real) else real) if real != cand else ""
+                # after a `cd`, a relative path is read where the cd leads (`cd supabase && cat .temp/pooler-url`)
+                if not kind and base not in ("", ROOT):
+                    kind = file_secret_kind(os.path.relpath(cand, ROOT))
+                if kind:
+                    return kind
+    except (ValueError, OSError):
+        return ""
+    return ""
 
 def file_secret_kind(path):
     parts = [c for c in str(path).strip("\"\x27").split("/") if c]
@@ -275,8 +311,9 @@ def file_secret_kind(path):
         return "" if low.endswith(".pub") else "deny"
     for i, c in enumerate(dirs):
         nxt = dirs[i + 1] if i + 1 < len(dirs) else low
-        if (c == ".config" and nxt in ("gcloud", "gh", "doctl")) or (c == ".docker" and low == "config.json"):
-            return "deny"
+        if (c == ".config" and nxt in ("gcloud", "gh", "doctl")) or (c == ".docker" and low == "config.json") \
+                or (c == "supabase" and nxt == ".temp" and i + 1 < len(dirs)):
+            return "deny"   # supabase/.temp holds the linked project\u2019s database address and password (pooler-url)
     if low in SECRET_NAMES or (low.endswith(SECRET_SUFFIX) and low not in SECRET_SUFFIX) or SECRET_RE.match(low):
         return "deny"
     if low in ASK_NAMES:
@@ -1238,17 +1275,30 @@ def check_deploy_script(words):
 
 SCAN_SKIP = {".git", "node_modules", ".next", ".venv", "venv", "dist", "build", "target", "__pycache__", ".cache"}
 
-def secret_in_tree(path, limit=20000):
-    """The first secret or credential file below a directory (skipping dependency and build folders), else None."""
-    seen = 0
-    for top, dirs, names in os.walk(path):
+TOO_BIG = "(too many files to check)"
+
+def secret_in_tree(path, limit=20000, follow=False):
+    """The first secret or credential file below a directory (skipping dependency and build folders), None when there is
+    none, TOO_BIG past `limit` entries. `follow`: the search follows folder links (`grep -R`), so the scan does too."""
+    seen, visited = 0, set()
+    for top, dirs, names in os.walk(path, followlinks=follow):
+        real_top = os.path.realpath(top)
+        if real_top in visited:
+            dirs[:] = []
+            continue
+        visited.add(real_top)
         dirs[:] = [d for d in dirs if d not in SCAN_SKIP]
         for n in names + dirs:
             seen += 1
             if seen > limit:
-                return None
+                return TOO_BIG
             full = os.path.join(top, n)
-            if file_secret_kind(full) == "deny" or (n in SECRET_DIRS and os.path.isdir(full)):
+            if n in dirs:
+                # a folder counts by what is inside it: `.ssh/` does, a `kubeconfig/` package does not
+                hit = file_secret_kind(os.path.join(os.path.realpath(full), "x")) == "deny"
+            else:
+                hit = file_secret_kind(full) == "deny" or (os.path.islink(full) and file_secret_kind(os.path.realpath(full)) == "deny")
+            if hit:
                 return full
     return None
 
@@ -1267,17 +1317,80 @@ def check_tree_search(words):
     excludes += [w for w in rest if w.startswith("!")]
     if not recursive or any("env" in x for x in excludes):
         return
+    follow = any(w == "--dereference-recursive" or re.match(r"^-[A-Za-z]*R[A-Za-z]*$", w) for w in flags) if name != "rg" \
+        else any(w in ("-L", "--follow") for w in flags)
     ops = operands(rest)
     own_pattern = any(w in ("-e", "--regexp", "-f", "--file") or w.startswith(("--regexp=", "--file=")) for w in flags)
     paths = ops if own_pattern else ops[1:]
     for pth in paths or ["."]:
         full = os.path.normpath(os.path.join(ROOT, expand_home(pth)))
         if os.path.isdir(full) and rel_inside(pth):
-            hit = secret_in_tree(full)
+            hit = secret_in_tree(full, follow=follow)
+            if hit == TOO_BIG:
+                ask(f"`{name}` over `{pth}` searches more files than the guard can check for secret files; the owner approves it. "
+                    "Search the folder you mean (`src/`).")
             if hit:
                 deny(f"`{name}` over `{pth}` would read `{os.path.relpath(hit, ROOT)}`, a secret or credential file; agents never read it "
                      "(AGENTS.md \u00a7 Golden rules). Search `src/` (or the folder you mean), exclude it (`--exclude=.env*`) or use the Grep tool.")
 
+
+# The Grep tool `type` filter, for the types that can hold the name of a secret file (secrets.json, credentials.yml).
+# A type not listed here counts as searching every file.
+GREP_TYPE_EXT = {"json": ("json",), "yaml": ("yaml", "yml"), "toml": ("toml",), "xml": ("xml",), "ini": ("ini",),
+                 "config": ("conf", "cfg", "ini", "json", "yaml", "yml", "toml", "properties", "xml", "config"),
+                 "txt": ("txt",), "md": ("md", "markdown"), "markdown": ("md", "markdown"), "ts": ("ts", "tsx", "mts", "cts"),
+                 "js": ("js", "jsx", "mjs", "cjs", "vue"), "py": ("py", "pyi"), "go": ("go",), "rust": ("rs",), "java": ("java",),
+                 "css": ("css", "scss"), "html": ("html", "htm"), "sh": ("sh", "bash", "zsh"), "sql": ("sql",), "rb": ("rb",)}
+
+def grep_glob_names(glob):
+    """The Grep tool glob as fnmatch patterns: `*.{ts,tsx}` -> `*.ts`, `*.tsx` (one brace list)."""
+    m = re.match(r"^(.*)\{([^{}]*)\}(.*)$", glob)
+    return [m.group(1) + p + m.group(3) for p in m.group(2).split(",")] if m else [glob]
+
+def check_grep_tree(path, glob, typ):
+    """The Grep tool over a folder that holds a secret file asks, as `grep -r` denies, unless its glob or type leaves the file out."""
+    full = os.path.normpath(os.path.join(ROOT, expand_home(path)))
+    try:
+        real = os.path.realpath(full)
+    except (ValueError, OSError):
+        return
+    if file_secret_kind(os.path.join(real, "x")) == "deny":
+        deny(f"Grep over `{path}` searches `{real}`, a folder of secret or credential files; agents never read it.")
+    if not os.path.isdir(real):
+        return
+    negate = glob.startswith("!")
+    globs = [g.lower().rsplit("/", 1)[-1] for g in grep_glob_names(glob.lstrip("!"))] if glob else []
+    def searched(name):
+        low = name.lower()
+        if globs and any(fnmatch.fnmatchcase(low, g) for g in globs) == negate:
+            return False
+        if typ and typ.lower() in GREP_TYPE_EXT and not low.endswith(tuple("." + e for e in GREP_TYPE_EXT[typ.lower()])):
+            return False
+        return True
+    top_hit, seen, visited = None, 0, set()
+    for top, dirs, names in os.walk(real):
+        if os.path.realpath(top) in visited:
+            dirs[:] = []
+            continue
+        visited.add(os.path.realpath(top))
+        dirs[:] = [d for d in dirs if d not in SCAN_SKIP]
+        seen += len(names) + len(dirs)
+        if seen > 20000:
+            ask(f"Grep over `{path}` searches more files than the guard can check for secret files; the owner approves it. "
+                "Search the folder you mean, or narrow it with `glob` or `type`.")
+        for n in names + dirs:
+            f = os.path.join(top, n)
+            # a folder is walked into, so only a link to a secret folder (which the search does not enter) counts as one
+            secret = os.path.islink(f) and file_secret_kind(os.path.join(os.path.realpath(f), "x")) == "deny" if n in dirs else \
+                (file_secret_kind(f) == "deny" or (os.path.islink(f) and file_secret_kind(os.path.realpath(f)) == "deny"))
+            if secret and (n in dirs or searched(n)):
+                top_hit = f
+                break
+        if top_hit:
+            break
+    if top_hit:
+        ask(f"Grep over `{path}` would read `{os.path.relpath(top_hit, ROOT)}`, a secret or credential file. Narrow it with `glob` "
+            "or `type` (`*.ts`), or search the folder you mean; otherwise the owner approves it.")
 
 def check_bash(cmd):
     # `$(git branch --show-current)` and its kin are the current branch: read them as HEAD.
@@ -1285,8 +1398,15 @@ def check_bash(cmd):
     # Heredoc bodies are text (a commit message, a PR body), not commands: keep only their first line.
     cmd = re.sub(r"(<<-?\s*([\x27\"]?)(\w+)\2[^\n]*)\n.*?\n[ \t]*\3[ \t]*(?=\n|\)|$)", r"\1", cmd, flags=re.S)
     for words in simple_commands(cmd):
-        if words[0] == "cd" and len(words) > 1:
-            CD_DIRS.append(words[1].strip("\"\x27"))
+        if words[0] in ("cd", "pushd") and len(words) > 1:
+            CD_DIRS.append(words[-1].strip("\"\x27"))
+        if words[0] == "ln":
+            # a link to a secret file or folder reads it under another name in the same command (`ln -s ~/.ssh k && cat k/config`)
+            for w in operands(words[1:]):
+                t = expand_home(w.strip("\"\x27"))
+                if file_secret_kind(t) == "deny" or ((os.path.basename(t.rstrip("/")) in SECRET_DIRS or os.path.isdir(os.path.join(ROOT, t)))
+                                                     and file_secret_kind(os.path.join(t, "x")) == "deny"):
+                    deny(f"`ln` to `{w}` would let a secret or credential file be read under another name; agents never read it.")
     check_pipes(cmd)
     if SHELL_FETCH.search(cmd):
         ask_fetched()
@@ -1424,6 +1544,7 @@ elif tool == "Grep":
             deny(f"`{v}` names a secret or credential file; agents never read it.")
         if v and env_in_word(v, True) == "home":
             ask(f"`{v}` is under ~/.claude: Claude Code settings, permissions and other projects\u2019 transcripts; the owner approves a read or change of it.")
+    check_grep_tree(str(args.get("path") or "."), str(args.get("glob") or ""), str(args.get("type") or ""))
 elif tool.startswith("mcp__") and MCP_ASK:
     short = tool.split("__", 2)[-1]
     if PR_ALLOW and tool.startswith("mcp__github__") and short in PR_TOOLS and own_repo(args) \

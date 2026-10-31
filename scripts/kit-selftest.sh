@@ -966,6 +966,11 @@ def check(name, fx, t):
             os.makedirs(os.path.dirname(os.path.join(t, rel)) or t, exist_ok=True)
             open(os.path.join(t, rel), "w", encoding="utf-8").write(text)
             made.append(os.path.join(t, rel))
+        # "links": {"notes.txt": ".env"} makes notes.txt a symlink to .env for this case only (a secret under another name).
+        for rel, target in case.get("links", {}).items():
+            os.makedirs(os.path.dirname(os.path.join(t, rel)) or t, exist_ok=True)
+            os.symlink(target, os.path.join(t, rel))
+            made.append(os.path.join(t, rel))
         if case.get("guard"):
             # "guard": {"deploys": "off"} switches that ask off for this case only.
             pairs = ", ".join(f"{k}: {v}" for k, v in case["guard"].items())
