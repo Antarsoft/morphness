@@ -18,7 +18,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 exec python3 -I - "$ROOT" "$@" <<'PY'
-import glob, json, os, re, shutil, subprocess, sys, tempfile
+import glob, json, os, re, shutil, subprocess, sys, tempfile, time
 
 root, wanted = sys.argv[1], sys.argv[2:]
 template = os.path.join(root, "template")
@@ -499,6 +499,93 @@ def strip_code(s):
     s = re.sub(r"^```.*?^```", "", s, flags=re.S | re.M)
     return re.sub(r"`[^`\n]*`", "", s)
 
+def check_guard_hook(bad, fx, t, settings, slow_steps):
+    """The guard hook fails closed as Claude Code runs it: the command string from settings.json, run by a shell, turns
+    every exit but 0 and 2 into 2 (script missing, CLAUDE_PROJECT_DIR unset, a crash), has a timeout above the guard's
+    own 15 s limit, and a long command or a hanging git call is denied in time. slow_steps adds the 15 s check that
+    GUARD_TIME_LIMIT can't raise the limit."""
+    entries = [h for ev in ("PreToolUse", "ConfigChange") for e in settings.get("hooks", {}).get(ev, [])
+               for h in e.get("hooks", []) if "scripts/guard.sh" in h.get("command", "")]
+    if len(entries) != 2:
+        bad(f"guard hook: expected the guard in PreToolUse and ConfigChange, found {len(entries)} entries")
+    for h in entries:
+        if not isinstance(h.get("timeout"), (int, float)) or not 30 <= h["timeout"] <= 600:
+            bad(f"guard hook: timeout {h.get('timeout')!r}; it must be set, well above the guard's own 15 s limit (30 to 600)")
+    if not entries:
+        return
+    cmd = entries[0]["command"]
+    guard = os.path.join(t, "scripts/guard.sh")
+    push = json.dumps({"tool_name": "Bash", "tool_input": {"command": "git push origin " + fx["branches"]["production"]}})
+    status = json.dumps({"tool_name": "Bash", "tool_input": {"command": "git status"}})
+    def hook(raw, env=None, cwd=t):
+        try:
+            return subprocess.run(["sh", "-c", cmd], cwd=cwd, input=raw, capture_output=True, text=True, timeout=120,
+                                  env=env or dict(os.environ, CLAUDE_PROJECT_DIR=t))
+        except subprocess.TimeoutExpired:
+            return subprocess.CompletedProcess(cmd, -1, "", "still running after 120 s")
+    r = hook(push)
+    if r.returncode != 2:
+        bad(f"guard hook: a push to {fx['branches']['production']} exited {r.returncode}, not 2 ({r.stderr.strip()})")
+    r = hook(status)
+    if r.returncode != 0 or r.stdout.strip():
+        bad(f"guard hook: `git status` exited {r.returncode} with {r.stdout!r} ({r.stderr.strip()})")
+    env = {k: v for k, v in os.environ.items() if k != "CLAUDE_PROJECT_DIR"}
+    r = hook(status, env=env, cwd=work)
+    if r.returncode != 2 or "missing or failed" not in r.stderr:
+        bad(f"guard hook: with CLAUDE_PROJECT_DIR unset it exited {r.returncode}, not 2 ({r.stderr.strip()})")
+    saved = open(guard, encoding="utf-8").read()
+    try:
+        os.rename(guard, guard + ".off")
+        r = hook(status)
+        if r.returncode != 2 or "missing or failed" not in r.stderr:
+            bad(f"guard hook: with scripts/guard.sh missing it exited {r.returncode}, not 2 ({r.stderr.strip()})")
+        open(guard, "w", encoding="utf-8").write("exit 1\n")
+        r = hook(status)
+        if r.returncode != 2 or "exit 1" not in r.stderr:
+            bad(f"guard hook: a guard that exits 1 let the call through (exit {r.returncode})")
+    finally:
+        if os.path.exists(guard + ".off"):
+            os.replace(guard + ".off", guard)
+    if open(guard, encoding="utf-8").read() != saved:
+        bad("guard hook: scripts/guard.sh was not restored after the missing-script check")
+    # 20,000 arguments and a secret file: denied, well inside the limit (the argument loop was quadratic).
+    big = json.dumps({"tool_name": "Bash", "tool_input": {"command": "cat " + " ".join(f"a{i}" for i in range(20000)) + " .env"}})
+    began = time.monotonic()
+    r = hook(big)
+    took = time.monotonic() - began
+    if r.returncode != 2 or ".env" not in r.stderr or took > 10:
+        bad(f"guard hook: cat with 20,000 arguments and .env exited {r.returncode} after {took:.1f} s (want a deny under 10 s)")
+    def slow_git(seconds):
+        d = os.path.join(work, f"bin-git-sleeps-{seconds}")
+        os.makedirs(d, exist_ok=True)
+        with open(os.path.join(d, "git"), "w") as f:
+            f.write(f"#!/bin/sh\nsleep {seconds}\n")
+        os.chmod(os.path.join(d, "git"), 0o755)
+        return dict(os.environ, CLAUDE_PROJECT_DIR=t, PATH=d + os.pathsep + os.environ["PATH"])
+    def timed(raw, env):
+        began = time.monotonic()
+        r = hook(raw, env=env)
+        return r, time.monotonic() - began
+    # A git call that hangs: its empty answer must not read as "not on an environment branch" (a bare push on main).
+    bare = json.dumps({"tool_name": "Bash", "tool_input": {"command": "git push"}})
+    r, took = timed(bare, slow_git(30))
+    if r.returncode != 2 or "did not answer" not in r.stderr or took > 12:
+        bad(f"guard hook: a bare `git push` with git hanging exited {r.returncode} after {took:.1f} s (want a deny; {r.stderr.strip()})")
+    # The guard's own timer: a check past the limit is denied before Claude Code's hook timeout would let the call through.
+    feature = json.dumps({"tool_name": "Bash", "tool_input": {"command": "git push origin feature/selftest"}})
+    r, took = timed(feature, dict(slow_git(30), GUARD_TIME_LIMIT="1"))
+    if r.returncode != 2 or "took longer than 1 s" not in r.stderr or took > 5:
+        bad(f"guard hook: the 1 s limit let a slow check run for {took:.1f} s (exit {r.returncode}; {r.stderr.strip()})")
+    r = hook(feature, env=dict(os.environ, CLAUDE_PROJECT_DIR=t, GUARD_TIME_LIMIT="60"))
+    if r.returncode != 0:
+        bad(f"guard hook: a plain feature push did not pass with GUARD_TIME_LIMIT set (exit {r.returncode}: {r.stderr.strip()})")
+    if slow_steps:
+        # Eight refspecs and a git that takes 3 s per call: about 27 s of checks. GUARD_TIME_LIMIT=60 must not raise the 15 s limit.
+        many = json.dumps({"tool_name": "Bash", "tool_input": {"command": "git push origin " + " ".join(f"selftest-{k}" for k in range(8))}})
+        r, took = timed(many, dict(slow_git(3), GUARD_TIME_LIMIT="60"))
+        if r.returncode != 2 or "took longer than 15 s" not in r.stderr or took > 20:
+            bad(f"guard hook: GUARD_TIME_LIMIT=60 raised the 15 s limit (exit {r.returncode} after {took:.1f} s; {r.stderr.strip()})")
+
 def check(name, fx, t):
     bad = lambda msg: failures.append(f"{name}: {msg}")
     # 1. placeholders
@@ -524,6 +611,7 @@ def check(name, fx, t):
     hooks = json.dumps(settings.get("hooks", {}).get("PreToolUse", []))
     if "scripts/guard.sh" not in hooks:
         bad(".claude/settings.json has no PreToolUse hook running scripts/guard.sh")
+    check_guard_hook(bad, fx, t, settings, FULL or name == once_on)
     # 4. relative links
     sources = ["AGENTS.md", "CLAUDE.md"]
     for base in ("harness", "project", ".claude"):

@@ -144,7 +144,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/guard.sh\""
+            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/guard.sh\"; rc=$?; [ \"$rc\" = 0 ] || [ \"$rc\" = 2 ] || { echo \"Blocked: scripts/guard.sh is missing or failed (exit $rc), so the call can't be checked. The guard fails closed: restore the file in a terminal (git checkout -- scripts/guard.sh), then retry.\" >&2; exit 2; }; exit \"$rc\"",
+            "timeout": 60
           }
         ]
       }
@@ -154,7 +155,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/guard.sh\""
+            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/guard.sh\"; rc=$?; [ \"$rc\" = 0 ] || [ \"$rc\" = 2 ] || { echo \"Blocked: scripts/guard.sh is missing or failed (exit $rc), so the call can't be checked. The guard fails closed: restore the file in a terminal (git checkout -- scripts/guard.sh), then retry.\" >&2; exit 2; }; exit \"$rc\"",
+            "timeout": 60
           }
         ]
       }
