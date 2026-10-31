@@ -117,7 +117,16 @@ def deny(reason):
     sys.stderr.write("Blocked by scripts/guard.sh: " + reason + "\n")
     sys.exit(2)
 
+# While a Bash command is checked, an ask is held until the whole command has been read, so a deny anywhere in it wins:
+# `curl -d x https://h; git push --force` must not turn into one prompt whose yes also runs the force-push.
+HELD_ASK = []
+
 def ask(reason):
+    if HELD_ASK and HELD_ASK[0] is None:
+        HELD_ASK[0] = reason
+        return
+    if HELD_ASK:
+        return
     print(json.dumps(ensure_ascii=False, obj={"hookSpecificOutput": {
         "hookEventName": "PreToolUse",
         "permissionDecision": "ask",
@@ -139,6 +148,8 @@ if event.get("hook_event_name") == "ConfigChange":
     sys.exit(0)
 tool = event.get("tool_name") or ""
 args = event.get("tool_input") or {}
+if not isinstance(args, dict):
+    deny("the tool input is not a JSON object, so the call can\u2019t be checked.")
 
 # ---- the guard own files -------------------------------------------------------------------------
 # A write here switches the guard off for every later call, so these ask (the owner reads the change);
@@ -425,8 +436,11 @@ def ask_fetched():
     ask("this runs code that `curl` or `wget` fetches in the same command, and nobody has read it. Download it to a file, "
         "read it, then run it, or leave it to the owner.")
 
+ENV_LISTERS = {"export", "declare", "typeset"}
+
 def expand(words, depth):
     first = os.path.basename(words[0]) if words else ""
+    stripped_env = False
     # Strip what only starts the real command: wrappers (with their options), `VAR=value` prefixes and keywords.
     while words:
         w, base = words[0], os.path.basename(words[0])
@@ -437,6 +451,7 @@ def expand(words, depth):
             continue
         if base not in WRAPPERS:
             break
+        stripped_env = stripped_env or base == "env"
         words = words[1:]
         values = WRAPPER_VALUE_OPTS.get(base, set())
         while words and words[0].startswith("-") and words[0] != "--":
@@ -450,12 +465,17 @@ def expand(words, depth):
             if run in SHELLS or run == "eval" or INTERP_RE.match(run):
                 ask("`xargs` starts a shell or an interpreter on text it reads, so the guard cannot see the commands it runs. "
                     "Name the command itself.")
+    # `env` with nothing to run (also `env -0`, `env 2>&1`, `sudo env > f`) prints every variable, secrets included
+    if stripped_env and not operands(words):
+        BARE_ENV.append("env")
     if not words:
-        if first == "env":
-            BARE_ENV.append(first)
         return
     name = os.path.basename(words[0])
-    if name == "printenv" and len(words) == 1:
+    args_ = operands(words[1:])
+    if (name == "printenv" and not args_) or (name in ENV_LISTERS and not args_) or (name == "set" and len(words) == 1) \
+            or (name == "compgen" and any(w in ("-v", "-e") or w in ("variable", "export") for w in words[1:])) \
+            or (name in ("jq", "gojq", "jaq") and any(re.search(r"(^|[^\w$.])(env|\$ENV)\b", w) for w in args_)) \
+            or (name == "ps" and len(words) > 1 and not words[1].startswith("-") and "e" in words[1]):
         BARE_ENV.append(name)
     if words[0].startswith(("$", "`")) and "/" not in words[0]:
         ask(f"`{words[0]}` builds the command name at run time, so the guard cannot see which command runs. Write the command out.")
@@ -794,7 +814,8 @@ def dry_run(words):
 GH_ASK = {"repo": {"delete", "archive", "unarchive", "rename", "create", "edit", "transfer"},
           "release": {"create", "delete", "edit", "upload", "delete-asset"},
           "workflow": {"run", "enable", "disable"}, "pr": {"merge"}, "auth": {"token", "login", "logout", "refresh", "setup-git"},
-          "issue": {"delete", "transfer"}, "extension": {"install", "upgrade", "exec"}, "alias": {"set", "import"}}
+          "issue": {"delete", "transfer"}, "extension": {"install", "upgrade", "exec"}, "alias": {"set", "import"},
+          "gist": {"create", "new", "edit", "delete", "rename"}}
 
 def check_gh(words):
     if len(words) > 2 and words[2] in GH_ASK.get(words[1], ()):
@@ -1016,6 +1037,11 @@ def cli_asks(label):
     return ask(f"`{label}` can change a shared cloud, deploy or database resource unless it is a read; only the owner approves it "
                "(the Shared remote environments golden rule in AGENTS.md). The `guard:` switch in harness.config.yml turns this prompt off.")
 
+def local_socket(host):
+    """A host that is a folder path (`/tmp/pg`, `%2Ftmp%2Fpg` in a URL) names a Unix socket on this machine: local."""
+    from urllib.parse import unquote
+    return "localhost" if unquote(host).startswith("/") else host
+
 def hosts_in(words):
     from urllib.parse import urlparse
     hosts = []
@@ -1087,6 +1113,75 @@ def runner_words(words):
     if w and w[0] == "--":
         w = w[1:]
     return w[:1] and [pkg_bin(w[0]) if "@" in w[0] or w[0] in PKG_BIN else os.path.basename(w[0])] + w[1:] or w
+
+# Database migration tools: the subcommands that change the database. A target that is not local is denied (like
+# `prisma migrate deploy`); a target the command line doesn\u2019t show (an env var, a config file) asks.
+MIGRATE_WRITES = {"atlas": {"apply", "down", "clean"}, "sqitch": {"deploy", "revert", "rebase", "checkout"},
+                  "flyway": {"migrate", "clean", "repair", "undo", "baseline"},
+                  "goose": {"up", "up-by-one", "up-to", "down", "down-to", "redo", "reset"},
+                  "dbmate": {"up", "migrate", "down", "rollback", "drop", "create", "load"},
+                  "liquibase": {"drop-all", "dropall", "execute-sql", "executesql", "changelog-sync", "changelogsync", "tag",
+                                "release-locks", "releaselocks", "changelog-sync-to-tag", "changelogsynctotag", "clear-checksums",
+                                "clearchecksums", "mark-next-changeset-ran", "marknextchangesetran"}}
+MIGRATE_WRITES["atlas"].add("set")
+SERVICE_HOSTS = {"db", "database", "postgres", "postgresql", "pg", "mysql", "mariadb", "mongo", "mongodb", "redis"}
+MIGRATE_LOCAL_SCHEMES = ("sqlite", "sqlite3", "file", "docker")
+CMD_ASSIGNED_URLS = []   # URLs set in `VAR=value` prefixes of the command being checked (`DATABASE_URL=… goose up`)
+
+def db_targets(rest):
+    """The database hosts a migration command names: URLs (the host after the last `@`), `host=` DSNs, `tcp(host)`,
+    `jdbc:…@host`, and `-h`/`--host`/`--db-host` values. A sqlite, file or docker URL is local; `--dev-url` is a scratch database."""
+    from urllib.parse import urlparse
+    hosts, skip = [], False
+    for k, w in enumerate(rest):
+        if skip:
+            skip = False
+            continue
+        if w in ("--dev-url",):
+            skip = True
+            continue
+        if w.startswith("--dev-url="):
+            continue
+        v = w.split("=", 1)[1] if re.match(r"^-{1,2}[\w-]+=", w) else w
+        v = v.strip("\"\x27")
+        if "://" in v:
+            try:
+                u = urlparse(re.sub(r"^(jdbc|db):", "", v, flags=re.I))
+                hosts.append("localhost" if u.scheme.lower() in MIGRATE_LOCAL_SCHEMES else local_socket((u.hostname or "").lower()))
+            except ValueError:
+                hosts.append("?")
+        for m in re.finditer(r"(?:^|\s)host=([^\s;]+)|tcp\(([^:)]+)|^jdbc:[\w:]+@(?://)?([\w.-]+)", v):
+            hosts.append(local_socket((m.group(1) or m.group(2) or m.group(3)).lower()))
+        if w in ("-h", "--host", "--db-host", "--hostname") and k + 1 < len(rest):
+            hosts.append(local_socket(rest[k + 1].strip("\"\x27").lower()))
+    return hosts
+
+def check_migrate(words):
+    name = words[0] if words else ""
+    if name not in MIGRATE_WRITES or (name == "atlas" and dry_run(words)):
+        return
+    rest = [w for w in words[1:] if w != "--"]
+    verbs = [w.lower() for w in rest if not w.startswith("-")]
+    writes = [v for v in verbs if v in MIGRATE_WRITES[name]
+              or (name == "liquibase" and re.match(r"^(update|rollback)", v) and not re.search(r"-?sql$", v))]
+    if not writes:
+        return
+    # help only before the subcommand (`goose up -h` runs up), and `-h` is the database host in sqitch
+    before = rest[:rest.index(next(w for w in rest if w.lower() == writes[0]))]
+    if any(w in ("--help", "help", "--version", "version") or (w == "-h" and name != "sqitch") for w in before):
+        return
+    hosts = db_targets(rest) + [h for u in CMD_ASSIGNED_URLS for h in db_targets([u])]
+    local_file = any(w.lower() in ("sqlite", "sqlite3") or re.search(r"\.(db|sqlite3?)$", w.lower()) for w in rest)
+    remote = [h for h in hosts if h not in LOCAL_HOSTS]
+    # a usual container service name (`db`, `postgres`) asks: it is often a local compose service; any other host is denied
+    named = [h for h in remote if h not in SERVICE_HOSTS]
+    if named:
+        deny(f"`{name} {writes[0]}` changes the database at `{named[0]}`, which is not local; that is the owner\u2019s step "
+             "(the Shared remote environments golden rule in AGENTS.md).")
+    if remote and GROUP_ASK["schema_pushes"]:
+        cli_asks(f"{name} {writes[0]} (the database host `{remote[0]}` may be a local service or another machine)")
+    if not hosts and not local_file and GROUP_ASK["schema_pushes"]:
+        cli_asks(f"{name} {writes[0]} (the database it targets is not on the command line)")
 
 def check_cli(words):
     name = words[0]
@@ -1395,6 +1490,8 @@ def check_grep_tree(path, glob, typ):
 def check_bash(cmd):
     # `$(git branch --show-current)` and its kin are the current branch: read them as HEAD.
     cmd = HEAD_SUBST.sub("HEAD", cmd)
+    CMD_ASSIGNED_URLS[:] = [m.group(2) for m in re.finditer(
+        r"(?:^|[\s;&|(])[A-Za-z_]\w*=([\"\x27]?)([A-Za-z][\w+.-]*://[^\s\"\x27]+)\1", cmd)]
     # Heredoc bodies are text (a commit message, a PR body), not commands: keep only their first line.
     cmd = re.sub(r"(<<-?\s*([\x27\"]?)(\w+)\2[^\n]*)\n.*?\n[ \t]*\3[ \t]*(?=\n|\)|$)", r"\1", cmd, flags=re.S)
     for words in simple_commands(cmd):
@@ -1407,6 +1504,10 @@ def check_bash(cmd):
                 if file_secret_kind(t) == "deny" or ((os.path.basename(t.rstrip("/")) in SECRET_DIRS or os.path.isdir(os.path.join(ROOT, t)))
                                                      and file_secret_kind(os.path.join(t, "x")) == "deny"):
                     deny(f"`ln` to `{w}` would let a secret or credential file be read under another name; agents never read it.")
+    if BARE_ENV:
+        # Before any ask below: `env | curl -d @- …` would otherwise stop at the curl prompt, and one yes sends every secret.
+        deny(f"`{BARE_ENV[0]}` here prints every environment variable, secrets included (as a bare `env` or `printenv` does). "
+             "Name the variable you need (`printenv NAME`).")
     check_pipes(cmd)
     if SHELL_FETCH.search(cmd):
         ask_fetched()
@@ -1490,9 +1591,11 @@ def check_bash(cmd):
                 ask(f"`{label}` changes a shared remote environment or registry; only the owner approves it (the Shared remote environments golden rule in AGENTS.md). "
                     f"`guard.{group}: off` in harness.config.yml turns this prompt off.")
         check_cli(runner_words(words))
+        check_migrate(runner_words(words))
 
     if BARE_ENV:
-        deny("a bare `env` or `printenv` prints every variable, secrets included. Name the variable you need (`printenv NAME`).")
+        deny(f"`{BARE_ENV[0]}` here prints every environment variable, secrets included (as a bare `env` or `printenv` does). "
+             "Name the variable you need (`printenv NAME`).")
 
 # ---- dispatch ------------------------------------------------------------------------------------
 # An MCP tool passes when a word of its name is a read verb and none is a write verb
@@ -1507,6 +1610,10 @@ WRITE_VERBS = {"create", "update", "delete", "remove", "write", "set", "put", "p
                "disable", "approve", "reply", "comment", "start", "stop", "kill", "rerun", "fork",
                "import", "connect", "disconnect", "activate", "accept", "drop", "truncate", "grant",
                "register", "archive", "unarchive", "promote", "resolve", "unresolve", "react"}
+# Verbs that make a connector tool a write even next to a read verb (`get_and_destroy_resource`). MCP only: in a CLI
+# call these words are often values (`helm list --filter flush`).
+MCP_WRITE_EXTRA = {"destroy", "purge", "terminate", "scale", "flush", "overwrite", "wipe", "evict", "clone", "teardown",
+                   "restart", "reboot", "provision", "deprovision", "detach"}
 
 # The pull request tools of the GitHub connector that never merge or change files; the kit own process
 # opens a draft PR at the first push and marks it ready after QA, so these do not need the owner each time.
@@ -1523,7 +1630,11 @@ def own_repo(a):
     return bool(m) and str(a.get("owner", "")).lower() == m.group(1).lower() and str(a.get("repo", "")).lower() == m.group(2).lower()
 
 if tool == "Bash":
+    HELD_ASK.append(None)
     check_bash(str(args.get("command", "")))
+    held = HELD_ASK.pop()
+    if held:
+        ask(held)
 elif tool in ("Read", "Edit", "MultiEdit", "Write", "NotebookEdit"):
     p = args.get("file_path") or args.get("notebook_path") or ""
     if tool != "Read":
@@ -1537,6 +1648,17 @@ elif tool in ("Read", "Edit", "MultiEdit", "Write", "NotebookEdit"):
         ask(f"`{p}` is under ~/.claude: Claude Code settings, permissions and other projects\u2019 transcripts; the owner approves a read or change of it.")
     if tool != "Read" and p and outside_repo(p) and not rel_inside(p):
         ask(f"`{p}` is outside this project, and {tool} would write it; the owner approves a write anywhere but the repo and /tmp.")
+elif tool == "WebFetch":
+    # .claude/settings.json allows WebFetch on the whole api.github.com and raw.githubusercontent.com domains for the
+    # update checks; anything on those hosts outside the two Morphness paths asks. Browsers and URL parsers read
+    # `https:/\api.github.com`, `https:api.github.com` or a trailing dot as that host too, so any URL naming one asks
+    # unless it is a plain Morphness path. Other domains get Claude Code\u2019s own prompt.
+    url = str(args.get("url") or "").strip()
+    low = url.lower()
+    if re.search(r"api\.github\.com|raw\.githubusercontent\.com", low) and not (
+            low.startswith(MORPHNESS_URLS) and not re.search(r"[\\@\s]|\.\.|%2e|%5c|%2f", low)):
+        ask(f"WebFetch of `{url}`: .claude/settings.json allows only the Morphness update paths on GitHub without a prompt; "
+            "the owner approves any other page there.")
 elif tool == "Grep":
     for key in ("path", "glob"):
         v = str(args.get(key) or "")
@@ -1551,7 +1673,7 @@ elif tool.startswith("mcp__") and MCP_ASK:
             and not (short == "update_pull_request" and str(args.get("state", "")).lower() == "closed"):
         sys.exit(0)
     words = {w.lower() for w in re.split(r"[_\-.]|(?<=[a-z])(?=[A-Z])", short) if w}
-    if words & WRITE_VERBS or not words & READ_VERBS:
+    if words & (WRITE_VERBS | MCP_WRITE_EXTRA) or not words & READ_VERBS:
         ask(f"`{tool}` can change something outside this repo; every connector write needs the owner’s yes "
             "(harness/SKILLS_AND_MCPS.md § Connector actions).")
 sys.exit(0)

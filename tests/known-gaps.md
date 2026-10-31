@@ -8,7 +8,7 @@ One line per limit, each starting with "- ". `scripts/trust-report.sh` copies th
 - A search over the whole project (grep, or Claude Code's Grep tool) is stopped or asks only when the folder holds a file with a known secret name. A secret inside a file with another name can still be printed.
 - Reading files outside the project is not blocked, except known credential files such as SSH and cloud keys.
 - When the hook does not answer within Claude Code's hook time limit, Claude Code runs the call. The guard ends its own check sooner and blocks the call, so this needs a hang its own timer can't end, such as one before the check starts.
-- Only Bash, file tools, Grep and MCP tool calls are checked. Other tools are left to Claude Code's own permission prompts.
+- Only Bash, file tools, Grep, WebFetch and MCP tool calls are checked. Other tools are left to Claude Code's own permission prompts.
 - The test suite is the kit's own: it shows the guard does what the kit says it does on the cases listed. No tool on this page tests the guard against hostile input beyond those cases.
 - No tool on this page measures quality or cost compared with plain Claude Code. Morphness adds process, and process costs tokens.
 - The real protection for shared environments is the host: branch protection, and environment secrets that only the owner holds.
