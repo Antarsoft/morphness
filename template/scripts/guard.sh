@@ -26,6 +26,7 @@ guard_closed() {
 }
 
 GUARD_LIB_DIR="$(cd "$(dirname "$0")" && pwd)/lib"
+GUARD_SELF="${GUARD_LIB_DIR%/lib}/${0##*/}"
 . "$GUARD_LIB_DIR/config.sh" 2>/dev/null || guard_closed "scripts/lib/config.sh is missing or unreadable, so harness.config.yml can't be read."
 cd "${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}" 2>/dev/null || guard_closed "the project folder can't be entered."
 command -v awk >/dev/null 2>&1 || guard_closed "awk is not installed, so harness.config.yml can't be read."
@@ -55,7 +56,15 @@ GUARD_ALLOW_HOSTS="$(config_get guard.allow_hosts)"
 GUARD_FAIL_OPEN="$(config_get guard.fail_open)"
 export GUARD_LIB_DIR GUARD_FAIL_OPEN GUARD_CONFIG_READABLE GUARD_INTEGRATION GUARD_PRODUCTION GUARD_ENV_BRANCHES GUARD_MCP_WRITES GUARD_DEPLOYS GUARD_PUBLISHES GUARD_SCHEMA_PUSHES GUARD_NETWORK GUARD_INSTALLS GUARD_PR_WRITES GUARD_ALLOW_HOSTS
 
-python3 -I -c '
+# The checks below run in python3. It reads them from this file (the GUARD_PY block at the end) rather than from a
+# `-c` argument, because Linux caps a single argument at 128 KB. Line numbers in a traceback match this file.
+python3 -I -c 'import sys; f = sys.argv[1]; t = open(f, encoding="utf-8").read(); s = t.index("\nimport fnmatch") + 1; e = t.rindex("\nGUARD_PY\n"); exec(compile("\n" * t.count("\n", 0, s) + t[s:e], f, "exec"))' "$GUARD_SELF"
+rc=$?
+# 0 = pass or ask (JSON on stdout), 2 = deny. Anything else is a crash inside the hook: block, don't pass.
+[ "$rc" -eq 0 ] || [ "$rc" -eq 2 ] || guard_closed "the guard script crashed (exit $rc), so the call can't be checked."
+exit "$rc"
+
+: <<'GUARD_PY'
 import fnmatch, glob as globmod, json, os, re, shlex, subprocess, sys, tempfile, threading
 
 # Claude Code lets a call through when a hook runs past its timeout (60 s in .claude/settings.json), so the guard
@@ -1523,9 +1532,22 @@ def cli_asks(label):
                "(the Shared remote environments golden rule in AGENTS.md). The `guard:` switch in harness.config.yml turns this prompt off.")
 
 def local_socket(host):
-    """A host that is a folder path (`/tmp/pg`, `%2Ftmp%2Fpg` in a URL) names a Unix socket on this machine: local."""
+    """The hosts in a host value, one per entry of a comma list (libpq tries each): a folder path (`/tmp/pg`, `%2Ftmp%2Fpg`
+    in a URL) names a Unix socket on this machine, so it counts as `localhost`."""
     from urllib.parse import unquote
-    return "localhost" if unquote(host).startswith("/") else host
+    return ["localhost" if unquote(h).strip().startswith("/") else unquote(h).strip() for h in host.split(",")]
+
+def db_url_hosts(url):
+    """The hosts a database URL names: each entry of its host list and a `host=` or `hostaddr=` query value."""
+    from urllib.parse import urlparse, parse_qsl
+    u = urlparse(url)
+    hosts = []
+    for part in u.netloc.rsplit("@", 1)[-1].split(","):
+        hosts.append(part[1:part.find("]")] if part.startswith("[") and "]" in part else part.split(":")[0])
+    query = [v for k, v in parse_qsl(u.query) if k.lower() in ("host", "hostaddr")]
+    if query:
+        hosts = [h for h in hosts if h] + query
+    return [h for v in hosts for h in local_socket(v.lower())] or [""]
 
 def hosts_in(words):
     from urllib.parse import urlparse
@@ -1533,16 +1555,16 @@ def hosts_in(words):
     for k, w in enumerate(words):
         if "://" in w:
             try:
-                hosts.append((urlparse(w.strip("\"\x27")).hostname or "").lower())
+                hosts += db_url_hosts(w.strip("\"\x27"))
             except ValueError:
                 hosts.append("?")
         elif w in ("-h", "-H", "--host", "--hostname") and k + 1 < len(words):
-            hosts.append(words[k + 1].lower())
+            hosts.append(words[k + 1].strip("\"\x27").lower())
         elif re.match(r"^--host(name)?=", w):
-            hosts.append(w.split("=", 1)[1].lower())
+            hosts.append(w.split("=", 1)[1].strip("\"\x27").lower())
         elif re.match(r"^-[hH]\S", w):
-            hosts.append(w[2:].lower())
-    return hosts
+            hosts.append(w[2:].strip("\"\x27").lower())
+    return [h for v in hosts for h in local_socket(v)]
 
 def check_db(name, words):
     """Ask when a database client reaches a host that is not local, unless the statement is a read."""
@@ -1632,13 +1654,13 @@ def db_targets(rest):
         if "://" in v:
             try:
                 u = urlparse(re.sub(r"^(jdbc|db):", "", v, flags=re.I))
-                hosts.append("localhost" if u.scheme.lower() in MIGRATE_LOCAL_SCHEMES else local_socket((u.hostname or "").lower()))
+                hosts += ["localhost"] if u.scheme.lower() in MIGRATE_LOCAL_SCHEMES else db_url_hosts(re.sub(r"^(jdbc|db):", "", v, flags=re.I))
             except ValueError:
                 hosts.append("?")
         for m in re.finditer(r"(?:^|\s)host=([^\s;]+)|tcp\(([^:)]+)|^jdbc:[\w:]+@(?://)?([\w.-]+)", v):
-            hosts.append(local_socket((m.group(1) or m.group(2) or m.group(3)).lower()))
+            hosts += local_socket((m.group(1) or m.group(2) or m.group(3)).lower())
         if w in ("-h", "--host", "--db-host", "--hostname") and k + 1 < len(rest):
-            hosts.append(local_socket(rest[k + 1].strip("\"\x27").lower()))
+            hosts += local_socket(rest[k + 1].strip("\"\x27").lower())
     return hosts
 
 def check_migrate(words):
@@ -1857,10 +1879,11 @@ SCAN_SKIP = {".git", "node_modules", ".next", ".venv", "venv", "dist", "build", 
 
 TOO_BIG = "(too many files to check)"
 
-def secret_in_tree(path, limit=20000, follow=False):
-    """The first secret or credential file below a directory (skipping dependency and build folders), None when there is
-    none, TOO_BIG past `limit` entries. `follow`: the search follows folder links (`grep -R`), so the scan does too."""
-    seen, visited = 0, set()
+def secrets_in_tree(path, limit=20000, cap=200, follow=False):
+    """The secret and credential files below a directory (a secret folder counts with each file in it), up to `cap`;
+    dependency and build folders are skipped. TOO_BIG past `limit` entries. `follow`: the search follows folder links
+    (`grep -R`), so the scan does too; a link to a secret folder that is not followed counts as one entry."""
+    found, seen, visited = [], 0, set()
     for top, dirs, names in os.walk(path, followlinks=follow):
         real_top = os.path.realpath(top)
         if real_top in visited:
@@ -1868,22 +1891,171 @@ def secret_in_tree(path, limit=20000, follow=False):
             continue
         visited.add(real_top)
         dirs[:] = [d for d in dirs if d not in SCAN_SKIP]
+        # a folder counts by what is inside it: `.ssh/` does, a `kubeconfig/` package does not
+        inside = top != path and (any(part in SECRET_DIRS for part in os.path.relpath(top, path).split(os.sep))
+                                  or file_secret_kind(os.path.join(real_top, "x")) == "deny")
         for n in names + dirs:
             seen += 1
             if seen > limit:
                 return TOO_BIG
+            if len(found) >= cap:
+                return found
             full = os.path.join(top, n)
             if n in dirs:
-                # a folder counts by what is inside it: `.ssh/` does, a `kubeconfig/` package does not
-                hit = file_secret_kind(os.path.join(os.path.realpath(full), "x")) == "deny"
+                hit = not follow and os.path.islink(full) and file_secret_kind(os.path.join(os.path.realpath(full), "x")) == "deny"
             else:
-                hit = file_secret_kind(full) == "deny" or (os.path.islink(full) and file_secret_kind(os.path.realpath(full)) == "deny")
+                hit = (inside and not n.endswith(".pub")) or file_secret_kind(full) == "deny" \
+                    or (os.path.islink(full) and file_secret_kind(os.path.realpath(full)) == "deny")
             if hit:
-                return full
-    return None
+                found.append(full)
+    return found
+
+def search_filters(name, rest):
+    """The file filters of a recursive grep or rg search, in command-line order (the last one that matches a file decides):
+    a list of (kind, glob, case_insensitive), kind include, exclude or exclude_dir for grep, glob for rg (`!` kept).
+    Words after `--` are operands, not filters."""
+    if "--" in rest:
+        rest = rest[:rest.index("--")]
+    rg_icase = name == "rg" and "--glob-case-insensitive" in rest
+    out = []
+    for k, w in enumerate(rest):
+        flag, value = w, None
+        if w.startswith("--") and "=" in w:
+            flag, value = w.split("=", 1)
+        elif name == "rg" and w.startswith("-g") and len(w) > 2:
+            flag, value = "-g", w[2:]
+        elif k + 1 < len(rest) and w in ("--include", "--exclude", "--exclude-dir", "--glob", "--iglob", "-g"):
+            value = rest[k + 1]
+        if value is None:
+            continue
+        value = value.strip("\"\x27")
+        if name == "rg" and flag in ("--glob", "-g", "--iglob"):
+            out.append(("glob", value, flag == "--iglob" or rg_icase))
+        elif name != "rg" and flag in ("--include", "--exclude", "--exclude-dir"):
+            out.append((flag[2:].replace("-", "_"), value, False))
+    return out
+
+def glob_regex(glob, rg):
+    """A grep (fnmatch) or rg glob as a regex for a whole name or path. rg: `*` and `?` stop at `/`, `**` crosses it, one
+    level of `{a,b}`; grep: no braces. `[!x]` and `[^x]` negate in both. None for a glob the guard cannot read."""
+    out, i, depth = "", 0, 0
+    while i < len(glob):
+        c = glob[i]
+        if c == "\\" and i + 1 < len(glob):
+            out += re.escape(glob[i + 1]); i += 2; continue
+        if c == "*":
+            if rg and glob.startswith("**", i):
+                after = glob[i + 2:i + 3]
+                if after == "/":
+                    out += "(?:.*/)?"; i += 3; continue
+                out += ".*"; i += 2; continue
+            out += "[^/]*" if rg else ".*"
+        elif c == "?":
+            out += "[^/]" if rg else "."
+        elif c == "[":
+            j = glob.find("]", i + 2 if glob[i + 1:i + 2] in ("!", "^") else i + 1)
+            if j < 0:
+                out += re.escape(c)
+            else:
+                body = glob[i + 1:j]
+                neg = body[:1] in ("!", "^")
+                body = body[1:] if neg else body
+                out += "[" + ("^" if neg else "") + body.replace("\\", "\\\\").replace("[", "\\[") + "]"
+                i = j
+        elif rg and c == "{":
+            if depth:
+                return None
+            depth += 1; out += "(?:"
+        elif rg and c == "}" and depth:
+            depth -= 1; out += ")"
+        elif rg and c == "," and depth:
+            out += "|"
+        else:
+            out += re.escape(c)
+        i += 1
+    return None if depth else out
+
+def search_reads(name, display, rel, filters):
+    """True when a recursive grep or rg with these filters may read the file at `rel` (relative to the searched folder;
+    `display` is the path as rg prints it). An unreadable glob counts as reading the file."""
+    parts = [p for p in rel.split("/") if p not in ("", ".")]
+    base, dirs = parts[-1], parts[:-1]
+    def hit(glob, text, icase, rg):
+        rx = glob_regex(glob, rg)
+        return rx is None or re.fullmatch(rx, text, re.S | (re.I if icase else 0)) is not None
+    if name != "rg":
+        # GNU grep: --exclude-dir skips a folder whose base name matches; --include and --exclude match the base name,
+        # the last matching one wins, and with none matching the file is read unless the first filter is --include.
+        if any(hit(g, d, False, False) and glob_regex(g, False) is not None for kind, g, _ in filters if kind == "exclude_dir" for d in dirs):
+            return False
+        files = [(kind, g) for kind, g, _ in filters if kind in ("include", "exclude")]
+        last = None
+        for kind, g in files:
+            if glob_regex(g, False) is None or hit(g, base, False, False):
+                last = kind if glob_regex(g, False) is not None else "include"
+        if last:
+            return last == "include"
+        return not (files and files[0][0] == "include")
+    # rg: the last matching glob wins; `!glob` leaves a file (or a folder) out; with any plain glob, a file that matches
+    # none is left out. A glob without `/` matches a name at any depth, one with `/` the path rg prints.
+    dparts = [p for p in display.split("/") if p not in ("", ".")]
+    def rg_match(glob, icase, as_dir):
+        g = glob.rstrip("/") if as_dir else glob
+        if glob.endswith("/") and not as_dir:
+            return False
+        if "/" not in g:
+            names = dirs if as_dir else [base]
+            return any(hit(g, n, icase, True) for n in names)
+        g = g.lstrip("/")
+        targets = ["/".join(dparts[:k]) for k in range(1, len(dparts))] if as_dir else ["/".join(dparts)]
+        return any(hit(g, t, icase, True) for t in targets)
+    decision, plain = None, False
+    for kind, glob, icase in filters:
+        neg = glob.startswith("!")
+        g = glob[1:] if neg else glob
+        if not neg:
+            plain = True
+            if glob_regex(g.lstrip("/"), True) is None or rg_match(g, icase, False):
+                decision = True
+        elif glob_regex(g.lstrip("/").rstrip("/"), True) is not None and (rg_match(g, icase, False) or rg_match(g, icase, True)):
+            decision = False
+    if decision is not None:
+        return decision
+    return not plain
+
+def glob_escape(text):
+    return re.sub(r"([*?\[\]{}\\!])", r"\\\1", text)
+
+def exclude_hint(name, full, rel):
+    """The filter that leaves this secret file out of a grep or rg search: its secret folder, else its exact name."""
+    parts = rel.split("/")
+    folder = None
+    for k in range(len(parts) - 1):
+        sub = os.path.join(full, *parts[:k + 1])
+        if parts[k] in SECRET_DIRS or file_secret_kind(os.path.join(os.path.realpath(sub), "x")) == "deny":
+            folder = parts[k]
+            break
+    base = parts[-1]
+    glob = ".env*" if base.startswith(".env") else glob_escape(base)
+    if name == "rg":
+        return f"-g \"!{glob_escape(folder)}/\"" if folder else f"-g \"!{glob}\""
+    return f"--exclude-dir=\"{glob_escape(folder)}\"" if folder else f"--exclude=\"{glob}\""
+
+SEARCH_VALUE_OPTS = ({"-m", "-A", "-B", "-C", "-d", "-D", "-e", "-f", "--regexp", "--file", "--include", "--exclude", "--exclude-dir",
+                      "--exclude-from", "--label", "--group-separator", "--max-count", "--context", "--after-context",
+                      "--before-context", "--devices", "--directories", "--binary-files"},
+                     {"-g", "--glob", "--iglob", "-t", "--type", "-T", "--type-not", "-m", "--max-count", "-A", "-B", "-C", "-M",
+                      "-e", "-f", "--regexp", "--file", "--max-columns", "-j", "--threads", "-d", "--max-depth", "--sort", "--sortr",
+                      "-r", "--replace", "-E", "--encoding", "--max-filesize", "--type-add", "--type-clear", "--ignore-file", "--pre",
+                      "--pre-glob", "--context-separator", "--color", "--colors", "--engine", "--path-separator",
+                      "--field-match-separator", "--field-context-separator", "--dfa-size-limit", "--regex-size-limit",
+                      "--hyperlink-format"})
+
+SEARCH_SHORT = set("rRnilLwxvcohHsqIEFPzZUuSNap.")   # short grep and rg flags that take no value
 
 def check_tree_search(words):
-    """A recursive grep (or `rg --hidden`) over a tree that holds a secret file reads it; deny unless the secret names are excluded."""
+    """A recursive grep (or `rg --hidden`) over a tree that holds a secret file reads it; deny unless its filters
+    (`--include`, `--exclude`, `--exclude-dir`, rg `-g`) leave every secret file out, and name the filter that would."""
     name, rest = words[0], words[1:]
     flags = [w for w in rest if w.startswith("-")]
     if name in ("grep", "egrep", "fgrep", "zgrep"):
@@ -1892,26 +2064,46 @@ def check_tree_search(words):
         recursive = any(w in ("--hidden", "-.", "--no-ignore", "--no-ignore-vcs") or re.match(r"^-u{2,}$", w) for w in flags)
     else:
         return
-    excludes = [w.split("=", 1)[1] if "=" in w else "" for w in rest if re.match(r"^--(exclude(-dir)?|glob|iglob)=", w)]
-    excludes += [rest[k + 1] for k, w in enumerate(rest[:-1]) if w in ("--exclude", "--exclude-dir", "--glob", "--iglob", "-g")]
-    excludes += [w for w in rest if w.startswith("!")]
-    if not recursive or any("env" in x for x in excludes):
+    if not recursive:
         return
     follow = any(w == "--dereference-recursive" or re.match(r"^-[A-Za-z]*R[A-Za-z]*$", w) for w in flags) if name != "rg" \
         else any(w in ("-L", "--follow") for w in flags)
-    ops = operands(rest)
-    own_pattern = any(w in ("-e", "--regexp", "-f", "--file") or w.startswith(("--regexp=", "--file=")) for w in flags)
+    filters = search_filters(name, rest)
+    # an option value given as the next word (`-g x`, `-e pat`) is not the pattern or a path
+    takes_value = SEARCH_VALUE_OPTS[name == "rg"]
+    value_next = lambda w: w in takes_value or re.match(r"^-[A-Za-z]*[ef]$", w)
+    ops = operands([w for k, w in enumerate(rest) if not (k and value_next(rest[k - 1]))])
+    own_pattern = any(w in ("-e", "--regexp", "-f", "--file") or w.startswith(("--regexp=", "--file=")) or re.match(r"^-[A-Za-z]*[ef]", w)
+                      for w in flags if not w.startswith("--") or w.startswith(("--regexp", "--file")))
     paths = ops if own_pattern else ops[1:]
-    for pth in paths or ["."]:
+    # a short option the guard does not know may take the next word: then, if no path given exists, `.` may be searched
+    risky = any(k and re.match(r"^-[^-]", rest[k - 1]) and not set(rest[k - 1][1:]) <= SEARCH_SHORT and not value_next(rest[k - 1])
+                for k, w in enumerate(rest) if w in ops)
+    if not paths or (risky and not any(os.path.exists(os.path.join(ROOT, expand_home(p))) for p in paths)):
+        paths = paths + ["."]
+    for pth in paths:
         full = os.path.normpath(os.path.join(ROOT, expand_home(pth)))
         if os.path.isdir(full) and rel_inside(pth):
-            hit = secret_in_tree(full, follow=follow)
-            if hit == TOO_BIG:
+            found = secrets_in_tree(full, follow=follow)
+            if found == TOO_BIG:
                 ask(f"`{name}` over `{pth}` searches more files than the guard can check for secret files; the owner approves it. "
                     "Search the folder you mean (`src/`).")
-            if hit:
-                deny(f"`{name}` over `{pth}` would read `{os.path.relpath(hit, ROOT)}`, a secret or credential file; agents never read it "
-                     "(AGENTS.md \u00a7 Golden rules). Search `src/` (or the folder you mean), exclude it (`--exclude=.env*`) or use the Grep tool.")
+                continue
+            def shown(h):
+                r = os.path.relpath(h, full).replace(os.sep, "/")
+                return r if pth in (".", "./") else os.path.normpath(pth).replace(os.sep, "/") + "/" + r
+            hits = [h for h in found if search_reads(name, shown(h), os.path.relpath(h, full).replace(os.sep, "/"), filters)]
+            if hits:
+                hints = []
+                for h in hits:
+                    hint = exclude_hint(name, full, os.path.relpath(h, full).replace(os.sep, "/"))
+                    if hint not in hints:
+                        hints.append(hint)
+                more = f" (and {len(hints) - 5} more)" if len(hints) > 5 else ""
+                flags_to_add = " ".join(hints[:5])
+                deny(f"`{name}` over `{pth}` would read `{os.path.relpath(hits[0], ROOT)}`, a secret or credential file; agents never "
+                     f"read it (AGENTS.md § Golden rules). Add `{flags_to_add}`{more} after the other filters to leave the secret "
+                     "files out, or search the folder you mean (`src/`).")
 
 
 # The Grep tool `type` filter, for the types that can hold the name of a secret file (secrets.json, credentials.yml).
@@ -2162,8 +2354,4 @@ elif tool.startswith("mcp__") and MCP_ASK:
         ask(f"`{tool}` can change something outside this repo; every connector write needs the owner’s yes "
             "(harness/SKILLS_AND_MCPS.md § Connector actions).")
 sys.exit(0)
-'
-rc=$?
-# 0 = pass or ask (JSON on stdout), 2 = deny. Anything else is a crash inside the hook: block, don't pass.
-[ "$rc" -eq 0 ] || [ "$rc" -eq 2 ] || guard_closed "the guard script crashed (exit $rc), so the call can't be checked."
-exit "$rc"
+GUARD_PY

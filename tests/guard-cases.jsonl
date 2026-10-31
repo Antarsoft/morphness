@@ -945,3 +945,72 @@
 {"expect": "pass", "tool": "Bash", "input": {"command": "cat scripts/guard.sh"}}
 {"expect": "pass", "tool": "Bash", "input": {"command": "cp scripts/guard.sh /tmp/g.sh"}}
 {"expect": "deny", "tool": "Bash", "input": {"command": "sed -i s/a/b/ scripts/*.sh"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "psql -h /tmp/pgsock -p 5433 -d app -c \"insert into t values (1)\""}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "psql --host=/var/run/postgresql -c \"drop table t\""}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "psql \"postgresql://%2Ftmp%2Fpgsock/app\" -c \"delete from t\""}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "psql -h db.example.com -c \"delete from t\""}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "psql \"postgresql://u@db.example.com/app\" -c \"delete from t\""}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "grep -rn TODO ."}, "files": {".env.local": "K=1", "src/a.ts": "x"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "grep -rn --exclude='.env*' TODO ."}, "files": {".env.local": "K=1", "src/a.ts": "x"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "grep -rn --include='*.ts' TODO ."}, "files": {".env.local": "K=1", "src/a.ts": "x"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "grep -rn --include=*.{ts,tsx} TODO ."}, "files": {".env.local": "K=1", "src/a.ts": "x"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "grep -rn --exclude='.env*' key ."}, "files": {".env.local": "K=1", "deploy/id_rsa": "k"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "grep -rn --exclude='.env*' --exclude=id_rsa key ."}, "files": {".env.local": "K=1", "deploy/id_rsa": "k"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "grep -rn --include='*.json' key ."}, "files": {"config/secrets.json": "{}", "src/a.ts": "x"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "grep -rn --exclude-dir=.aws key ."}, "files": {".aws/credentials": "k"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "grep -rn key ."}, "files": {".aws/credentials": "k"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "grep -rn key ."}, "files": {".ssh/id_rsa.pub": "k"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "rg --hidden -g '!.env*' TODO"}, "files": {".env.local": "K=1"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "rg --hidden -g '!.env*' TODO"}, "files": {".env.local": "K=1", "certs/server.key": "k"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "rg --hidden -g '*.ts' TODO"}, "files": {".env.local": "K=1"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "rg --hidden -g '*' KEY"}, "files": {".env.local": "K=1"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "grep -rn -A 2 KEY"}, "files": {".env.local": "K=1"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "grep -r -m 5 KEY ."}, "files": {".env": "K=1"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "grep -rn -A 2 KEY src"}, "files": {".env.local": "K=1", "src/a.ts": "x"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "grep -r --exclude=zzz --include='*.ts' TOKEN ."}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "grep -r --exclude=secrets.json --include='*.json' --exclude=x.key TOKEN ."}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "grep -r --include='*.json' --exclude=secrets.json --exclude=x.key TOKEN ."}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "grep -r --exclude='.env*' --include='*' TOKEN ."}, "files": {".env": "x\n", "src/a.ts": "x\n"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "grep -r --include='*.ts' TOKEN ."}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "rg --hidden -g '!secrets.json' -g '*.json' TOKEN"}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "rg --hidden -g '*.ts' TOKEN"}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "rg --hidden -g '*.json' -g '!secrets.json' TOKEN"}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "grep -r --exclude=SECRETS.JSON --exclude=x.key TOKEN ."}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "grep -r --exclude-dir=CONFIG TOKEN ."}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "grep -r --exclude-dir=config TOKEN ."}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "rg --hidden -g '!SECRETS.JSON' -g '!x.key' TOKEN"}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "rg --hidden --iglob '!SECRETS.JSON' -g '!x.key' TOKEN"}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "rg --hidden --glob-case-insensitive -g '!SECRETS.JSON' -g '!X.KEY' TOKEN"}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "grep -r --exclude='.env*' TOKEN ."}, "files": {".Env.production": "x\n"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "grep -r --exclude=config/secrets.json --exclude=x.key TOKEN ."}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "grep -r --exclude='c*' --exclude=x.key TOKEN ."}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "rg --hidden -g '!c*.json' -g '!x.key' TOKEN"}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "rg --hidden -g '!sub/x.key' -g '!secrets.json' TOKEN config"}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "rg --hidden -g '!config/sub/x.key' -g '!secrets.json' TOKEN config"}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "rg --hidden -g '!**/secrets.json' -g '!**/x.key' TOKEN"}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "rg --hidden -g '!config' TOKEN"}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "rg --hidden -g '!config/' TOKEN"}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "grep -r --exclude='{secrets.json,x.key}' TOKEN ."}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "rg --hidden -g '!{secrets.json,x.key}' TOKEN"}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "grep -r --include='[^x]ecrets.json' TOKEN ."}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "grep -r --exclude='[^s]ecrets.json' --exclude=x.key TOKEN ."}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "rg --hidden -g '{*.ts,secret}{s.json,x}' TOKEN"}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "grep -r -e TOKEN -- --exclude=secrets.json ."}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "rg --hidden -e TOKEN -- -g '!secrets.json' ."}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "grep -r -e TOKEN"}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "rg --hidden -e TOKEN"}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "rg --hidden --color never TOKEN"}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "grep -rn --group-separator XX TOKEN"}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "rg --hidden --engine auto TOKEN"}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "rg --hidden -g!secrets.json -g!sub TOKEN"}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "grep -r -e TOKEN src"}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "grep -rie TOKEN src"}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "grep -r TOKEN . --exclude='secrets.json' --exclude-dir='sub'"}, "files": {"config/secrets.json": "x\n", "config/sub/x.key": "x\n", "src/a.ts": "x\n"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "psql -h /tmp,evil.com -c \"delete from t\""}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "psql --host=/var/run/postgresql,db.evil.com -c \"delete from t\""}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "psql \"postgresql://%2Ftmp,evil.com/app\" -c \"delete from t\""}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "psql \"postgresql://%2Ftmp/app?host=evil.com\" -c \"delete from t\""}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "psql \"postgresql:///app?host=evil.com\" -c \"delete from t\""}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "psql -h localhost,evil.com -c \"delete from t\""}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "psql -h /tmp,/var/run/postgresql -c \"delete from t\""}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "psql \"postgresql:///app?host=/tmp\" -c \"delete from t\""}}
