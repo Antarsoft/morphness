@@ -760,6 +760,96 @@ def check(name, fx, t):
         bad(f"evidence.sh printed a summary that left most entries out (exit {r.returncode}): {r.stdout!r}")
     open(lf, "w").write(keep)
     os.remove(pf)
+    # evidence.sh options are stable (STABILITY.md § Stable item 7): the field names of --json (none renamed
+    # or removed; new ones may be added), --out files, a bad option fails
+    r = run(["bash", "scripts/evidence.sh", "--json"], t)
+    def key_paths(v, at=""):
+        if isinstance(v, dict):
+            for k, x in v.items():
+                yield at + k
+                yield from key_paths(x, at + k + ".")
+    try:
+        keys = set(key_paths(json.loads(r.stdout)))
+    except ValueError:
+        keys = set()
+    want_keys = {"generated", "morphness_release", "first_feature", "last_feature", "windows", "escapes_recorded",
+                 "failure_causes_unfolded", "modes_unfolded", "prunes", "prune_decisions", "lessons_adopted", "git",
+                 "overall", "overall.features", "overall.enough_data", "overall.first_time_pass", "overall.avg_qa_rounds",
+                 "overall.cost_measured", "overall.avg_cost_usd", "overall.median_cost_usd",
+                 "retro_items", "retro_items.applied", "retro_items.deferred", "retro_items.open", "retro_items.skipped",
+                 "rule_audit", "rule_audit.fired", "rule_audit.insurance", "rule_audit.never fired", "rule_audit.other",
+                 "rule_audit.too new", "trials",
+                 "records", "records.audit_rows", "records.folded_entries", "records.learnings_files", "records.prune_files",
+                 "records.prunes_read", "records.unread_entries"}
+    if r.returncode or want_keys - keys:
+        bad(f"evidence.sh --json (exit {r.returncode}) lacks the fields {sorted(want_keys - keys)}")
+    r = run(["bash", "scripts/evidence.sh", "--out"], t)
+    outs = glob.glob(os.path.join(t, "_harness/evidence/*"))
+    if r.returncode or sorted(os.path.splitext(o)[1] for o in outs) != [".json", ".md"]:
+        bad(f"evidence.sh --out wrote {outs} (exit {r.returncode}, stderr {r.stderr.strip()!r})")
+    shutil.rmtree(os.path.join(t, "_harness/evidence"), ignore_errors=True)
+    for script, opt in (("evidence.sh", "--jsn"), ("learned-rules.sh", "--al"), ("prune-counter.sh", "--prun")):
+        r = run(["bash", f"scripts/{script}", opt], t)
+        if r.returncode != 2 or f"unknown option: {opt}" not in r.stderr:
+            bad(f"{script} {opt} (an unknown option) exited {r.returncode}: {r.stdout!r} {r.stderr!r}")
+    # a record saved in another encoding stops each reader with its name, never a traceback or a silent pass
+    cp1252 = os.path.join(t, "_harness/learnings/cp1252-v1.md")
+    open(cp1252, "wb").write(b"### cp1252 v1, 2026-01-03\n- **Fired:** caf\xe9\n")
+    for script, code in (("evidence.sh", 3), ("learned-rules.sh", 1), ("prune-counter.sh", 2)):
+        r = run(["bash", f"scripts/{script}"], t)
+        if r.returncode != code or "cp1252-v1.md is not valid UTF-8" not in r.stdout + r.stderr or "Traceback" in r.stderr:
+            bad(f"{script} on a learnings file that isn't UTF-8 exited {r.returncode}: {r.stdout[-200:]!r} {r.stderr[-300:]!r}")
+    # with a budget over as well, exit 1 (the proposal still waits) wins over 2, and the line is still printed
+    keep_cfg = read(os.path.join(t, "harness.config.yml"))
+    write(os.path.join(t, "harness.config.yml"), re.sub(r"rule_budget_kb: *\S+", "rule_budget_kb: 1", keep_cfg))
+    r = run(["bash", "scripts/prune-counter.sh"], t)
+    if r.returncode != 1 or "cp1252-v1.md is not valid UTF-8" not in r.stdout:
+        bad(f"prune-counter.sh over budget with a record that isn't UTF-8 exited {r.returncode}: {r.stdout[-300:]!r}")
+    write(os.path.join(t, "harness.config.yml"), keep_cfg)
+    os.remove(cp1252)
+    # without a tool they need (awk, git, python3, ...) the scripts say so and exit non-zero instead of printing
+    # blank gauges or skipping the trials
+    nobin = os.path.join(t, "selftest-no-tool")
+    def without(tool):
+        shutil.rmtree(nobin, ignore_errors=True)
+        os.makedirs(nobin)
+        for name in ("awk", "bash", "cat", "dirname", "git", "grep", "head", "ls", "sed", "sort", "tr", "wc", "python3"):
+            if name != tool and shutil.which(name):
+                os.symlink(shutil.which(name), os.path.join(nobin, name))
+        return dict(os.environ, PATH=nobin)
+    bash_bin = shutil.which("bash")
+    r = run([bash_bin, "scripts/prune-counter.sh"], t, env=without("awk"))
+    if r.returncode != 2 or "Prune counter: not measured (missing: awk;" not in r.stdout:
+        bad(f"prune-counter.sh without awk exited {r.returncode}: {r.stdout!r} (stderr {r.stderr.strip()[-200:]!r})")
+    r = run([bash_bin, "scripts/evidence.sh"], t, env=without("awk"))
+    if r.returncode != 1 or "Evidence: not measured (awk not found)" not in r.stdout:
+        bad(f"evidence.sh without awk exited {r.returncode}: {r.stdout!r}")
+    r = run([bash_bin, "scripts/prune-counter.sh"], t, env=without("git"))
+    if r.returncode != 2 or "Prune counter: not measured (missing: git;" not in r.stdout:
+        bad(f"prune-counter.sh without git exited {r.returncode}: {r.stdout!r}")
+    r = run([bash_bin, "scripts/learned-rules.sh"], t, env=without("git"))
+    if r.returncode != 1 or "needs git" not in r.stderr:
+        bad(f"learned-rules.sh without git exited {r.returncode}: {r.stdout!r} {r.stderr!r}")
+    r = run([bash_bin, "scripts/prune-counter.sh"], t, env=without("python3"))
+    if r.returncode != 2 or "trials and rule tags not measured (python3 not found" not in r.stdout or "Rules:" not in r.stdout:
+        bad(f"prune-counter.sh without python3 exited {r.returncode}: {r.stdout!r}")
+    shutil.rmtree(nobin)
+    # a budget written 09 is nine (bash read it as a bad octal number and skipped the check); a prune
+    # file name with spaces is still found
+    pdir = os.path.join(t, "_harness/prunes")
+    os.makedirs(pdir, exist_ok=True)
+    keep_cfg = read(os.path.join(t, "harness.config.yml"))
+    write(os.path.join(t, "harness.config.yml"), re.sub(r"rule_budget_kb: *\S+", "rule_budget_kb: 09", keep_cfg))
+    r = run(["bash", "scripts/prune-counter.sh"], t)
+    if r.returncode != 1 or "/9 KB always loaded" not in r.stdout or "value too great" in r.stderr:
+        bad(f"prune-counter.sh with rule_budget_kb: 09 exited {r.returncode}: {r.stdout!r} (stderr {r.stderr.strip()!r})")
+    spaced = os.path.join(pdir, "2026-01-07 second look.md")
+    open(spaced, "w").write("# Prune\n\n**Status:** proposed\n")
+    r = run(["bash", "scripts/prune-counter.sh"], t)
+    if r.returncode or "Prune proposal waiting: _harness/prunes/2026-01-07 second look.md" not in r.stdout:
+        bad(f"prune-counter.sh did not see a proposal whose name has spaces: {r.stdout!r} (stderr {r.stderr.strip()!r})")
+    os.remove(spaced)
+    write(os.path.join(t, "harness.config.yml"), keep_cfg)
     # guard hook cases
     # {I^} and {P^} are the same branches in capitals (a guard case for `git push origin Main`).
     branches = {"{I}": fx["branches"]["integration"], "{P}": fx["branches"]["production"],
@@ -899,6 +989,28 @@ EDITS = [
     (".claude/settings.json", '"allow": [', '\n      "Bash(make:*)",'),
 ]
 
+# Run records an owner's project has built up by the time it updates; the update must leave them byte
+# for byte (STABILITY.md § Stable: "without losing its records").
+RECORDS = [
+    ("_harness/learnings/selftest-records-v1.md", "### selftest-records v1, 2026-01-05\n- **Verdict:** pass\n- **Fired:** `retry-flow`\n"),
+    ("_harness/prunes/2026-01-06.md", "# Prune\n\n**Status:** applied\n"),
+    ("_harness/LEARNINGS.md", "\n- selftest-records v1, 2026-01-05: pass, QA rounds 1, ≈ $1.20; Fired: retry-flow\n"),
+]
+
+def add_records(base):
+    for rel, text in RECORDS:
+        path = os.path.join(base, rel)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        write(path, (read(path) if os.path.exists(path) else "") + text)
+
+def drop_records(base, saved):
+    for rel, _ in RECORDS:
+        path = os.path.join(base, rel)
+        if rel in saved:
+            write(path, saved[rel])
+        elif os.path.exists(path):
+            os.remove(path)
+
 def edit_file(path, anchor, text):
     s = read(path)
     write(path, s + text if anchor is None else s.replace(anchor, anchor + text, 1))
@@ -913,6 +1025,7 @@ def update_case(name, fx, tag, base_tpl, edits):
     if edits:
         for rel, anchor, text in EDITS:
             edit_file(os.path.join(proj, rel), anchor, text)
+    add_records(proj)
     ls = lambda ref, d: set(run(["git", "ls-tree", "-r", "--name-only", ref, d], root).stdout.split()) if ref else set()
     added = sorted(f for f in glob.glob(os.path.join(root, "updates", "*.md"))
                    if os.path.basename(f) != "README.md" and f"updates/{os.path.basename(f)}" not in ls(tag, "updates/"))
@@ -962,12 +1075,13 @@ def update_case(name, fx, tag, base_tpl, edits):
     for rel in removed:
         if rd(proj, rel) is not None and rd(proj, rel) == rd(old, rel):
             os.remove(os.path.join(proj, rel))
-    expected = new
+    expected = os.path.join(work_u, "expected")
+    shutil.copytree(new, expected)
     if edits:
-        expected = os.path.join(work_u, "expected")
-        shutil.copytree(new, expected)
         for rel, anchor, text in EDITS:
             edit_file(os.path.join(expected, rel), anchor, text)
+    saved = {rel: read(os.path.join(new, rel)) for rel, _ in RECORDS if os.path.exists(os.path.join(new, rel))}
+    add_records(expected)
     for base in (expected, proj):
         other = proj if base == expected else expected
         for f in files_under(base):
@@ -978,7 +1092,13 @@ def update_case(name, fx, tag, base_tpl, edits):
             if b is None:
                 bad(f"{rel} is {'missing from' if base == expected else 'left in'} the updated project")
             elif base == expected and a != b:
-                bad(f"{rel} differs from a fresh install of this checkout")
+                bad(f"{rel} differs from a fresh install of this checkout"
+                    + (" (a run record the update must leave as it was)" if rel in dict(RECORDS) else ""))
+    for rel, _ in RECORDS:   # byte for byte: line endings and encoding included
+        a, b = (open(os.path.join(d, rel), "rb").read() if os.path.exists(os.path.join(d, rel)) else None for d in (expected, proj))
+        if a != b:
+            bad(f"{rel} (a run record) is not byte for byte what it was before the update")
+    drop_records(proj, saved)   # the merged project then gets the fresh-install checks
     return proj, work_u
 
 # Guard cases marked "every" (branches, environments, guard switches, broken input) or "only" replay on each
@@ -1007,6 +1127,14 @@ if not os.environ.get("UPDATE_FROM") and OLDEST_SUPPORTED != prev_tag and OLDEST
     tpl_dir = tempfile.mkdtemp(prefix="morphness-oldest-")
     if old_template(OLDEST_SUPPORTED, tpl_dir):
         starts.append((OLDEST_SUPPORTED, os.path.join(tpl_dir, "template")))
+elif (not os.environ.get("UPDATE_FROM") and prev_tag and OLDEST_SUPPORTED not in release_tags()
+      and release_key(OLDEST_SUPPORTED) < release_key(prev_tag)):
+    # A shallow clone, or a deleted tag, would skip the oldest replay and still pass.
+    msg = f"no release tag {OLDEST_SUPPORTED} (the oldest supported release) in this checkout (fetch the tags: git fetch --tags)"
+    if os.environ.get("STRICT") == "1":
+        failures.append("update: " + msg)
+    else:
+        print("note: " + msg + "; the update-from-the-oldest-release case is skipped")
 for path in fixtures:
     name = os.path.splitext(os.path.basename(path))[0]
     fx = json.load(open(path))

@@ -8,17 +8,36 @@
 # `paths:` line) against loop.rule_budget_kb, and the plan checklists and project/*.md against theirs.
 # Each active trial (_harness/trials/*.md) gets a line with how many of its features have run.
 # Exits 1 when a size budget is over and no prune proposal is open: the hand-off waits for the
-# proposal (harness/SETUP.md § Prune). Every other case exits 0.
+# proposal (harness/SETUP.md § Prune). Exits 2 when it can't measure all of it, with a "not measured"
+# line saying why (a tool it needs is missing, a record it reads isn't UTF-8), or on an unknown option
+# (usage on stderr). Exit 1 wins over 2: the not-measured line is printed and the proposal still waits.
+# Otherwise 0.
 # Usage: bash scripts/prune-counter.sh [--prune]   (from anywhere in the repo; read-only)
 #   --prune  also print what a prune reads (harness/SETUP.md § Prune): one trend line for the window
 #            (rework rounds, QA fails, cost), each trial's numbers, and every rule tagged
 #            `(from <slug>, <date>)` with the features finished since it landed
 
-. "$(cd "$(dirname "$0")" && pwd)/lib/config.sh" || exit 1
-cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)" || exit 1
+for arg in "$@"; do
+  case "$arg" in
+    --prune) ;;
+    *) echo "usage: bash scripts/prune-counter.sh [--prune] (unknown option: $arg)" >&2; exit 2 ;;
+  esac
+done
+# Without these the gauges print blank and the budget checks silently pass: stop instead.
+missing=""
+for tool in awk cat dirname git grep head ls sed sort tr wc; do
+  command -v "$tool" >/dev/null 2>&1 || missing="$missing $tool"
+done
+if [ -n "$missing" ]; then
+  echo "Prune counter: not measured (missing:$missing; install them and run it again)"
+  exit 2
+fi
+. "$(cd "$(dirname "$0")" && pwd)/lib/config.sh" || { echo "Prune counter: not measured (scripts/lib/config.sh is missing or unreadable)"; exit 2; }
+cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)" || { echo "Prune counter: not measured (cannot enter the project folder)"; exit 2; }
 
 threshold="$(config_get loop.prune_every)"
 case "$threshold" in ''|*[!0-9]*) threshold=10 ;; esac
+threshold=$((10#$threshold))   # 08 and 09 are decimal, not a bad octal number
 # A window under 8 features leaves most rules "too new to judge" (landed in the last 3 features) and
 # decides trials before their escapes show; above 30 a prune comes too late to matter.
 if [ "$threshold" -lt 8 ]; then
@@ -52,6 +71,7 @@ count="$(printf '%s\n' "$files" | grep . | sort -u | wc -l | tr -d ' ')"
 # Always-loaded rule files and their size.
 budget="$(config_get loop.rule_budget_kb)"
 case "$budget" in ''|*[!0-9]*) budget=36 ;; esac
+budget=$((10#$budget))
 loaded="$(
   { [ -f CLAUDE.md ] && echo CLAUDE.md && sed -n 's/^@\([^ ]*\).*/\1/p' CLAUDE.md
     for f in .claude/rules/*.md; do
@@ -68,11 +88,13 @@ kb() { awk -v b="$1" 'BEGIN { printf "%.1f", b / 1024 }'; }
 # The plan checklists, read before every full-mode approval: retros grow them fastest.
 cbudget="$(config_get loop.checklist_budget_kb)"
 case "$cbudget" in ''|*[!0-9]*) cbudget=36 ;; esac
+cbudget=$((10#$cbudget))
 cbytes="$(cat harness/PLAN_CHECKLIST.md project/PLAN_CHECKLIST.md 2>/dev/null | wc -c | tr -d ' ')"
 
 # The project fact docs (project/*.md), read before planning: they grow as features add facts.
 dbudget="$(config_get loop.project_docs_budget_kb)"
 case "$dbudget" in ''|*[!0-9]*) dbudget=48 ;; esac
+dbudget=$((10#$dbudget))
 dbytes="$(cat project/*.md 2>/dev/null | wc -c | tr -d ' ')"
 
 echo "Prune counter: $count/$threshold"
@@ -82,7 +104,9 @@ echo "Project docs: $(kb "$dbytes")/$dbudget KB"
 # A proposal still open (proposed: the owner hasn't decided; approved: decided, cuts not applied yet):
 # the hand-off names it instead of writing another. A declined one is closed by prune step 6 (fold, reset).
 waiting=""
-for f in $(ls _harness/prunes/*.md 2>/dev/null | grep -E '/[0-9]{4}-[0-9]{2}-[0-9]{2}[^/]*\.md$' | sort); do
+# The glob sorts by name and keeps names with spaces whole.
+for f in _harness/prunes/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.md; do
+  [ -f "$f" ] || continue
   if grep -q -E '^\*\*Status:\*\*[[:space:]]*proposed[[:space:]]*$' "$f"; then waiting="$f"
   elif grep -q -E '^\*\*Status:\*\*[[:space:]]*approved[[:space:]]*$' "$f"; then waiting="$f (approved, cuts not applied yet)"
   fi
@@ -120,23 +144,38 @@ fi
 
 # Trials, and with --prune the trend, trial numbers and rule tags. A file that is only on the
 # integration branch is read from there.
-command -v python3 >/dev/null 2>&1 || exit "$rc"
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "Prune counter: trials and rule tags not measured (python3 not found; install it and run it again)"
+  [ "$rc" = 1 ] && exit 1
+  exit 2
+fi
 read -r -d '' program <<'PY' || true
 import glob, re, sys
 
 prune = "--prune" in sys.argv[1:]
 DATE = r"\d{4}-\d{2}-\d{2}"
 
+def not_utf8(path, err):
+    print(f"Prune counter: trials and rule tags not measured ({path} is not valid UTF-8 at byte {err.start}; save it as UTF-8 and run it again)")
+    sys.exit(2)
+
 def read(path):
     try:
         return open(path, encoding="utf-8").read()
     except OSError:
         return ""
+    except UnicodeDecodeError as err:
+        not_utf8(path, err)
 
 # Learnings files: date, rework rounds (QA rounds after the first), whether QA failed, cost, trial.
 features = []
-for chunk in sys.stdin.read().split("\036")[1:]:
-    name, _, text = chunk.partition("\n")
+for chunk in sys.stdin.buffer.read().split(b"\036")[1:]:
+    name, _, raw = chunk.partition(b"\n")
+    name = name.decode("utf-8", "replace")
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError as err:
+        not_utf8("_harness/learnings/" + name, err)
     heading = re.search(r"^### .*?(" + DATE + ")", text, re.M)
     rounds = re.search(r"QA rounds:\s*(\d+)", text)
     cost = re.search(r"\*\*Cost:\*\*\s*≈\s*\$\s*([0-9][0-9,]*(?:\.[0-9]+)?)", text)
@@ -222,4 +261,10 @@ printf '%s\n' "$files" | grep . | sort -u | while read -r f; do
   elif [ -n "$integration" ]; then git show "origin/$integration:_harness/learnings/$f" 2>/dev/null
   fi
 done | python3 -I -c "$program" "$@"
+py=$?   # a pipeline's status is its last command's: python's
+if [ "$py" -ne 0 ]; then
+  [ "$py" -eq 2 ] || echo "Prune counter: trials and rule tags not measured (the python part failed with exit $py; the error is above)"
+  [ "$rc" = 1 ] && exit 1
+  exit 2
+fi
 exit "$rc"
