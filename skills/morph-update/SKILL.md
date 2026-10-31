@@ -185,6 +185,13 @@ For each accepted kit update:
      note's own owner question is accepted: a note that only suggests a new default (a model switch) leaves
      the existing values alone. Show the diff before writing.
    - **New file, unedited file, removal:** as in the table.
+   - **The guard's own files:** the guard denies any tool call that writes `scripts/guard.sh` or `scripts/lib/`,
+     and any Bash write to `.claude/settings.json` or `harness.config.yml`. Write the merged or new copy of a
+     guard file under `/tmp/morphness-update/` instead, show the diff, and give the owner the command to run in
+     a terminal (`cp /tmp/morphness-update/scripts/guard.sh scripts/guard.sh`); after they run it, rerun the push
+     test (render.md § 7 item 9). Change `.claude/settings.json` and `harness.config.yml` with Edit or Write: the
+     guard asks for a change that only adds, and denies one that removes a protection (the guard hook, a deny
+     rule, a `guard:` switch turned off). Hand such a change to the owner the same way, with the lines to edit.
 3. **Do the rest of § How to apply:** config keys, rows in `harness/README.md`, a module's
    § On install, deny rules. Adding a module the project didn't install: follow the morph-module
    skill § 2 steps 3 to 6 with `HEAD` as its source (template files from

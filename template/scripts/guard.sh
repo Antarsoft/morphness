@@ -25,7 +25,8 @@ guard_closed() {
   exit 2
 }
 
-. "$(cd "$(dirname "$0")" && pwd)/lib/config.sh" 2>/dev/null || guard_closed "scripts/lib/config.sh is missing or unreadable, so harness.config.yml can't be read."
+GUARD_LIB_DIR="$(cd "$(dirname "$0")" && pwd)/lib"
+. "$GUARD_LIB_DIR/config.sh" 2>/dev/null || guard_closed "scripts/lib/config.sh is missing or unreadable, so harness.config.yml can't be read."
 cd "${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}" 2>/dev/null || guard_closed "the project folder can't be entered."
 command -v awk >/dev/null 2>&1 || guard_closed "awk is not installed, so harness.config.yml can't be read."
 if ! command -v python3 >/dev/null 2>&1; then
@@ -51,7 +52,8 @@ GUARD_NETWORK="$(config_get guard.network)"
 GUARD_INSTALLS="$(config_get guard.installs)"
 GUARD_PR_WRITES="$(config_get guard.pr_writes)"
 GUARD_ALLOW_HOSTS="$(config_get guard.allow_hosts)"
-export GUARD_CONFIG_READABLE GUARD_INTEGRATION GUARD_PRODUCTION GUARD_ENV_BRANCHES GUARD_MCP_WRITES GUARD_DEPLOYS GUARD_PUBLISHES GUARD_SCHEMA_PUSHES GUARD_NETWORK GUARD_INSTALLS GUARD_PR_WRITES GUARD_ALLOW_HOSTS
+GUARD_FAIL_OPEN="$(config_get guard.fail_open)"
+export GUARD_LIB_DIR GUARD_FAIL_OPEN GUARD_CONFIG_READABLE GUARD_INTEGRATION GUARD_PRODUCTION GUARD_ENV_BRANCHES GUARD_MCP_WRITES GUARD_DEPLOYS GUARD_PUBLISHES GUARD_SCHEMA_PUSHES GUARD_NETWORK GUARD_INSTALLS GUARD_PR_WRITES GUARD_ALLOW_HOSTS
 
 python3 -I -c '
 import fnmatch, glob as globmod, json, os, re, shlex, subprocess, sys, tempfile, threading
@@ -78,14 +80,14 @@ _watchdog.start()
 BRANCH_WORD = re.compile(r"^(?!-)(?!.*\.\.)(?!.*@\{)[^\s~^:?*\[\\\x00-\x1f\x7f&{}\x27\",#]+$")
 NOT_A_BRANCH = {"null", "~", "true", "false", "yes", "no", "on", "off", "none"}
 
-def config_branches():
+def config_branches(env=os.environ):
     """The environment branches from harness.config.yml, and what made them unreadable (then every push is blocked)."""
     found, problems = set(), []
-    if os.environ.get("GUARD_CONFIG_READABLE") != "1":
+    if env.get("GUARD_CONFIG_READABLE") != "1":
         return found, ["harness.config.yml is missing or can\u2019t be read"]
     for key, var in (("branches.integration", "GUARD_INTEGRATION"), ("branches.production", "GUARD_PRODUCTION"),
                      ("environments", "GUARD_ENV_BRANCHES")):
-        values = [v.strip().strip("\"\x27") for v in os.environ.get(var, "").splitlines() if v.strip()]
+        values = [v.strip().strip("\"\x27") for v in env.get(var, "").splitlines() if v.strip()]
         if not values and key != "environments":
             problems.append(f"`{key}` was not found in harness.config.yml")
         for v in values:
@@ -101,17 +103,23 @@ PROTECTED_LOW = {b.lower() for b in PROTECTED}
 def protected_branch(name):
     # Branch names are case sensitive on the code host but not on every remote or file system, so `Main` counts as `main`.
     return str(name).lower() in PROTECTED_LOW
-def switch(name):
-    return os.environ.get(name, "ask").strip().lower() not in ("off", "false", "no")
+def switch(name, env=os.environ):
+    return env.get(name, "ask").strip().lower() not in ("off", "false", "no")
+def pr_allow(env=os.environ):
+    return env.get("GUARD_PR_WRITES", "allow").strip().lower() not in ("ask", "no", "false")
+def allow_hosts(env=os.environ):
+    return {"localhost", "127.0.0.1", "::1"} | set(re.split(r"[\s,]+", env.get("GUARD_ALLOW_HOSTS", "").lower()))
+def fail_open(env=os.environ):
+    return env.get("GUARD_FAIL_OPEN", "").strip().lower() in ("true", "yes", "on")
 
 MCP_ASK = switch("GUARD_MCP_WRITES")
 # `pr_writes: allow` (the default, also when the key is missing) lets a pull request be opened, updated and commented on
 # in this project own repo without a prompt; `ask` brings the prompt back for those tools.
-PR_ALLOW = os.environ.get("GUARD_PR_WRITES", "allow").strip().lower() not in ("ask", "no", "false")
+PR_ALLOW = pr_allow()
 GROUP_ASK = {"deploys": switch("GUARD_DEPLOYS"), "publishes": switch("GUARD_PUBLISHES"),
              "schema_pushes": switch("GUARD_SCHEMA_PUSHES"), "network": switch("GUARD_NETWORK"),
              "installs": switch("GUARD_INSTALLS")}
-ALLOW_HOSTS = {"localhost", "127.0.0.1", "::1"} | set(re.split(r"[\s,]+", os.environ.get("GUARD_ALLOW_HOSTS", "").lower()))
+ALLOW_HOSTS = allow_hosts()
 
 def deny(reason):
     sys.stderr.write("Blocked by scripts/guard.sh: " + reason + "\n")
@@ -152,10 +160,15 @@ if not isinstance(args, dict):
     deny("the tool input is not a JSON object, so the call can\u2019t be checked.")
 
 # ---- the guard own files -------------------------------------------------------------------------
-# A write here switches the guard off for every later call, so these ask (the owner reads the change);
-# settings.local.json is the owner alone and is denied.
-GUARD_FILES = ["scripts/guard.sh", "scripts/session-start.sh", "scripts/lib/*", ".claude/settings.json",
-               "harness.config.yml", ".git/hooks/*", ".git/config"]
+# One approved write here could switch the guard off for every later call. scripts/guard.sh and scripts/lib/ (the guard
+# itself) are never written by a tool call: the owner changes them by hand. .claude/settings.json and harness.config.yml
+# change through Edit or Write only, so the guard can work out the result: a change that removes a protection is denied,
+# any other change asks. The other files the guard rests on ask; settings.local.json is the owner alone and is denied.
+CORE_FILES = ["scripts/guard.sh", "scripts/lib/*"]
+HOLDER_DIRS = ["scripts", "scripts/lib", ".claude"]   # the folders that hold the guard and its wiring
+SETTINGS_FILES = [".claude/settings.json"]
+CONFIG_FILES = ["harness.config.yml"]
+GUARD_FILES = ["scripts/session-start.sh", ".git/hooks/*", ".git/config"]
 OWNER_FILES = [".claude/settings.local.json"]
 # CI definitions run with the repository\u2019s secrets, so a change to one asks (the `deploys` switch turns it off).
 CI_FILES = [".github/workflows/*", ".github/actions/*", ".gitlab-ci.yml"]
@@ -164,7 +177,7 @@ CD_DIRS = []   # directories a `cd` in the same command moves to; a relative pat
 
 def rels_to_root(word):
     """Where a path word points, relative to the project root, once per directory a `cd` could set."""
-    w = str(word).strip("\"\x27")
+    w = expand_home(str(word).strip())
     for var in ("${CLAUDE_PROJECT_DIR}", "$CLAUDE_PROJECT_DIR", "${PWD}", "$PWD"):
         w = w.replace(var, ROOT)
     if not w or any(c in w for c in "$`"):
@@ -213,25 +226,240 @@ def home_kind(word):
     return ""
 
 def protected_kind(word):
-    """"owner" for settings.local.json, "guard" for the guard files, "persist" for shell startup files and
-    schedules, "ci" for CI definitions, "" for anything else."""
-    for part in re.split(r"[=:<>|,;()]", str(word)):
+    """"owner" for settings.local.json, "core" for the guard itself, "settings" and "config" for .claude/settings.json and
+    harness.config.yml, "guard" for the other files it rests on, "persist" for shell startup files and schedules, "ci" for
+    CI definitions, "" for anything else."""
+    # also split on spaces and braces: a one-liner names a path as `copy( \x27/tmp/x\x27, \x27scripts/guard.sh\x27 )` or `q{scripts/guard.sh}`
+    for part in re.split(r"[=:<>|,;(){}\s]", str(word)):
+        part = part.strip("\"\x27")
         if part and home_kind(part) == "persist":
             return "persist"
         globbed = any(c in part for c in "*?[")
         for rel in rels_to_root(part) if part else ():
-            for kind, names in (("owner", OWNER_FILES), ("guard", GUARD_FILES), ("ci", CI_FILES if GROUP_ASK["deploys"] else [])):
+            for kind, names in (("owner", OWNER_FILES), ("holder", HOLDER_DIRS), ("core", CORE_FILES), ("settings", SETTINGS_FILES),
+                                ("config", CONFIG_FILES), ("guard", GUARD_FILES), ("ci", CI_FILES if GROUP_ASK["deploys"] else [])):
                 for name in names:
                     # Without letter case: on macOS and Windows `Scripts/Guard.sh` is the guard itself.
                     low, pat = rel.lower(), name.lower()
                     if fnmatch.fnmatchcase(low, pat) or (globbed and fnmatch.fnmatchcase(pat.replace("/*", "/x"), low)):
+                        # a new file in scripts/lib/ changes nothing the guard runs (a `cd` into a monorepo app makes many such paths)
+                        if kind == "core" and name.endswith("/*") and not globbed and not os.path.lexists(os.path.join(ROOT, rel)):
+                            continue
                         return kind
     return ""
 
-def protect(path, how):
+CONFIG_VARS = [("GUARD_INTEGRATION", "config_get_all branches.integration"), ("GUARD_PRODUCTION", "config_get_all branches.production"),
+               ("GUARD_ENV_BRANCHES", "config_env_branches")] + [
+               (f"GUARD_{k.upper()}", f"config_get guard.{k}") for k in ("mcp_writes", "deploys", "publishes", "schema_pushes",
+                                                                        "network", "installs", "pr_writes", "allow_hosts", "fail_open")]
+
+def read_config(text):
+    """The values the guard would read from a harness.config.yml holding `text`, through the same reader (scripts/lib/config.sh)."""
+    try:
+        fd, tmp = tempfile.mkstemp(suffix=".yml")
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as f:
+            f.write(text)
+        body = "; ".join(f"printf \"%s=%s\\0\" {var} \"$({call} \"$2\")\"" for var, call in CONFIG_VARS)
+        r = subprocess.run(["bash", "-c", ". \"$1/config.sh\" || exit 3; " + body, "guard", os.environ.get("GUARD_LIB_DIR", ""), tmp],
+                           capture_output=True, text=True, timeout=5)
+    except (OSError, UnicodeError, subprocess.SubprocessError):
+        r = None
+    finally:
+        try:
+            os.unlink(tmp)
+        except (OSError, NameError):
+            pass
+    if r is None or r.returncode != 0:
+        deny("the new harness.config.yml can\u2019t be checked (its reader did not run), so the change is blocked. Retry.")
+    env = {"GUARD_CONFIG_READABLE": "1"}
+    for record in r.stdout.split("\0"):
+        if "=" in record:
+            key, value = record.split("=", 1)
+            env[key] = value
+    return env
+
+SWITCH_WHAT = {"mcp_writes": "a connector write", "deploys": "a deploy or cloud CLI call", "publishes": "a publish or tag push",
+               "schema_pushes": "a database client or schema push", "network": "a request that sends data out",
+               "installs": "a downloaded package runs"}
+
+def config_lost(after):
+    """The protections a harness.config.yml holding `after` would drop, compared with the one the guard reads now."""
+    new, lost = read_config(after), []
+    for key, what in SWITCH_WHAT.items():
+        if switch(f"GUARD_{key.upper()}") and not switch(f"GUARD_{key.upper()}", new):
+            lost.append(f"`guard.{key}` goes to off (nothing asks before {what})")
+    if not pr_allow() and pr_allow(new):
+        lost.append("`guard.pr_writes` goes from ask to allow")
+    hosts = ", ".join(sorted(allow_hosts(new) - ALLOW_HOSTS - {""}))
+    if hosts:
+        lost.append(f"`guard.allow_hosts` adds {hosts} (data can be sent there without a prompt)")
+    if fail_open(new) and not fail_open():
+        lost.append("`guard.fail_open` turns on (calls run unchecked when python3 is missing)")
+    branches, problems = config_branches(new)
+    if not problems:
+        kept = {b.lower() for b in branches}
+        gone = ", ".join(sorted(b for b in PROTECTED if b.lower() not in kept))
+        if gone:
+            lost.append(f"{gone} would no longer be an environment branch (a push to it would pass)")
+    return lost
+
+# Settings that run a command outside the guard: a new or changed one runs code that no check sees.
+COMMAND_SETTINGS = ("apiKeyHelper", "awsAuthRefresh", "awsCredentialExport", "otelHeadersHelper", "statusLine")
+
+def guard_hooks(settings):
+    """{event: [(matcher, command, timeout)]} for each hook in a settings object that runs scripts/guard.sh."""
+    out = {}
+    hooks = settings.get("hooks")
+    for event, groups in (hooks.items() if isinstance(hooks, dict) else ()):
+        for group in (groups if isinstance(groups, list) else ()):
+            entries = group.get("hooks") if isinstance(group, dict) else None
+            for h in (entries if isinstance(entries, list) else ()):
+                if isinstance(h, dict) and "scripts/guard.sh" in str(h.get("command", "")):
+                    t = h.get("timeout")
+                    out.setdefault(event, []).append((str(group.get("matcher", "")), str(h.get("command")),
+                                                      t if isinstance(t, (int, float)) and not isinstance(t, bool) else 60,
+                                                      str(h.get("type"))))
+    return out
+
+def hook_commands(settings):
+    """Every command a settings object runs: hook commands and the helper settings (apiKeyHelper, statusLine ...)."""
+    out = set()
+    hooks = settings.get("hooks")
+    for groups in (hooks.values() if isinstance(hooks, dict) else ()):
+        for group in (groups if isinstance(groups, list) else ()):
+            entries = group.get("hooks") if isinstance(group, dict) else None
+            for h in (entries if isinstance(entries, list) else ()):
+                if not (isinstance(h, dict) and "scripts/guard.sh" in str(h.get("command", ""))):   # checked on its own
+                    out.add(json.dumps(h, sort_keys=True))
+    for key in COMMAND_SETTINGS:
+        if key in settings:
+            out.add(key + "=" + json.dumps(settings[key], sort_keys=True))
+    return out
+
+def matcher_covers(new, old):
+    try:
+        re.compile(new)
+    except re.error:
+        return False   # Claude Code drops a hook whose matcher is not a valid pattern
+    if new in ("", "*") or new == old:
+        return True
+    return old not in ("", "*") and set(old.split("|")) <= set(new.split("|"))
+
+def settings_lost(path, after):
+    """The protections a .claude/settings.json holding `after` would drop, compared with the file as it is now."""
+    def strict(value):
+        raise ValueError(value)   # NaN and Infinity: Python reads them, Claude Code does not
+    try:
+        with open(os.path.join(ROOT, path), encoding="utf-8") as f:
+            before = json.loads(f.read(), parse_constant=strict)
+    except Exception:
+        before = None
+    if not isinstance(before, dict):
+        # the file as it is can\u2019t be read: the new one must at least wire the guard as the template does
+        before = {"hooks": {"PreToolUse": [{"matcher": "Bash|Read|Edit|MultiEdit|Write|NotebookEdit|Grep|WebFetch|mcp__.*",
+                                            "hooks": [{"type": "command", "command": "scripts/guard.sh", "timeout": 30}]}],
+                            "ConfigChange": [{"hooks": [{"type": "command", "command": "scripts/guard.sh", "timeout": 30}]}]}}
+        loose = True
+    else:
+        loose = False
+    try:
+        new = json.loads(after, parse_constant=strict)
+    except Exception:
+        new = None
+    if not isinstance(new, dict):
+        return ["the file would no longer be a valid settings object, so Claude Code would drop its hooks and rules"]
+    lost = []
+    if new.get("disableAllHooks") not in (None, False) and before.get("disableAllHooks") in (None, False):
+        lost.append("`disableAllHooks` turns every hook off, the guard with it")
+    hooks = guard_hooks(new)
+    for event, entries in guard_hooks(before).items():
+        for matcher, command, timeout, kind in entries:
+            # a timeout of 30 s or more is enough: the guard stops itself at 15 s
+            if not any((c == command or (loose and "scripts/guard.sh" in c)) and matcher_covers(m, matcher) and t >= min(timeout, 30)
+                       and k == kind for m, c, t, k in hooks.get(event, [])):
+                lost.append(f"the {event} hook that runs scripts/guard.sh is removed, narrowed or changed")
+                break
+    added = sorted(hook_commands(new) - hook_commands(before))
+    if added and not loose:
+        lost.append(f"a hook or helper command is added or changed ({added[0][:80]}), and it would run with no check")
+    def rules(settings, key):
+        perms = settings.get("permissions")
+        values = perms.get(key) if isinstance(perms, dict) else None
+        return {str(r) for r in values} if isinstance(values, list) else set()
+    # a rule with an unfilled render placeholder is filled or dropped by the render, so it is not a protection yet
+    for key in ("deny", "ask"):
+        gone = sorted(r for r in rules(before, key) - rules(new, key) if "{{" not in r)
+        if gone:
+            lost.append(f"{key} rule " + ", ".join(f"`{r}`" for r in gone[:5]) + (f" and {len(gone) - 5} more" if len(gone) > 5 else "") + " removed")
+    def mode(settings):
+        perms = settings.get("permissions")
+        return perms.get("defaultMode") if isinstance(perms, dict) else None
+    if mode(new) == "bypassPermissions" and mode(before) != "bypassPermissions":
+        lost.append("`defaultMode: bypassPermissions` skips every permission prompt")
+    # every `env` variable reaches the hook too (PATH, BASH_ENV, an exported bash function named like python3 ...)
+    env_before = before.get("env") if isinstance(before.get("env"), dict) else {}
+    env_new = new.get("env") if isinstance(new.get("env"), dict) else {}
+    changed = ", ".join(sorted(str(k) for k in env_new if env_new.get(k) != env_before.get(k)))
+    if changed:
+        lost.append(f"`env` sets {changed}, which reaches the guard hook too")
+    return lost
+
+def planned_text(tool, args, path):
+    """The text the file would hold after this Edit, MultiEdit or Write; None when it can\u2019t be worked out."""
+    if tool == "Write":
+        return str(args.get("content") or "")
+    try:
+        with open(os.path.join(ROOT, path), encoding="utf-8", newline="") as f:
+            text = f.read()
+    except FileNotFoundError:
+        text = ""
+    except (OSError, UnicodeError):
+        return None
+    edits = args.get("edits") if tool == "MultiEdit" else [args] if tool == "Edit" else None
+    if not isinstance(edits, list):
+        return None
+    for e in edits:
+        if not isinstance(e, dict):
+            return None
+        old, new = str(e.get("old_string") or ""), str(e.get("new_string") or "")
+        if not old:
+            if text:
+                return None
+            text = new
+        elif old in text:
+            text = text.replace(old, new) if e.get("replace_all") else text.replace(old, new, 1)
+        else:
+            # Edit also matches straight quotes in old_string to curly ones in the file: do the same (same length, so
+            # positions agree)
+            flat = lambda t: t.translate({0x201c: 34, 0x201d: 34, 0x2018: 39, 0x2019: 39})
+            at = flat(text).find(flat(old))
+            if at >= 0:
+                text = text[:at] + new + text[at + len(old):]
+    return text
+
+def protect(path, how, after=None):
+    """Deny or ask for a write to a protected file. `after` is the text the file would hold (Edit and Write), when known."""
     kind = protected_kind(path)
     if kind == "owner":
         deny(f"`{path}` is the owner\u2019s file ({how}); an agent never writes settings.local.json.")
+    if kind == "holder":
+        deny(f"`{path}` holds the guard or its wiring ({how}); removing, moving or replacing it would switch the guard off, "
+             "so the owner does it by hand.")
+    if kind == "core":
+        deny(f"`{path}` is the guard itself ({how}). No tool call changes it, because one approved change could switch every "
+             "check off: the owner edits it by hand. For a kit update, write the new copy under /tmp and give the owner the "
+             f"command to run in a terminal (`cp /tmp/<file> {path}`).")
+    if kind in ("settings", "config"):
+        if after is None:
+            deny(f"`{path}` holds the guard\u2019s own settings, and the guard can\u2019t work out what this change does to it "
+                 f"({how}). Make the change with the Edit or Write tool: the guard checks that it removes no protection, "
+                 "and the owner approves it.")
+        lost = settings_lost(path, after) if kind == "settings" else config_lost(after)
+        if lost:
+            what = "; ".join(lost)
+            deny(f"this change to `{path}` removes a protection: {what}. One approval must not switch a protection off, so "
+                 "an agent never makes this change. If the owner wants it, they edit the file by hand.")
+        kind = "guard"
     if kind == "guard":
         ask(f"`{path}` is one of the files the guard rests on ({how}); the owner approves each change to it.")
     if kind == "persist":
@@ -919,17 +1147,274 @@ WRITERS = {"cp", "mv", "rm", "ln", "install", "tee", "truncate", "chmod", "chown
            "patch", "ed", "ex", "vi", "vim", "nano", "touch", "unlink", "shred"}
 INTERPRETERS = {"python", "python3", "node", "ruby", "perl", "php", "deno", "bun"}
 
+def copy_targets(words):
+    """The paths `cp`, `mv`, `install`, `ln` or `rsync` writes: the target, or each source name inside it when it is a
+    folder (or `-t <dir>`), with every file of a source folder below that. `mv` also removes its sources, and `ln` makes
+    a second name for them (a write through it changes them)."""
+    name, ops, target = words[0], operands(words[1:]), None
+    for k, w in enumerate(words[1:], 1):
+        if w in ("-t", "--target-directory") and k + 1 < len(words):
+            target = words[k + 1]
+        elif w.startswith("--target-directory="):
+            target = w.split("=", 1)[1]
+    no_dir = any(w == "--no-target-directory" or re.match(r"^-[A-Za-z]*T", w) for w in words[1:] if not w.startswith("--") or w == "--no-target-directory")
+    if target is not None:
+        sources, into = [o for o in ops if o != target], True
+    elif len(ops) > 1:
+        target, sources = ops[-1], ops[:-1]
+        t = expand_home(target.strip("\"\x27"))
+        into = not no_dir and (name == "rsync" or target.endswith("/") or len(sources) > 1
+                               or os.path.isdir(t if os.path.isabs(t) else os.path.join(ROOT, t)))
+    else:
+        return list(ops) if name == "mv" else []
+    out = []
+    for src in sources:
+        s = expand_home(src.strip("\"\x27"))
+        contents = (name == "rsync" and s.endswith("/")) or s.endswith("/.")
+        base = os.path.join(target, os.path.basename(s.rstrip("/"))) if into and not contents else target
+        out.append(base)
+        full = s if os.path.isabs(s) else os.path.join(ROOT, s)
+        if os.path.isdir(full) and not os.path.islink(full):
+            seen = 0
+            for top, dirs, names in os.walk(full):
+                for n in names + dirs:
+                    seen += 1
+                    if seen > 5000:
+                        break
+                    out.append(os.path.join(base, os.path.relpath(os.path.join(top, n), full)))
+    if not into:
+        out.append(target)
+    if name == "mv":
+        out += sources
+    if name == "ln":
+        out += sources + [os.path.join(os.path.dirname(target.strip("\"\x27")), src) for src in sources if not os.path.isabs(src)]
+    return out
+
+def patch_paths(path):
+    """The files a patch or mbox file changes (each path with its first one or two folders also stripped, for `-p`)."""
+    try:
+        with open(os.path.join(ROOT, expand_home(path.strip("\"\x27"))), encoding="utf-8", errors="replace") as f:
+            text = f.read(2000000)
+    except OSError:
+        return None
+    out = []
+    for m in re.finditer(r"(?m)^(?:diff --git (\S+) (\S+)|(?:---|\+\+\+) (\S+)|rename (?:from|to) (\S+)|copy (?:from|to) (\S+))", text):
+        for p in m.groups():
+            if p and p != "/dev/null":
+                parts = p.strip("\"").split("/")
+                out += ["/".join(parts[k:]) for k in range(min(3, len(parts)))]
+    return out
+
+def archive_paths(name, words):
+    """The files `tar -x` or `unzip` writes, read from the archive listing; None when it can\u2019t be listed."""
+    dest, archive = ".", None
+    rest = words[1:]
+    if name == "unzip":
+        for k, w in enumerate(rest):
+            if w == "-d" and k + 1 < len(rest):
+                dest = rest[k + 1]
+        ops = [w for k, w in enumerate(rest) if not w.startswith("-") and not (k and rest[k - 1] in ("-d", "-x", "-P"))]
+        archive = ops[0] if ops else None
+        listing = ["unzip", "-Z1"]
+    else:
+        for k, w in enumerate(rest):
+            if w in ("-C", "--directory") and k + 1 < len(rest):
+                dest = rest[k + 1]
+            elif w.startswith("--directory="):
+                dest = w.split("=", 1)[1]
+            elif w.startswith("--file="):
+                archive = w.split("=", 1)[1]
+            elif w == "--file" and k + 1 < len(rest):
+                archive = rest[k + 1]
+            elif re.match(r"^-?[A-Za-z]*f[A-Za-z]*$", w) and not w.startswith("--") and (k == 0 or w.startswith("-")):
+                tail = w.lstrip("-")
+                if tail.endswith("f") and k + 1 < len(rest):
+                    archive = rest[k + 1]
+                elif "f" in tail:
+                    archive = tail[tail.index("f") + 1:] or None
+        listing = ["tar", "-tf"]
+    if not archive or archive == "-":
+        return None, dest
+    try:
+        r = subprocess.run(listing + [os.path.join(ROOT, expand_home(archive.strip("\"\x27")))], capture_output=True, text=True, timeout=5)
+    except (OSError, subprocess.SubprocessError):
+        return None, dest
+    if r.returncode:
+        return None, dest
+    out = []
+    for line in r.stdout.splitlines()[:20000]:
+        parts = line.strip().lstrip("./").split("/")
+        out += [os.path.join(dest, "/".join(parts[k:])) for k in range(min(3, len(parts)))]
+    return out, dest
+
+def git_globals(words):
+    """(folders from `git -C`, the index of the subcommand) for a git command."""
+    dirs, i = [], 1
+    while i < len(words) and words[i].startswith("-"):
+        if words[i] in GIT_OPTS_WITH_VALUE and i + 1 < len(words):
+            if words[i] == "-C":
+                dirs.append(words[i + 1].strip("\"\x27"))
+            i += 2
+        else:
+            i += 1
+    return dirs, i
+
+def guarded_files():
+    """The guard and the settings it rests on, as they are in this project (paths from the project root)."""
+    lib = os.path.join(ROOT, "scripts/lib")
+    return ["scripts/guard.sh", ".claude/settings.json", "harness.config.yml"] + sorted(
+        "scripts/lib/" + n for n in (os.listdir(lib) if os.path.isdir(lib) else ()))
+
+def git_restores(dirs, sub, args):
+    """For `git checkout <commit> -- <paths>`, `git restore --source=<commit> <paths>` and `git stash pop|apply`, the
+    guarded files this would change; None when the guard can\u2019t tell."""
+    base = ["-C", dirs[-1]] if dirs else []
+    def run(*a):
+        try:
+            r = subprocess.run(["git"] + base + list(a), capture_output=True, text=True, timeout=5)
+            return r.stdout if r.returncode == 0 else None
+        except (OSError, subprocess.SubprocessError):
+            return None
+    top = (run("rev-parse", "--show-toplevel") or "").strip()
+    if sub == "stash":
+        if not args or args[0] not in ("pop", "apply"):
+            return []
+        refs = [a for a in args[1:] if not a.startswith("-")]
+        names = run("stash", "show", "--include-untracked", "--name-only", refs[0] if refs else "stash@{0}")
+        if names is None:
+            names = run("stash", "show", "--name-only", refs[0] if refs else "stash@{0}")
+        return None if names is None else [n for n in names.split() if n in guarded_files()]
+    source, paths = None, []
+    if sub == "restore":
+        for k, a in enumerate(args):
+            if a in ("-s", "--source") and k + 1 < len(args):
+                source = args[k + 1]
+            elif a.startswith("--source="):
+                source = a.split("=", 1)[1]
+        paths = [a for k, a in enumerate(args) if not a.startswith("-") and not (k and args[k - 1] in ("-s", "--source"))]
+    else:
+        before = args[:args.index("--")] if "--" in args else args[:1]
+        after = args[args.index("--") + 1:] if "--" in args else args[1:]
+        commits = [a for a in before if not a.startswith("-")]
+        source, paths = (commits[0] if commits else None), [a for a in after if not a.startswith("-")]
+    if not source or not paths:
+        return []
+    here = os.path.relpath(os.path.join(ROOT, dirs[-1]) if dirs else ROOT, top or ROOT) if top else "."
+    def covers(spec, f):
+        spec = os.path.normpath(os.path.join(here, spec.strip("\"\x27"))) if not spec.startswith(":/") else spec[2:] or "."
+        return spec in (".", "") or f == spec or f.startswith(spec.rstrip("/") + "/") or fnmatch.fnmatchcase(f, spec)
+    hit = [f for f in guarded_files() if any(covers(sp, f) for sp in paths)]
+    if not hit:
+        return []
+    changed = run("diff", "--name-only", source, "--", *[os.path.join(top or ROOT, f) for f in hit])
+    return None if changed is None else [f for f in hit if f in changed.split()]
+
 def guard_file_write(cmd, words):
-    """Ask or deny when a Bash command writes one of the protected files."""
+    """Deny or ask when a Bash command writes one of the protected files."""
     name = words[0]
-    named = [w for w in words[1:] if protected_kind(w)]
+    if name in ("chmod", "chown", "chattr", "touch"):
+        # no content change: only a guard file named outright counts (`chmod +x scripts/*.sh` is fine)
+        named = [w for w in words[1:] if not any(c in w for c in "*?[") and protected_kind(w)]
+        if named and name != "touch":
+            protect(named[0], f"`{name}` changes it")
+        return
+    if name in ("cp", "mv", "install", "ln", "rsync"):
+        named = [w for w in copy_targets(words) if protected_kind(w)]
+        if named:
+            protect(named[0], "`ln` links to it, and a write through the link changes it" if name == "ln" else f"`{name}` writes it")
+        return
+    if name in ("tar", "bsdtar", "gtar", "unzip"):
+        if name == "unzip" or any(w in ("--extract", "--get") or (not w.startswith("--") and "x" in w.lstrip("-") and re.match(r"^-?[A-Za-z]+$", w))
+                                  for w in words[1:2] + [w for w in words[2:] if w.startswith("-")]):
+            files, dest = archive_paths(name, words)
+            if files is None:
+                if rel_inside(dest):
+                    ask(f"`{name}` extracts an archive the guard can\u2019t list into the project, so it can\u2019t tell whether it "
+                        "replaces the guard\u2019s own files; the owner approves it.")
+                return
+            named = [f for f in files if protected_kind(f)]
+            if named:
+                protect(named[0], f"`{name}` extracts over it")
+        return
+    if name in ("patch",) or (name == "git" and len(words) > 1):
+        dirs, i = git_globals(words) if name == "git" else ([], 0)
+        sub = words[i] if name == "git" and i < len(words) else name
+        args = words[i + 1:] if name == "git" else words[1:]
+        if sub in ("apply", "am", "patch"):
+            if sub == "patch":
+                files = [args[k + 1] for k, a in enumerate(args[:-1]) if a in ("-i", "--input", "<")]
+                files += [a.split("=", 1)[1] for a in args if a.startswith("--input=")] + [a[1:] for a in args if a.startswith("<") and len(a) > 1]
+                named = [w for w in args if protected_kind(w) and not w.startswith("-")]
+            else:
+                files = [a for k, a in enumerate(args) if not a.startswith("-") and not (k and args[k - 1] in ("--directory", "-p", "--include", "--exclude"))]
+                named = []
+            if sub == "apply" and any(a in ("--check", "--stat", "--numstat", "--summary") for a in args) and "--apply" not in args:
+                return
+            for f in files:
+                changed = patch_paths(os.path.join(dirs[-1], f) if dirs else f)
+                if changed is None:
+                    continue
+                named += [c for c in changed if protected_kind(os.path.join(dirs[-1], c) if dirs else c)]
+            if not files:
+                ask(f"`{sub}` reads a patch the guard can\u2019t see (from a pipe), so it can\u2019t tell whether it changes the "
+                    "guard\u2019s own files; the owner approves it. Save the patch to a file and apply that.")
+            if named:
+                protect(named[0], f"`{sub}` patches it")
+            return
+        if name == "git":
+            if sub in ("checkout", "restore", "stash"):
+                changed = git_restores(dirs, sub, args)
+                if changed is None:
+                    ask(f"`git {sub}` may bring back an older copy of the guard\u2019s own files and the guard can\u2019t tell; "
+                        "the owner approves it.")
+                elif changed:
+                    protect(changed[0], f"`git {sub}` replaces it with another version")
+            named = [w for w in args if protected_kind(w)]
+            named += [os.path.join(d, part) for d in dirs for w in args for part in re.split(r"[=:,\s]", w)
+                      if part and protected_kind(os.path.join(d, part))]
+            if named and sub in ("update-index", "checkout", "restore", "rm", "mv", "apply", "stash", "reset"):
+                protect(named[0], f"`git {sub}` writes it")
+            return
+    if name == "dd":
+        named = [w[3:] for w in words[1:] if w.startswith("of=") and protected_kind(w[3:])]
+    elif name in ("curl", "wget"):
+        from urllib.parse import urlparse
+        rest = words[1:]
+        outdir = "."
+        for k, w in enumerate(rest):
+            if w in ("--output-dir", "-P", "--directory-prefix") and k + 1 < len(rest):
+                outdir = rest[k + 1]
+            elif w.startswith(("--output-dir=", "--directory-prefix=")):
+                outdir = w.split("=", 1)[1]
+            elif re.match(r"^-P\S", w):
+                outdir = w[2:]
+        named = [os.path.join(outdir, rest[k + 1]) for k, w in enumerate(rest[:-1])
+                 if (w in ("--output", "--output-document") or re.match(r"^-[A-Za-z]*[oO]$", w)) and protected_kind(os.path.join(outdir, rest[k + 1]))]
+        named += [os.path.join(outdir, w.split("=", 1)[1]) for w in rest if w.startswith(("--output=", "--output-document="))
+                  and protected_kind(os.path.join(outdir, w.split("=", 1)[1]))]
+        # a remote name: `curl -O`, and wget whenever no `-O` names the file
+        remote = name == "wget" and not any(w in ("-O", "--output-document") or w.startswith("--output-document=") for w in rest) \
+            or name == "curl" and any(w in ("--remote-name", "--remote-name-all") or re.match(r"^-[A-Za-z]*O[A-Za-z]*$", w) for w in rest)
+        if remote:
+            for w in rest:
+                if "://" in w:
+                    try:
+                        base = os.path.basename(urlparse(w.strip("\"\x27")).path) or "index.html"
+                    except ValueError:
+                        continue
+                    if protected_kind(os.path.join(outdir, base)):
+                        named.append(os.path.join(outdir, base))
+        if named:
+            protect(named[0], f"`{name}` downloads into it")
+        return
+    else:
+        named = [w for w in words[1:] if protected_kind(w)]
     if not named:
         return
     sub = words[1] if len(words) > 1 else ""
     writes = (name in WRITERS
               or (name in ("sed", "perl", "ruby") and any(re.match(r"^-[A-Za-z]*i", w) or w.startswith("--in-place") for w in words[1:]))
               or (name in INTERPRETERS and any(w in ("-c", "-e", "-p", "-pe", "-pi") or w.startswith("-i") for w in words[1:]))
-              or (name == "git" and sub in ("update-index", "checkout", "restore", "rm", "mv", "apply", "stash", "reset"))
               or (name in ("awk", "gawk") and "-i" in words[1:] and "inplace" in " ".join(words)))
     if writes:
         protect(named[0], f"`{name}` writes it")
@@ -1637,8 +2122,8 @@ if tool == "Bash":
         ask(held)
 elif tool in ("Read", "Edit", "MultiEdit", "Write", "NotebookEdit"):
     p = args.get("file_path") or args.get("notebook_path") or ""
-    if tool != "Read":
-        protect(p, f"{tool} writes it")
+    if tool != "Read" and protected_kind(p):
+        protect(p, f"{tool} writes it", planned_text(tool, args, p))
     kind = secret_kind(p, tool == "Read")
     if kind == "deny":
         deny(f"`{p}` is a secret or credential file; agents never read or write it (AGENTS.md § Golden rules).")

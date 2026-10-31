@@ -43,6 +43,21 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
   `2026-10-17-guard-hook`). `guard.mcp_writes: off`: mention once that connector writes then rely on
   the named `ask` rules alone; `guard.deploys`, `guard.publishes`, `guard.schema_pushes`, `guard.network` or `guard.installs: off` the
   same for that group (nothing asks before it runs).
+- **Guard integrity:** each finding here is the owner's to fix by hand, because the guard denies an agent's
+  write to these files. Report:
+  - `scripts/guard.sh` or a file in `scripts/lib/` that differs from the kit's copy at `installed_from.commit`
+    (`read(<commit>, template/scripts/guard.sh)` through `/morph-update` § 1's source; "not checked" when the
+    source can't be read). Name the differing lines; a project may have edited them on purpose, so ask.
+  - The guard entries in `.claude/settings.json` (PreToolUse and ConfigChange): each is `"type": "command"`,
+    runs `scripts/guard.sh` through the template's wrapper that turns any other exit into 2, with a `timeout`
+    of at least 30, and the PreToolUse `matcher` is a valid pattern that names every tool the template's does.
+    Also any `disableAllHooks` value but `false`, `defaultMode: bypassPermissions`, every `env` entry (each
+    reaches the hook), and every other hook or helper command (`statusLine`, `apiKeyHelper` …): it runs with
+    no check, so name it.
+  - Each `permissions.deny` and `permissions.ask` rule the template ships (with the branches filled in) that is
+    missing; added rules are fine.
+  - Every `guard:` switch set to `off`, any `allow_hosts` and `fail_open` set to `true`, `yes` or `on`, in one
+    line, so the owner sees what the guard no longer asks about.
 - **Permission prompts:** `.claude/settings.json` has `permissions.defaultMode` and the check allow rules
   (`/morph-init` Q14). Missing in an installed copy: say that file edits and every check command prompt in
   Claude Code's default mode, and offer to add them from the template's `.claude/settings.json` and
