@@ -742,6 +742,71 @@ def check(name, fx, t):
         if r.returncode or not ok:
             bad(f"feature-cost.sh with feature_budget_usd {cap} printed {r.stdout!r} (stderr {r.stderr.strip()!r})")
     open(cfg, "w").write(keep_cfg)
+    # feature-cost.sh on bad input: a torn line, a bad byte, a BOM, string counts and naive times are
+    # skipped or read, never fatal; a call copied into a second session counts once; a json.py in the
+    # project doesn't run; prices match Claude Code's (Sonnet 5.5 cache reads at $0.10 per million)
+    if name == once_on or FULL:
+        def cost_entry(mid, usage, ts="2026-10-21T09:00:00Z", branch="main", model="claude-sonnet-5-5"):
+            return json.dumps({"type": "assistant", "timestamp": ts, "gitBranch": branch, "uuid": "u-" + mid,
+                               "requestId": "r-" + mid, "message": {"id": mid, "model": model, "usage": usage}})
+        def cost_run(*args, home=home, cwd=t):
+            r = run(["bash", os.path.join(t, "scripts/feature-cost.sh"), *args], cwd, env=dict(os.environ, HOME=home))
+            return r, (r.stdout.strip().splitlines() or [""])[-1]
+        mtok = {"input_tokens": 0, "output_tokens": 0, "cache_read_input_tokens": 1000000, "cache_creation_input_tokens": 0}
+        open(os.path.join(proj, "s2.jsonl"), "wb").write(
+            "\ufeff".encode() + cost_entry("m2", mtok).encode() + b"\n"                         # BOM on line 1: $0.10
+            + cost_entry("m3", dict(mtok, cache_read_input_tokens="1000000")).replace("u-m3", "u-\xc3").encode("latin-1") + b"\n"   # string count, bad byte: $0.10
+            + cost_entry("m4", dict(mtok, cache_read_input_tokens=1000000), ts="2026-10-21T09:00:00").encode() + b"\n"   # naive time: $0.10
+            + cost_entry("m6", mtok, ts="2026-10-21T09:00:00.12Z").encode() + b"\n"                # 2-digit fraction (Python < 3.11 couldn't parse it): $0.10
+            + cost_entry("m7", mtok, ts="2026-10-21T07:59:59.5Z").encode() + b"\n"                 # before --since: left out
+            + b'{"type": "assistant", "message": {"id": "torn", "usage": {"inp\n'                 # torn write
+            + b"[1, 2]\n")                                                                           # not an object
+        r, last = cost_run("--session", "s2", "--since", "2026-10-21T08:00")
+        if (r.returncode or not last.startswith("Cost ≈ $0.40 ") or "2 unreadable transcript lines skipped" not in last
+                or "no readable time" in last or "Traceback" in r.stderr):
+            bad(f"feature-cost.sh on a transcript with bad lines printed {r.stdout!r} (exit {r.returncode}, stderr {r.stderr.strip()[-300:]!r})")
+        # resumed session: s3 repeats s2's first call and adds one; --branch counts m2 once
+        open(os.path.join(proj, "s3.jsonl"), "w").write(cost_entry("m2", mtok) + "\n" + cost_entry("m5", mtok) + "\n")
+        r, last = cost_run("--branch", "main")
+        if r.returncode or not last.startswith("Cost ≈ $3.60 "):   # s1's call $3.00, then m2 to m7 at $0.10 each
+            bad(f"feature-cost.sh --branch counted a call copied into a resumed session twice: {r.stdout!r}")
+        planted = os.path.join(t, "json.py")
+        open(planted, "w").write("print('PLANTED json.py ran')\nraise SystemExit(0)\n")
+        r, last = cost_run("--session", "s3")
+        os.remove(planted)
+        if r.returncode or "PLANTED" in r.stdout + r.stderr or not last.startswith("Cost ≈ $0.20 "):
+            bad(f"feature-cost.sh ran a json.py from the project: {r.stdout!r} (stderr {r.stderr.strip()[-200:]!r})")
+        r, last = cost_run("--sinse", "2026-10-21")
+        if r.returncode != 2 or "bad option: --sinse" not in r.stdout:
+            bad(f"feature-cost.sh with an unknown option exited {r.returncode}: {r.stdout!r}")
+        # a project path with an emoji: Claude Code names its folder with "--" for it (JavaScript string length)
+        emo = os.path.join(t, "cost-emoji", "app \U0001F600")
+        os.makedirs(os.path.join(emo, "harness"))
+        shutil.copytree(os.path.join(t, "scripts"), os.path.join(emo, "scripts"))
+        shutil.copy(os.path.join(t, "harness/MODEL_PRICES.md"), os.path.join(emo, "harness"))
+        shutil.copy(cfg, emo)
+        run(["git", "init", "-q"], emo)
+        emo_proj = os.path.join(home, ".claude/projects", re.sub(r"[^A-Za-z0-9]", "-", os.path.realpath(emo).replace("\U0001F600", "  ")))
+        os.makedirs(emo_proj)
+        open(os.path.join(emo_proj, "s9.jsonl"), "w").write(cost_entry("m9", mtok) + "\n")   # no cwd field: found by name only
+        r = run(["bash", "scripts/feature-cost.sh", "--session", "s9"], emo, env=dict(os.environ, HOME=home))
+        if r.returncode or "Cost ≈ $0.10 " not in r.stdout:
+            bad(f"feature-cost.sh in a project path with an emoji did not find its transcripts: {r.stdout!r} (stderr {r.stderr.strip()[-200:]!r})")
+        # the fallback search survives a damaged transcript elsewhere (a NUL in its cwd)
+        shutil.rmtree(emo_proj)
+        other = os.path.join(home, ".claude/projects", "-elsewhere")
+        os.makedirs(other)
+        open(os.path.join(other, "s8.jsonl"), "w").write(json.dumps({"cwd": "/x\u0000y", "type": "user"}) + "\n")
+        r = run(["bash", "scripts/feature-cost.sh"], emo, env=dict(os.environ, HOME=home))
+        if r.returncode or not r.stdout.startswith("Cost: not measured (no Claude Code transcripts"):
+            bad(f"feature-cost.sh crashed on a transcript with a NUL in its cwd: {r.stdout!r} (stderr {r.stderr.strip()[-200:]!r})")
+        shutil.rmtree(other)
+        # without scripts/lib/config.sh it says so and exits 1 (it used to exit 0 with nothing on stdout)
+        os.remove(os.path.join(emo, "scripts/lib/config.sh"))
+        r = run(["bash", "scripts/feature-cost.sh"], emo, env=dict(os.environ, HOME=home))
+        if r.returncode != 1 or not r.stdout.startswith("Cost: not measured (scripts/lib/config.sh"):
+            bad(f"feature-cost.sh without scripts/lib/config.sh exited {r.returncode}: {r.stdout!r}")
+        shutil.rmtree(os.path.join(t, "cost-emoji"))
     r = run(["bash", "scripts/evidence.sh"], t)
     if r.returncode or "# Morphness evidence summary" not in r.stdout or "0 features finished" not in r.stdout or "Traceback" in r.stdout + r.stderr:
         bad(f"evidence.sh on a fresh install printed {r.stdout!r} (stderr {r.stderr.strip()!r})")
