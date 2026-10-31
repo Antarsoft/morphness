@@ -27,20 +27,22 @@ guard_closed() {
 
 . "$(cd "$(dirname "$0")" && pwd)/lib/config.sh" 2>/dev/null || guard_closed "scripts/lib/config.sh is missing or unreadable, so harness.config.yml can't be read."
 cd "${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}" 2>/dev/null || guard_closed "the project folder can't be entered."
+command -v awk >/dev/null 2>&1 || guard_closed "awk is not installed, so harness.config.yml can't be read."
 if ! command -v python3 >/dev/null 2>&1; then
-  case "$(config_get guard.fail_open | tr 'A-Z' 'a-z')" in
-    true|yes|on) echo "scripts/guard.sh: python3 is missing and guard.fail_open is set, so this call is not checked." >&2; exit 0 ;;
+  case "$(config_get guard.fail_open)" in
+    [Tt][Rr][Uu][Ee]|[Yy][Ee][Ss]|[Oo][Nn]) echo "scripts/guard.sh: python3 is missing and guard.fail_open is set, so this call is not checked." >&2; exit 0 ;;
   esac
   guard_closed "python3 is not installed, so the call can't be checked. Install python3, or set guard.fail_open: true in harness.config.yml to accept unchecked calls."
 fi
 
-GUARD_BRANCHES="$(
-  {
-    config_get branches.integration
-    config_get branches.production
-    config_env_branches
-  } | tr -d "\"'" | grep . | sort -u | tr '\n' ' '
-)"
+# The environment branches, one per line. The Python part checks them and blocks every push when they
+# can't be read (file missing, key missing, a value that isn't a branch name), so a broken config never
+# leaves the branches unprotected.
+GUARD_CONFIG_READABLE=0
+[ -f harness.config.yml ] && [ -r harness.config.yml ] && GUARD_CONFIG_READABLE=1
+GUARD_INTEGRATION="$(config_get_all branches.integration)"
+GUARD_PRODUCTION="$(config_get_all branches.production)"
+GUARD_ENV_BRANCHES="$(config_env_branches)"
 GUARD_MCP_WRITES="$(config_get guard.mcp_writes)"
 GUARD_DEPLOYS="$(config_get guard.deploys)"
 GUARD_PUBLISHES="$(config_get guard.publishes)"
@@ -49,7 +51,7 @@ GUARD_NETWORK="$(config_get guard.network)"
 GUARD_INSTALLS="$(config_get guard.installs)"
 GUARD_PR_WRITES="$(config_get guard.pr_writes)"
 GUARD_ALLOW_HOSTS="$(config_get guard.allow_hosts)"
-export GUARD_BRANCHES GUARD_MCP_WRITES GUARD_DEPLOYS GUARD_PUBLISHES GUARD_SCHEMA_PUSHES GUARD_NETWORK GUARD_INSTALLS GUARD_PR_WRITES GUARD_ALLOW_HOSTS
+export GUARD_CONFIG_READABLE GUARD_INTEGRATION GUARD_PRODUCTION GUARD_ENV_BRANCHES GUARD_MCP_WRITES GUARD_DEPLOYS GUARD_PUBLISHES GUARD_SCHEMA_PUSHES GUARD_NETWORK GUARD_INSTALLS GUARD_PR_WRITES GUARD_ALLOW_HOSTS
 
 python3 -I -c '
 import fnmatch, json, os, re, shlex, subprocess, sys, tempfile, threading
@@ -71,7 +73,30 @@ _watchdog = threading.Timer(TIME_LIMIT, too_slow)
 _watchdog.daemon = True
 _watchdog.start()
 
-PROTECTED = set(os.environ.get("GUARD_BRANCHES", "").split())
+# What a branch name read from the config may hold: git rules (no `..`, `@{`, spaces, ~^:?*[\\ or control characters, no
+# leading `-`) plus the characters the config reader would have kept from YAML syntax (&{}"#,). A YAML null or boolean is no name.
+BRANCH_WORD = re.compile(r"^(?!-)(?!.*\.\.)(?!.*@\{)[^\s~^:?*\[\\\x00-\x1f\x7f&{}\x27\",#]+$")
+NOT_A_BRANCH = {"null", "~", "true", "false", "yes", "no", "on", "off", "none"}
+
+def config_branches():
+    """The environment branches from harness.config.yml, and what made them unreadable (then every push is blocked)."""
+    found, problems = set(), []
+    if os.environ.get("GUARD_CONFIG_READABLE") != "1":
+        return found, ["harness.config.yml is missing or can\u2019t be read"]
+    for key, var in (("branches.integration", "GUARD_INTEGRATION"), ("branches.production", "GUARD_PRODUCTION"),
+                     ("environments", "GUARD_ENV_BRANCHES")):
+        values = [v.strip().strip("\"\x27") for v in os.environ.get(var, "").splitlines() if v.strip()]
+        if not values and key != "environments":
+            problems.append(f"`{key}` was not found in harness.config.yml")
+        for v in values:
+            b = v[len("refs/heads/"):] if v.startswith("refs/heads/") else v
+            if BRANCH_WORD.match(b) and b.lower() not in NOT_A_BRANCH:
+                found.add(b)
+            else:
+                problems.append(f"`{key}: {v}` is not a branch name the guard can read")
+    return found, problems
+
+PROTECTED, CONFIG_PROBLEMS = config_branches()
 PROTECTED_LOW = {b.lower() for b in PROTECTED}
 def protected_branch(name):
     # Branch names are case sensitive on the code host but not on every remote or file system, so `Main` counts as `main`.
@@ -508,6 +533,9 @@ def follow_git(sub, rest, git_dir_args):
     elif sub == "clean" and ("--force" in flags or "f" in short) and "--dry-run" not in flags and "n" not in short:
         ask("`git clean -f` deletes untracked files, ignored ones too with `-x`, and nothing brings them back; the owner approves it. Run `git clean -n` to see what it would delete.")
     elif sub == "branch":
+        if CONFIG_PROBLEMS and positional and (any(f in ("--delete", "--force", "--move") for f in flags) or re.search("[dDfmM]", short)):
+            deny("`git branch` deletes, moves or forces a branch while the environment branches can\u2019t be read from "
+                 "harness.config.yml (" + "; ".join(CONFIG_PROBLEMS[:3]) + "). Fix the config, then retry.")
         names = [x for x in positional if protected_branch(x)]
         if names and (any(f in ("--delete", "--force", "--move") for f in flags) or re.search("[dDfmM]", short)):
             deny(f"agents never delete, move or force `{names[0]}`: it is an environment branch and changes only through a PR "
@@ -536,6 +564,10 @@ def check_git(words):
     if words[i] != "push":
         follow_git(words[i], words[i + 1:], git_dir_args)
         return
+    if CONFIG_PROBLEMS:
+        deny("every `git push` is blocked because the environment branches can\u2019t be read: " + "; ".join(CONFIG_PROBLEMS[:3])
+             + ". Fix `branches.integration`, `branches.production` and `environments` in harness.config.yml, then retry "
+             "(/morph-doctor shows what the scripts read).")
     rest = words[i + 1:]
     positional, flags, j = [], [], 0
     while j < len(rest):

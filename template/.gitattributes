@@ -1,0 +1,5 @@
+# Morphness: the hook scripts and the config they read keep LF line endings, also on a Windows checkout
+# (core.autocrlf=true). With CRLF, bash stops on the carriage returns and the guard blocks every call.
+*.sh text eol=lf
+harness.config.yml text eol=lf
+.claude/settings.json text eol=lf

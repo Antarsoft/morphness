@@ -586,6 +586,90 @@ def check_guard_hook(bad, fx, t, settings, slow_steps):
         if r.returncode != 2 or "took longer than 15 s" not in r.stderr or took > 20:
             bad(f"guard hook: GUARD_TIME_LIMIT=60 raised the 15 s limit (exit {r.returncode} after {took:.1f} s; {r.stderr.strip()})")
 
+def check_guard_config(bad, fx, t):
+    """A missing, odd or broken harness.config.yml never leaves the environment branches unprotected: each variant
+    below still denies a push to both branches, a readable one still lets a feature branch through, and a missing
+    awk blocks every call."""
+    cfg = os.path.join(t, "harness.config.yml")
+    saved = open(cfg, "rb").read()
+    text = saved.decode("utf-8")
+    I, P = fx["branches"]["integration"], fx["branches"]["production"]
+    no_envs = re.sub(r"(?ms)^environments:.*?(?=^\S)", "environments: []\n", text)
+    branch_line = lambda key: re.compile(rf"(?m)^  {key}: \S+")
+    def guard(cmd, path=None):
+        env = dict(os.environ, CLAUDE_PROJECT_DIR=t)
+        if path:
+            env["PATH"] = path
+        raw = json.dumps({"tool_name": "Bash", "tool_input": {"command": cmd}})
+        return run(["bash", "scripts/guard.sh"], t, input=raw, env=env)
+    # (name, file contents or None to delete it or "dir" for a folder, readable: a feature branch push still passes)
+    variants = [
+        ("missing", None, False), ("empty", b"", False), ("a folder", "dir", False),
+        # the mark goes in front of a key line: in front of the template's opening comment it would change nothing
+        ("byte order mark", b"\xef\xbb\xbf" + no_envs[no_envs.index("branches:"):].encode(), True),
+        ("a null branch", branch_line("production").sub("  production: null", no_envs).encode(), False),
+        # in an environment, so the two configured branches stay as they are and must still be protected
+        ("an unusual branch name", re.sub(r"(?m)^environments: \[\]$", "environments:\n  - { name: s, branch: release+1 }", no_envs).encode(), True),
+        ("CRLF line endings", no_envs.replace("\n", "\r\n").encode(), True),
+        ("quoted keys", no_envs.replace("\nbranches:", '\n"branches":').replace("\n  integration:", '\n  "integration":')
+                                .replace("\n  production:", "\n  \x27production\x27:").encode(), True),
+        ("refs/heads/ prefix", branch_line("production").sub(f"  production: refs/heads/{P}", no_envs).encode(), True),
+        ("an anchor", branch_line("integration").sub(f"  integration: &b {I}", no_envs).encode(), True),
+        ("an alias", branch_line("production").sub("  production: *b", branch_line("integration").sub(f"  integration: &b {I}", no_envs)).encode(), False),
+        ("a repeated key", branch_line("production").sub(f"  production: {P}\n  production: selftest-second", no_envs).encode(), True),
+        ("production missing", branch_line("production").sub("", no_envs).encode(), False),
+        ("capitalised keys", no_envs.replace("\nbranches:", "\nBranches:").encode(), False),
+        ("a flow map over two lines", re.sub(r"(?m)^branches:\n  integration: (\S+).*\n  production: (\S+).*\n",
+                                             r"branches:\n  { integration: \1,\n    production: \2 }\n", no_envs).encode(), False),
+        ("capitalised Environments", re.sub(r"(?m)^environments: \[\]$", "Environments:\n  - { name: s, branch: selftest-second }", no_envs).encode(), True),
+        ("a branch value on the next line", re.sub(r"(?m)^environments: \[\]$", "environments:\n  - name: s\n    branch:\n      selftest-second", no_envs).encode(), False),
+        ("one-line flow environments", re.sub(r"(?m)^environments: \[\]$", f"environments: [ {{ name: a, branch: {I} }}, "
+                                              f"{{ name: s, branch: selftest-second }}, {{ name: b, branch: {P} }} ]", no_envs).encode(), True),
+    ]
+    try:
+        for label, data, readable in variants:
+            if os.path.isdir(cfg):
+                os.rmdir(cfg)
+            elif os.path.exists(cfg):
+                os.remove(cfg)
+            if data == "dir":
+                os.makedirs(cfg)
+            elif data is not None:
+                open(cfg, "wb").write(data)
+            if isinstance(data, bytes) and data and data in (saved, no_envs.encode()):
+                bad(f"guard config: the {label} variant did not change harness.config.yml (the fixture writes it differently)")
+            extra = [b for b in ("selftest-second", "release+1") if isinstance(data, bytes) and b.encode() in data]
+            for branch in [I, P] + extra:
+                r = guard(f"git push origin {branch}")
+                if r.returncode != 2:
+                    bad(f"guard config: with {label} in harness.config.yml, a push to {branch} exited {r.returncode}, not 2")
+            r = guard("git push origin feature/selftest")
+            if (r.returncode == 0) != readable:
+                bad(f"guard config: with {label} in harness.config.yml, a feature push exited {r.returncode} ({r.stderr.strip()[:200]})")
+            if not readable and "can\u2019t be read" not in r.stderr:
+                bad(f"guard config: with {label}, the deny does not say the branches can't be read ({r.stderr.strip()[:200]})")
+            r = guard("git status")
+            if r.returncode != 0:
+                bad(f"guard config: with {label} in harness.config.yml, `git status` exited {r.returncode} ({r.stderr.strip()[:200]})")
+    finally:
+        if os.path.isdir(cfg):
+            os.rmdir(cfg)
+        open(cfg, "wb").write(saved)
+    # Without awk the config can't be read at all: every call is blocked. grep, sort and tr are not needed.
+    for missing in ("awk", "grep", "sort", "tr"):
+        bindir = os.path.join(work, f"bin-no-{missing}")
+        os.makedirs(bindir, exist_ok=True)
+        for tool in ("bash", "sh", "git", "python3", "awk", "sed", "cat", "dirname", "env", "grep", "sort", "tr"):
+            src = shutil.which(tool)
+            if tool != missing and src and not os.path.exists(os.path.join(bindir, tool)):
+                os.symlink(src, os.path.join(bindir, tool))
+        r = guard(f"git push origin {P}", bindir)
+        if r.returncode != 2:
+            bad(f"guard config: without {missing}, a push to {P} exited {r.returncode}, not 2 ({r.stderr.strip()[:200]})")
+        r = guard("git status", bindir)
+        if r.returncode != (2 if missing == "awk" else 0):
+            bad(f"guard config: without {missing}, `git status` exited {r.returncode} ({r.stderr.strip()[:200]})")
+
 def check(name, fx, t):
     bad = lambda msg: failures.append(f"{name}: {msg}")
     # 1. placeholders
@@ -612,6 +696,7 @@ def check(name, fx, t):
     if "scripts/guard.sh" not in hooks:
         bad(".claude/settings.json has no PreToolUse hook running scripts/guard.sh")
     check_guard_hook(bad, fx, t, settings, FULL or name == once_on)
+    check_guard_config(bad, fx, t)
     # 4. relative links
     sources = ["AGENTS.md", "CLAUDE.md"]
     for base in ("harness", "project", ".claude"):
