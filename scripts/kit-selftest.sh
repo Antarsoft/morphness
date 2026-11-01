@@ -978,6 +978,35 @@ def check(name, fx, t):
         d = re.search(r"^description:[ \t]*(.*)$", fm.group(1), re.M) if fm else None
         if d and re.search(r":\s", d.group(1)) and d.group(1)[:1] not in "\"'|>":
             bad(f"{os.path.relpath(f, t)} description has an unquoted colon: quote it")
+    # 5b. rules reach the agent they are for. Subagents run with omitClaudeMd: they load neither CLAUDE.md,
+    # AGENTS.md nor .claude/rules/, so a rule file must not address one, and the role bodies must name what
+    # the agent reads. The researcher has no shell and no edit tools (it replies; the TL writes the file).
+    for f in glob.glob(os.path.join(t, ".claude/agents/*.md")):
+        rel, text = os.path.relpath(f, t), read(f)
+        fm = re.match(r"^---\n(.*?)\n---\n", text, re.S)
+        if re.search(r"harness/agents/[a-z-]+\.md` \(its §", text):
+            bad(f"{rel} lists sections of its role body to read: the Read tool returns the whole file, so read it in full")
+        if os.path.basename(f).startswith("researcher"):
+            d = re.search(r"^disallowedTools:\s*(.*)$", fm.group(1), re.M) if fm else None
+            have = {x.strip() for x in d.group(1).split(",")} if d else set()
+            for tool in ("Bash", "Edit", "MultiEdit", "Write", "NotebookEdit"):
+                if tool not in have:
+                    bad(f"{rel} lets the researcher use {tool}: disallowedTools needs it")
+    role_reads = set()
+    for role in ("fullstack-engineer", "qa-engineer"):
+        body = read(os.path.join(t, f"harness/agents/{role}.md"))
+        start = body.split("## Before you start", 1)[-1].split("\n## ", 1)[0]
+        role_reads |= set(re.findall(r"\.claude/rules/[\w.-]+\.md", start))
+        if ".claude/rules/testing.md" not in start:
+            bad(f"harness/agents/{role}.md § Before you start doesn't read .claude/rules/testing.md")
+        if "AGENTS.md" in start:
+            bad(f"harness/agents/{role}.md § Before you start reads AGENTS.md (the Technical Lead's file)")
+    for f in glob.glob(os.path.join(t, ".claude/rules/*.md")):
+        rel = os.path.relpath(f, t)
+        if rel in role_reads:
+            continue
+        for m in re.finditer(r"\*\*[A-Za-z -]*(subagent|engineer|researcher|writer):\*\*", read(f)):
+            bad(f"{rel} addresses a subagent ({m.group(0)}), but no subagent reads it: move it to harness/agents/<role>.md")
     # 6. named checks have commands, and no row names an unknown check
     cfg = lambda key: run(["bash", "-c", f'. scripts/lib/config.sh; config_get {key}'], t).stdout.strip()
     names = set()
@@ -1232,6 +1261,111 @@ def check(name, fx, t):
         bad(f"learned-rules.sh did not list the tagged rule with its source and last fired day: {r.stdout!r}")
     open(rules_md, "w").write(saved)
     os.remove(os.path.join(ldir, "selftest-v1.md"))
+    # risk-check.sh: the mode comes from the paths, the same every time (harness/MODES.md § Choosing mode).
+    # It reads what the branch changed, so it runs on a committed copy (an updated copy has the update unstaged).
+    rk = os.path.join(tempfile.mkdtemp(prefix="risk-"), "p")
+    shutil.copytree(t, rk, symlinks=True)
+    integ = run(["bash", "-c", ". scripts/lib/config.sh; config_get branches.integration"], rk).stdout.strip() or "dev"
+    for cmd in (["add", "-A"], ["-c", "user.name=selftest", "-c", "user.email=selftest@example.com", "commit", "-q", "--allow-empty", "-m", "state"],
+                ["branch", "-f", integ]):
+        run(["git", *cmd], rk)
+    def risk(*args, cwd=None):
+        r = run(["bash", os.path.join(rk, "scripts/risk-check.sh"), *args], cwd or rk)
+        return r.returncode, r.stdout
+    section = read(os.path.join(rk, "project/CONTROLS.md")).split("## Risk paths", 1)[-1].split("\n## ", 1)[0]
+    rows = re.findall(r"^- \*\*(.+?):\*\*(.*)$", section, re.M)
+    if "Bash(bash scripts/risk-check.sh:*)" not in settings.get("permissions", {}).get("allow", []):
+        bad(".claude/settings.json doesn't allow bash scripts/risk-check.sh: every mode choice would stop at a permission prompt")
+    if not rows:
+        bad("project/CONTROLS.md § Risk paths has no rows")
+    for area, rest in rows:
+        for g in re.findall(r"`([^`\s]+)`", rest):
+            sample = g.lstrip("/").replace("**/", "a/").replace("**", "a").replace("*", "x").replace("?", "x")
+            if sample.endswith("/"):
+                sample += "f.ts"
+            outs = {risk(sample)[1] for _ in range(3)}
+            out = outs.pop() if len(outs) == 1 else f"{len(outs)} different answers"
+            if not out.startswith("Mode: full\n") or area not in out:
+                bad(f"risk-check.sh {sample} (risk path `{g}`, {area}) printed {out!r}")
+    code, out = risk("README.md", "docs/guide.md")
+    if code or out != "Mode: plain (documentation only)\n":
+        bad(f"risk-check.sh on documentation printed {out!r} (exit {code})")
+    code, out = risk("src/lib/format.ts")
+    if code or out != "Mode: plain (1 file, none on a risk path)\n":
+        bad(f"risk-check.sh on one ordinary file printed {out!r} (exit {code})")
+    code, out = risk(*[f"src/lib/f{i}.ts" for i in range(7)], "README.md")
+    if code or not out.startswith("Mode: full\n") or "more than mode.plain_max_files (6)" not in out:
+        bad(f"risk-check.sh on 7 files printed {out!r} (exit {code})")
+    code, out = risk("--force", "plain", "supabase/migrations/0001_x.sql")
+    if code or not out.startswith("Mode: plain (the owner chose plain; without that: full)\n"):
+        bad(f"risk-check.sh --force plain on a migration printed {out!r} (exit {code})")
+    code, out = risk("--force", "full", "README.md")
+    if code or not out.startswith("Mode: full (the owner chose full; without that: plain)"):
+        bad(f"risk-check.sh --force full on documentation printed {out!r} (exit {code})")
+    for args in (("--force", "maybe", "README.md"), ("--fast",), ()):
+        code, out = risk(*args)
+        if code != 2 or not out.startswith("Mode: full (risk check: "):
+            bad(f"risk-check.sh {' '.join(args) or '(no files, clean tree)'} printed {out!r} (exit {code}): it must fail toward full")
+    code, out = risk("../supabase/migrations/0001_x.sql", cwd=os.path.join(rk, "project"))
+    if not out.startswith("Mode: full\n") or "- supabase/migrations/0001_x.sql:" not in out:
+        bad(f"risk-check.sh run from a subfolder printed {out!r}")
+    code, out = risk(os.path.join(rk, "supabase/migrations/0001_x.sql"))
+    if not out.startswith("Mode: full\n") or "- supabase/migrations/0001_x.sql:" not in out:
+        bad(f"risk-check.sh with an absolute path printed {out!r}")
+    code, out = risk("requirements.txt")
+    if code or out != "Mode: plain (1 file, none on a risk path)\n":
+        bad(f"risk-check.sh on requirements.txt printed {out!r} (exit {code}): a .txt file is not documentation")
+    os.makedirs(os.path.join(rk, "src/lib"), exist_ok=True)
+    for fname, line, hit in (("purge.ts", "export const purge = (db) => db.query('DELETE FROM notes WHERE old');", "DELETE FROM"),
+                            ("reset.py", "cur.execute('TRUNCATE users;')", "TRUNCATE users"),
+                            ("slim.py", "cur.execute('ALTER TABLE users DROP email')", "ALTER TABLE users DROP"),
+                            ("old tables.go", "db.Exec(`drop table notes`)", "drop table")):
+        write(os.path.join(rk, "src/lib", fname), line + "\n")
+        write(os.path.join(rk, "docs-note.md"), f"Run {hit} by hand.\n")
+        code, out = risk()
+        if code or not out.startswith("Mode: full\n") or f'src/lib/{fname} adds "{hit}"' not in out or "docs-note.md" in out:
+            bad(f"risk-check.sh with a new file that deletes stored data ({hit}) printed {out!r} (exit {code})")
+        os.remove(os.path.join(rk, "src/lib", fname))
+        os.remove(os.path.join(rk, "docs-note.md"))
+    controls = os.path.join(rk, "project/CONTROLS.md")
+    first = rows[0][1].split("`")[1] if rows and "`" in rows[0][1] else None
+    if first:
+        saved = read(controls)
+        write(controls, saved.replace(f"`{first}`", "", 1))
+        code, out = risk()
+        if code or not out.startswith("Mode: full\n") or f"drops risk path `{first}`" not in out:
+            bad(f"risk-check.sh after § Risk paths lost `{first}` printed {out!r} (exit {code})")
+        write(controls, saved)
+    script = os.path.join(rk, "scripts/risk-check.sh")
+    saved = read(script)
+    write(script, saved + "# edited\n")
+    code, out = risk()
+    if code or not out.startswith("Mode: full\n") or "scripts/risk-check.sh: the risk check itself" not in out:
+        bad(f"risk-check.sh after an edit to itself printed {out!r} (exit {code})")
+    write(script, saved)
+    os.makedirs(os.path.join(rk, "supabase/migrations"), exist_ok=True)
+    write(os.path.join(rk, "supabase/migrations/0002_tags.sql"), "create table tags (id int);\n")
+    git_id = ["-c", "user.name=selftest", "-c", "user.email=selftest@example.com"]
+    for cmd in (["checkout", "-q", "-b", "selftest-risk"], ["add", "supabase"], [*git_id, "commit", "-q", "-m", "tags"]):
+        run(["git", *cmd], rk)
+    code, out = risk()
+    if code or not out.startswith("Mode: full\n") or "supabase/migrations/0002_tags.sql" not in out:
+        bad(f"risk-check.sh after a committed migration on a branch printed {out!r} (exit {code})")
+    code, out = risk(cwd=os.path.join(rk, "project"))
+    if code or "- supabase/migrations/0002_tags.sql:" not in out:
+        bad(f"risk-check.sh from a subfolder after a committed migration printed {out!r} (exit {code})")
+    os.makedirs(os.path.join(rk, "src/auth"), exist_ok=True)
+    write(os.path.join(rk, "src/auth/café token.ts"), "export {};\n")
+    for cmd in (["add", "src"], [*git_id, "commit", "-q", "-m", "auth"]):
+        run(["git", *cmd], rk)
+    code, out = risk()
+    if code or "- src/auth/café token.ts:" not in out:
+        bad(f"risk-check.sh after a committed file with an accent and a space printed {out!r} (exit {code})")
+    run(["git", "branch", "-D", integ], rk)
+    code, out = risk("README.md")
+    if code != 2 or not out.startswith("Mode: full (risk check: "):
+        bad(f"risk-check.sh with no `{integ}` branch printed {out!r} (exit {code}): it must fail toward full")
+    shutil.rmtree(os.path.dirname(rk))
     # prune states: proposed and approved are open (named, no DUE); declined, applied and README are not
     pdir, ldir = os.path.join(t, "_harness/prunes"), os.path.join(t, "_harness/learnings")
     os.makedirs(pdir, exist_ok=True)

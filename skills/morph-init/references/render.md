@@ -35,7 +35,7 @@ Copy every file under `SRC/template/` to the same path in `T`, skipping any file
 | File exists | Do |
 |-------------|----|
 | `CLAUDE.md` | Keep the user's content. Append the template's `CLAUDE.md` body under a `## Morphness` heading, or add the line `@AGENTS.md` if the template's AGENTS.md was copied. |
-| `AGENTS.md` | Keep it. Append the template's golden rules and harness table under `## Morphness`, without duplicating rules it already has. |
+| `AGENTS.md` | Keep it. Append the template's golden rules and harness table under `## Morphness`, without duplicating rules it already has. Full-stack and QA don't read it: copy any of its rules they must follow (a convention, a path not to touch) to `project/agents/<role>.md`. |
 | `AGENTS.md` and `CLAUDE.md` are one file (a link either way, as install.sh reports) | Keep the link. Append the template's `AGENTS.md` body under `## Morphness` to the real file once, then the template `CLAUDE.md`'s lines other than `@AGENTS.md` (a file importing itself). If the link points at a file that doesn't exist yet, create that file with the same text. |
 | `.claude/settings.json` | Merge in § 6b, not now: union `permissions.allow`, `deny`, `ask`; add the SessionStart and PreToolUse (guard) hooks if absent; an existing PreToolUse hook stays, with the guard added as one more entry; keep every existing key. When the user's `model` or `permissions.defaultMode` differs from the answers, ask once which to keep (unattended: keep the user's) and record the choice and why in `project/HARNESS_AGENTS.md`. Show the diff. |
 | `.github/pull_request_template.md` (GitLab: `.gitlab/merge_request_templates/Default.md`) | Keep the user's. Mention the template's sections in the hand-off, and that the tag workflow reads a `## Release notes` section. |
@@ -68,7 +68,7 @@ keeps everything it learned; it moves into the places Morphness reads it from.
    go; when in doubt, keep it. Project files that already exist keep their content and get the kit's
    vocabulary (step 5).
 4. **Keep what the template doesn't cover.** Extra agent variants (a trial variant keeps its trial),
-   project-only rule files in `.claude/rules/`, a custom `scripts/session-start.sh`, a richer
+   project-only rule files in `.claude/rules/` (only the main chat loads them: copy a rule Full-stack or QA must follow to `project/agents/<role>.md`), a custom `scripts/session-start.sh`, a richer
    `.claude/settings.json` (merge per step 2's table), the PR template and `.mcp.json`: keep them and
    point the new docs at them.
 5. **Map old names.** When the kit renamed a field or file (a plan field, a QA section, a checklist
@@ -126,6 +126,11 @@ accepted app; each `deploy` key is an `environments` name. Fill `project/STACK.m
 App column to `project/RELEASE.md` § Where things deploy, and add each shared package folder the apps
 depend on to `project/CONTROLS.md` § Cross-cutting paths. With the ci-cd module, write one deploy job
 per app that has `workflow` for some environment (the deploy scaffold's fill comment).
+
+`risk_areas`: write the paths that hold each area to `project/CONTROLS.md` § Risk paths, one bullet per
+area, from the repo scan and the answer to question 12a. Narrow or drop the kit's three generic rows to
+the folders this repo has (a row whose paths match nothing here is dropped), and keep every path to the
+code that holds the risky behaviour, not a whole layer.
 
 `permissions` (answers file only, not a config key): with `accept_edits: false`, delete the template's
 `permissions.defaultMode` from the settings build (a user's own `defaultMode` follows § 2's row). With `allow_checks: true`, add one `allow` rule
@@ -280,7 +285,9 @@ All must pass before committing; fix and re-run on failure.
    Each `apps` entry's `path` exists, and its `deploy` keys are names in `environments`.
 9. `scripts/session-start.sh` is executable and parses (`bash -n scripts/session-start.sh`). Don't
    run it here: it installs dependencies. `scripts/prune-counter.sh` runs and prints
-   `Prune counter: 0/<loop.prune_every>`. `scripts/feature-cost.sh` is executable and runs without a
+   `Prune counter: 0/<loop.prune_every>`. `bash scripts/risk-check.sh <a path under each § Risk paths row>`
+   prints a `- <that path>: <its area>` line (the first line says `Mode: full` until the install is
+   committed, because the kit's own files count as the change). `scripts/feature-cost.sh` is executable and runs without a
    Python error (it may print `Cost: not measured`, or this session's cost). Both read
    `harness.config.yml` through `scripts/lib/config.sh`: `bash -c '. scripts/lib/config.sh;
    config_get branches.integration'` prints the integration branch. The prune counter prints
