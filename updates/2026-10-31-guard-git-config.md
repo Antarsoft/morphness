@@ -2,7 +2,7 @@
 id: 2026-10-31-guard-git-config
 title: The guard asks before git config sets a command git runs later
 kind: fix
-release: unreleased
+release: v0.15.0
 applies_to: { modules: [] }
 files:
   - scripts/guard.sh

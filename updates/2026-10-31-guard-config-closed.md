@@ -2,7 +2,7 @@
 id: 2026-10-31-guard-config-closed
 title: A missing or odd harness.config.yml no longer unprotects the environment branches
 kind: fix
-release: unreleased
+release: v0.15.0
 applies_to: { modules: [] }
 files:
   - scripts/guard.sh

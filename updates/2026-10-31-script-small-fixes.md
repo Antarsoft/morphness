@@ -2,7 +2,7 @@
 id: 2026-10-31-script-small-fixes
 title: Session start keeps its temp files private, quotes PATH, has a time limit on macOS and names a broken python3
 kind: fix
-release: unreleased
+release: v0.15.0
 applies_to: { modules: [] }
 files:
   - scripts/session-start.sh

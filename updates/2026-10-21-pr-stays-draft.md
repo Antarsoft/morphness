@@ -2,7 +2,7 @@
 id: 2026-10-21-pr-stays-draft
 title: A feature PR is ready only when no more code will land on its branch
 kind: rule
-release: unreleased
+release: v0.15.0
 applies_to: { modules: [] }
 files:
   - harness/RELEASE.md

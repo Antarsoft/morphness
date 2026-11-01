@@ -2,7 +2,7 @@
 id: 2026-10-31-feature-cost-robust
 title: The feature cost survives bad transcript lines and prices Sonnet 5.5 cache reads correctly
 kind: fix
-release: unreleased
+release: v0.15.0
 applies_to: { modules: [] }
 files:
   - scripts/feature-cost.sh
