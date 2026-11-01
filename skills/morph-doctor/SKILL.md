@@ -72,6 +72,13 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
   `project/CONTROLS.md` (update note `2026-10-20-fewer-permission-prompts`). A project that answered no
   keeps its prompts; don't offer again. A `Bash(<interpreter>:*)` allow rule (`bash`, `sh`, `npx`, `node`,
   `python`) lets any code through without a prompt: report it.
+- **Settings and config agree:** `.claude/settings.json` → `model`, when set, is `agents.technical_lead.model`
+  (or that model's full id), and `permissions.defaultMode` is what the install answers asked
+  (`_harness/morph-answers.yml` → `permissions.accept_edits`: `acceptEdits` when true, no key when false;
+  skip the mode check when that file or its `permissions` key isn't there).
+  Report each difference, unless `project/HARNESS_AGENTS.md` records that the owner chose it: the main chat
+  then runs a model or mode that the config, the advice and `scripts/feature-cost.sh`'s prices don't
+  describe. Offer to change either side, the owner picks.
 - Module markers (`harness/README.md` § Modules → **Module markers**): no `module:<name>` marker
   for a module missing from `modules` (text left from a removal: offer the removal command), and every
   `<!-- module:<name> -->` opening line has its closing line.
@@ -113,7 +120,9 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
   deleteBranchOnMerge`); offer render.md § 7b step 2 when it doesn't. Flag
   `delete_merged_branches: true` with `enabled: false`: an unprotected environment branch would be
   deleted when a release PR from it merges.
-- With the ci-cd module: every path in `ci_cd` exists; the CI workflow has one step per `before_qa`
+- With the ci-cd module: `ci_cd.ci: none` (and `ci_cd.tags: none` with `release_tags: true`): ask whether
+  that was on purpose, because an install that couldn't write a workflow leaves this state; if not, offer to
+  write the accepted scaffolds (render.md § 4). Every path in `ci_cd` exists; the CI workflow has one step per `before_qa`
   check whose command matches `project/CONTROLS.md` (report each missing or differing step); no runner
   image ends in `-latest`; the CI workflow uses `pull_request`, not `pull_request_target`, lists `ready_for_review` in its
   `types` and has a `merge_group` trigger, skips drafts exactly when `ci_cd.on_drafts` is false (and the value in the `if:` line is the literal `true` or `false`, not a placeholder or other text), every `uses:` pins a full 40-character commit SHA (a version tag or branch is reported; the fix is to pin the SHA the tag points to), and reads no
