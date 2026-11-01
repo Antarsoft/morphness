@@ -1049,6 +1049,47 @@ def check(name, fx, t):
             continue
         for m in re.finditer(r"\*\*[A-Za-z -]*(subagent|engineer|researcher|writer):\*\*", read(f)):
             bad(f"{rel} addresses a subagent ({m.group(0)}), but no subagent reads it: move it to harness/agents/<role>.md")
+    # 5c. one agent by default: light and small mode (risk check plain) run no subagent; the main chat builds
+    # and checks the change itself (harness/MODES.md § Working alone). The split is for full and bug mode, so
+    # every "never codes / must delegate" rule the main chat reads names those modes (on its line, the line
+    # before, or its heading).
+    def need(rel):
+        text = read(os.path.join(t, rel))
+        if not text:
+            bad(f"{rel} is missing or empty")
+        return text
+    modes = need("harness/MODES.md")
+    msec = lambda name: modes.split(f"\n## {name}\n", 1)[-1].split("\n## ", 1)[0] if f"\n## {name}\n" in modes else ""
+    alone = msec("Working alone (plain changes)")
+    if not alone:
+        bad("harness/MODES.md has no § Working alone (plain changes)")
+    for want in ("harness/agents/fullstack-engineer.md", "project/agents/fullstack-engineer.md", "harness/agents/qa-engineer.md",
+                 "before_signoff", "risk-check.sh"):
+        if want not in alone:
+            bad(f"harness/MODES.md § Working alone doesn't name {want}")
+    hands_off = re.compile(r"(?i)\b(launch|delegat)\w*|agent tool|(?:fullstack|qa)-engineer(?![\w.-]*\.md)|full-stack (builds|engineer)|qa (engineer|agent) (checks|runs)")
+    for mname in ("Light mode", "Small mode"):
+        sec = msec(mname)
+        if not sec or "Working alone" not in sec:
+            bad(f"harness/MODES.md § {mname} doesn't send the change to § Working alone")
+        for m in hands_off.finditer(sec):
+            bad(f"harness/MODES.md § {mname} still hands the change to an agent ({m.group(0)!r})")
+    small = need("harness/templates/small-plan.md")
+    if "## Agent effort" in small or re.search(r"(?i)full-stack|(?:fullstack|qa)-engineer(?![\w.-]*\.md)", small) or "## Check\n" not in small:
+        bad("harness/templates/small-plan.md still plans for agents (§ Agent effort or Full-stack) or has no § Check")
+    if re.search(r"light[- ]mode change|light mode\*\* \(", need("harness/HANDOFFS.md")):
+        bad("harness/HANDOFFS.md still has a Full-stack light-mode brief")
+    no_code = re.compile(r"(?i)never (edit|write)s? application code|no app(lication)? code|no product code|plan and delegate only|delegate \*\*all\*\*|\*\*mandatorily\*\* delegate|must not implement|always means agent")
+    for rel in ("AGENTS.md", "CLAUDE.md", "harness/TECHNICAL_LEAD.md", ".claude/rules/harness.md", "harness/HANDOFFS.md", "harness/STRATEGY.md"):
+        heading, prev, fence = "", "", False
+        for line in need(rel).splitlines():
+            if line.startswith("```"):
+                fence = not fence  # a subagent's prompt block, not a rule for the main chat
+            if line.startswith("#") and not fence:
+                heading = line
+            if not fence and no_code.search(line) and not any("full and bug mode" in x.lower() for x in (line, prev, heading)):
+                bad(f"{rel}: {line.strip()[:90]!r} says the main chat never codes, without limiting it to full and bug mode")
+            prev = line
     # 6. named checks have commands, and no row names an unknown check
     cfg = lambda key: run(["bash", "-c", f'. scripts/lib/config.sh; config_get {key}'], t).stdout.strip()
     names = set()

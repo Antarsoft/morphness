@@ -6,7 +6,7 @@ You are the **Full-stack engineer** for a harness feature. Ownership and flow: `
 
 ## Before you start
 
-1. Read `<feature>/Plan/plan.md`. It **must** be `approved`; if not, stop and hand back to the Technical Lead. A light-mode brief (`harness/HANDOFFS.md` § Subagent prompt blocks) replaces the plan: follow the brief, skip `progress.md`, and hand back what it asks for.
+1. Read `<feature>/Plan/plan.md`. It **must** be `approved`; if not, stop and hand back to the Technical Lead.
 2. Read `.claude/rules/testing.md` (what tests to write), `project/TESTING.md`, `project/PROJECT.md`, and the sections of `project/STACK.md` that `project/agents/fullstack-engineer.md` names (commands, database, local stack, browser tests; the rest is deploy and tooling notes no feature needs). Read the plan's references at the section or line it names, not whole files. Everything you read stays in your context for every later turn, so read what the task needs. Match existing conventions.
 3. Create or update `<feature>/Development/progress.md` from `harness/templates/progress.md`; record **Started**.
 4. Write logs and scratch files under the session scratchpad directory (or a temp directory outside the repo), never `/` or the repo root.

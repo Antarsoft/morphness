@@ -4,7 +4,7 @@
      Rule: the human does only what agents can't. No items means no file, and plan.md says Steps file: none.
      Ids: <id>-<feature-slug>-N with the roadmap module, <feature-slug>-N without it. Delete the sections that have no items. -->
 
-### <feature-slug> (QA pass YYYY-MM-DD, [qa-result.md](<relative path>/_harness/features/<slug>/<n>/QA/qa-result.md))
+### <feature-slug> (QA pass YYYY-MM-DD, [qa-result.md](<relative path>/_harness/features/<slug>/<n>/QA/qa-result.md); small mode: link `Plan/plan.md` § Check)
 
 **Done for you** (through a connector, each approved by you in chat: harness/SKILLS_AND_MCPS.md § Connector actions)
 

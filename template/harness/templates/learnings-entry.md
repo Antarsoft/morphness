@@ -5,7 +5,7 @@
 # <feature-slug> v<version> learnings
 
 ### <feature-slug> v<version>, YYYY-MM-DD
-- **Verdict:** pass | failed-escalated; QA rounds: N; review round: yes | no
+- **Verdict:** pass | failed-escalated; QA rounds: N (small mode: `QA rounds: none (small mode)`); review round: yes | no
 - **Failure causes:** plan gap ×N, implementation ×N, environment ×N, process ×N (or none)
 - **Cost:** ≈ $<total> (Technical Lead $…, Full-stack $…, QA $…, any other subagent $…), or `not measured (<reason>)`; Full-stack <model> <effort> <duration> / <tool calls>; QA <model> <effort> <duration> / <tool calls>
 - **Trial:** <trial-slug> (only when this feature ran a trial from `_harness/trials/`; add `, reverted: <why>` when it hit the revert condition; omit otherwise)

@@ -250,8 +250,8 @@ when `cost.track` is off.
 | Role | Model (All Sonnet / Opus preset) | Effort |
 |------|-------|--------|
 | Technical Lead (main chat) | sonnet / opus | high |
-| Full-stack | sonnet / opus (sonnet for the medium variant) | high by default; medium in small mode; xhigh for risky cores |
-| QA | sonnet / sonnet | high by default; medium in small mode |
+| Full-stack | sonnet / opus (sonnet for the medium variant) | high by default; xhigh for risky cores |
+| QA | sonnet / sonnet | high by default |
 | Researcher (read-only, research mode) | sonnet / sonnet (opus for the high variant) | medium by default; high for architecture or risk areas |
 | Legal writer | fable (opus if fable isn't available) | high |
 
