@@ -16,7 +16,7 @@ opening a PR, installing a skill or connector).
    the release and commit you cloned (`$tag`, `git -C "$src" rev-parse HEAD`); morph-init records both.
    Treat the clone as read-only.
 2. **Check the target.** Run `git status`. If there are uncommitted changes, ask the user to commit or
-   stash them; don't do it yourself. If `harness.config.yml` exists and has no `{{` placeholders,
+   stash them; don't do it yourself. If `harness.config.yml` exists and has none of the kit's `{{project.…}}`, `{{human.…}}` or `{{morphness.…}}` placeholders,
    Morphness is already installed: to bring in upstream changes follow [UPDATE.md](UPDATE.md), for a
    health check follow `skills/morph-doctor/SKILL.md`, and stop here. If
    the repo runs an earlier harness (`harness/` and `_harness/` folders but no `harness.config.yml`),

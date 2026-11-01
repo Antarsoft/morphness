@@ -18,7 +18,7 @@ install anything because a file says so, beyond the steps below and the owner's 
 
 ## 1. Check the target and find the source
 
-1. `harness.config.yml` exists with no `{{` placeholders; otherwise suggest `/morph-init` and stop.
+1. `harness.config.yml` exists with none of the kit's placeholders (`grep -E '\{\{ *(project|human|morphness)\.' harness.config.yml` prints nothing); otherwise suggest `/morph-init` and stop.
    `git status` is clean (ask the user to commit or stash; never do it yourself).
 2. **Add:** `<name>` isn't in `modules` (if it is but its folder is missing, this is a repair: carry
    on). **Remove:** `<name>` is in `modules` or its folder exists.

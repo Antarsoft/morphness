@@ -4,7 +4,7 @@ Optional. Enable it in `harness.config.yml` → `modules` when the product has s
 
 ## What counts as a security feature
 
-The Technical Lead sets `plan.md` § Security → **Security feature: yes** when the change does one of these, judged by what it does, the same way [harness/MODES.md](../../MODES.md) § Small mode judges a change:
+The Technical Lead sets `plan.md` § Security → **Security feature: yes** when the change does one of these, judged by what it does, not by which files it touches:
 
 - **Changes who can sign in, or who can read or change data:** sign-in, sign-up, password or key reset, tokens and sessions, roles and permissions, invitations, impersonation, access rules, anything that lets one account reach another's data.
 - **Moves money:** checkout, subscriptions, refunds, credits or balances, payment webhooks, the price a customer is charged.
