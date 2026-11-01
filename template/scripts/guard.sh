@@ -9,8 +9,11 @@
 # see are described once, in AGENTS.md § Permissions for this project. This file is the implementation of
 # that list: change the two together, and add a case to tests/guard-cases.jsonl for each rule.
 # The hook fails closed: without python3, without the config reader (scripts/lib/config.sh), when the
-# project folder can't be entered, on input it can't parse and on an internal error, it exits 2
-# with the reason, so a broken guard blocks the call instead of passing it. `guard: { fail_open: true }`
+# project folder can't be entered, on input it can't parse, on an internal error and when a check runs
+# past 15 s, it exits 2 with the reason, so a broken guard blocks the call instead of passing it. The hook
+# command in .claude/settings.json turns any other exit (this file missing, bash missing) into 2 too, and
+# its 60 s timeout sits well above the 15 s limit, because Claude Code runs the call when a hook times out.
+# A hang the 15 s timer can't end (before the check starts, or inside one long regex call) still reaches that timeout. `guard: { fail_open: true }`
 # in harness.config.yml lets calls through when python3 is missing (the owner's choice for a machine
 # that can't have it); /morph-doctor reports the gap either way.
 #
@@ -49,7 +52,24 @@ GUARD_ALLOW_HOSTS="$(config_get guard.allow_hosts)"
 export GUARD_BRANCHES GUARD_MCP_WRITES GUARD_DEPLOYS GUARD_PUBLISHES GUARD_SCHEMA_PUSHES GUARD_NETWORK GUARD_INSTALLS GUARD_PR_WRITES GUARD_ALLOW_HOSTS
 
 python3 -I -c '
-import fnmatch, json, os, re, shlex, subprocess, sys, tempfile
+import fnmatch, json, os, re, shlex, subprocess, sys, tempfile, threading
+
+# Claude Code lets a call through when a hook runs past its timeout (60 s in .claude/settings.json), so the guard
+# stops its own check after 15 s and blocks the call. GUARD_TIME_LIMIT can only lower the limit (the self-test uses it).
+def too_slow():
+    sys.stderr.write(f"Blocked by scripts/guard.sh: checking this call took longer than {TIME_LIMIT:g} s, so it can\u2019t be "
+                     "checked. Split a long command into smaller ones, then retry.\n")
+    sys.stderr.flush()
+    os._exit(2)
+try:
+    TIME_LIMIT = min(15.0, float(os.environ.get("GUARD_TIME_LIMIT") or 15))
+except ValueError:
+    TIME_LIMIT = 15.0
+if not TIME_LIMIT > 0:
+    TIME_LIMIT = 15.0
+_watchdog = threading.Timer(TIME_LIMIT, too_slow)
+_watchdog.daemon = True
+_watchdog.start()
 
 PROTECTED = set(os.environ.get("GUARD_BRANCHES", "").split())
 PROTECTED_LOW = {b.lower() for b in PROTECTED}
@@ -424,6 +444,10 @@ def git_out(git_dir_args, *args):
     try:
         r = subprocess.run(["git"] + git_dir_args + list(args), capture_output=True, text=True, timeout=5)
         return r.stdout.strip() if r.returncode == 0 else ""
+    except subprocess.TimeoutExpired:
+        # An empty answer would read as "not on an environment branch", so a git that hangs must block, not pass.
+        deny("`git " + " ".join(args) + "` did not answer within 5 s, so the guard can\u2019t tell which branch this is. Retry; "
+             "if git keeps hanging, look for a stuck git process or a lock file in .git.")
     except Exception:
         return ""
 
@@ -1199,6 +1223,9 @@ def check_bash(cmd):
         check_deploy_script(words)
         check_tree_search(words)
         prev = ""
+        # Computed once per command: inside the loop it made a long argument list quadratic (20,000 words took minutes).
+        redirects = any(re.match(r"^(\d*>|&>)" if words[0] != "sed" else r"^(\d*>|&>|-i|--in-place)", x) for x in words[1:])
+        reads_only = words[0] in READ_ONLY_CMDS and not redirects
         for w in words[1:]:
             skipped = bool(re.match(r"^--(exclude(-dir)?|glob|iglob|ignore)=", w)) or w.startswith("!") \
                 or (words[0] in ("grep", "egrep", "fgrep", "zgrep", "rg", "ag", "ack") and prev in ("--exclude", "--exclude-dir", "--glob", "--iglob", "-g"))
@@ -1207,7 +1234,7 @@ def check_bash(cmd):
                 continue   # an exclude pattern such as --exclude=.env* names a secret in order to leave it out
             if re.search(r"^/proc/[^/]+/environ$", w):
                 deny("`/proc/<pid>/environ` is the whole environment, secrets included.")
-            kind = env_in_word(w, words[0] in READ_ONLY_CMDS and not any(re.match(r"^(\d*>|&>)" if words[0] != "sed" else r"^(\d*>|&>|-i|--in-place)", x) for x in words[1:]))
+            kind = env_in_word(w, reads_only)
             if kind == "deny":
                 deny(f"`{w}` is a secret or credential file; agents never read or write it (AGENTS.md § Golden rules). Use .env.example for names.")
             if kind == "ask":
