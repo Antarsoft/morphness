@@ -50,7 +50,7 @@ A change to any of these paths can break pages or flows it doesn't name, so it g
 A change to any of these paths always gets full mode (plan, Full-stack and QA), however small: `bash scripts/risk-check.sh` reads this list ([harness/MODES.md](../harness/MODES.md) § Choosing mode). One bullet per risk area, its paths in backticks, `.gitignore` style: a pattern with a slash is from the repo root, one without matches in any folder, `**` crosses folders. Keep each to the code that holds the risky behaviour, not a whole layer: every path listed here sends every change to it to full mode.
 
 - **Database schema and migrations:** `**/migrations/`, `*.sql`, `schema.prisma`
-- **Sign-in, sessions and access rules:** `**/auth/`, `**/session/`, `**/sessions/`, `middleware.*`, `**/policies/`
+- **Sign-in, sessions and access rules:** `**/auth/`, `auth.*`, `**/session/`, `**/sessions/`, `session.*`, `middleware.*`, `**/policies/`
 - **Money:** `**/billing/`, `**/payments/`, `**/checkout/`, `**/stripe/`
 
 <!-- morph-init: fill one bullet per entry in harness.config.yml → risk_areas that the rows above don't cover, with the paths that hold it from the repo scan, and narrow or drop the rows above to fit this repo. Example: "- **Public API keys:** `src/api/keys/`". -->
