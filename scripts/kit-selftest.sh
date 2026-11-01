@@ -951,12 +951,12 @@ def check(name, fx, t):
     for need in ("harness/agents/fullstack-engineer.md", "project/agents/fullstack-engineer.md", "before_signoff", "risk-check.sh"):
         if need not in alone:
             bad(f"harness/MODES.md § Working alone doesn't name {need}")
-    for name in ("Light mode", "Small mode"):
-        sec = msec(name)
+    for mname in ("Light mode", "Small mode"):
+        sec = msec(mname)
         if not sec or "Working alone" not in sec:
-            bad(f"harness/MODES.md § {name} doesn't send the change to § Working alone")
+            bad(f"harness/MODES.md § {mname} doesn't send the change to § Working alone")
         for m in re.finditer(r"Full-stack|QA engineer|QA pass on|\(QA, |subagent with", sec):
-            bad(f"harness/MODES.md § {name} still hands the change to an agent ({m.group(0)!r})")
+            bad(f"harness/MODES.md § {mname} still hands the change to an agent ({m.group(0)!r})")
     small = read(os.path.join(t, "harness/templates/small-plan.md"))
     if "## Agent effort" in small or "Full-stack" in small or "## Check\n" not in small:
         bad("harness/templates/small-plan.md still plans for agents (§ Agent effort or Full-stack) or has no § Check")
@@ -964,7 +964,7 @@ def check(name, fx, t):
         bad("harness/HANDOFFS.md still has a Full-stack light-mode brief")
     for rel in ("harness/TECHNICAL_LEAD.md", ".claude/rules/harness.md", "AGENTS.md"):
         lead = read(os.path.join(t, rel)).split("\n## Must do", 1)[0] if rel.startswith("harness/") else read(os.path.join(t, rel))
-        if re.search(r"always means Agent|light brief|This rule is non-negotiable\.\*\* It is not overridden", lead):
+        if re.search(r"always means Agent|light brief|outside light mode, which has none|This rule is non-negotiable\.\*\* It is not overridden", lead):
             bad(f"{rel} still sends every change to Full-stack, light and small mode included")
     # 6. named checks have commands, and no row names an unknown check
     cfg = lambda key: run(["bash", "-c", f'. scripts/lib/config.sh; config_get {key}'], t).stdout.strip()
