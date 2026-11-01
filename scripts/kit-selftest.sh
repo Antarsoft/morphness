@@ -318,6 +318,18 @@ for name, files in (("linked", {"CLAUDE.md": "# Mine\n"}), ("linked-dangling", {
                         f"or changed the link: {r.stdout[-300:]!r} {r.stderr[-300:]!r}")
 shutil.rmtree(scratch)
 
+# ---- once: the template's settings allow GitHub reads by path, never a whole domain ------------------------
+# A domain-wide WebFetch allow let any page on api.github.com or raw.githubusercontent.com through with no prompt;
+# the update checks need only the repo-scoped `gh api` and `curl` reads.
+tpl_allow = json.load(open(os.path.join(template, ".claude/settings.json")))["permissions"]["allow"]
+for rule in tpl_allow:
+    if re.match(r"WebFetch\(domain:", rule):
+        failures.append(f"kit: template/.claude/settings.json allows a whole domain for WebFetch: {rule}")
+for want in ("Bash(gh api --method GET repos/antarsoft/morphness/*)", "Bash(curl -fsSL https://api.github.com/repos/antarsoft/morphness/*)",
+             "Bash(curl -fsSL https://raw.githubusercontent.com/antarsoft/morphness/*)"):
+    if want not in tpl_allow:
+        failures.append(f"kit: template/.claude/settings.json lost the repo-scoped update read {want}")
+
 # ---- once: § references name headings that exist, and config keys match the template config ------
 # A reference such as `harness/SETUP.md § Prune` must point at a heading (or a bold lead-in) in that
 # file, and a config key the scripts and docs name (`loop.prune_every`, `config_get guard.deploys`)

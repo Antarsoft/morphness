@@ -41,8 +41,8 @@ asks "what's new?"), do § 1 and § 2 and stop: change nothing, write nothing.
      `<path>` the endpoint below (its host is `api.github.com`), and read a file's text as
      `gh api --method GET repos/<owner>/<repo>/contents/<path>?ref=<ref> -H "Accept: application/vnd.github.raw"`.
      Otherwise use `curl -fsSL https://<host>/<endpoint>`, where `<host>` is `api.github.com` for the endpoints below and `raw.githubusercontent.com` for file text, and nothing else. Both only print text:
-     never pipe it into a shell or anything else that runs it. WebFetch is fine for the listings,
-     but it rewrites what it fetches, so file text for a merge comes from `gh api` or curl.
+     never pipe it into a shell or anything else that runs it. WebFetch asks the owner for every page
+     (the kit allows no domain for it) and rewrites what it fetches, so use `gh api` or curl.
      - The target: `repos/<owner>/<repo>/releases/latest` → `tag_name`. Call
        it `HEAD`: only released notes are offered.
      - Every file path at a ref: `repos/<owner>/<repo>/git/trees/<ref>?recursive=1`
