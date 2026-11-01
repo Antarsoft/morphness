@@ -18,7 +18,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 exec python3 -I - "$ROOT" "$@" <<'PY'
-import glob, json, os, re, shutil, subprocess, sys, tempfile, time
+import difflib, glob, json, os, re, shutil, subprocess, sys, tempfile, time
 
 root, wanted = sys.argv[1], sys.argv[2:]
 template = os.path.join(root, "template")
@@ -1462,9 +1462,12 @@ def check(name, fx, t):
 # ---- update from the previous release and the oldest supported one ----------------------------
 # A project installed from the newest release tag (and from OLDEST_SUPPORTED, below), brought up to
 # date the way skills/morph-update does it: the kit updates added since (updates/ notes) merged
-# against the template at that release. Without local edits the result must equal a fresh install;
-# with edits, they must survive with no conflict. The merged project then goes through the same
-# self-checks as a fresh one.
+# against the template at that release, one note put off on the first run and applied on the next
+# against its recorded base, and the installed_from record written. Without local edits the result
+# must equal a fresh install; with edits (appends, config values, and an owner line right next to the
+# first upstream change in a file, which conflicts and is resolved as upstream's text plus the
+# owner's lines), each side's text must be there and nothing else may differ. The merged project then
+# goes through the same self-checks as a fresh one.
 RELEASE_NAME = re.compile(r"v\d+\.\d+\.\d+|\d{4}-\d{2}-\d{2}(?:\.[2-9]|\.[1-9]\d+)?")
 
 def release_key(tag):
@@ -1527,6 +1530,123 @@ EDITS = [
     (".claude/settings.json", '"allow": [', '\n      "Bash(make:*)",'),
 ]
 
+# Config values an owner changes: (file, old text, new text), replaced the same way in the expected result.
+REPLACES = [
+    ("harness.config.yml", "  qa_max_rounds: 2 ", "  qa_max_rounds: 3 "),
+    ("harness.config.yml", "updates: { source: github }", "updates: { source: local }"),
+]
+# A line an owner adds right above the first line an update changes, in a Markdown file and in the config.
+OWNER_LINES = {".md": "Owner note: our reviewers also read the changelog wording.",
+               ".yml": "# owner: three QA rounds here, the suite is slow to settle"}
+
+def plant_at(old_text, new_text, ext):
+    # the old line index of the first upstream change where an owner line fits (not in a table, a code
+    # block or a multi-line YAML value), or None
+    a, b = old_text.split("\n"), new_text.split("\n")
+    in_fence, fence_at = False, []
+    for line in a:
+        fence_at.append(in_fence)
+        if line.lstrip().startswith("```"):
+            in_fence = not in_fence
+    for op, i1, _, _, _ in difflib.SequenceMatcher(None, a, b, autojunk=False).get_opcodes():
+        if op == "equal" or not 0 < i1 < len(a):
+            continue
+        prev, here = a[i1 - 1], a[i1]
+        if ext == ".md" and (fence_at[i1] or prev.startswith("|") or here.startswith("|")):
+            continue
+        if ext == ".yml" and prev.rstrip().endswith((",", "{", "[", "|", ">")):
+            continue
+        return i1
+    return None
+
+def reapply(base, ours, theirs):
+    # the owner's changes to `base` (lines added, changed or removed) made again on upstream's `theirs`
+    out, lead = list(theirs), []
+    for op, i1, i2, j1, j2 in reversed(difflib.SequenceMatcher(None, base, ours, autojunk=False).get_opcodes()):
+        if op == "equal":
+            continue
+        seg = base[i1:i2]
+        at = next((k for k in range(len(out) - len(seg) + 1) if out[k:k + len(seg)] == seg), None) if seg else None
+        if op == "insert":
+            # the place of the base lines that followed the insertion (two of them when there are, a blank
+            # line alone matches too much), else the first one
+            ctx = base[i1:i1 + 2]
+            k = next((x for x in range(len(out) - len(ctx) + 1) if ctx and out[x:x + len(ctx)] == ctx), None)
+            if k is None and i1 < len(base) and base[i1] in out:
+                k = out.index(base[i1])
+            if k is None:
+                lead = ours[j1:j2] + lead
+            else:
+                out[k:k] = ours[j1:j2]
+        elif at is not None:
+            out[at:at + len(seg)] = ours[j1:j2]
+        else:
+            out += ours[j1:j2]      # upstream rewrote the lines the owner changed: left for a person to see
+    return lead + out
+
+MARKER = 13   # conflict marker length: longer than a Markdown underline such as =======
+
+def resolve_conflicts(text):
+    # git merge-file --diff3 output -> (each conflict as upstream's side with the owner's changes made again, conflicts)
+    out, lines, i, count = [], text.split("\n"), 0, 0
+    mark = "=" * MARKER
+    while i < len(lines):
+        if not lines[i].startswith("<" * MARKER + " "):
+            out.append(lines[i]); i += 1
+            continue
+        sides, part, i = {"ours": [], "base": [], "theirs": []}, "ours", i + 1
+        while i < len(lines) and not lines[i].startswith(">" * MARKER + " "):
+            if lines[i].startswith("|" * MARKER + " "):
+                part = "base"
+            elif lines[i] == mark:
+                part = "theirs"
+            else:
+                sides[part].append(lines[i])
+            i += 1
+        out += reapply(sides["base"], sides["ours"], sides["theirs"])
+        count, i = count + 1, i + 1
+    return "\n".join(out), count
+
+def planted_ok(result, expected, owner):
+    # the owner line is there once, and taking it out gives exactly the expected file (every upstream line)
+    lines = result.split("\n")
+    if lines.count(owner) != 1 or "<" * MARKER + " " in result:
+        return False
+    lines.remove(owner)
+    return "\n".join(lines) == expected
+
+def record(cfg_path, commit, release, applied, deferred):
+    # skills/morph-update § 4: installed_from after an update (deferred: [(id, base)])
+    out, inside = [], False
+    for line in read(cfg_path).split("\n"):
+        if re.match(r"^\S", line):
+            inside = line.startswith("installed_from:")
+        if inside:
+            line = re.sub(r'^(  commit: ).*$', rf'\g<1>"{commit}"', line)
+            line = re.sub(r'^(  release: ).*$', rf'\g<1>"{release}"', line)
+            m = re.match(r"^  updates: \{.*?\}(\s*#.*)?$", line)
+            if m:
+                d = ", ".join(f'{{ id: {i}, base: "{b}" }}' for i, b in deferred)
+                line = f"  updates: {{ applied: [{', '.join(applied)}], declined: [], deferred: [{d}] }}{m.group(1) or ''}"
+        out.append(line)
+    write(cfg_path, "\n".join(out))
+
+def record_ok(bad, cfg_path, commit, release, applied, deferred, when):
+    if yaml is None:
+        return
+    try:
+        inst = (yaml.safe_load(read(cfg_path)) or {}).get("installed_from") or {}
+    except yaml.YAMLError as e:
+        bad(f"harness.config.yml no longer parses after the update {when}: {e}")
+        return
+    ups = inst.get("updates") or {}
+    want = {"commit": commit, "release": release, "applied": applied, "deferred": [{"id": i, "base": b} for i, b in deferred]}
+    got = {"commit": inst.get("commit"), "release": inst.get("release"), "applied": ups.get("applied"), "deferred": ups.get("deferred")}
+    if got != want:
+        bad(f"installed_from {when} is {got}, not {want}")
+    if not deferred and "lessons:" in read(os.path.join(template, "harness.config.yml")) and inst.get("lessons") != {"declined": [], "deferred": []}:
+        bad(f"installed_from.lessons {when} is {inst.get('lessons')!r}: the merge lost the lessons ledger")
+
 # Run records an owner's project has built up by the time it updates; the update must leave them byte
 # for byte (STABILITY.md § Stable: "without losing its records").
 RECORDS = [
@@ -1563,6 +1683,10 @@ def update_case(name, fx, tag, base_tpl, edits):
     if edits:
         for rel, anchor, text in EDITS:
             edit_file(os.path.join(proj, rel), anchor, text)
+        for rel, before, after in REPLACES:
+            if before not in read(os.path.join(proj, rel)):
+                bad(f"{rel}: the owner edit's anchor {before!r} isn't in the release's render")
+            write(os.path.join(proj, rel), read(os.path.join(proj, rel)).replace(before, after, 1))
     add_records(proj)
     ls = lambda ref, d: set(run(["git", "ls-tree", "-r", "--name-only", ref, d], root).stdout.split()) if ref else set()
     added = sorted(f for f in glob.glob(os.path.join(root, "updates", "*.md"))
@@ -1582,44 +1706,102 @@ def update_case(name, fx, tag, base_tpl, edits):
     for p in sorted(changed - set(files) - set(removed) - set(moved) - set(moved.values())):
         bad(f"template/{p} changed since {tag} but no kit update note lists it")
     rd = lambda base, rel: read(os.path.join(base, rel)) if os.path.exists(os.path.join(base, rel)) else None
+    # the note put off on the first run: the first whose files no other new note lists
+    note_files = {os.path.basename(f)[:-3]: [x for x in frontmatter(read(f)).get("files", []) if rd(new, x) is not None]
+                  for f in added}
+    later = next((i for i, fs in note_files.items() if fs and not frontmatter(read(os.path.join(root, "updates", i + ".md"))).get("moved")
+                  and all(sum(x in o for o in note_files.values()) == 1 for x in fs)), None)
+    # owner lines right above the first upstream change: one Markdown file and the config
+    planted, resolved = {}, {}
+    # not the rule files (the rule budget counts them) or _harness/ (its run records stay byte for byte)
+    rule_files = lambda r: r in ("AGENTS.md", "CLAUDE.md") or r.startswith((".claude/rules/", "_harness/"))
+    if edits:
+        for rel in sorted(set(files), key=lambda r: (r != "harness.config.yml", r)):
+            ext = os.path.splitext(rel)[1]
+            if ext not in OWNER_LINES or ext in {os.path.splitext(x)[1] for x in planted} or rel in moved or rel in moved.values() \
+                    or rule_files(rel) or (ext == ".yml" and rel != "harness.config.yml"):
+                continue
+            o, n, mine = rd(old, rel), rd(new, rel), rd(proj, rel)
+            if o is None or n is None or mine is None or o == n:
+                continue
+            at = plant_at(o, n, ext)
+            mine_lines = mine.split("\n")
+            if at is None or mine_lines[:at] != o.split("\n")[:at]:
+                continue
+            write(os.path.join(proj, rel), "\n".join(mine_lines[:at] + [OWNER_LINES[ext]] + mine_lines[at:]))
+            planted[rel] = OWNER_LINES[ext]
     def merge(rel_ours, rel_base, rel_theirs, out_rel):
         ours = os.path.join(proj, rel_ours)
-        r = run(["git", "merge-file", "-p", ours, os.path.join(old, rel_base), os.path.join(new, rel_theirs)], root)
-        if r.returncode > 0:
-            bad(f"{rel_ours}: {r.returncode} merge conflict(s) against the template at {tag}")
+        r = run(["git", "merge-file", "-p", "--diff3", f"--marker-size={MARKER}", ours, os.path.join(old, rel_base), os.path.join(new, rel_theirs)], root)
+        text, conflicts = resolve_conflicts(r.stdout) if r.returncode > 0 else (r.stdout, 0)
+        if r.returncode < 0 or r.returncode != conflicts or (rel_ours in planted and not conflicts):
+            bad(f"{rel_ours}: git merge-file exited {r.returncode} and the script resolved {conflicts} conflict(s) against the "
+                f"template at {tag}" + (", but the owner line next to the first upstream change made none" if rel_ours in planted else ""))
+        resolved[rel_ours] = resolved.get(rel_ours, 0) + conflicts
         os.makedirs(os.path.dirname(os.path.join(proj, out_rel)), exist_ok=True)
-        write(os.path.join(proj, out_rel), r.stdout)
+        write(os.path.join(proj, out_rel), text)
     for src, dst in moved.items():
         if rd(proj, src) is None:
             continue
         merge(src, src, dst, dst)
         if src != dst:
             os.remove(os.path.join(proj, src))
-    for rel in sorted(set(files)):
-        if rel in moved.values() or rd(new, rel) is None:
-            continue    # moved (done above), or not part of this project: a module it lacks, a file a later note removed
-        targets = [rel]
-        scaffold = re.fullmatch(r"harness/modules/ci-cd/github/(.+)", rel)
-        if scaffold and rd(new, f".github/workflows/{scaffold.group(1)}") is not None:
-            targets.append(f".github/workflows/{scaffold.group(1)}")   # the live copy the scaffold was filled into
-        for t_rel in targets:
-            if rd(proj, t_rel) is None or rd(old, t_rel) is None:
-                os.makedirs(os.path.dirname(os.path.join(proj, t_rel)), exist_ok=True)
-                write(os.path.join(proj, t_rel), rd(new, t_rel))
-            elif rd(proj, t_rel) == rd(old, t_rel):
-                shutil.copy2(os.path.join(new, t_rel), os.path.join(proj, t_rel))
-            elif rd(proj, t_rel) != rd(new, t_rel):
-                merge(t_rel, t_rel, t_rel, t_rel)
+    def apply(rels):
+        for rel in rels:
+            if rel in moved.values() or rd(new, rel) is None:
+                continue    # moved (done above), or not part of this project: a module it lacks, a file a later note removed
+            targets = [rel]
+            scaffold = re.fullmatch(r"harness/modules/ci-cd/github/(.+)", rel)
+            if scaffold and rd(new, f".github/workflows/{scaffold.group(1)}") is not None:
+                targets.append(f".github/workflows/{scaffold.group(1)}")   # the live copy the scaffold was filled into
+            for t_rel in targets:
+                if rd(proj, t_rel) is None or rd(old, t_rel) is None:
+                    os.makedirs(os.path.dirname(os.path.join(proj, t_rel)), exist_ok=True)
+                    write(os.path.join(proj, t_rel), rd(new, t_rel))
+                elif rd(proj, t_rel) == rd(old, t_rel):
+                    shutil.copy2(os.path.join(new, t_rel), os.path.join(proj, t_rel))
+                elif rd(proj, t_rel) != rd(new, t_rel):
+                    merge(t_rel, t_rel, t_rel, t_rel)
+    # first run: every note but `later`; its files must stay as the owner had them
+    later_files = set(note_files.get(later, []))
+    kept = {rel: rd(proj, rel) for rel in later_files}
+    apply(sorted(set(files) - later_files))
     for rel in removed:
         if rd(proj, rel) is not None and rd(proj, rel) == rd(old, rel):
             os.remove(os.path.join(proj, rel))
+    for rel, text in kept.items():
+        if rd(proj, rel) != text:
+            bad(f"{rel} changed although its note ({later}) was put off for later")
+    head = run(["git", "rev-parse", "HEAD"], root).stdout.strip()
+    base_commit = run(["git", "rev-parse", f"{tag}^{{commit}}"], root).stdout.strip()
+    release = f"{release_tags()[-1]}+{head[:7]}"
+    ids = sorted(os.path.basename(f)[:-3] for f in added)
+    cfg = os.path.join(proj, "harness.config.yml")
+    record(cfg, head, release, [i for i in ids if i != later], [(later, base_commit)] if later else [])
+    record_ok(bad, cfg, head, release, [i for i in ids if i != later], [(later, base_commit)] if later else [], "with a note put off")
+    # next run: the put-off note merges against the template it was written for (its recorded base)
+    apply(sorted(later_files))
+    record(cfg, head, release, ids, [])
+    record_ok(bad, cfg, head, release, ids, [], "after the put-off note")
     expected = os.path.join(work_u, "expected")
     shutil.copytree(new, expected)
     if edits:
         for rel, anchor, text in EDITS:
             edit_file(os.path.join(expected, rel), anchor, text)
+        for rel, before, after in REPLACES:
+            write(os.path.join(expected, rel), read(os.path.join(expected, rel)).replace(before, after, 1))
+    record(os.path.join(expected, "harness.config.yml"), head, release, ids, [])
     saved = {rel: read(os.path.join(new, rel)) for rel, _ in RECORDS if os.path.exists(os.path.join(new, rel))}
     add_records(expected)
+    for rel, owner in planted.items():
+        result, want = rd(proj, rel), rd(expected, rel)
+        if not planted_ok(result, want, owner):
+            bad(f"{rel}: after resolving the conflict next to the first upstream change, the owner's line or an upstream line is lost")
+        # the check itself must catch a merge that drops either side
+        upstream_line = next((l for l in want.split("\n") if l.strip() and l not in rd(old, rel).split("\n")), None)
+        if planted_ok(result.replace(owner + "\n", "", 1), want, owner) or \
+                (upstream_line and planted_ok(result.replace(upstream_line, "", 1), want, owner)):
+            bad(f"{rel}: the replay's check doesn't notice a merge that drops the owner's line or an upstream line")
     for base in (expected, proj):
         other = proj if base == expected else expected
         for f in files_under(base):
@@ -1629,7 +1811,7 @@ def update_case(name, fx, tag, base_tpl, edits):
             a, b = rd(base, rel), rd(other, rel)
             if b is None:
                 bad(f"{rel} is {'missing from' if base == expected else 'left in'} the updated project")
-            elif base == expected and a != b:
+            elif base == expected and a != b and rel not in planted:
                 bad(f"{rel} differs from a fresh install of this checkout"
                     + (" (a run record the update must leave as it was)" if rel in dict(RECORDS) else ""))
     for rel, _ in RECORDS:   # byte for byte: line endings and encoding included

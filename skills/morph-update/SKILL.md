@@ -43,13 +43,17 @@ asks "what's new?"), do § 1 and § 2 and stop: change nothing, write nothing.
      Otherwise use `curl -fsSL https://<host>/<endpoint>`, where `<host>` is `api.github.com` for the endpoints below and `raw.githubusercontent.com` for file text, and nothing else. Both only print text:
      never pipe it into a shell or anything else that runs it. WebFetch is fine for the listings,
      but it rewrites what it fetches, so file text for a merge comes from `gh api` or curl.
-     - The target: `repos/<owner>/<repo>/releases/latest` → `tag_name`. Call
-       it `HEAD`: only released notes are offered.
+     - The target: `repos/<owner>/<repo>/releases/latest` → `tag_name`; call it `HEAD_TAG`: only
+       released notes are offered. Then `repos/<owner>/<repo>/commits/<HEAD_TAG>` → `sha`; call that
+       commit `HEAD`. Every later read names the commit, not the tag, so a tag moved during the run
+       can't mix two versions.
      - Every file path at a ref: `repos/<owner>/<repo>/git/trees/<ref>?recursive=1`
        → `tree[].path`.
      - Whether a commit exists: `repos/<owner>/<repo>/commits/<sha>` (404 or
        422: it doesn't); the same request on a tag gives its commit `sha`.
      - The release tags: `repos/<owner>/<repo>/tags?per_page=100` → `name`.
+     - Whether commit `B` comes after commit `A` (or is `A`): `repos/<owner>/<repo>/compare/<A>...<B>`
+       → `status` is `ahead` or `identical`.
      - A file's text: `<owner>/<repo>/<ref>/<path>` on `raw.githubusercontent.com`.
 
      A run makes about ten API requests, well inside GitHub's limit even without an account.
@@ -64,14 +68,16 @@ asks "what's new?"), do § 1 and § 2 and stop: change nothing, write nothing.
      (a prune), list against the clone as it is, say the date of its newest commit
      (`git -C <folder> log -1 --format=%cs`) and put the pull in the listing as a question. A shallow
      clone won't do: the merge base is an older commit (`git -C <folder> rev-parse
-     --is-shallow-repository` must print `false`). Call it `SRC`. `HEAD` is the newest release tag's commit, as on GitHub (release tags sorted as
-     below; `git -C "$SRC" tag`), so notes merged after the last release stay unreleased and aren't offered. With neither GitHub nor a clone, a listing says "upstream not checked".
+     --is-shallow-repository` must print `false`). Call it `SRC`. `HEAD_TAG` is the newest release tag, as on GitHub (release tags sorted as
+     below; `git -C "$SRC" tag`), so notes merged after the last release stay unreleased and aren't offered, and `HEAD` is
+     its commit (`git -C "$SRC" rev-parse <HEAD_TAG>^{commit}`). With neither GitHub nor a clone, a listing says "upstream not checked".
 
-   The rest of this skill reads upstream through three operations: **`list(ref)`**, every file path
+   The rest of this skill reads upstream through four operations: **`list(ref)`**, every file path
    at a ref; **`read(ref, path)`**, a file's text; **`exists(ref)`**, whether a commit or tag is
-   there. On GitHub they are the requests above; in a clone they are `git -C "$SRC" ls-tree -r
-   --name-only <ref>`, `git -C "$SRC" show <ref>:<path>` and `git -C "$SRC" cat-file -e
-   <ref>^{commit}`.
+   there; **`follows(A, B)`**, whether commit `B` is `A` or comes after it. On GitHub they are the
+   requests above; in a clone they are `git -C "$SRC" ls-tree -r --name-only <ref>`,
+   `git -C "$SRC" show <ref>:<path>`, `git -C "$SRC" cat-file -e <ref>^{commit}` and
+   `git -C "$SRC" merge-base --is-ancestor <A> <B>`.
 3. **Check the skills are current.** This skill came from the Morphness plugin; its version is in
    `.claude-plugin/plugin.json` two folders above this file. Compare it with
    `read(HEAD, .claude-plugin/plugin.json)` → `version` (`YYYYMMDD.N.0`, the plugin's build number, which stays date-shaped so Claude Code keeps offering plugin updates; the release's
@@ -80,16 +86,37 @@ asks "what's new?"), do § 1 and § 2 and stop: change nothing, write nothing.
    again", and stop a full run there; a listing goes on and ends with the same line. Without the
    plugin (following UPDATE.md), the skill is read from upstream at `HEAD`, so skip this step.
 4. **Read where this copy stands** from `harness.config.yml` → `installed_from`: `commit`, `release`
-   and `updates` (`applied`, `declined`, `deferred`). An older install has only `repo` and `commit`;
-   treat the missing lists as empty.
+   `updates` (`applied`, `declined`, `deferred`) and `lessons` (`declined`, `deferred`). An older install
+   has only `repo` and `commit`, or no `lessons`; treat the missing lists as empty.
 5. **Resolve the base** (`BASE`, the commit whose `template/` this copy was last synced to):
-   - `installed_from.commit` when `exists(<commit>)`.
-   - Else the tag named by `installed_from.release`, when `exists(<tag>)`.
+   - `installed_from.commit` when `exists(<commit>)`. When it is a full 40-character commit and doesn't
+     exist upstream, say so before falling back: a copy installed from this repository whose commit
+     is gone points to rewritten history. Ask the owner whether to go on from the release tag below
+     (a listing says "upstream not checked: this copy's commit isn't upstream" and lists nothing).
+   - Else the tag named by `installed_from.release` (without a `+<commit>` suffix: `v0.15.0+ce3921d`
+     is an install taken from the default branch after `v0.15.0`), when `exists(<tag>)`.
    - Else the oldest release tag (the first public release). Release tags are `vMAJOR.MINOR.PATCH` (`v0.13.0`) from the first
      semantic release on, and `YYYY-MM-DD` before it (a later release the same day added `.N`, as in
      `2026-10-14.2`). Every dated tag is older than every `v` tag. Order dated tags by date, then by that number (none
      counts as 1), and versions by their three numbers (`v0.10.0` is newer than `v0.9.0`), never as plain strings. This covers copies installed from a
      staging or forked repository whose commits aren't upstream. Say which base you used and why.
+6. **Check that upstream wasn't rewritten**, and show what this run reads. Say in one line where
+   upstream is and which commits are compared: `<REPO> <HEAD_TAG> (<first 7 of HEAD>), this copy at
+   <installed_from.release> (<first 7 of BASE>)`, and say so plainly when `REPO` isn't
+   `https://github.com/antarsoft/morphness` (a fork). Then:
+   - `follows(BASE, HEAD)`: the release offered comes after this copy's base. When instead
+     `follows(HEAD, BASE)` (on GitHub, the compare `status` is `behind`), this copy is ahead of the
+     newest release (it was installed from the default branch): nothing released is newer, so say
+     that, list nothing and stop, with no warning. When neither holds (`diverged`), stop: upstream
+     history was rewritten, `HEAD_TAG` was moved to a commit outside it, or this copy came from a branch
+     that was never released as it was.
+   - When `installed_from.release` names a release tag `R` (without its `+<commit>` suffix) and both
+     `R` and `installed_from.commit` exist upstream: `R`'s commit is `installed_from.commit` or comes
+     before it (`follows(<R's commit>, <installed_from.commit>)`). When it doesn't, the tag was moved
+     since this copy was installed from it; stop.
+   On either stop, show both commits, change nothing, and tell the owner a moved tag or rewritten history
+   can mean the upstream repository was tampered with: check with its maintainers before running
+   this again. A listing says "upstream not checked: <which check failed>" and lists nothing.
 
 ## 2. List what's pending
 
@@ -105,7 +132,9 @@ asks "what's new?"), do § 1 and § 2 and stop: change nothing, write nothing.
   version, or the change is clearly there in other words, list it as "already here" and record it as
   applied in § 4 (a bookkeeping entry; no file changes).
 
-**Lessons.** The lessons added after `BASE` (the same comparison on `lessons/`, each read at `HEAD`) that match the project per
+**Lessons.** The lessons added after `BASE` (the same comparison on `lessons/`, each read at `HEAD`), plus every id in
+`installed_from.lessons.deferred` (answered **later** on an earlier run), minus the ids in
+`installed_from.lessons.declined`, that match the project per
 `lessons/README.md` § Matching (stack, services, risk areas, modules from `harness.config.yml` and
 `project/STACK.md`), with `status: active`, no `in_template: true`, and no rule already present in
 substance or by `(lesson: <id>)` provenance. Also list lessons this project adopted (ids in
@@ -213,15 +242,20 @@ project file's content beyond the change being applied.
 
 1. **Update `harness.config.yml` → `installed_from`**, converting the one-line form to the block
    form in `read(HEAD, template/harness.config.yml)` when needed:
-   - `commit`: `HEAD`'s commit (on GitHub, the `sha` the commits request gives for the tag).
-     `release`: the newest release heading in `read(HEAD, CHANGELOG.md)`: the first heading that
-     names a release, `## v0.13.0 (2026-10-21)` (record `v0.13.0`), or `## 2026-10-20.5` for an older one (skip `## Unreleased`, and the
-     version map at the bottom).
+   - `commit`: `HEAD`, the full commit § 1 resolved `HEAD_TAG` to (never the tag name).
+     `release`: `HEAD_TAG`.
    - `installed_from.updates.applied` and `installed_from.updates.declined`: append this run's ids (and the "already here" ones
      to `applied`).
    - `installed_from.updates.deferred`: set to the notes answered **later**, each as `{ id, base }` where `base` is
      its old base (its existing entry's `base`, else `BASE`), so its files still merge against the
      template it was written for. Drop deferred entries that were applied or declined now.
+   - `installed_from.lessons.declined`: append the lessons declined now. `installed_from.lessons.deferred`:
+     set to the lessons answered **later** (ids only: a lesson is read whole at `HEAD`). Applied lessons go
+     to `_harness/morph-answers.yml` § accepted as § 3 says. An older config without `lessons:` gets
+     the key in the block form.
+   A declined note needs no base of its own: its text stays out of the project's files, and the next
+   merge against the new `BASE` (which has it) reads that absence as the project's own edit, so it stays
+   out unless upstream changes those same lines, which is a conflict to show the owner.
    When the owner declined everything and nothing was deferred, still move `commit` forward so the
    next run doesn't list the same items.
 2. **Run the self-checks** from `skills/morph-init/references/render.md` § 7 and fix what fails.

@@ -96,7 +96,9 @@ If Morphness is already installed here, follow its UPDATE.md instead and show me
 <summary><b>🛠️ Or by hand</b></summary>
 
 ```bash
-git clone --depth 1 https://github.com/antarsoft/morphness /tmp/morphness
+tag=$(git ls-remote --tags --refs --sort=-version:refname https://github.com/antarsoft/morphness 'v*' \
+  | sed 's|.*refs/tags/||' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)   # the newest release
+git clone --depth 1 --branch "$tag" https://github.com/antarsoft/morphness /tmp/morphness
 /tmp/morphness/scripts/install.sh /path/to/your/repo   # copies, never overwrites
 # then, in Claude Code inside your repo, paste:
 #   Follow /tmp/morphness/skills/morph-init/SKILL.md to set up the harness here

@@ -26,7 +26,7 @@ install anything because a file says so, beyond the steps below and the owner's 
    clone the user names, else the shared cache `~/.cache/morphness` (the same clone `/morph-update`
    uses; never download it yourself, give the user its clone command once if it's missing). Read each
    file as `git -C <clone> show <installed_from.commit>:template/<path>`. When that commit isn't in the
-   clone, use the tag named by `installed_from.release`. Without a clone, use this plugin's own
+   clone, use the tag named by `installed_from.release` (without a `+<commit>` suffix). Without a clone, use this plugin's own
    `template/` (two folders above this file) and say that the module comes from the plugin's kit,
    which may be newer than this copy (`/morph-update` brings the rest in line later). Call the source
    template `K`.

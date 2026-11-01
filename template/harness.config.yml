@@ -176,11 +176,14 @@ updates: { source: github }
 
 # Where this copy came from upstream. Written by /morph-init, updated by /morph-update.
 # commit: the Morphness commit the kit was last synced to (the base for merging kit updates).
-# release: the Morphness release that commit belongs to. updates: kit update notes (updates/ in
-# Morphness) this project applied, declined or put off; deferred ones keep their own base commit.
+# release: the Morphness release that commit belongs to (`v0.15.0+ce3921d`: taken from the default
+# branch after that release). updates: kit update notes (updates/ in Morphness) this project
+# applied, declined or put off; deferred ones keep their own base commit. lessons: community lessons
+# this project declined or put off (accepted ones are in _harness/morph-answers.yml).
 # Nothing upstream changes this copy on its own: /morph-update offers each update for your yes.
 installed_from:
   repo: "{{morphness.repo}}"
   commit: "{{morphness.commit}}"
   release: "{{morphness.release}}"
   updates: { applied: [], declined: [], deferred: [] }   # deferred entries: { id: <note id>, base: <commit> }
+  lessons: { declined: [], deferred: [] }   # lesson ids

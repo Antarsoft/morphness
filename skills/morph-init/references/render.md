@@ -104,8 +104,9 @@ is no toolchain setup or install command, and escape any `'` in a command as `'\
 scan, in the style of the surrounding file, then delete the comment. Where there's nothing to say
 yet, leave a one-line "Not set yet: <what goes here>" so a later retro can fill it.
 
-Fill `installed_from` in `harness.config.yml` with the source repo URL, commit and release, and leave
-`updates` empty: every update note up to that commit is already in the template.
+Fill `installed_from` in `harness.config.yml` with the source repo URL, commit and release Phase 0
+recorded, and leave `updates` and `lessons` empty: every update note up to that commit is already in
+the template.
 
 ## 3b. Config values
 
