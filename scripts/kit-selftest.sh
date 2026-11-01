@@ -179,15 +179,16 @@ if shutil.which("shellcheck"):
 elif os.environ.get("STRICT") == "1":
     failures.append("kit: shellcheck is not installed (python3 -m pip install shellcheck-py); STRICT=1 needs it")
 
-# ---- once: the guard's python fits in one command-line argument -----------------------------------------
-# guard.sh passes its program to `python3 -I -c '…'`; Linux refuses a single argument over 128 KB
-# (MAX_ARG_STRLEN), and the guard would then block every call. Move the program to its own file before then.
-m = re.search(r"\npython3 -I -c '\n(.*?)\n'", read(os.path.join(template, "scripts/guard.sh")), re.S)
-if not m:
-    failures.append("kit: scripts/guard.sh has no `python3 -I -c '…'` program to measure")
-elif len(m.group(1).encode()) > 100 * 1024:
-    failures.append(f"kit: scripts/guard.sh's python is {len(m.group(1).encode()) // 1024} KB, near Linux's 128 KB limit for one "
-                    "argument: move it to its own file (still run with python3 -I)")
+# ---- once: the guard's python is read from guard.sh, not passed as one command-line argument -------------
+# Linux refuses a single argument over 128 KB (MAX_ARG_STRLEN), and the guard would then block every call. So guard.sh
+# passes `python3 -I -c` only a one-line loader, which reads the program from the GUARD_PY block at the end of the file.
+g = read(os.path.join(template, "scripts/guard.sh"))
+m = re.search(r"\npython3 -I -c '([^'\n]*)' \"\$GUARD_SELF\"\n", g)
+if not m or "\n: <<'GUARD_PY'\nimport fnmatch" not in g or not g.endswith("\nGUARD_PY\n"):
+    failures.append("kit: scripts/guard.sh has no one-line `python3 -I -c` loader and GUARD_PY block at its end")
+elif len(m.group(1).encode()) > 4096:
+    failures.append(f"kit: scripts/guard.sh passes python3 a {len(m.group(1).encode())}-byte argument; keep the program in "
+                    "the GUARD_PY block")
 
 # ---- once: install.sh names a python3 that can't run the guard (a stub, or older than 3.7) -------------
 scratch = tempfile.mkdtemp(prefix="morphness-install-")
