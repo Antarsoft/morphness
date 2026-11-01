@@ -34,11 +34,13 @@ with real values filled in (repository, branch, file, folder), never a bare comm
    `2026-10-14.2`, the first one below `## Unreleased`).
 2. **Check the target.** `git status` must be clean, apart from files `scripts/install.sh` just copied
    (ask the user to commit or stash anything else; never do it yourself). If `harness.config.yml`
-   exists and still has `{{` placeholders, the files were copied by `scripts/install.sh`: carry on and
-   skip the copy step in render.md. If it exists and is filled in, stop and suggest `/morph-update`
+   exists and still has `{{` placeholders, the files were copied by `scripts/install.sh`: carry on; the
+   copy step in render.md then copies only what that copy left out. If it exists and is filled in, stop and suggest `/morph-update`
    (upstream changes) or `/morph-doctor` (health check) instead: morph-init never overwrites an
    installed harness.
-   If there is no `harness.config.yml` but the repo already runs an earlier harness of this shape
+   If there is no `harness.config.yml` and `harness/SETUP.md` is byte for byte the template's, a run of
+   `scripts/install.sh` stopped during its copy: this is a plain install, and render.md § 2 finishes the copy.
+   Otherwise, if there is no `harness.config.yml` but the repo already runs an earlier harness of this shape
    (a `harness/` folder with `SETUP.md` or `PLAN_CHECKLIST.md`, a `_harness/` folder, or a
    `HARNESS_VERSION` file), this is a **migration**: say so, and follow `references/render.md`
    § Migrating an earlier harness instead of the plain copy. A no-clobber copy would skip every kit
