@@ -45,8 +45,9 @@ Stop before the change, and write a full plan with this one linked, when it need
 
 Filled on the final commit, in place of `progress.md` and `qa-result.md`.
 
+- **Commit:** the `git rev-parse HEAD` the `before_signoff` checks ran on. Later commits may change only this plan and other documentation, or the checks run again.
 - **Checks:** each `before_qa` check (with its scope) and each `before_signoff` check, with its exit code; **not run** with the reason for any the environment refused.
-- **Criteria:** one line per acceptance criterion: met, with the test name or the output that shows it.
+- **Criteria:** one line per acceptance criterion: met, with the test name or the output that shows it, or `deferred: local` (needs a live service, `harness/agents/qa-engineer.md`).
 - **Screenshots:** the files, when **UI change** is yes.
 - **Risk check at hand-off:** the first line of `bash scripts/risk-check.sh` with no files (it must still print `Mode: plain`).
 

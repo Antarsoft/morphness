@@ -29,7 +29,7 @@ and gets better every time someone shares a lesson.
 ---
 
 **Morphness** is an open-source harness for [Claude Code](https://claude.com/claude-code) that puts
-a process around the model: a plan you approve, a separate QA check with recorded evidence, a guard
+a process around the model: a plan you approve, recorded evidence that every check passed, a guard
 on risky commands, and a retro loop that turns misses into rules. It is a set of subagents,
 `CLAUDE.md` / `AGENTS.md` rules, checklists and a review loop for AI coding agents. If you have been writing those by hand (what people now call *harness engineering* or
 *context engineering*), Morphness is that work packaged, with a loop that keeps it current.
@@ -37,8 +37,8 @@ on risky commands, and a retro loop that turns misses into rules. It is a set of
 Every release is tested, and the results are public, including the known limits: [see the latest run](https://morphness.dev/trust.html).
 
 You talk to a **Technical Lead** in the main chat. It plans each feature with testable acceptance
-criteria and waits for your approval, then hands the work to a **Full-stack** agent and a mandatory
-**QA** agent. After every feature, a short retrospective turns what went wrong into rules. After
+criteria and waits for your approval. A risky feature goes to a **Full-stack** agent and a separate
+**QA** agent; an everyday change it builds and checks itself. After every feature, a short retrospective turns what went wrong into rules. After
 every ten, a prune audits those rules: the ones that caught problems stay, and the ones that never
 fire get questioned, then moved out of the rules every session loads.
 
@@ -62,7 +62,7 @@ for clear requests so that process costs little when there's nothing to plan.
 |--------|-----------------|
 | 🌍 **Improved by the community** | Every lesson in the catalog comes from a rule that ran in a real project, with its evidence recorded. `/morph-update` offers the ones that match your stack; `/morph-share` sends yours back. |
 | 🧭 **Plan first, then build** | A Technical Lead writes a plan with testable acceptance criteria and waits for your approval before any code is written. |
-| ✅ **QA is never skipped** | Every feature gets a separate QA agent that runs your checks and records the evidence, so "done" means verified, not claimed. |
+| ✅ **Done means verified** | Every change records each check's exit code and the evidence for each criterion on the final commit; risky features get a separate QA agent. "Done" means verified, not claimed. |
 | 🔁 **Learns from its own mistakes** | Retros turn real misses (a failed QA round, a review fix, a bug you report after a pass) into rules, and prunes delete rules that never fire, so the instructions your agents read stay short and earned. |
 | 🛡️ **Safe by default** | A guard hook checks every tool call before it runs. It blocks pushes to environment branches, force-pushes, secret and credential files (`.env*`, keys, cloud credentials), a bare `env`, remote database writes and any change that would switch it off. It asks you before deploys, publishes, merges, connector writes, unknown downloads and other edits to its settings, and blocks everything if it can't run. It stops accidents, not intent, so branch protection and environment secrets on the host stay the real guard. [Exact list](template/AGENTS.md#permissions-for-this-project). |
 | 🧪 **Tested as a kit** | Every change to the kit runs a self-test that installs it into sample projects (Next.js with Supabase among them), replays the guard's cases and brings the previous release up to date, so an update doesn't break an install that already works. The [results page](https://morphness.dev/trust.html) shows the latest run, with public scanners and the known limits. |
@@ -210,7 +210,7 @@ and advised settings (coordinator sonnet · medium, feature threads sonnet · hi
 
 | Piece | What it does |
 |-------|--------------|
-| 📄 `AGENTS.md`, `CLAUDE.md`, `.claude/rules/` | The rules every session loads: the Technical Lead plans and delegates risky work and never codes it; QA is never skipped there. |
+| 📄 `AGENTS.md`, `CLAUDE.md`, `.claude/rules/` | The rules every session loads: the Technical Lead plans, delegates risky work and never codes it; every change records its checks. |
 | 🤖 `.claude/agents/` | Full-stack (medium, high, xhigh effort), QA (medium, high), researcher (medium, high) and legal-writer subagents. |
 | 🛡️ `.claude/settings.json` | Deny rules for secrets and protected-branch pushes, ask rules on every merge command. |
 | 🗺️ `harness/` | The process: lifecycle, handoffs, checks, modes (full, small, light, bug, research), release and environments, the plan checklist, model prices, and how it morphs. |

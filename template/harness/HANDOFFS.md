@@ -5,7 +5,7 @@
 | File | Created by | May edit | Notes |
 |------|------------|----------|--------|
 | `Plan/feature.md` | Human (draft OK with Tech Lead) | Human; Tech Lead before plan approved | Plain-language intent |
-| `Plan/plan.md` | Technical Lead | Tech Lead until approved; then frozen except Status, Steps file, Approval, Open questions, Decisions | Includes acceptance criteria |
+| `Plan/plan.md` | Technical Lead | Tech Lead until approved; then frozen except Status, Steps file, Approval, Open questions, Decisions, and a small plan's § Check | Includes acceptance criteria |
 | Steps file | Technical Lead | Technical Lead; the human ticks items | The human's steps after QA pass, or none (§ Steps file below; [SETUP.md](./SETUP.md) § After QA pass, step 4) |
 | `Plan/review.md` | Technical Lead | Technical Lead only | Pre-QA code review findings, `xhigh` Full-stack only ([SETUP.md](./SETUP.md) § Code review before QA) |
 | `Plan/retro.md` | Technical Lead | Technical Lead only | Retrospective after pass or escalation ([templates/retro.md](./templates/retro.md), [SETUP.md](./SETUP.md) § Retrospective) |
@@ -42,10 +42,10 @@ The only hand-off record for the **human**, written by the Technical Lead at QA 
 
 0. **Done for you**: each action the TL took through a connector after the human approved it, with the tool used and what it now shows.
 1. **Needs you**: only (a) actions no connected tool can do (hosting, cloud environment settings, repository settings, vendor dashboards), (b) changes to the integration or production environment that no connector covers or that never go through an agent, (c) actions the TL offered through a connector that the human declined or hasn't answered, (d) judgement calls. Each item says what to do and what the human should see, and for (a) why no tool did it: no official MCP (date checked), an official one not connected (its link), or no tool for this in the connected one.
-2. **Deferred from QA**: every AC `qa-result.md` marks `deferred: local`, with where to check it.
+2. **Deferred from QA**: every AC `qa-result.md` (small mode: the plan's § Check) marks `deferred: local`, with where to check it.
 3. **Apply to the integration environment** (data-access features): the migrations to apply after the merge, files in order from `progress.md`, then the TL asks QA for stage B ([modules/data-access/](./modules/data-access/README.md)).
 
-The block heading links `qa-result.md`. What QA verified stays in `qa-result.md`, what is out of scope stays in `plan.md`, and screenshots go in the reply to the human. No items means no file, and the plan's **Steps file** line says `none`.
+The block heading links `qa-result.md` (small mode: the plan). What QA verified stays in `qa-result.md`, what is out of scope stays in `plan.md`, and screenshots go in the reply to the human. No items means no file, and the plan's **Steps file** line says `none`.
 
 ## `progress.md` minimum sections
 
@@ -78,6 +78,8 @@ Each project lists its subagents in **`project/HARNESS_AGENTS.md`**. Delegate wi
 
 ## Mandatory flow (Technical Lead)
 
+Full and bug mode. Light and small mode run no subagent ([MODES.md](./MODES.md) § Working alone).
+
 1. Approved `plan.md` → Agent **Full-stack** (the variant for the plan's Full-stack effort).
 2. Full-stack marks dev complete in `progress.md` → the Technical Lead checks it (for a UI change, `progress.md` § Screenshots lists the files and they exist; if not, back to Full-stack) → Agent **QA** (the variant for the plan's QA effort). **Never skip.** Full-stack `xhigh`<!-- module:security -->, or a security feature with the `security` module<!-- /module:security -->: the read-only review in [SETUP.md](./SETUP.md) § Code review before QA runs first.
 3. QA verdict **pass** → steps 4 and 5 below, then the human decides on the merge into the integration branch ([SETUP.md](./SETUP.md) § After QA pass); production ships later in a release ([RELEASE.md](./RELEASE.md)). **Fail** → Full-stack rework (at most `loop.qa_max_rounds` QA rounds per version).
@@ -86,7 +88,7 @@ Each project lists its subagents in **`project/HARNESS_AGENTS.md`**. Delegate wi
 
 In bug mode the order changes: QA's reproduction run (the failing test) comes before step 1 ([MODES.md](./MODES.md) § Bug mode).
 
-The Technical Lead must not implement or QA even if the human says "execute", "run", "develop" or "implement". See `harness/TECHNICAL_LEAD.md`.
+In full and bug mode the Technical Lead must not implement or QA even if the human says "execute", "run", "develop" or "implement". See `harness/TECHNICAL_LEAD.md`.
 
 ## Parallel plans
 

@@ -2,11 +2,12 @@
 
 ## Working alone (plain changes)
 
-When `bash scripts/risk-check.sh` prints `Mode: plain`, the main chat makes the change itself: no Full-stack or QA subagent. That is light mode and small mode below. The three roles (the Technical Lead plans, Full-stack builds, QA checks) split only for full mode, bug mode and research mode (learned: on everyday changes the hand-offs between agents cost more than the work, and the risk check already sends risky ones to full mode).
+When `bash scripts/risk-check.sh` prints `Mode: plain`, the main chat makes the change itself: no Full-stack or QA subagent. That is light mode and small mode below. Full-stack and QA run only in full and bug mode (learned: on everyday changes the hand-offs between agents cost more than the work, and the risk check already sends risky ones to full mode).
 
 Working alone, the main chat follows the builder's rules as well as its own:
 
-- Before the first edit, read `harness/agents/fullstack-engineer.md` § Do, § UI screenshots and § Before handoff, and `project/agents/fullstack-engineer.md` (this project's builder rules). Tests follow `.claude/rules/testing.md`.
+- Before the first edit, read `harness/agents/fullstack-engineer.md` § Do, § UI screenshots and § Before handoff, and `project/agents/fullstack-engineer.md` (this project's builder rules). Tests follow `.claude/rules/testing.md`. Where those sections say `progress.md`, write the PR record (light mode) or the plan's § Check (small mode); § Ownership limits and § Hand back are for the subagent.
+- With **UI change: yes**, also follow `harness/agents/qa-engineer.md` on screenshots and the layout pass (open each after-shot; check every page at the narrowest width when styles or a shared component change). With **Needs live app/services**, its rules for the local stack and `deferred: local` apply, and `project/CONTROLS.md` § Manual smoke when it has rows.
 - Same branch, commit and PR rules as any feature (`AGENTS.md` § Golden rules), and the same guard hook: a deny is final.
 - The `before_qa` checks after the change, scoped by what changed; then, for small mode, the `before_signoff` checks once in full on the final commit ([CONTROLS.md](./CONTROLS.md)). A check the environment refused is **not run**, never a pass.
 - Before the hand-off, run `bash scripts/risk-check.sh` again with no files (§ Choosing mode, step 4). When it prints `Mode: full`, stop: write a full plan with this change linked, and the agents take it from there.
@@ -30,6 +31,7 @@ Working alone, the main chat follows the builder's rules as well as its own:
 
 - The main chat makes the change itself (§ Working alone), application code included. The owner's request is the approval; there is no plan to approve.
 - No `_harness/` feature folder required, no QA agent, no retro: the named checks are the only verification.
+- When the change turns out to alter behaviour or to need a test of its own, stop before going further: it is small mode, with a plan the human approves.
 - Still run the applicable named checks if the change touches code ([CONTROLS.md](./CONTROLS.md)): the `before_qa` checks, scoped by what changed. The record is the PR (or the commit message with no PR): the checks run with their exit codes, under a **Light mode** line saying why the change qualified.
 - With `cost.track` on, the closing message ends with the `Cost ≈ $…` line from `bash scripts/feature-cost.sh` (with `--since <time the task started>` when the session did other work first). It goes in the message only; light mode writes no file for it.
 
@@ -91,5 +93,5 @@ The first match wins. The human's wording ("quick fix", "ship it fast", "no time
 
 1. **A question, no change asked** ("how does", "why does", "which should we use", "compare") → research mode. A question one or two files the Technical Lead reads anyway can answer gets a direct answer, with no research file.
 2. **Something that worked is broken and a fix is asked** ("bug", "broken", "error in production", "this used to work") → bug mode, on a hotfix branch when it can't wait for the next release. A bug fix that touches a risk path never runs Full-stack at `medium`.
-3. **Any other change:** name the files it will touch and run `bash scripts/risk-check.sh <files>`. `Mode: full` → full mode. `Mode: plain` → light mode when the change alters no behaviour (§ Light mode), small mode otherwise. When the owner forced plain and the script still names a risk path, the change still runs alone (§ Working alone): forcing plain is the owner's choice to go without the agents. The Technical Lead may raise plain to full when the request leaves a real product choice open, naming the choice; it never lowers full to plain. The script's output goes in the small plan's § Why small, or in a light change's PR or commit record.
+3. **Any other change:** name the files it will touch and run `bash scripts/risk-check.sh <files>`. `Mode: full` → full mode. `Mode: plain` → light mode when the change alters no behaviour (§ Light mode), small mode otherwise. When the owner forced plain and the script still names a risk path, the change runs alone too, with no QA agent (§ Working alone): forcing plain is the owner's choice to go without the agents, so say so in the plan or the PR record. The Technical Lead may raise plain to full when the request leaves a real product choice open, naming the choice; it never lowers full to plain. The script's output goes in the small plan's § Why small, or in a light change's PR or commit record.
 4. **Before the hand-off** of a small or light change, run `bash scripts/risk-check.sh` again with no files: it reads what the branch really changed. When it now prints `Mode: full`, stop and switch to full mode (a plan, with the first one linked, and QA) before anything is handed off.

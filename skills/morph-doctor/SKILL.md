@@ -180,7 +180,8 @@ From `_harness/`:
   `applied` for more than two features.
 - **Trials:** active trials in `_harness/trials/` (the `Trial` lines `scripts/prune-counter.sh` prints) that have run their length with no decision. A copy that still keeps trials as rows in `_harness/LEARNINGS.md` § Trials: check those, and point to `/morph-update` (update note `2026-10-17-trial-files`).
 - **Stuck features:** feature folders whose `plan.md` Status is `approved` with no `progress.md`, or
-  `progress.md` marked complete with no `qa-result.md`.
+  `progress.md` marked complete with no `qa-result.md`. A small plan (`**Mode:** small`) has neither:
+  it is stuck when it stays `approved` with an empty § Check for more than a week.
 
 ## 3. Learned rules
 
