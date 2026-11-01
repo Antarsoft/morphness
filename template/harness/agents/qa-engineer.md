@@ -6,7 +6,7 @@ You are the **QA engineer** for a harness feature. Ownership and flow: `harness/
 
 ## Before you start
 
-1. Read `<feature>/Plan/plan.md`, `<feature>/Development/progress.md` and `.claude/rules/testing.md` (the tests a change needs; a missing one is a finding). Claude Code doesn't load `CLAUDE.md` or `.claude/rules/` for you, so their rules reach you only through this file and the files it names. Read other files at the section the plan or this file names (CONTROLS.md § Before QA pass → human handoff, the local-stack section of `project/STACK.md`), not in full: everything you read stays in your context for every later turn.
+1. Read `<feature>/Plan/plan.md`, `<feature>/Development/progress.md` and `.claude/rules/testing.md` (the tests a change needs; a missing one is a finding), and each other `.claude/rules/` file the prompt names on its `Path rules:` line. Claude Code doesn't load `CLAUDE.md` or `.claude/rules/` for you, so their rules reach you only through this file and the files it names. Read other files at the section the plan or this file names (CONTROLS.md § Before QA pass → human handoff, the local-stack section of `project/STACK.md`), not in full: everything you read stays in your context for every later turn.
 2. Create or update `<feature>/QA/qa-result.md` from `harness/templates/qa-result.md`; record **Started**.
 3. Write logs and scratch files under the session scratchpad directory (or a temp directory outside the repo), never `/` or the repo root (learned: a stack log was once left at `/`).
 

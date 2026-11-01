@@ -5,7 +5,9 @@
 # features each count the others that merged first, and files a prune folded on the integration
 # branch don't come back from a branch cut before it. The gauge adds up the files Claude Code loads
 # into every session (CLAUDE.md, the files it imports with `@`, and each .claude/rules/*.md without a
-# `paths:` line) against loop.rule_budget_kb, and the plan checklists and project/*.md against theirs.
+# `paths:` line) against loop.rule_budget_kb plus loop.owner_rules_kb (the owner's own text kept at install),
+# with a token estimate and the agent and skill descriptions Claude Code also loads, and the plan
+# checklists and project/*.md against their budgets.
 # Each active trial (_harness/trials/*.md) gets a line with how many of its features have run.
 # Exits 1 when a size budget is over and no prune proposal is open: the hand-off waits for the
 # proposal (harness/SETUP.md § Prune). Exits 2 when it can't measure all of it, with a "not measured"
@@ -70,8 +72,16 @@ count="$(printf '%s\n' "$files" | grep . | sort -u | wc -l | tr -d ' ')"
 
 # Always-loaded rule files and their size.
 budget="$(config_get loop.rule_budget_kb)"
-case "$budget" in ''|*[!0-9]*) budget=36 ;; esac
+case "$budget" in ''|*[!0-9]*) budget=16 ;; esac
 budget=$((10#$budget))
+# The owner's own always-loaded text kept at install (/morph-init sets it): its own allowance on top.
+obudget="$(config_get loop.owner_rules_kb)"
+case "$obudget" in
+  '') obudget=0 ;;
+  *[!0-9]*) echo "(loop.owner_rules_kb is not a whole number of KB: $obudget; counting 0)" >&2; obudget=0 ;;
+esac
+obudget=$((10#$obudget))
+total=$((budget + obudget))
 loaded="$(
   { [ -f CLAUDE.md ] && echo CLAUDE.md && sed -n 's/^@\([^ ]*\).*/\1/p' CLAUDE.md
     for f in .claude/rules/*.md; do
@@ -84,6 +94,14 @@ loaded="$(
 )"
 bytes="$(printf '%s\n' "$loaded" | awk '{ s += $1 } END { print s + 0 }')"
 kb() { awk -v b="$1" 'BEGIN { printf "%.1f", b / 1024 }'; }
+# About 4 bytes per token for English text: an estimate, not a tokenizer count.
+tok() { awk -v b="$1" 'BEGIN { printf "%.1fk", b / 4 / 1000 }'; }
+# Claude Code also puts each subagent's and each skill's `description:` into every session.
+desc="$(for f in .claude/agents/*.md .claude/skills/*/SKILL.md; do
+    [ -f "$f" ] && awk 'NR == 1 && $0 != "---" { exit } NR > 1 && $0 == "---" { exit }
+      /^description:/ { on = 1; sub(/^description:[ \t]*/, ""); printf "%s", $0; next }
+      on && /^[ \t]/ { printf "%s", $0; next } on && /^[ \t]*$/ { next } { on = 0 }' "$f"
+  done 2>/dev/null | wc -c | tr -d ' ')"
 
 # The plan checklists, read before every full-mode approval: retros grow them fastest.
 cbudget="$(config_get loop.checklist_budget_kb)"
@@ -98,7 +116,8 @@ dbudget=$((10#$dbudget))
 dbytes="$(cat project/*.md 2>/dev/null | wc -c | tr -d ' ')"
 
 echo "Prune counter: $count/$threshold"
-echo "Rules: $(kb "$bytes")/$budget KB always loaded"
+if [ "$obudget" -gt 0 ]; then allowance="$budget kit + $obudget for your own text; "; else allowance=""; fi
+echo "Rules: $(kb "$bytes")/$total KB always loaded (${allowance}≈$(tok "$bytes") tokens; agent and skill descriptions add $(kb "$desc") KB, ≈$(tok "$desc") tokens)"
 echo "Checklists: $(kb "$cbytes")/$cbudget KB"
 echo "Project docs: $(kb "$dbytes")/$dbudget KB"
 # A proposal still open (proposed: the owner hasn't decided; approved: decided, cuts not applied yet):
@@ -113,13 +132,13 @@ for f in _harness/prunes/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.md; do
 done
 due=""
 over=0
-if [ "$bytes" -gt $((budget * 1024)) ] || [ "$cbytes" -gt $((cbudget * 1024)) ] || [ "$dbytes" -gt $((dbudget * 1024)) ]; then over=1; fi
+if [ "$bytes" -gt $((total * 1024)) ] || [ "$cbytes" -gt $((cbudget * 1024)) ] || [ "$dbytes" -gt $((dbudget * 1024)) ]; then over=1; fi
 if [ -f harness/TECHNICAL_LEAD.md ] && [ "$(wc -c < harness/TECHNICAL_LEAD.md)" -gt 20480 ]; then over=1; fi
 if [ "$count" -ge "$threshold" ]; then
   due="Prune is DUE"
-elif [ "$bytes" -gt $((budget * 1024)) ]; then
+elif [ "$bytes" -gt $((total * 1024)) ]; then
   largest="$(printf '%s\n' "$loaded" | head -n 3 | while read -r b f; do printf '%s %s KB, ' "$f" "$(kb "$b")"; done)"
-  due="Prune is DUE (always-loaded rules are over loop.rule_budget_kb; largest: ${largest%, })"
+  due="Prune is DUE (always-loaded rules are over loop.rule_budget_kb plus loop.owner_rules_kb; largest: ${largest%, })"
 elif [ "$cbytes" -gt $((cbudget * 1024)) ]; then
   due="Prune is DUE (the plan checklists are over loop.checklist_budget_kb)"
 elif [ "$dbytes" -gt $((dbudget * 1024)) ]; then

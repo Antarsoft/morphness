@@ -54,7 +54,6 @@ When the project doesn't choose this module, morph-init deletes this folder and 
 **Delete or reword these lines** (unmarked: always-loaded, config or code-block text):
 
 - `harness.config.yml` → `agents`: the `legal_writer` line.
-- `CLAUDE.md` § Claude Code notes → **Delegation**: drop ", and `legal-writer` for a plan's legal wording (when the `legal` module is enabled)".
 - `harness/STRATEGY.md` and `_harness/README.md`: the `Legal/` and `legal-copy.md` lines of the folder tree.
 
 **Unlink:** every Markdown link left pointing into `harness/modules/legal/` becomes plain text, or goes with its line (`/morph-doctor` fails on a broken link). Find them with `grep -rn 'modules/legal' --include='*.md' . | grep -v '^./harness/modules/'`.

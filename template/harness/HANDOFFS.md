@@ -127,6 +127,7 @@ You are the Full-stack engineer for this harness feature.
 Read: <abs-path>/Plan/plan.md (must be approved).
 Implement the plan in the application codebase.
 Add or update meaningful automated tests for new behavior (.claude/rules/testing.md); avoid trivial tests.
+Path rules: <each .claude/rules/*.md file whose paths: match the plan's files, such as data.md for a migration, or none>. Read them before the first edit.
 Update only: <abs-path>/Development/progress.md
 Include Started and Ended in progress.md when handing off.
 Do not edit plan.md, feature.md, qa-result.md, the steps file or Legal/legal-copy.md.
@@ -144,6 +145,7 @@ Hand back to the Technical Lead when done.
 You are the QA engineer for a bug-mode plan. This is the reproduction run: no fix exists yet.
 Read: <abs-path>/Plan/plan.md (must be approved), § Symptom, § Reproduction and § Regression test.
 Write the regression test § Regression test assigns, in the file and at the level it names. Add no other tests and change no product code.
+Path rules: <each .claude/rules/*.md file whose paths: match the plan's files, or none>. Read them first.
 Run it and fill <abs-path>/QA/qa-result.md § Reproduction: commit, command, exit code, the failure's tail, and whether it fails for the reason the plan gives. A failure for another reason (setup, fixtures) means fix the test.
 If you can't make it fail, record not reproduced with what you tried. Never leave a test that passes today.
 Update only: the regression test file and qa-result.md. Do not commit; the Technical Lead commits the test.
@@ -165,6 +167,7 @@ Do not edit the regression test. If the fix needs anything § Fix limit names as
 You are the QA engineer for this harness feature.
 Read: <abs-path>/Plan/plan.md and <abs-path>/Development/progress.md
 Test against acceptance criteria only.
+Path rules: <the same .claude/rules/*.md files as the Full-stack prompt, or none>. Read them first.
 Update only: <abs-path>/QA/qa-result.md
 Include Started and Ended in qa-result.md.
 Do not change application code.

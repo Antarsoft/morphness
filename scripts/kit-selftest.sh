@@ -787,7 +787,142 @@ def render(fx, t, tpl=None):
             sys.exit(f"git failed in {t}: {r.stderr}")
 
 # KB of always-loaded rules (CLAUDE.md, its imports, unscoped .claude/rules) a fresh install may carry.
-ALWAYS_LOADED_CEILING_KB = 35
+ALWAYS_LOADED_CEILING_KB = 8
+
+def glob_re(pattern):
+    """A `paths:` glob as Claude Code reads it: `**/` is any folders (or none), `*` stays within one folder."""
+    out, i = "", 0
+    while i < len(pattern):
+        if pattern.startswith("**/", i):
+            out, i = out + "(?:.*/)?", i + 3
+        elif pattern.startswith("**", i):
+            out, i = out + ".*", i + 2
+        elif pattern[i] == "*":
+            out, i = out + "[^/]*", i + 1
+        else:
+            out, i = out + re.escape(pattern[i]), i + 1
+    return re.compile(out + r"\Z")
+
+def rule_paths(text):
+    """The `paths:` globs in a rule file's frontmatter, or None when it has none (it loads in every session)."""
+    fm = re.match(r"^---\n(.*?)\n---\n", text, re.S)
+    if not fm or not re.search(r"^paths:", fm.group(1), re.M):
+        return None
+    return re.findall(r"^\s+-\s+[\"']?([^\"'\n]+?)[\"']?\s*$", fm.group(1).split("paths:", 1)[1], re.M)
+
+# Files a task on each area touches, and the path rule that must load for it (and only it, of the area rules).
+PATH_RULE_CASES = [
+    ("supabase/migrations/20260101000000_init.sql", "data.md"), ("prisma/schema.prisma", "data.md"),
+    ("db/queries/report.sql", "data.md"),
+    ("src/auth/session.ts", "auth.md"), ("app/middleware.ts", "auth.md"), ("lib/auth.ts", "auth.md"),
+    (".github/workflows/ci.yml", "deploy.md"), ("infra/main.tf", "deploy.md"), ("wrangler.toml", "deploy.md"),
+    ("src/lib/price.test.ts", "testing.md"), ("tests/test_cli.py", "testing.md"), ("e2e/signup.spec.ts", "testing.md"),
+    ("_harness/features/signup/1/Plan/plan.md", "harness.md"),
+    ("docs/guide.md", None), ("README.md", None), ("src/components/Button.tsx", None),
+]
+
+def check_path_rules(bad, t):
+    """G4: a fresh install loads only CLAUDE.md and AGENTS.md in every session. The Technical Lead's file is read when
+    a full or bug plan starts, and each .claude/rules/ file has `paths:`, so a migration task loads the data rules and
+    a docs task loads none. Hand-offs name the path rules, because subagents load none of them."""
+    claude = read(os.path.join(t, "CLAUDE.md"))
+    if re.search(r"^@\S*TECHNICAL_LEAD", claude, re.M):
+        bad("CLAUDE.md imports harness/TECHNICAL_LEAD.md: it is read when a full or bug plan starts, not loaded in every session")
+    agents = read(os.path.join(t, "AGENTS.md"))
+    golden = agents.split("## Golden rules", 1)[-1].split("\n## ", 1)[0] if "## Golden rules" in agents else ""
+    # the limits every mode needs, now that harness/TECHNICAL_LEAD.md is read only for full and bug plans
+    for want in ("harness/TECHNICAL_LEAD.md", "risk-check.sh", "Shared remote environments", "force-push",
+                 "only when the human asks for that PR in their own message", "is not an ask", "auto-merge is a merge",
+                 "moves only through a release", "never read or write `.env`", "Full and bug mode:"):
+        if want not in golden:
+            bad(f"AGENTS.md § Golden rules doesn't carry {want!r}: the core every session loads must")
+    if "harness/GUARD.md" not in agents:
+        bad("AGENTS.md doesn't link harness/GUARD.md")
+    if "### Permissions" in agents or "**Denies:**" in agents:
+        bad("AGENTS.md still lists the guard's rules: they live in harness/GUARD.md, read when a guard message names it")
+    guard_doc = os.path.join(t, "harness/GUARD.md")
+    if not os.path.exists(guard_doc) or "**Denies:**" not in read(guard_doc):
+        bad("harness/GUARD.md has no **Denies:** list")
+    globs = {}
+    for f in sorted(glob.glob(os.path.join(t, ".claude/rules/*.md"))):
+        p = rule_paths(read(f))
+        if p is None:
+            bad(f".claude/rules/{os.path.basename(f)} has no `paths:` frontmatter, so it loads in every session")
+        else:
+            globs[os.path.basename(f)] = [glob_re(g) for g in p]
+    for path, want in PATH_RULE_CASES:
+        got = sorted(n for n, rs in globs.items() if any(r.match(path) for r in rs))
+        if (want is None and got) or (want is not None and got != [want]):
+            bad(f"a task on {path} loads .claude/rules/{got or 'nothing'}, want {want or 'nothing'}")
+    # every Full-stack and QA prompt block names the path rules (a bug-mode add-on to the Full-stack block excepted)
+    blocks = read(os.path.join(t, "harness/HANDOFFS.md")).split("## Subagent prompt blocks", 1)[-1]
+    found = re.findall(r"^\*\*((?:Full-stack|QA) engineer[^*]*)\*\*[^\n]*\n+```text\n(.*?)```", blocks, re.S | re.M)
+    if len(found) < 3:
+        bad(f"harness/HANDOFFS.md: found {len(found)} Full-stack and QA prompt blocks, want at least 3")
+    for role, block in found:
+        if "Path rules:" not in block and "add to the Full-stack block above" not in blocks.split(f"**{role}**", 1)[1].split("\n", 1)[0]:
+            bad(f"harness/HANDOFFS.md **{role}** prompt block has no Path rules: line naming the .claude/rules/ files it needs")
+
+def check_owner_allowance(bad, t):
+    """C3: an install over the owner's own 3 KB CLAUDE.md (render.md § 2 keeps it above `## Morphness`) still passes the
+    render checks, and with loop.owner_rules_kb the owner's text has its own allowance on top of the kit's budget.
+    The gauge also prints a token estimate and the agent and skill descriptions Claude Code loads."""
+    cfg_p, claude_p = os.path.join(t, "harness.config.yml"), os.path.join(t, "CLAUDE.md")
+    keep_cfg, keep_claude = read(cfg_p), read(claude_p)
+    gauge = lambda r: next((l for l in r.stdout.splitlines() if l.startswith("Rules:")), "")
+    kit = re.match(r"Rules: (\d+\.\d)/", gauge(run(["bash", "scripts/prune-counter.sh"], t)))
+    # a budget the kit's own text fits under with less than 3 KB to spare
+    tight = int(float(kit.group(1))) + 1 if kit else 9
+    mine = "# Our notes\n\n" + "".join(f"- Rule {i:02}: API handlers stay thin; logging goes through lib/log.ts only.\n" for i in range(40))
+    if not 2900 <= len(mine.encode()) <= 3072:
+        bad(f"owner allowance case: the owner text is {len(mine.encode())} bytes, not about 3 KB")
+    write(claude_p, mine + "\n## Morphness\n\n" + keep_claude)
+    r = run(["bash", "scripts/prune-counter.sh"], t)
+    if r.returncode or "Prune is DUE" in r.stdout:
+        bad(f"an install over a 3 KB CLAUDE.md is due a prune with the default budget: {r.stdout!r}")
+    # the other render checks that read CLAUDE.md (links, placeholders) still pass on it
+    for target in re.findall(r"\]\(([^)\s#]+)", strip_code(read(claude_p))):
+        if not re.match(r"^[a-z]+:", target) and not os.path.exists(os.path.join(t, target)):
+            bad(f"an install over a 3 KB CLAUDE.md has a broken link: {target}")
+    if re.search(r"(^|[^$])\{\{ *[a-z]", read(claude_p)):
+        bad("an install over a 3 KB CLAUDE.md still has a {{placeholder}}")
+    dm = re.search(r"KB always loaded \(≈\d+\.\dk tokens; agent and skill descriptions add (\d+\.\d) KB, ≈\d+\.\dk tokens\)$", gauge(r))
+    if not dm or float(dm.group(1)) == 0:
+        bad(f"the Rules gauge prints no token estimate or descriptions size: {gauge(r)!r}")
+    write(cfg_p, re.sub(r"rule_budget_kb: *\S+", f"rule_budget_kb: {tight}", keep_cfg))
+    r = run(["bash", "scripts/prune-counter.sh"], t)
+    if r.returncode != 1 or "Prune is DUE (always-loaded rules are over" not in r.stdout:
+        bad(f"with rule_budget_kb: {tight} and no owner allowance, 3 KB of the owner's text didn't make a prune due: {r.stdout!r}")
+    write(cfg_p, re.sub(r"owner_rules_kb: *\S+", "owner_rules_kb: 3", re.sub(r"rule_budget_kb: *\S+", f"rule_budget_kb: {tight}", keep_cfg)))
+    r = run(["bash", "scripts/prune-counter.sh"], t)
+    if r.returncode or "Prune is DUE" in r.stdout or f"/{tight + 3} KB always loaded ({tight} kit + 3 for your own text; ≈" not in gauge(r):
+        bad(f"loop.owner_rules_kb: 3 gave the owner's text no allowance: {r.stdout!r} (exit {r.returncode})")
+    before = re.search(r"descriptions add (\d+\.\d) KB", gauge(r))
+    sk = os.path.join(t, ".claude/skills/selftest-skill")
+    os.makedirs(sk)
+    # a folded description with a blank line inside: both paragraphs count (2 x 1024 bytes plus the indents)
+    write(os.path.join(sk, "SKILL.md"), "---\nname: selftest-skill\ndescription: >\n  " + "x" * 1024 + "\n\n  " + "x" * 1022
+          + "\nallowed-tools: Read\n---\n\n# Body is not loaded\n" + "y" * 4096 + "\n")
+    after = re.search(r"descriptions add (\d+\.\d) KB", gauge(run(["bash", "scripts/prune-counter.sh"], t)))
+    if not before or not after or round(float(after.group(1)) - float(before.group(1)), 1) != 2.0:
+        bad(f"a skill with a 2 KB description changed the descriptions size from {before and before.group(1)} to {after and after.group(1)} KB, not by 2.0")
+    shutil.rmtree(os.path.join(t, ".claude/skills/selftest-skill"))
+    if not os.listdir(os.path.join(t, ".claude/skills")):
+        os.rmdir(os.path.join(t, ".claude/skills"))
+    # an owner's own @-import counts in the gauge, and a garbled allowance is said, not silently dropped
+    write(cfg_p, re.sub(r"owner_rules_kb: *\S+", "owner_rules_kb: 3.5", keep_cfg))
+    write(os.path.join(t, "selftest-conventions.md"), "z" * 1023 + "\n")
+    base = re.match(r"Rules: (\d+\.\d)/", gauge(run(["bash", "scripts/prune-counter.sh"], t)))
+    write(claude_p, "@selftest-conventions.md\n" + mine + "\n## Morphness\n\n" + keep_claude)
+    r = run(["bash", "scripts/prune-counter.sh"], t)
+    now = re.match(r"Rules: (\d+\.\d)/", gauge(r))
+    if not base or not now or round(float(now.group(1)) - float(base.group(1)), 1) not in (1.0, 1.1):
+        bad(f"an owner's 1 KB @-import moved the gauge from {base and base.group(1)} to {now and now.group(1)} KB, not by about 1.0")
+    if "loop.owner_rules_kb is not a whole number of KB: 3.5" not in r.stderr:
+        bad(f"owner_rules_kb: 3.5 was dropped without a note: {r.stderr!r}")
+    os.remove(os.path.join(t, "selftest-conventions.md"))
+    write(cfg_p, keep_cfg)
+    write(claude_p, keep_claude)
 
 # ---- self-checks (render.md § 7) -------------------------------------------------------------
 def strip_code(s):
@@ -1090,6 +1225,8 @@ def check(name, fx, t):
             if not fence and no_code.search(line) and not any("full and bug mode" in x.lower() for x in (line, prev, heading)):
                 bad(f"{rel}: {line.strip()[:90]!r} says the main chat never codes, without limiting it to full and bug mode")
             prev = line
+    # 5d. the always-loaded core is CLAUDE.md and AGENTS.md; every other rule loads by path
+    check_path_rules(bad, t)
     # 6. named checks have commands, and no row names an unknown check
     cfg = lambda key: run(["bash", "-c", f'. scripts/lib/config.sh; config_get {key}'], t).stdout.strip()
     names = set()
@@ -1666,10 +1803,14 @@ def check(name, fx, t):
     pdir = os.path.join(t, "_harness/prunes")
     os.makedirs(pdir, exist_ok=True)
     keep_cfg = read(os.path.join(t, "harness.config.yml"))
-    write(os.path.join(t, "harness.config.yml"), re.sub(r"rule_budget_kb: *\S+", "rule_budget_kb: 09", keep_cfg))
+    write(os.path.join(t, "harness.config.yml"), re.sub(r"owner_rules_kb: *\S+", "owner_rules_kb: 08", re.sub(r"rule_budget_kb: *\S+", "rule_budget_kb: 09", keep_cfg)))
     r = run(["bash", "scripts/prune-counter.sh"], t)
-    if r.returncode != 1 or "/9 KB always loaded" not in r.stdout or "value too great" in r.stderr:
-        bad(f"prune-counter.sh with rule_budget_kb: 09 exited {r.returncode}: {r.stdout!r} (stderr {r.stderr.strip()!r})")
+    if r.returncode or "/17 KB always loaded (9 kit + 8 for your own text;" not in r.stdout or "value too great" in r.stderr:
+        bad(f"prune-counter.sh with rule_budget_kb: 09 and owner_rules_kb: 08 exited {r.returncode}: {r.stdout!r} (stderr {r.stderr.strip()!r})")
+    write(os.path.join(t, "harness.config.yml"), re.sub(r"rule_budget_kb: *\S+", "rule_budget_kb: 05", keep_cfg))
+    r = run(["bash", "scripts/prune-counter.sh"], t)
+    if r.returncode != 1 or "/5 KB always loaded" not in r.stdout:
+        bad(f"prune-counter.sh with rule_budget_kb: 05 (under a fresh install) exited {r.returncode}: {r.stdout!r} (stderr {r.stderr.strip()!r})")
     spaced = os.path.join(pdir, "2026-01-07 second look.md")
     open(spaced, "w").write("# Prune\n\n**Status:** proposed\n")
     r = run(["bash", "scripts/prune-counter.sh"], t)
@@ -1677,6 +1818,7 @@ def check(name, fx, t):
         bad(f"prune-counter.sh did not see a proposal whose name has spaces: {r.stdout!r} (stderr {r.stderr.strip()!r})")
     os.remove(spaced)
     write(os.path.join(t, "harness.config.yml"), keep_cfg)
+    check_owner_allowance(bad, t)
     # guard hook cases
     # {I^} and {P^} are the same branches in capitals (a guard case for `git push origin Main`).
     branches = {"{I}": fx["branches"]["integration"], "{P}": fx["branches"]["production"],

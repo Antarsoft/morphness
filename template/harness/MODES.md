@@ -6,9 +6,9 @@ When `bash scripts/risk-check.sh` prints `Mode: plain`, the main chat makes the 
 
 Working alone, the main chat follows the builder's rules as well as its own:
 
-- Before the first edit, read `harness/agents/fullstack-engineer.md` § Do, § UI screenshots and § Before handoff, and `project/agents/fullstack-engineer.md` (this project's builder rules). Tests follow `.claude/rules/testing.md`. Where those sections say `progress.md`, write the PR record (light mode) or the plan's § Check (small mode); § Ownership limits and § Hand back are for the subagent.
+- Before the first edit, read `harness/agents/fullstack-engineer.md` § Do, § UI screenshots and § Before handoff, and `project/agents/fullstack-engineer.md` (this project's builder rules). Read `.claude/rules/testing.md` for the tests to write. Where those sections say `progress.md`, write the PR record (light mode) or the plan's § Check (small mode); § Ownership limits and § Hand back are for the subagent.
 - With **UI change: yes**, also follow `harness/agents/qa-engineer.md` on screenshots and the layout pass (open each after-shot; check every page at the narrowest width when styles or a shared component change). With **Needs live app/services**, its rules for the local stack and `deferred: local` apply, and `project/CONTROLS.md` § Manual smoke when it has rows.
-- Same branch, commit and PR rules as any feature (`AGENTS.md` § Golden rules), and the same guard hook: a deny is final.
+- Same branch, commit and PR rules as any feature (`AGENTS.md` § Golden rules, `harness/TECHNICAL_LEAD.md` § Commits and branches), and the same guard hook: a deny is final.
 - The `before_qa` checks after the change, scoped by what changed; then, for small mode, the `before_signoff` checks once in full on the final commit ([CONTROLS.md](./CONTROLS.md)). A check the environment refused is **not run**, never a pass.
 - Before the hand-off, run `bash scripts/risk-check.sh` again with no files (§ Choosing mode, step 4). When it prints `Mode: full`, stop: write a full plan with this change linked, and the agents take it from there.
 

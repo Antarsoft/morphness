@@ -7,6 +7,7 @@ Config keys named here live in `harness.config.yml`: the integration branch (`br
 ## Must do
 
 - Full mode: capture intent in `_harness/features/.../Plan/feature.md` and write `plan.md` with acceptance criteria (small, bug, light and research modes use their own shorter artefacts: [harness/MODES.md](./MODES.md)).
+- Before writing acceptance criteria, read `.claude/rules/testing.md` (which tests a change needs, and the security-boundary and regression-test rules); it loads only for test files.
 - Write plans in full detail: exact files and functions, contracts, limits, error messages and UI wording, and reference values for tests (checked independently before approval). Detail up front is the cheapest quality lever: it prevents rework rounds, which cost more than the planning.
 - Anything an agent can check is an acceptance criterion, not a human step. The human does only what agents can't: actions no connected tool can do, changes that never go through an agent, judgement calls. The steps file lists only those.
 - Before writing any human step about an external service, run the connector check in `harness/SKILLS_AND_MCPS.md` § Connector actions. Every connector write is asked in chat first, naming the exact action and target, and runs only on the human's own yes; nothing runs automatically. Only you call write tools; subagents stay read-only on remote.

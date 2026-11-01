@@ -6,7 +6,7 @@
 #
 # What it denies (exit 2, the reason goes back to the agent), what it asks (the owner answers a
 # permission prompt), which `guard:` switches in harness.config.yml turn an ask off, and what it does not
-# see are described once, in AGENTS.md § Permissions for this project. This file is the implementation of
+# see are described once, in harness/GUARD.md. This file is the implementation of
 # that list: change the two together, and add a case to tests/guard-cases.jsonl for each rule.
 # The hook fails closed: without python3, without the config reader (scripts/lib/config.sh), when the
 # project folder can't be entered, on input it can't parse, on an internal error and when a check runs
@@ -131,7 +131,7 @@ GROUP_ASK = {"deploys": switch("GUARD_DEPLOYS"), "publishes": switch("GUARD_PUBL
 ALLOW_HOSTS = allow_hosts()
 
 def deny(reason):
-    sys.stderr.write("Blocked by scripts/guard.sh: " + reason + "\n")
+    sys.stderr.write("Blocked by scripts/guard.sh: " + reason + " What the guard checks: harness/GUARD.md.\n")
     sys.exit(2)
 
 # While a Bash command is checked, an ask is held until the whole command has been read, so a deny anywhere in it wins:
