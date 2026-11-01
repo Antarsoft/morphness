@@ -37,9 +37,17 @@ need() {  # need <tool> <what breaks without it>
   command -v "$1" >/dev/null 2>&1 || missing+=("$1: $2")
 }
 need git "the branch, PR and release process (the installed scripts call git throughout)"
-need python3 "scripts/guard.sh stops blocking: every tool call passes unchecked, and the prune counter and feature-cost scripts do not run"
-need awk "scripts/lib/config.sh cannot read harness.config.yml, so every script that reads the config fails"
-need perl "removing a module (/morph-module remove) cannot strip its marked text"
+need python3 "scripts/guard.sh blocks every tool call (unless harness.config.yml sets guard.fail_open: true), and the cost, evidence and learned-rules scripts do not run (the prune counter runs without its trial and rule-tag counts)"
+# A python3 that is a stub (macOS before the Command Line Tools, the Microsoft Store alias) or older than 3.7
+# passes command -v but can't run the guard.
+if command -v python3 >/dev/null 2>&1 && [ "$(python3 -I -c 'import sys; print(sys.version_info >= (3, 7))' 2>/dev/null)" != True ]; then
+  missing+=("python3: $(command -v python3) is not a working Python 3.7 or later, so scripts/guard.sh can't check tool calls (it blocks every call, or lets them through unchecked); install Python 3.7 or later")
+fi
+need awk "scripts/lib/config.sh reads harness.config.yml with awk: without it every setting reads as empty, so scripts/guard.sh protects no branch and the other scripts run on their defaults or stop with a not-measured line"
+need perl "removing a module (/morph-module remove) cannot strip its marked text, and scripts/session-start.sh has no time limit where there is no timeout command (stock macOS)"
+for tool in grep sed sort tr wc; do
+  need "$tool" "scripts/prune-counter.sh stops with a not-measured line, and without grep, sort or tr scripts/guard.sh protects no branch"
+done
 
 copied=0; skipped=()
 while IFS= read -r -d '' f; do
