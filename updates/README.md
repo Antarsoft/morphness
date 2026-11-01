@@ -32,6 +32,9 @@ files:                           # every template/ path it adds or changes, rela
   - harness/modules/ci-cd/README.md
 removed: []                      # template/ paths it deletes, if any
 moved: []                        # "old/path -> new/path" for a file that moved; the old path is also under removed, the new one under files
+reviewed: "<why it is safe>"     # when the note has a URL or host, a network command, a command that installs or runs text, an env
+                                 # dump, or names the guard, settings, the harness config, permissions or secrets
+                                 # (check-updates.sh --since flags those; a changed note needs a new reason)
 ---
 
 ## What changed

@@ -2,7 +2,11 @@
 # Validate Morphness kit update notes (updates/*.md) and release metadata.
 # Usage: scripts/check-updates.sh [--since <git-ref>]
 #   --since: also fail when a template/ file changed since <git-ref> isn't listed in a note that was
-#            added or changed since then (run in PRs with --since origin/main).
+#            added or changed since then (run in PRs with --since origin/main), and when such a note has
+#            risky prose (a URL or host, a network or remote-shell command, a command that installs or runs
+#            text, an environment dump, the guard, settings, harness config or permissions, secrets) and no
+#            `reviewed: <why it is safe>` in its frontmatter, or the same reason it had before the change:
+#            a maintainer reads those before merging.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 exec python3 -I - "$ROOT" "$@" <<'PY'
@@ -38,6 +42,35 @@ def plugin_version(name):
     k = release_key(name)
     return f"{k[1]}.{k[2]}.0"
 errors, notes = [], {}
+# Prose an agent would follow or paste that could open a hole: shell that reaches the network, installs or
+# runs fetched text, an env dump, a URL or host, or anything that touches the guard, the settings, the
+# harness config or secrets. A maintainer reads each flagged file before merging; `reviewed: <why>` in the
+# frontmatter records that, and a later change to the text needs a new reason.
+RISKY = [
+    ("a URL or host", re.compile(r"\bhttps?://|\bwww\.|\b(?:[a-z0-9-]+\.)+(?:com|net|org|io|dev|app|co|ai|cloud|xyz|site|example|internal|local)/\S"
+                                 r"|\b\d{1,3}(?:\.\d{1,3}){3}\b", re.I)),
+    ("a network or remote-shell command", re.compile(r"\b(curl|wget|nc|ncat|netcat|socat|ssh|scp|sftp|telnet|ftp|openssl\s+s_client|dig|nslookup)\b(?!-)"
+                                                     r"|\bInvoke-(WebRequest|RestMethod)\b|\biwr\b|\bgit\s+(push|remote)\b|\bfetch\(", re.I)),
+    ("a command that installs or runs text", re.compile(r"\|\s*(ba|z|da)?sh\b|\b(ba|z|da)?sh\s+-c\b|(?<!unsafe-)\beval\b|\bsource\s+<\(|\bbase64\s+(-d|--decode)\b"
+                                                        r"|\b(python3?|node|perl|ruby)\s+-[cep]\b|\b(npx|bunx|dlx)\b|\b(npm|pnpm|yarn|bun|pip3?|pipx|gem|cargo|go)\s+(i|install|add|get)\b"
+                                                        r"|--no-verify\b", re.I)),
+    ("an environment dump", re.compile(r"(?<![.\w-])(printenv|env)\b(?=\s*($|[|>;&`)]))|\bexport\s+-p\b|\bdeclare\s+-x\b|\bset\s*\||/proc/\S*environ", re.I | re.M)),
+    ("the guard, settings, harness config or permissions", re.compile(
+        r"\bguard(\.sh|\.[a-z_]+)?\b|settings(\.local)?\.json|\.claude/|harness\.config\.yml|\binstalled_from\b|\bpermissions?\b|\bdefaultMode\b"
+        r"|\bbypassPermissions\b|--dangerously|\ballow(ed)?Tools\b|\bdeny\b|\bdisable\w*\s+(the\s+)?(hook|guard|check)"
+        r"|\b(network|installs|deploys|publishes|mcp_writes|pr_writes|schema_pushes|source)\s*:\s*(off|allow|local)\b", re.I)),
+    ("secrets or tokens", re.compile(r"(?<![\w-])\.env\b|\bsecrets?\b|\b(access|auth|api|bearer|refresh|github|gh|npm|deploy)[_ -]?tokens?\b"
+                                     r"|\bapi[_ -]?keys?\b|\bcredentials?\b|\bpasswords?\b", re.I)),
+]
+
+def risky(text):
+    """[(what, the matched text)] for each kind of risky prose in `text`, first match of each."""
+    out = []
+    for what, rx in RISKY:
+        m = rx.search(text)
+        if m:
+            out.append((what, m.group(0).strip()))
+    return out
 
 def parse(text):
     m = re.match(r"^---\n(.*?)\n---\n(.*)$", text, re.S)
@@ -101,6 +134,9 @@ for f in sorted(glob.glob(os.path.join(root, "updates", "*.md"))):
         if dst not in files: errors.append(f"{rel}: moved to '{dst}' must also be listed under files")
     for h in ("## What changed", "## Why", "## How to apply"):
         if h not in (body or ""): errors.append(f"{rel}: missing '{h}' section")
+    if "reviewed" in fm and not str(fm["reviewed"]).strip():
+        errors.append(f"{rel}: 'reviewed' is empty: say why the flagged text is safe, or remove the key")
+    fm["_risky"] = risky(body or "")   # the whole body: /morph-update reads What changed too, and a heading can be renamed
 
 # Releases: every release a note names has a CHANGELOG heading, and plugin.json carries the newest.
 # Headings: `## v0.13.0 (2026-10-21)`, or for the earlier releases `## 2026-10-20.5`.
@@ -167,6 +203,19 @@ if since:
                      + git("ls-files", "--others", "--exclude-standard", "--", "updates")}
     listed = set()
     for i, (rel, fm) in notes.items():
+        rv = str(fm.get("reviewed") or "").strip()
+        if rel in changed_notes and fm["_risky"]:
+            old = subprocess.run(["git", "-C", root, "show", f"{since}:{rel}"], capture_output=True, text=True)
+            was = re.search(r"^reviewed:\s*(.*?)\s*$", old.stdout, re.M) if old.returncode == 0 else None
+            if not rv:
+                for what, hit in fm["_risky"]:
+                    errors.append(f"{rel}: has {what} (`{hit}`). The agent applying the note follows its text, so a "
+                                  "maintainer reads it before merging: rewrite it without that, or add `reviewed: <why it is safe>` to the frontmatter")
+            elif was and was.group(1).strip('"') == rv:
+                errors.append(f"{rel}: changed since {since} but keeps the same `reviewed:` reason; a maintainer re-reads the "
+                              f"flagged text ({', '.join(w for w, _ in fm['_risky'])}) and writes a new one")
+            else:
+                print(f"::warning file={rel}::reviewed ({rv}): " + "; ".join(f"{w}: {h}" for w, h in fm["_risky"]))
         if rel in changed_notes:
             for key in ("files", "removed"):
                 if isinstance(fm.get(key), list): listed.update(fm[key])

@@ -18,7 +18,13 @@ Comment on the issue before you start so we don't double up. If there's no PR af
    You can also write one by hand.
 2. Open a PR with the lesson files. One topic per PR; several lessons are fine.
 3. The `lessons` check runs on the PR: valid frontmatter, a unique id, an existing `kind`, a
-   `target` path that exists in `template/`, and no secrets-looking strings.
+   `target` path that exists in `template/`, and no secrets-looking strings. It also stops a new or
+   changed lesson that has a URL or host, a network or remote-shell command (`curl`, `ssh`,
+   `git push`), a command that installs or runs text (`| sh`, `eval`, `npx`, `npm install <pkg>`), an
+   environment dump, or mentions the guard, settings, `harness.config.yml`, permissions or secrets:
+   agents paste that text, so a maintainer reads it first. Rewrite
+   it without that, or add `reviewed: <why it is safe>` to the frontmatter for the maintainer to check (a later change
+   to the lesson needs a new reason).
 
 What gets merged:
 

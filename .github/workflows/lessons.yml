@@ -10,7 +10,12 @@ jobs:
     runs-on: ubuntu-24.04   # pinned: bump it in its own PR
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
-      - run: scripts/check-lessons.sh
+        with:
+          fetch-depth: 0
+      - if: github.event_name == 'pull_request'
+        run: scripts/check-lessons.sh --since "origin/${{ github.base_ref }}"
+      - if: github.event_name == 'push'
+        run: scripts/check-lessons.sh
       - name: Counts on the README and site match (after a merge, so contributors are not blocked)
         if: github.event_name == 'push'
         run: scripts/lesson-stats.sh --check
