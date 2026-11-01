@@ -15,9 +15,12 @@
 #   --branch     every session in this repo, counting only calls made on that git branch (a feature
 #                worked on across several sessions); calls made before the branch existed are missed
 #   --session    these sessions instead of the current one
+# A transcript line it can't read (a torn write, a bad byte, a field of the wrong type) is skipped and
+# counted on the Cost line, never fatal. Exit 0 with a Cost or "not measured" line; 2 on a bad option;
+# 1 when the script itself fails, with a "not measured" line saying so.
 
-. "$(cd "$(dirname "$0")" && pwd)/lib/config.sh" || exit 0
-cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)" || exit 0
+. "$(cd "$(dirname "$0")" && pwd)/lib/config.sh" || { echo "Cost: not measured (scripts/lib/config.sh is missing or unreadable)"; exit 1; }
+cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)" || { echo "Cost: not measured (cannot enter the project folder)"; exit 1; }
 
 # Config: cost.track (default true) and cost.prices (default harness/MODEL_PRICES.md).
 if [ "$(config_get cost.track | tr '[:upper:]' '[:lower:]')" = false ]; then
@@ -35,9 +38,14 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 0
 fi
 
-python3 - "$@" <<'PY'
+# -I: a json.py or re.py in the project must not run in place of the standard module.
+# -X utf8: write UTF-8 even where the console's default encoding can't hold ≈ (Windows cp1252).
+python3 -I -X utf8 - "$@" <<'PY'
 import glob, json, os, re, sys
 from datetime import datetime, timezone
+
+# A model or agent name from a damaged transcript can hold text UTF-8 can't encode (a lone surrogate).
+sys.stdout.reconfigure(errors="replace")
 
 args = sys.argv[1:]
 opts = {"since": None, "branch": None, "session": None}
@@ -46,7 +54,7 @@ while args:
     key = flag.lstrip("-")
     if key not in opts or not args:
         print(f"usage: feature-cost.sh [--since <ISO time>] [--branch <name>] [--session <id>[,<id>]] (bad option: {flag})")
-        sys.exit(0)
+        sys.exit(2)
     opts[key] = args.pop(0)
 
 prices_path = os.environ["COST_PRICES"]
@@ -81,28 +89,92 @@ except OSError:
     print(f"Cost: not measured (price table {prices_path} not found)")
     sys.exit(0)
 
+def count(v):
+    # A token count: an int, or digits in a string; anything else (null, negative, junk) counts 0.
+    if isinstance(v, bool):
+        return 0
+    if isinstance(v, str):
+        v = v.strip()
+        if not v.isdigit():
+            return 0
+    try:
+        return max(int(v), 0)
+    except (TypeError, ValueError, OverflowError):
+        return 0
+
+ISO = re.compile(r"(\d{4}-\d{2}-\d{2})(?:[T ](\d{2}:\d{2})(:\d{2})?(?:[.,](\d+))?)?\s*(Z|[+-]\d{2}:?\d{2})?", re.I)
+
+def parse_time(text):
+    # ISO 8601 to an aware datetime, UTC when no zone is given; None when unreadable. The common forms
+    # are normalised first, because Python before 3.11 accepts neither "Z" nor a fraction of other than
+    # 3 or 6 digits; anything else goes to fromisoformat as written (3.11 and later read more forms).
+    if not isinstance(text, str):
+        return None
+    text = text.strip()
+    m = ISO.fullmatch(text)
+    if m:
+        day, hm, sec, frac, zone = m.groups()
+        iso = day + "T" + (hm or "00:00") + (sec or ":00")
+        if frac:
+            iso += "." + (frac + "000000")[:6]
+        if zone:
+            iso += "+00:00" if zone.upper() == "Z" else zone if ":" in zone else zone[:3] + ":" + zone[3:]
+    else:
+        iso = text[:-1] + "+00:00" if text[-1:] in ("Z", "z") else text
+    try:
+        when = datetime.fromisoformat(iso)
+    except ValueError:
+        return None
+    return when if when.tzinfo else when.replace(tzinfo=timezone.utc)
+
 def rates_for(model):
     # Longest table entry that the model id starts with (ids may carry a date or [1m] suffix).
     best = max((k for k in prices if model.startswith(k)), key=len, default=None)
     return best
 
+def folder_name(path):
+    # Claude Code's own rule: every character that isn't an ASCII letter or digit becomes "-". It runs in
+    # JavaScript, which counts a character outside the BMP (an emoji) as two, so that becomes "--".
+    return "".join(c if c.isascii() and c.isalnum() else "--" if ord(c) > 0xFFFF else "-" for c in path)
+
+def first_cwd(path):
+    try:
+        with open(path, encoding="utf-8-sig", errors="replace") as fh:
+            for line in fh:
+                if '"cwd"' in line:
+                    try:
+                        cwd = json.loads(line).get("cwd")
+                    except (ValueError, AttributeError, RecursionError):
+                        continue
+                    if isinstance(cwd, str):
+                        return cwd
+    except OSError:
+        pass
+    return None
+
 # Transcripts: <config dir>/projects/<repo path with every non-alphanumeric as ->/
 config_dir = os.environ.get("CLAUDE_CONFIG_DIR") or os.path.expanduser("~/.claude")
 repo = os.getcwd()
-folder = os.path.join(config_dir, "projects", re.sub(r"[^A-Za-z0-9]", "-", repo))
+real = os.path.realpath(repo)
+folder = os.path.join(config_dir, "projects", folder_name(repo))
 if not os.path.isdir(folder):
-    # Long paths are shortened in the folder name, and a session may start in a subfolder:
-    # fall back to the folder whose transcripts ran inside this repo.
-    for cand in glob.glob(os.path.join(config_dir, "projects", "*", "*.jsonl")):
+    folder = ""
+    # Long paths are shortened in the folder name, a session may start in a subfolder, and a recorded
+    # cwd may go through a symlink (/tmp is /private/tmp on macOS): fall back to the folder of the
+    # newest transcript that ran inside this repo.
+    def inside(cwd):
         try:
-            with open(cand, encoding="utf-8") as fh:
-                cwd = next((json.loads(l).get("cwd") for l in fh if '"cwd"' in l), None)
-        except (OSError, ValueError):
-            continue
-        if cwd and (cwd == repo or cwd.startswith(repo + os.sep)):
+            cwd = os.path.realpath(cwd)
+        except (ValueError, OSError):   # a NUL in a damaged transcript's cwd
+            return False
+        return cwd == real or cwd.startswith(real.rstrip(os.sep) + os.sep)
+    cands = glob.glob(os.path.join(config_dir, "projects", "*", "*.jsonl"))
+    for cand in sorted(cands, key=lambda p: os.path.getmtime(p) if os.path.exists(p) else 0, reverse=True):
+        cwd = first_cwd(cand)
+        if cwd and inside(cwd):
             folder = os.path.dirname(cand)
             break
-if not os.path.isdir(folder):
+if not folder or not os.path.isdir(folder):
     print(f"Cost: not measured (no Claude Code transcripts for this repo in {config_dir}/projects)")
     sys.exit(0)
 
@@ -128,60 +200,75 @@ for sid in sessions:
     for sub in glob.glob(os.path.join(folder, sid, "subagents", "*.jsonl")):
         role = "subagent"
         try:
-            meta = json.load(open(sub[:-6] + ".meta.json", encoding="utf-8"))
-            role = meta.get("agentType") or role
-        except (OSError, ValueError):
+            meta = json.load(open(sub[:-6] + ".meta.json", encoding="utf-8-sig", errors="replace"))
+            if isinstance(meta.get("agentType"), str) and meta["agentType"]:
+                role = meta["agentType"]
+        except (OSError, ValueError, AttributeError):
             pass
         files.append((sub, role))
 
 since = None
 if opts["since"]:
-    try:
-        since = datetime.fromisoformat(opts["since"].replace("Z", "+00:00"))
-        if since.tzinfo is None:
-            since = since.replace(tzinfo=timezone.utc)
-    except ValueError:
+    since = parse_time(opts["since"])
+    if since is None:
         print(f"Cost: not measured (--since {opts['since']} is not an ISO time)")
         sys.exit(0)
 
-# Each API call is written once per content block: keep the last entry per message id.
-calls = {}
+# Each API call is written once per content block: keep the last entry per message id. The id is
+# unique per call, so a call copied into a second session file (a resumed or forked session) counts once.
+calls, undated = {}, set()
+skipped = 0
 first_ts = last_ts = None
 for path, role in files:
     try:
-        lines = open(path, encoding="utf-8")
+        # A bad byte (a torn write, a file saved in another encoding) becomes U+FFFD, never a crash.
+        lines = open(path, encoding="utf-8-sig", errors="replace")
     except OSError:
         continue
-    for line in lines:
-        try:
-            entry = json.loads(line)
-        except ValueError:
-            continue
-        msg = entry.get("message")
-        if not isinstance(msg, dict) or not isinstance(msg.get("usage"), dict):
-            continue
-        model = msg.get("model") or ""
-        if not model.startswith("claude-"):
-            continue
-        if opts["branch"] and entry.get("gitBranch") != opts["branch"]:
-            continue
-        ts = entry.get("timestamp")
-        when = None
-        if ts:
+    with lines:
+        for line in lines:
+            if not line.strip():
+                continue
             try:
-                when = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-            except ValueError:
-                pass
-        if since and when and when < since:
-            continue
-        key = msg.get("id") or entry.get("requestId") or entry.get("uuid")
-        calls[(path, key)] = (role, model, msg["usage"], path, when)
-        if when:
-            first_ts = when if first_ts is None or when < first_ts else first_ts
-            last_ts = when if last_ts is None or when > last_ts else last_ts
+                entry = json.loads(line)
+                if not isinstance(entry, dict):
+                    raise ValueError("not an object")
+                msg = entry.get("message")
+                if not isinstance(msg, dict) or not isinstance(msg.get("usage"), dict):
+                    continue
+                model = msg.get("model")
+                if not isinstance(model, str) or not model.startswith("claude-"):
+                    continue
+                if opts["branch"] and entry.get("gitBranch") != opts["branch"]:
+                    continue
+                # A call that is in two files (a resumed session, or a main and a subagent transcript)
+                # counts once, on the row of the file read last (subagent files come after their session's).
+                mid = msg.get("id")
+                key = ("id", mid) if isinstance(mid, str) and mid else (path, str(entry.get("requestId") or entry.get("uuid")))
+                when = parse_time(entry.get("timestamp"))
+                if since and when is None:
+                    undated.add(key)
+                    continue
+                if since and when < since:
+                    continue
+            except (ValueError, TypeError, AttributeError, RecursionError):
+                skipped += 1
+                continue
+            calls[key] = (role, model, msg["usage"], path, when)
+            if when:
+                first_ts = when if first_ts is None or when < first_ts else first_ts
+                last_ts = when if last_ts is None or when > last_ts else last_ts
 
+notes = []
+if missing:
+    notes.append(f"sessions not found: {', '.join(missing)}")
+if skipped:
+    notes.append(f"{skipped} unreadable transcript line{'s' if skipped != 1 else ''} skipped")
+undated -= calls.keys()
+if undated:
+    notes.append(f"{len(undated)} call{'s' if len(undated) != 1 else ''} with no readable time left out by --since")
 if not calls:
-    note = f" (sessions not found: {', '.join(missing)})" if missing else ""
+    note = f" ({'; '.join(notes)})" if notes else ""
     print(f"Cost: not measured (no API calls found in scope){note}")
     sys.exit(0)
 
@@ -190,17 +277,17 @@ if not calls:
 rows = {}  # (role, model, run) -> totals
 unpriced = set()
 for role, model, u, path, when in calls.values():
-    inp = u.get("input_tokens") or 0
-    out = u.get("output_tokens") or 0
-    read = u.get("cache_read_input_tokens") or 0
+    inp = count(u.get("input_tokens"))
+    out = count(u.get("output_tokens"))
+    read = count(u.get("cache_read_input_tokens"))
     cc = u.get("cache_creation") if isinstance(u.get("cache_creation"), dict) else None
     if cc:
-        w5 = cc.get("ephemeral_5m_input_tokens") or 0
-        w1 = cc.get("ephemeral_1h_input_tokens") or 0
+        w5 = count(cc.get("ephemeral_5m_input_tokens"))
+        w1 = count(cc.get("ephemeral_1h_input_tokens"))
     else:
-        w5, w1 = u.get("cache_creation_input_tokens") or 0, 0
+        w5, w1 = count(u.get("cache_creation_input_tokens")), 0
     stu = u.get("server_tool_use") if isinstance(u.get("server_tool_use"), dict) else {}
-    searches = stu.get("web_search_requests") or 0
+    searches = count(stu.get("web_search_requests"))
     run = "" if role == "Technical Lead" else path
     r = rows.setdefault((role, model, run), {"calls": 0, "in": 0, "w": 0, "read": 0, "out": 0, "usd": 0.0, "start": None})
     if when and (r["start"] is None or when < r["start"]):
@@ -246,8 +333,7 @@ for row in table:
 total = sum(by_role.values())
 split = ", ".join(f"{role} ${usd:.2f}" for role, usd in sorted(by_role.items(), key=lambda kv: (kv[0] != "Technical Lead", -kv[1])))
 extra = f"; unpriced models: {', '.join(sorted(unpriced))}" if unpriced else ""
-if missing:
-    extra += f"; sessions not found: {', '.join(missing)}"
+extra += "".join(f"; {n}" for n in notes)
 try:
     budget = float(os.environ.get("FEATURE_BUDGET") or 0)
 except ValueError:
@@ -259,4 +345,9 @@ if budget > 0:
     print(f"Budget: ${total:.2f} of ${budget:.2f} ({total / budget * 100:.0f}%), {over}")
 print(f"Cost ≈ ${total:.2f} ({split}); API list prices as of {as_of}{extra}")
 PY
-exit 0
+rc=$?
+if [ "$rc" -ne 0 ] && [ "$rc" -ne 2 ]; then
+  echo "Cost: not measured (feature-cost.sh failed with exit $rc; the error is above)"
+  exit 1
+fi
+exit "$rc"
