@@ -1136,6 +1136,12 @@ MORPHNESS_URLS = ("https://api.github.com/repos/antarsoft/morphness/",
                   "https://raw.githubusercontent.com/antarsoft/morphness/")
 CURL_READ_FLAG = re.compile(r"^(-[fsSL]+|--fail|--silent|--show-error|--location)$")
 
+def dotted_path(url):
+    # a `.` or `..` path segment, or anything that a server or URL parser could read as one; `compare/A...B` has neither
+    from urllib.parse import unquote
+    path = unquote(url.split("?", 1)[0].split("#", 1)[0])
+    return "%" in path or "\\" in path or any(seg in (".", "..") for seg in path.split("/")[3:])
+
 def check_curl(words):
     # .claude/settings.json allows `curl -fsSL <Morphness URL>/*`, and that pattern accepts any
     # trailing words. Stdout, GET, no body, no headers, no config file, one of the two prefixes.
@@ -1144,9 +1150,9 @@ def check_curl(words):
         return
     for w in words[1:]:
         if "://" in w:
-            if not w.startswith(MORPHNESS_URLS) or ".." in w or "%2e" in w.lower():
+            if not w.startswith(MORPHNESS_URLS) or dotted_path(w):
                 ask(f"`curl` with `{w}`: the allowed read is only the two Morphness GitHub prefixes, "
-                    "no `..` in the path, and nothing else on the line.")
+                    "no `.` or `..` path segment, and nothing else on the line.")
         elif not CURL_READ_FLAG.match(w):
             ask(f"`curl {w}` is more than a read of the Morphness repository: update checks print to "
                 "the terminal only (no file, method, body, header or config). Use `gh api --method GET` "

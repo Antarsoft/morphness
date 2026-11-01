@@ -250,18 +250,17 @@ when `cost.track` is off.
 | Role | Model (All Sonnet / Opus preset) | Effort |
 |------|-------|--------|
 | Technical Lead (main chat) | sonnet / opus | high |
-| Full-stack | sonnet / opus (sonnet for the medium variant) | high by default; medium in small mode; xhigh for risky cores |
-| QA | sonnet / sonnet | high by default; medium in small mode |
+| Full-stack | sonnet / opus (sonnet for the medium variant) | high by default; xhigh for risky cores |
+| QA | sonnet / sonnet | high by default |
 | Researcher (read-only, research mode) | sonnet / sonnet (opus for the high variant) | medium by default; high for architecture or risk areas |
 | Legal writer | fable (opus if fable isn't available) | high |
 
-12a. "Which areas are risky enough that changing how they behave needs the full process?" Suggest
-behaviours found in the scan: who can read or change data (access rules, sign-in), money, deleting
-data, schema migrations, secrets. Don't suggest whole layers such as "public API routes" or
-"response shapes": almost every change touches one, so listing them sends routine work to full mode.
-Say that a small, fully specified change inside
-one of them (a new field, a limit) still uses small mode when it leaves the risky behaviour alone.
-→ `risk_areas`
+12a. "Which areas are risky enough that every change to them gets the full process (plan, build,
+QA)?" Suggest behaviours found in the scan: who can read or change data (access rules, sign-in),
+money, deleting data, schema migrations, secrets. Then propose the paths that hold each one, from the
+scan, as narrow as the code allows. Say that `scripts/risk-check.sh` sends every change to one of
+these paths to full mode, however small, so whole layers such as "public API routes" or "response
+shapes" send routine work there. → `risk_areas`, and the paths to `project/CONTROLS.md` § Risk paths
 
 For a migration, show the earlier harness's agents table instead of the advised one, with the
 differences marked, and keep its extra variants (a trial variant stays, with its trial).

@@ -102,9 +102,15 @@ ci_cd:
   migrations: none
   tags: none
 
-# Areas where a change to their behaviour gets full mode, never medium effort (e.g. auth, billing, migrations). When a security review runs before QA: `harness/SETUP.md` § Code review before QA.
-# A fully specified change that alters none of that behaviour still uses small mode (harness/MODES.md § Small mode).
+# Areas where a change gets full mode, never medium effort (e.g. auth, billing, migrations). The paths that
+# hold each one are in project/CONTROLS.md § Risk paths, which scripts/risk-check.sh reads. When a security
+# review runs before QA: `harness/SETUP.md` § Code review before QA.
 risk_areas: []
+
+# How scripts/risk-check.sh picks the mode for a change (harness/MODES.md § Choosing mode).
+mode:
+  plain_max_files: 6      # a change to more files than this (documentation not counted) gets full mode
+  force: auto             # auto lets the script decide; full or plain makes every change run that way
 
 agents:
   # Default: Sonnet in every role, at about half the cost of Opus; the plan, QA and checks carry the quality.
@@ -176,11 +182,14 @@ updates: { source: github }
 
 # Where this copy came from upstream. Written by /morph-init, updated by /morph-update.
 # commit: the Morphness commit the kit was last synced to (the base for merging kit updates).
-# release: the Morphness release that commit belongs to. updates: kit update notes (updates/ in
-# Morphness) this project applied, declined or put off; deferred ones keep their own base commit.
+# release: the Morphness release that commit belongs to (`v0.15.0+ce3921d`: taken from the default
+# branch after that release). updates: kit update notes (updates/ in Morphness) this project
+# applied, declined or put off; deferred ones keep their own base commit. lessons: community lessons
+# this project declined or put off (accepted ones are in _harness/morph-answers.yml).
 # Nothing upstream changes this copy on its own: /morph-update offers each update for your yes.
 installed_from:
   repo: "{{morphness.repo}}"
   commit: "{{morphness.commit}}"
   release: "{{morphness.release}}"
   updates: { applied: [], declined: [], deferred: [] }   # deferred entries: { id: <note id>, base: <commit> }
+  lessons: { declined: [], deferred: [] }   # lesson ids

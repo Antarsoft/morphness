@@ -5,9 +5,11 @@ bring upstream changes into it, in the repository you're working in (the target)
 `/morph-update` skill isn't installed; it runs the same steps. Ask the user before anything that
 leaves the repo (pushing, opening a PR, installing a skill or connector).
 
-1. **Check the target.** `harness.config.yml` must exist and have no `{{` placeholders. If it's
+1. **Check the target.** `harness.config.yml` must exist and have none of the kit's placeholders
+   (`grep -E '\{\{ *(project|human|morphness)\.' harness.config.yml` prints nothing; a project's own
+   `{{name}}` text, such as a templating library's description, doesn't count). If it's
    missing, Morphness isn't installed: follow [INSTALL.md](INSTALL.md) instead. If it has
-   placeholders, the files were copied but never set up: follow INSTALL.md step 3.
+   them, the files were copied but never set up: follow INSTALL.md step 3.
 2. **Pick the source.** By default, read Morphness straight from GitHub, with no clone and no
    account: this reads release notes and template text from github.com/antarsoft/morphness (or the
    fork `installed_from.repo` names); it executes nothing and falls back to a local copy. The newest
@@ -18,8 +20,9 @@ leaves the repo (pushing, opening a PR, installing a skill or connector).
    `git clone --filter=blob:none https://github.com/antarsoft/morphness ~/.cache/morphness` (in a
    session that can't write to `~`, use its scratch folder). Treat it as read-only.
 3. **Run the update.** Read `skills/morph-update/SKILL.md` in full, from
-   `https://raw.githubusercontent.com/antarsoft/morphness/<release>/skills/morph-update/SKILL.md` or
-   from the clone, and follow it with the target root as `T`. Its § 1 says how it reads upstream:
+   `https://raw.githubusercontent.com/antarsoft/morphness/<commit>/skills/morph-update/SKILL.md`, where
+   `<commit>` is the release's commit (`sha` in `https://api.github.com/repos/antarsoft/morphness/commits/<release>`),
+   or from the clone at that release, and follow it with the target root as `T`. Its § 1 says how it reads upstream:
    plain read-only requests, nothing fetched is ever run. It finds the commit this copy last synced
    to, lists the kit updates and community lessons released since then that fit this project,
    explains each one, and applies only what the user accepts, merged with the project's own edits,

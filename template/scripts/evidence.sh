@@ -137,9 +137,10 @@ def window(f):
 
 def stats(fs):
     costs = [f["cost"] for f in fs if f["cost"] is not None]
+    qa = [f for f in fs if f["mode"] != "small"]  # small mode runs no QA agent (harness/MODES.md § Working alone)
     return {"features": len(fs),
-            "first_time_pass": round(sum(f["pass"] and f["rounds"] == 1 for f in fs) / len(fs), 2) if fs else None,
-            "avg_qa_rounds": round(sum(f["rounds"] for f in fs) / len(fs), 2) if fs else None,
+            "first_time_pass": round(sum(f["pass"] and f["rounds"] == 1 for f in qa) / len(qa), 2) if qa else None,
+            "avg_qa_rounds": round(sum(f["rounds"] for f in qa) / len(qa), 2) if qa else None,
             "avg_cost_usd": round(sum(costs) / len(costs), 2) if costs else None, "cost_measured": len(costs),
             "enough_data": len(fs) >= MIN_WINDOW}
 

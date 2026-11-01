@@ -4,11 +4,19 @@ You are a Claude Code agent asked to install Morphness into the repository you'r
 target). Follow these steps in order. Ask the user before anything that leaves the repo (pushing,
 opening a PR, installing a skill or connector).
 
-1. **Get the source.** Clone Morphness shallowly into a temporary folder outside the target:
-   `git clone --depth 1 https://github.com/antarsoft/morphness "$TMPDIR/morphness"` (use the
-   session's scratch folder if there's no `$TMPDIR`). Treat it as read-only.
+1. **Get the source.** Clone the newest Morphness release shallowly into a temporary folder outside
+   the target, not the default branch, which carries changes no release has yet:
+   ```sh
+   tag=$(git ls-remote --tags --refs --sort=-version:refname https://github.com/antarsoft/morphness 'v*' \
+     | sed 's|.*refs/tags/||' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+   src=$(mktemp -d)/morphness
+   git clone --depth 1 --branch "$tag" https://github.com/antarsoft/morphness "$src"
+   ```
+   (only full releases: a `-rc` tag is skipped). Use `$src` as the source from here on, and tell the user
+   the release and commit you cloned (`$tag`, `git -C "$src" rev-parse HEAD`); morph-init records both.
+   Treat the clone as read-only.
 2. **Check the target.** Run `git status`. If there are uncommitted changes, ask the user to commit or
-   stash them; don't do it yourself. If `harness.config.yml` exists and has no `{{` placeholders,
+   stash them; don't do it yourself. If `harness.config.yml` exists and has none of the kit's `{{project.…}}`, `{{human.…}}` or `{{morphness.…}}` placeholders,
    Morphness is already installed: to bring in upstream changes follow [UPDATE.md](UPDATE.md), for a
    health check follow `skills/morph-doctor/SKILL.md`, and stop here. If
    the repo runs an earlier harness (`harness/` and `_harness/` folders but no `harness.config.yml`),
@@ -22,7 +30,7 @@ opening a PR, installing a skill or connector).
 5. **Clean up.** Delete the temporary clone.
 
 If the user only wants the files without the interview, run
-`"$TMPDIR/morphness/scripts/install.sh" <target>` and tell them to run `/morph-init` (or ask you to
+`"$src/scripts/install.sh" <target>` and tell them to run `/morph-init` (or ask you to
 follow step 3) when they're ready. Files copied that way still have `{{` placeholders, and the
 harness isn't usable until morph-init fills them. The script copies nothing and says why when the
 guard couldn't be wired: the repo has its own `.claude/settings.json` (morph-init merges it, so use

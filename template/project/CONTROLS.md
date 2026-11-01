@@ -1,6 +1,6 @@
 # Controls: this project's commands
 
-The handoff rules (who runs which checks, when, and how the output is logged) are in [harness/CONTROLS.md](../harness/CONTROLS.md). This file maps each **named check** in `harness.config.yml` → `checks` to the command that runs it here, and lists the paths that need the full browser suite. Kit docs name the checks; only this file names the commands.
+The handoff rules (who runs which checks, when, and how the output is logged) are in [harness/CONTROLS.md](../harness/CONTROLS.md). This file maps each **named check** in `harness.config.yml` → `checks` to the command that runs it here, and lists the paths that need the full browser suite and the risk paths that need full mode. Kit docs name the checks; only this file names the commands.
 
 ## Named checks
 
@@ -44,6 +44,16 @@ tail -n 30 "$SCRATCH/logs/<check>.log"
 A change to any of these paths can break pages or flows it doesn't name, so it gets `e2e-full` from Full-stack and a full (not scoped) QA round 2.
 
 <!-- morph-init: fill the list. Typical entries: shared packages, the database schema and migrations, the auth and session code, request middleware, the root layout, framework config, the browser-test fixtures and config, the root manifest and lockfile. Example: "`src/db/`, `migrations/`, `src/auth/`, `src/middleware.ts`, `package.json`, the lockfile". -->
+
+## Risk paths
+
+A change to any of these paths always gets full mode (plan, Full-stack and QA), however small: `bash scripts/risk-check.sh` reads this list ([harness/MODES.md](../harness/MODES.md) § Choosing mode). One bullet per risk area, its paths in backticks, `.gitignore` style: a pattern with a slash is from the repo root, one without matches in any folder, `**` crosses folders. Keep each to the code that holds the risky behaviour, not a whole layer: every path listed here sends every change to it to full mode.
+
+- **Database schema and migrations:** `**/migrations/`, `*.sql`, `schema.prisma`
+- **Sign-in, sessions and access rules:** `**/auth/`, `auth.*`, `**/session/`, `**/sessions/`, `session.*`, `middleware.*`, `**/policies/`
+- **Money:** `**/billing/`, `**/payments/`, `**/checkout/`, `**/stripe/`
+
+<!-- morph-init: fill one bullet per entry in harness.config.yml → risk_areas that the rows above don't cover, with the paths that hold it from the repo scan, and narrow or drop the rows above to fit this repo. Example: "- **Public API keys:** `src/api/keys/`". -->
 
 <!-- module:security -->
 ## Security paths

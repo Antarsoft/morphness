@@ -19,7 +19,7 @@ Merge after: none <!-- or #N, when the merge-order check found an open PR that s
 <!-- Full harness: link each feature folder. Light mode (docs, typos, config): say so and why. -->
 
 - Feature: `_harness/features/<slug>/<version>/`: plan approved, QA **pass** (`QA/qa-result.md`), owner steps in `<steps file>` or none
-- Mode: full | light (reason)
+- Mode: full | small | light | bug (reason)
 
 ## Changes
 
@@ -41,7 +41,7 @@ Merge after: none <!-- or #N, when the merge-order check found an open PR that s
 
 - [ ] Named checks before QA: each name in `harness.config.yml` → `checks.before_qa` (commands: project/CONTROLS.md)
 - [ ] Full browser suite on the final commit (when pages, auth or the public API change) <!-- module:browser-e2e -->
-- [ ] Recorded in `qa-result.md` on the final commit <!-- morph-init: fill "and CI passed on this PR" when harness.config.yml → ci_gate is true -->
+- [ ] Recorded in `qa-result.md` (small mode: `plan.md` § Check) on the final commit <!-- morph-init: fill "and CI passed on this PR" when harness.config.yml → ci_gate is true -->
 
 ## Needs the owner
 

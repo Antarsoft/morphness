@@ -34,8 +34,9 @@ This project uses the Morphness harness in the repository. Read AGENTS.md and CL
 
 Coordinator:
 - Start one thread per feature or fix. The thread's Claude is the Technical Lead: it plans in
-  _harness/features/<slug>/<version>/Plan/, gets the owner's approval, delegates to the Full-stack
-  and QA subagents, and never writes application code itself.
+  _harness/features/<slug>/<version>/Plan/, gets the owner's approval, and in full and bug mode
+  delegates to the Full-stack and QA subagents and never writes application code itself. Light
+  and small changes (the risk check prints plain) it builds and checks itself.
 - Brief a new thread with the owner's message and only what memory adds: the repo, the integration
   branch, decisions already made. Don't add deliverables the owner didn't ask for.
 - Answer status questions from memory and the thread list; don't message a thread just to ask.

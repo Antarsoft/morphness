@@ -6,7 +6,7 @@ The harness uses **three agents** with fixed responsibilities, a read-only **res
 
 | Agent | Title | Runs as |
 |-------|--------|---------|
-| Main chat | **Technical Lead** | Orchestrator; plans; no product code, no QA |
+| Main chat | **Technical Lead** | Orchestrator; plans; in full and bug mode no product code, no QA; builds and checks light and small changes itself |
 | Subagent | **Full-stack engineer** | Implements from `plan.md`; updates `progress.md` |
 | Subagent | **QA engineer** | Validates against acceptance criteria; updates `qa-result.md` |
 | Subagent | **Researcher** | Answers one question about the code or the web with cited evidence, in a reply the Technical Lead writes into the research file ([MODES.md](./MODES.md) § Research mode) |
@@ -77,7 +77,7 @@ With the roadmap module on, the steps file lives next to the version checklist i
 - After QA **pass**, write the steps file (or none) and set the plan to `passed` ([SETUP.md](./SETUP.md) § After QA pass) before handing to the human.
 - After the QA pass hand-off (or on `failed-escalated`), write `Plan/retro.md` from [templates/retro.md](./templates/retro.md) and the feature's own learnings file in `_harness/learnings/` ([SETUP.md](./SETUP.md) § Retrospective).
 
-### Should not
+### Should not (full and bug mode)
 
 - Write or edit **application** code or config outside harness docs (read-only for investigation).
 - Perform QA validation (that is QA's role).

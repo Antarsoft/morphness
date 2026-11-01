@@ -70,7 +70,7 @@ The fix is the smallest change that makes the regression test pass.
 
 `harness/SETUP.md` § Effort per feature; the human approves it with the plan.
 
-- **Full-stack:** medium | high | xhigh: one-line reason (a bug in a `risk_areas` entry is never `medium`).
+- **Full-stack:** medium | high | xhigh: one-line reason (a fix that touches a risk path, `bash scripts/risk-check.sh` printing full, is never `medium`).
 - **QA:** medium | high: one-line reason. The same variant writes the regression test and runs the re-run.
 - **Code review before QA:** yes (Full-stack xhigh) | no.
 - **Security review before QA:** yes when the fix changes who can sign in or read or change data, moves money, handles secrets, or deletes or shares people's data (`harness/modules/security/README.md`) | no. <!-- module:security -->
