@@ -11,7 +11,7 @@ This short plan replaces `feature.md` and the full plan. The sections the agents
 
 ## Why small
 
-One line per test in `harness/MODES.md` § Small mode → Use when: the request says exactly what to build, the files below are the whole change, and the change passes every test in that section.
+The output of `bash scripts/risk-check.sh <the files below>` (it must print `Mode: plain`), and one line on what behaviour changes (`harness/MODES.md` § Choosing mode).
 
 ## Change
 
@@ -27,7 +27,7 @@ The paths to change and the function in each, read by the TL itself (`file:line`
 
 ## Limit
 
-Full-stack stops and hands back, without the change, when it needs: a file not listed, a change to who can read or change data, to what a customer is charged or where money moves, to how secrets are handled, to deleting or sharing people's data, a schema change, a new dependency, a new page or flow, or behaviour § Acceptance criteria doesn't name.
+Full-stack stops and hands back, without the change, when it needs: a file not listed, a risk path (`project/CONTROLS.md` § Risk paths), a change to who can read or change data, to what a customer is charged or where money moves, to how secrets are handled, to deleting or sharing people's data, a schema change, a new dependency, a new page or flow, or behaviour § Acceptance criteria doesn't name.
 
 ## QA scope
 

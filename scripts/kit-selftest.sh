@@ -1040,6 +1040,67 @@ def check(name, fx, t):
         bad(f"learned-rules.sh did not list the tagged rule with its source and last fired day: {r.stdout!r}")
     open(rules_md, "w").write(saved)
     os.remove(os.path.join(ldir, "selftest-v1.md"))
+    # risk-check.sh: the mode comes from the paths, the same every time (harness/MODES.md § Choosing mode).
+    # It reads what the branch changed, so it runs on a committed copy (an updated copy has the update unstaged).
+    rk = os.path.join(tempfile.mkdtemp(prefix="risk-"), "p")
+    shutil.copytree(t, rk, symlinks=True)
+    for cmd in (["add", "-A"], ["-c", "user.name=selftest", "-c", "user.email=selftest@example.com", "commit", "-q", "--allow-empty", "-m", "state"]):
+        run(["git", *cmd], rk)
+    def risk(*args, cwd=None):
+        r = run(["bash", os.path.join(rk, "scripts/risk-check.sh"), *args], cwd or rk)
+        return r.returncode, r.stdout
+    section = read(os.path.join(rk, "project/CONTROLS.md")).split("## Risk paths", 1)[-1].split("\n## ", 1)[0]
+    rows = re.findall(r"^- \*\*(.+?):\*\*(.*)$", section, re.M)
+    if not rows:
+        bad("project/CONTROLS.md § Risk paths has no rows")
+    for area, rest in rows:
+        for g in re.findall(r"`([^`\s]+)`", rest):
+            sample = g.lstrip("/").replace("**/", "a/").replace("**", "a").replace("*", "x").replace("?", "x")
+            if sample.endswith("/"):
+                sample += "f.ts"
+            outs = {risk(sample)[1] for _ in range(3)}
+            out = outs.pop() if len(outs) == 1 else f"{len(outs)} different answers"
+            if not out.startswith("Mode: full\n") or area not in out:
+                bad(f"risk-check.sh {sample} (risk path `{g}`, {area}) printed {out!r}")
+    code, out = risk("README.md", "docs/guide.md")
+    if code or out != "Mode: plain (documentation only)\n":
+        bad(f"risk-check.sh on documentation printed {out!r} (exit {code})")
+    code, out = risk("src/lib/format.ts")
+    if code or out != "Mode: plain (1 file, none on a risk path)\n":
+        bad(f"risk-check.sh on one ordinary file printed {out!r} (exit {code})")
+    code, out = risk(*[f"src/lib/f{i}.ts" for i in range(7)], "README.md")
+    if code or not out.startswith("Mode: full\n") or "more than mode.plain_max_files (6)" not in out:
+        bad(f"risk-check.sh on 7 files printed {out!r} (exit {code})")
+    code, out = risk("--force", "plain", "supabase/migrations/0001_x.sql")
+    if code or not out.startswith("Mode: plain (the owner chose plain; without that: full)\n"):
+        bad(f"risk-check.sh --force plain on a migration printed {out!r} (exit {code})")
+    code, out = risk("--force", "full", "README.md")
+    if code or not out.startswith("Mode: full (the owner chose full; without that: plain)"):
+        bad(f"risk-check.sh --force full on documentation printed {out!r} (exit {code})")
+    for args in (("--force", "maybe", "README.md"), ("--fast",), ()):
+        code, out = risk(*args)
+        if code != 2 or not out.startswith("Mode: full (risk check: "):
+            bad(f"risk-check.sh {' '.join(args) or '(no files, clean tree)'} printed {out!r} (exit {code}): it must fail toward full")
+    code, out = risk("../supabase/migrations/0001_x.sql", cwd=os.path.join(rk, "project"))
+    if not out.startswith("Mode: full\n") or "- supabase/migrations/0001_x.sql:" not in out:
+        bad(f"risk-check.sh run from a subfolder printed {out!r}")
+    os.makedirs(os.path.join(rk, "src/lib"), exist_ok=True)
+    write(os.path.join(rk, "src/lib/purge.ts"), "export const purge = (db) => db.query('DELETE FROM notes WHERE old');\n")
+    write(os.path.join(rk, "docs-note.md"), "Run DELETE FROM notes by hand.\n")
+    code, out = risk()
+    if code or not out.startswith("Mode: full\n") or "src/lib/purge.ts adds" not in out or "docs-note.md" in out:
+        bad(f"risk-check.sh with a new file that deletes rows printed {out!r} (exit {code})")
+    os.remove(os.path.join(rk, "src/lib/purge.ts"))
+    os.remove(os.path.join(rk, "docs-note.md"))
+    os.makedirs(os.path.join(rk, "supabase/migrations"), exist_ok=True)
+    write(os.path.join(rk, "supabase/migrations/0002_tags.sql"), "create table tags (id int);\n")
+    git_id = ["-c", "user.name=selftest", "-c", "user.email=selftest@example.com"]
+    for cmd in (["checkout", "-q", "-b", "selftest-risk"], ["add", "supabase"], [*git_id, "commit", "-q", "-m", "tags"]):
+        run(["git", *cmd], rk)
+    code, out = risk()
+    if code or not out.startswith("Mode: full\n") or "supabase/migrations/0002_tags.sql" not in out:
+        bad(f"risk-check.sh after a committed migration on a branch printed {out!r} (exit {code})")
+    shutil.rmtree(os.path.dirname(rk))
     # prune states: proposed and approved are open (named, no DUE); declined, applied and README are not
     pdir, ldir = os.path.join(t, "_harness/prunes"), os.path.join(t, "_harness/learnings")
     os.makedirs(pdir, exist_ok=True)

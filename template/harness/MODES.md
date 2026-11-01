@@ -2,12 +2,7 @@
 
 ## Full harness
 
-**Use when**
-
-- New user-facing or API behavior
-- Cross-cutting changes (auth, payments, data model, a public API or SDK) and changes that alter behaviour in a `risk_areas` entry
-- Work that needs acceptance criteria and a QA record
-- Anything you want auditable under `_harness/features/`
+**Use when** `bash scripts/risk-check.sh` prints `Mode: full` for the change (it touches a risk path in `project/CONTROLS.md` § Risk paths, deletes stored data, or changes more files than `mode.plain_max_files`), when the Technical Lead raises a plain change to full because the request leaves a real product choice open, or when the owner asks for full mode (§ Choosing mode).
 
 **Process**
 
@@ -18,36 +13,24 @@
 
 ## Light mode
 
-**Use when**
-
-- Documentation-only edits
-- Typos, comments, non-behavioral config
-- A dependency bump with obvious, fast verification
-- Exploratory spikes the human did not request as a formal feature
-- Applying an approved prune or a small approved retro item to harness docs
+**Use when** the risk check prints `Mode: plain` and the change alters no behaviour: documentation, comments, formatting, config that changes nothing at run time, a dependency bump whose named checks pass, or an approved prune or small retro item applied to harness docs. A change a user can see (copy, layout) or that changes what the code does is small mode or higher, however small.
 
 **Process**
 
-- Single agent in the main session, explicitly assigned as implementer. The Technical Lead still never writes application code: a light-mode code change goes to the Full-stack subagent with the light brief in [HANDOFFS.md](./HANDOFFS.md) § Subagent prompt blocks, which replaces `plan.md`.
-- No `_harness/` feature folder required, no QA agent, no retro.
+- Documentation and harness files outside application code (`README.md`, `docs/`, `harness/`, `project/`): the Technical Lead edits them itself. Anything in application code, a comment or a dependency bump included: the Full-stack subagent with the light brief in [HANDOFFS.md](./HANDOFFS.md) § Subagent prompt blocks, which replaces `plan.md`. The owner's request is the approval; there is no plan to approve.
+- No `_harness/` feature folder required, no QA agent, no retro: the named checks are the only verification.
 - Still run the applicable named checks if the change touches code ([CONTROLS.md](./CONTROLS.md)): the `before_qa` checks, scoped by what changed. The record is the PR (or the commit message with no PR): the checks run with their exit codes, under a **Light mode** line saying why the change qualified.
 - With `cost.track` on, the closing message ends with the `Cost ≈ $…` line from `bash scripts/feature-cost.sh` (with `--since <time the task started>` when the session did other work first). It goes in the message only; light mode writes no file for it.
 
 ## Small mode
 
-Small mode is the default for a fully specified request. **Use it when** all of these hold:
-
-- The request says exactly what to build: a flag, a field, a format, a message, a sort order, a limit, pagination.
-- The change fits in a few files the Technical Lead can name before it starts.
-- The change does none of these: change who can read or change data (access rules, roles, sessions, sign-in), move money or change what a customer is charged, delete, migrate, export or share people's data (with another service too), change the schema, handle secrets, add a dependency, or add a page or flow.
-
-Judge the last test by what the change does, not by where it lives: a new query parameter on a route listed in `risk_areas` is small; a change to who that route answers is not. Anything else is full mode, and so is a vague request or one that leaves a real choice open. A bug is bug mode. The human can always ask for full mode.
+**Use it when** the risk check prints `Mode: plain` for the files the change will touch and the change alters behaviour (a flag, a field, a format, a message, a sort order, a limit, pagination). The script, not a reading of the request, decides: a change to a risk path is full mode however small, and a change off them is small mode however it is worded. A bug is bug mode.
 
 **Process**
 
 The three agents and the merge gate stay as in full mode; the planning is what shrinks (learned: on small, fully specified changes, full mode cost many times a plain session for the same result, and small mode cut it by more than half with the same result).
 
-1. **Plan (Technical Lead).** Read the code the change touches, then write `_harness/features/<slug>/<version>/Plan/plan.md` from [templates/small-plan.md](./templates/small-plan.md): why it qualifies, the change, the files, 3 to 8 acceptance criteria with their tests, and the limit. No `feature.md` and no plan checklist run. The human approves it as any plan.
+1. **Plan (Technical Lead).** Read the code the change touches, then write `_harness/features/<slug>/<version>/Plan/plan.md` from [templates/small-plan.md](./templates/small-plan.md): the risk check's output, the change, the files, 3 to 8 acceptance criteria with their tests, and the limit. No `feature.md` and no plan checklist run. The human approves it as any plan.
 2. **Build (Full-stack, `medium`).** The full Full-stack brief with the small plan's path. Full-stack writes the tests the criteria name, runs the `before_qa` checks and records them in `progress.md` § Validation. A change that needs more than § Limit allows stops before the change and hands back; the Technical Lead writes a full plan with this one linked.
 3. **Check (QA, `medium`).** One QA pass on the criteria and the `before_signoff` checks, recorded in `QA/qa-result.md`. Rework and escalation as in full mode.
 4. **Close.** § After QA pass as in full mode. No `retro.md`: the learnings file has the verdict and cost lines and **Retro:** `none (small mode)`, with an action item only when something went wrong. It counts toward the prune counter, so the prune sees whether small mode lets problems through.
@@ -59,7 +42,7 @@ The three agents and the merge gate stay as in full mode; the planning is what s
 - Something that worked, or that an AC, the docs or the product promise, is broken: a bug report, an error in production, "this used to work", and the human wants it fixed
 - A production bug that can't wait for the next release: bug mode on a hotfix branch ([RELEASE.md](./RELEASE.md) § Hotfix)
 
-Not for a typo or wrong copy with an obvious one-line fix (light mode), for new behaviour that fixes nothing (full), or for "why does this happen?" with no fix asked yet (research, then bug mode if it is one).
+Not for wrong copy or a typo that nobody reported as broken (small or light mode, § Choosing mode), for new behaviour that fixes nothing (full), or for "why does this happen?" with no fix asked yet (research, then bug mode if it is one).
 
 **Process**
 
@@ -91,19 +74,11 @@ No application code changes, no QA, no retro, and research files don't count tow
 
 **Research before a plan.** In full mode the Technical Lead may launch the researcher before planning, for a large codebase sweep or an unfamiliar API; the file then lives at `<feature>/<version>/Research/<topic>.md` and `plan.md` § References links it. It is optional: small features don't wait on it. The Technical Lead still reads the exact files and functions the plan changes itself, because the plan's detail is what prevents rework.
 
-**Default:** if unsure, use the **full harness**. Light and small mode are the exceptions.
-
 ## Choosing mode (Technical Lead)
 
-| Signal | Mode |
-|--------|------|
-| Human says "use harness" or "feature X" | Full |
-| Fails any test in § Small mode (access, money or price, stored data's shape, deletion or sharing, secrets, dependency, page or flow) | Full |
-| One file, obvious diff, human says "quick fix" | Light |
-| A fully specified change in a few named files that passes every test in § Small mode (the default for a clear request) | Small |
-| Something that worked is broken ("bug", "broken", "error in production", "this used to work") and the human wants it fixed | Bug |
-| A production bug that can't wait for the next release | Bug, on a hotfix branch |
-| Needs acceptance criteria for sign-off | Full |
-| Harness or project docs only | Light |
-| Human asks a question ("how does", "why does", "which should we use", "research", "compare") and no change yet | Research |
-| A plan can't be written until a question is answered | Research first (or research before the plan), then Full |
+The first match wins. The human's wording ("quick fix", "ship it fast", "no time for QA") never changes the mode; only the owner choosing one does ("use full mode", "run it plain"), passed to the script as `--force full` or `--force plain`, or set for every change in `harness.config.yml` → `mode.force`.
+
+1. **A question, no change asked** ("how does", "why does", "which should we use", "compare") → research mode. A question one or two files the Technical Lead reads anyway can answer gets a direct answer, with no research file.
+2. **Something that worked is broken and a fix is asked** ("bug", "broken", "error in production", "this used to work") → bug mode, on a hotfix branch when it can't wait for the next release. A bug fix that touches a risk path never runs Full-stack at `medium`.
+3. **Any other change:** name the files it will touch and run `bash scripts/risk-check.sh <files>`. `Mode: full` → full mode. `Mode: plain` → light mode when the change alters no behaviour (§ Light mode), small mode otherwise. The Technical Lead may raise plain to full when the request leaves a real product choice open, naming the choice; it never lowers full to plain. The script's output goes in the small plan's § Why small, or in a light change's PR or commit record.
+4. **Before the hand-off** of a small or light change, run `bash scripts/risk-check.sh` again with no files: it reads what the branch really changed. When it now prints `Mode: full`, stop and switch to full mode (a plan, with the first one linked, and QA) before anything is handed off.
