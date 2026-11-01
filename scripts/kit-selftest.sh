@@ -1239,16 +1239,16 @@ def check(name, fx, t):
     if code or out != "Mode: plain (1 file, none on a risk path)\n":
         bad(f"risk-check.sh on requirements.txt printed {out!r} (exit {code}): a .txt file is not documentation")
     os.makedirs(os.path.join(rk, "src/lib"), exist_ok=True)
-    for name, line, hit in (("purge.ts", "export const purge = (db) => db.query('DELETE FROM notes WHERE old');", "DELETE FROM"),
+    for fname, line, hit in (("purge.ts", "export const purge = (db) => db.query('DELETE FROM notes WHERE old');", "DELETE FROM"),
                             ("reset.py", "cur.execute('TRUNCATE users;')", "TRUNCATE users"),
                             ("slim.py", "cur.execute('ALTER TABLE users DROP email')", "ALTER TABLE users DROP"),
                             ("old tables.go", "db.Exec(`drop table notes`)", "drop table")):
-        write(os.path.join(rk, "src/lib", name), line + "\n")
+        write(os.path.join(rk, "src/lib", fname), line + "\n")
         write(os.path.join(rk, "docs-note.md"), f"Run {hit} by hand.\n")
         code, out = risk()
-        if code or not out.startswith("Mode: full\n") or f'src/lib/{name} adds "{hit}"' not in out or "docs-note.md" in out:
+        if code or not out.startswith("Mode: full\n") or f'src/lib/{fname} adds "{hit}"' not in out or "docs-note.md" in out:
             bad(f"risk-check.sh with a new file that deletes stored data ({hit}) printed {out!r} (exit {code})")
-        os.remove(os.path.join(rk, "src/lib", name))
+        os.remove(os.path.join(rk, "src/lib", fname))
         os.remove(os.path.join(rk, "docs-note.md"))
     controls = os.path.join(rk, "project/CONTROLS.md")
     first = rows[0][1].split("`")[1] if rows and "`" in rows[0][1] else None
