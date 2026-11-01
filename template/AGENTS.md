@@ -52,14 +52,14 @@ Stack: {{stack.summary}}. Run [harness/CONTROLS.md](harness/CONTROLS.md) before 
 | What | Where |
 |------|-------|
 | Entry point | [CLAUDE.md](CLAUDE.md) (imports this file) |
-| Rules (always loaded) | `.claude/rules/*.md`: harness, testing. The Technical Lead's hard limits (`harness/TECHNICAL_LEAD.md`) are imported by `CLAUDE.md`, so only the main chat loads them; subagents set `omitClaudeMd: true` |
+| Rules (loaded in the main chat) | `.claude/rules/*.md` (harness, testing) and `harness/TECHNICAL_LEAD.md` (imported by `CLAUDE.md`). Subagents set `omitClaudeMd: true` and read their role bodies |
 | Subagents | `.claude/agents/` (one file per effort level) → generic bodies in `harness/agents/`, project addenda in `project/agents/` |
 | Settings | `.claude/settings.json` (startup hook, guard hook, permissions) |
 | MCP | `.mcp.json` when the project has one; other MCPs come from your own connectors ([project/SKILLS_AND_MCPS.md](project/SKILLS_AND_MCPS.md)) |
 
 ### Permissions for this project
 
-**The guard hook (`scripts/guard.sh`) is described only here; other files link to this section.** It runs before every Bash call, file read and write, Grep, WebFetch and MCP tool call, reads a Bash command the way the shell does (each command in a chain, inside `$(…)`, `bash -c`, `eval`, `find -exec`, after `sudo`, `xargs`, `git -C` and other wrappers), and lets the call through, shows the owner a permission prompt (**ask**) or stops it (**deny**, telling the agent why). A deny has no switch and beats any ask in the same command.
+**The guard hook (`scripts/guard.sh`) is listed in full only here; others link here.** It runs before every Bash call, file read and write, Grep, WebFetch and MCP tool call, reads a Bash command the way the shell does (each command in a chain, inside `$(…)`, `bash -c`, `eval`, `find -exec`, after `sudo`, `xargs`, `git -C` and other wrappers), and lets the call through, shows the owner a permission prompt (**ask**) or stops it (**deny**, telling the agent why). A deny has no switch and beats any ask in the same command.
 
 **Denies:**
 - a `git push` that would update an environment branch (`branches.*` and every `environments` entry, in any letter case): a named refspec, `HEAD` or a bare push while on one, `--all`, `--mirror`, `--prune`, a delete; also `git branch -d|-D|-m|-f` on one; every push if the config can't be read;

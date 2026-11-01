@@ -30,12 +30,13 @@ without a push, and `/morph-doctor` finishes the setup once the project is onlin
 ## 2. Copy without overwriting
 
 Copy every file under `SRC/template/` to the same path in `T`, skipping any file that already exists.
-`SRC/scripts/install.sh --no-clobber <T>` does this and prints what it skipped. If the permission layer refuses the script or `cp -n` (a project allowlist without `Bash(bash:*)`), ask the owner to allow it once, or copy file by file and skip what exists. For each skipped file:
+`SRC/scripts/install.sh --merge <T>` does this and prints what it kept (`--merge` says you merge a kept `.claude/settings.json` below; without it the script stops there). Run it even when Phase 0 found an earlier copy: it then copies only the files that copy left out. If it stops before copying (it says nothing was copied), show the owner its message and wait for them to fix the cause (their own file at a kit script path such as `scripts/guard.sh`, a `.gitignore` rule that hides kit files such as `.claude/`, a kit folder that is a link, a file where the kit needs a folder); never copy around a stop. If it stops during the copy (it says how many files it moved), fix the error it shows and run it again. If the permission layer refuses the script or `cp -n` (a project allowlist without `Bash(bash:*)`), ask the owner to allow it once, or copy file by file and skip what exists, after the same checks. For each kept file:
 
 | File exists | Do |
 |-------------|----|
 | `CLAUDE.md` | Keep the user's content. Append the template's `CLAUDE.md` body under a `## Morphness` heading, or add the line `@AGENTS.md` if the template's AGENTS.md was copied. |
-| `AGENTS.md` | Keep it. Append the template's golden rules and harness table under `## Morphness`, without duplicating rules it already has. |
+| `AGENTS.md` | Keep it. Append the template's golden rules and harness table under `## Morphness`, without duplicating rules it already has. Full-stack and QA don't read it: copy any of its rules they must follow (a convention, a path not to touch) to `project/agents/<role>.md`. |
+| `AGENTS.md` and `CLAUDE.md` are one file (a link either way, as install.sh reports) | Keep the link. Append the template's `AGENTS.md` body under `## Morphness` to the real file once, then the template `CLAUDE.md`'s lines other than `@AGENTS.md` (a file importing itself). If the link points at a file that doesn't exist yet, create that file with the same text. |
 | `.claude/settings.json` | Merge: union `permissions.allow`, `deny`, `ask`; add the SessionStart and PreToolUse (guard) hooks if absent; an existing PreToolUse hook stays, with the guard added as one more entry; keep every existing key. Show the diff. |
 | `.github/pull_request_template.md` (GitLab: `.gitlab/merge_request_templates/Default.md`) | Keep the user's. Mention the template's sections in the hand-off, and that the tag workflow reads a `## Release notes` section. |
 | `.mcp.json` | Merge `mcpServers`; never remove one. |
@@ -67,7 +68,7 @@ keeps everything it learned; it moves into the places Morphness reads it from.
    go; when in doubt, keep it. Project files that already exist keep their content and get the kit's
    vocabulary (step 5).
 4. **Keep what the template doesn't cover.** Extra agent variants (a trial variant keeps its trial),
-   project-only rule files in `.claude/rules/`, a custom `scripts/session-start.sh`, a richer
+   project-only rule files in `.claude/rules/` (only the main chat loads them: copy a rule Full-stack or QA must follow to `project/agents/<role>.md`), a custom `scripts/session-start.sh`, a richer
    `.claude/settings.json` (merge per step 2's table), the PR template and `.mcp.json`: keep them and
    point the new docs at them.
 5. **Map old names.** When the kit renamed a field or file (a plan field, a QA section, a checklist

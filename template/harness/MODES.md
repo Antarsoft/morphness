@@ -66,7 +66,7 @@ The three agents and the merge gate stay as in full mode; what changes is the or
 
 1. The Technical Lead creates `_harness/research/<YYYY-MM-DD>-<slug>.md` from [templates/research.md](./templates/research.md) and writes § Question, § Scope and § Context (with the current commit), and the researcher effort ([SETUP.md](./SETUP.md) § Effort per feature).
 2. The Technical Lead launches the **researcher** subagent (Agent tool, the variant for that effort) with the file's absolute path. Two independent questions (for example one about the repo and one on the web) can go to two researchers at once, each with its own file.
-3. The researcher, read-only, fills the findings, recommendation and sources, and hands back.
+3. The researcher, which has no shell or edit tools, replies with the findings, recommendation and sources; the Technical Lead pastes the reply's sections, unchanged, between the file's two lines.
 4. The Technical Lead re-opens the sources behind the findings the recommendation depends on (§ Check), then records § Decision: a feature to plan (in full mode, with the research file linked from `plan.md` § References), a light-mode change, or no action. Decisions that change product behaviour, add a step for the human or cost money are the human's. With the decision it fills the three § How it went lines: whether the check held, whether the scope and researcher effort were right, and whether the answer got used, and the header's **Cost** line from `bash scripts/feature-cost.sh` (with `--since` when the session did other work first).
 5. The research file is committed like a light-mode docs change, or on the feature branch when it leads to a plan. Files that end in `no action` are kept: they record what was checked.
 

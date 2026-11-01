@@ -6,7 +6,7 @@ Morphness never pushes changes into an installed harness, and nothing upstream o
 
 ## Where a lesson lands
 
-A retro action item or a prune decision is applied to exactly one owner file ([README.md](./README.md) § Rule owners). Pick the narrowest file that every agent who needs the rule already reads.
+A retro action item or a prune decision is applied to exactly one owner file ([README.md](./README.md) § Rule owners). Pick the narrowest file that every agent who needs the rule already reads. Subagents load neither `CLAUDE.md`, `AGENTS.md` nor `.claude/rules/`; they read their role bodies, and Full-stack and QA also read `.claude/rules/testing.md`.
 
 | The lesson is about | It lands in | Example |
 |---------------------|-------------|---------|
