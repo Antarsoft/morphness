@@ -35,7 +35,7 @@ Copy every file under `SRC/template/` to the same path in `T`, skipping any file
 | File exists | Do |
 |-------------|----|
 | `CLAUDE.md` | Keep the user's content. Append the template's `CLAUDE.md` body under a `## Morphness` heading, or add the line `@AGENTS.md` if the template's AGENTS.md was copied. |
-| `AGENTS.md` | Keep it. Append the template's golden rules and harness table under `## Morphness`, without duplicating rules it already has. |
+| `AGENTS.md` | Keep it. Append the template's golden rules and harness table under `## Morphness`, without duplicating rules it already has. Full-stack and QA don't read it: copy any of its rules they must follow (a convention, a path not to touch) to `project/agents/<role>.md`. |
 | `.claude/settings.json` | Merge: union `permissions.allow`, `deny`, `ask`; add the SessionStart and PreToolUse (guard) hooks if absent; an existing PreToolUse hook stays, with the guard added as one more entry; keep every existing key. Show the diff. |
 | `.github/pull_request_template.md` (GitLab: `.gitlab/merge_request_templates/Default.md`) | Keep the user's. Mention the template's sections in the hand-off, and that the tag workflow reads a `## Release notes` section. |
 | `.mcp.json` | Merge `mcpServers`; never remove one. |
@@ -67,7 +67,7 @@ keeps everything it learned; it moves into the places Morphness reads it from.
    go; when in doubt, keep it. Project files that already exist keep their content and get the kit's
    vocabulary (step 5).
 4. **Keep what the template doesn't cover.** Extra agent variants (a trial variant keeps its trial),
-   project-only rule files in `.claude/rules/`, a custom `scripts/session-start.sh`, a richer
+   project-only rule files in `.claude/rules/` (only the main chat loads them: copy a rule Full-stack or QA must follow to `project/agents/<role>.md`), a custom `scripts/session-start.sh`, a richer
    `.claude/settings.json` (merge per step 2's table), the PR template and `.mcp.json`: keep them and
    point the new docs at them.
 5. **Map old names.** When the kit renamed a field or file (a plan field, a QA section, a checklist

@@ -9,7 +9,7 @@ The harness uses **three agents** with fixed responsibilities, a read-only **res
 | Main chat | **Technical Lead** | Orchestrator; plans; no product code, no QA |
 | Subagent | **Full-stack engineer** | Implements from `plan.md`; updates `progress.md` |
 | Subagent | **QA engineer** | Validates against acceptance criteria; updates `qa-result.md` |
-| Subagent | **Researcher** | Answers one question about the code or the web with cited evidence; updates its research file ([MODES.md](./MODES.md) § Research mode) |
+| Subagent | **Researcher** | Answers one question about the code or the web with cited evidence, in a reply the Technical Lead writes into the research file ([MODES.md](./MODES.md) § Research mode) |
 | Subagent | **Legal writer** (legal module) | Writes the exact legal sentences a plan needs; updates `Legal/legal-copy.md` ([modules/legal/](./modules/legal/README.md)) | <!-- module:legal -->
 
 Role bodies: [agents/](./agents/) (generic) plus `project/agents/` (this project's addenda). Subagent names, models and effort: `project/HARNESS_AGENTS.md`.
@@ -128,9 +128,9 @@ Writes `Legal/legal-copy.md` for the legal portion of a plan, before approval, a
 
 ## Agent 5: Researcher
 
-Answers one question per research file, read-only, with every claim cited (`file:line` or a URL with the date read), and writes only the sections of that file between its two lines. It never edits code, plans or other harness files, never writes to a remote environment, and never decides: the Technical Lead checks its findings and records the decision. Role body: [agents/researcher.md](./agents/researcher.md). Subagents can't start subagents, so only the Technical Lead launches it.
+Answers one question per research file, with every claim cited (`file:line` or a URL with the date read). It has no shell and no edit tools (`disallowedTools` in `.claude/agents/researcher*.md`): it replies with the sections that go between the file's two lines, and the Technical Lead writes them in unchanged. It never writes to a remote environment, and never decides: the Technical Lead checks its findings and records the decision. Role body: [agents/researcher.md](./agents/researcher.md). Subagents can't start subagents, so only the Technical Lead launches it.
 
 ## Skills, MCPs, guides, rules
 
 - Prefer the skills and MCPs listed in [SKILLS_AND_MCPS.md](./SKILLS_AND_MCPS.md) and **`project/SKILLS_AND_MCPS.md`**.
-- Project conventions live in `AGENTS.md`, `.claude/rules/` and `project/PROJECT.md`, per repository.
+- Project conventions live in `project/PROJECT.md`, and rules in `AGENTS.md` and `.claude/rules/` (the main chat's) and `project/agents/` (each subagent's), per repository.
