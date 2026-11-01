@@ -13,6 +13,7 @@ files:
   - harness/templates/bug-plan.md
   - harness/templates/small-plan.md
   - project/CONTROLS.md
+  - .claude/settings.json
   - project/HARNESS_AGENTS.md
   - scripts/risk-check.sh
 removed: []
@@ -32,7 +33,7 @@ The same request, install and model got small mode with QA in one run and light 
 
 ## How to apply
 
-1. Copy `scripts/risk-check.sh` and make it executable. Add the `mode:` block after `risk_areas` in `harness.config.yml`.
+1. Copy `scripts/risk-check.sh` and make it executable. Add the `mode:` block after `risk_areas` in `harness.config.yml`, and `"Bash(bash scripts/risk-check.sh:*)"` at the end of `permissions.allow` in `.claude/settings.json` (without it every mode choice stops at a permission prompt). The guard stops an agent's edit to either file, so the owner makes both.
 2. Add `project/CONTROLS.md` § Risk paths from the kit, before § Security paths. Fill it from your `project/HARNESS_AGENTS.md` risk-area bullets (each path in backticks, `.gitignore` style), narrow or drop the three generic rows to match this repo, then replace those bullets with the kit's one-line pointer. Check it: `bash scripts/risk-check.sh <a file in each area>` prints `Mode: full`.
 3. Merge `harness/MODES.md`, `harness/TECHNICAL_LEAD.md`, `.claude/rules/harness.md`, `harness/SETUP.md` and the small and bug plan templates. If a retro added a mode rule of its own (a phrase that picks light mode, a "judge by what the change does" exception), it conflicts with the script: bring it to the owner, and keep it only as a reason to raise plain to full.
 

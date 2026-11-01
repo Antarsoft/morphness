@@ -1051,6 +1051,8 @@ def check(name, fx, t):
         return r.returncode, r.stdout
     section = read(os.path.join(rk, "project/CONTROLS.md")).split("## Risk paths", 1)[-1].split("\n## ", 1)[0]
     rows = re.findall(r"^- \*\*(.+?):\*\*(.*)$", section, re.M)
+    if "Bash(bash scripts/risk-check.sh:*)" not in settings.get("permissions", {}).get("allow", []):
+        bad(".claude/settings.json doesn't allow bash scripts/risk-check.sh: every mode choice would stop at a permission prompt")
     if not rows:
         bad("project/CONTROLS.md § Risk paths has no rows")
     for area, rest in rows:
