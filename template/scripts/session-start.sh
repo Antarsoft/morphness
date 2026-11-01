@@ -4,7 +4,7 @@
 # Each command is printed before it runs, runs under a timeout (MORPHNESS_START_TIMEOUT seconds,
 # default 300; with `timeout` or `gtimeout`, else perl, which stock macOS has; without any of them it
 # runs unbounded and says so), and on failure the last lines of its output are printed. A package install of npm, pnpm, bun or yarn 1 gets
-# --ignore-scripts, so a dependency's lifecycle scripts don't run at session start; to run them, write
+# --ignore-scripts (on the install itself, also inside a chain such as `cd app && npm ci`), so a dependency's lifecycle scripts don't run at session start; to run them, write
 # the flag yourself (`--ignore-scripts=false`) or run the install by hand.
 # The install is skipped while the lockfiles and the command are unchanged since its last successful
 # run in this clone (hash in the git folder; delete morphness-install.hash there to force it).
@@ -82,17 +82,93 @@ bounded() {
   ' "$@"
 }
 
-# Package installs skip dependency lifecycle scripts where the manager supports the flag.
+# Package installs skip dependency lifecycle scripts where the manager supports the flag. The flag goes
+# right after each install's subcommand, wherever the install sits in the line: `cd app && npm ci`,
+# `NODE_ENV=dev npm ci`, `npm --prefix web ci`, `(cd api && pnpm i)`, `if …; then npm ci; fi`,
+# `npm ci 2>&1 | tee log`, `npm ci && npx prisma generate` (never on the command after it). The line is
+# split at `&&`, `||`, `;`, `|`, `&` and newlines outside quotes, redirects and comments. An install behind
+# another wrapper (`env`, `sudo`, `timeout`, `corepack`) is left as written.
 safe_install() {
-  local cmd="$1"
-  case "$cmd" in *ignore-scripts*) printf '%s' "$cmd"; return ;; esac
-  case "$cmd" in
-    npm\ ci*|npm\ install*|npm\ i|npm\ i\ *|pnpm\ install*|pnpm\ i|pnpm\ i\ *|bun\ install*|bun\ i|bun\ i\ *)
-      printf '%s --ignore-scripts' "$cmd" ;;
-    yarn|yarn\ install*)
-      case "$(yarn --version 2>/dev/null)" in 1.*) printf '%s --ignore-scripts' "$cmd" ;; *) printf '%s' "$cmd" ;; esac ;;
-    *) printf '%s' "$cmd" ;;
+  local cmd="$1" out="" seg="" ch q="" i nl=$'\n' tab=$'\t'
+  for ((i = 0; i < ${#cmd}; i++)); do
+    ch="${cmd:i:1}"
+    if [ -n "$q" ]; then
+      seg+="$ch"
+      if [ "$q" = '"' ] && [ "$ch" = '\' ]; then seg+="${cmd:i+1:1}"; i=$((i + 1))
+      elif [ "$ch" = "$q" ]; then q=""; fi
+      continue
+    fi
+    case "$ch" in
+      "'"|'"') q="$ch"; seg+="$ch" ;;
+      '\') seg+="$ch${cmd:i+1:1}"; i=$((i + 1)) ;;
+      '#')
+        case "${seg: -1}" in
+          ''|' '|"$tab"|"$nl"|';'|'('|'{')   # a comment: copied as it is, up to the end of its line
+            out+="$(flag_install "$seg"; printf x)"; out="${out%x}"; seg=""
+            while [ "$i" -lt "${#cmd}" ] && [ "${cmd:i:1}" != "$nl" ]; do out+="${cmd:i:1}"; i=$((i + 1)); done
+            i=$((i - 1)) ;;
+          *) seg+="$ch" ;;
+        esac ;;
+      '&'|'|')
+        case "${seg: -1}" in
+          '>'|'<') seg+="$ch" ;;   # 2>&1, >&2, >|, <&0: part of a redirect
+          *) out+="$(flag_install "$seg"; printf x)"; out="${out%x}$ch"; seg="" ;;
+        esac ;;
+      ';'|"$nl") out+="$(flag_install "$seg"; printf x)"; out="${out%x}$ch"; seg="" ;;
+      *) seg+="$ch" ;;
+    esac
+  done
+  out+="$(flag_install "$seg"; printf x)"
+  printf '%s' "${out%x}"
+}
+
+# take_word: moves one word from the front of $r to $w, skipping blanks first. Quotes stay in the word;
+# a word ends at a blank, a redirect (< or >), a ) or the end.
+take_word() {
+  local c qq=""
+  r="${r#"${r%%[![:space:]]*}"}"; w=""
+  while [ -n "$r" ]; do
+    c="${r:0:1}"
+    if [ -n "$qq" ]; then
+      w+="$c"; r="${r:1}"; [ "$c" = "$qq" ] && qq=""; continue
+    fi
+    case "$c" in
+      [[:space:]]|'<'|'>'|')') break ;;
+      "'"|'"') qq="$c" ;;
+      '\') w+="$c"; r="${r:1}"; c="${r:0:1}" ;;
+    esac
+    w+="$c"; r="${r:1}"
+  done
+}
+
+# flag_install <one simple command>: the command with --ignore-scripts after the subcommand when it is a
+# package install of npm, pnpm, bun or yarn 1, and unchanged otherwise.
+flag_install() {
+  local seg="$1" r w mgr save
+  case "$seg" in *ignore-scripts*) printf '%s' "$seg"; return ;; esac   # the owner chose
+  r="$seg"
+  while :; do   # ( and {, shell keywords and VAR=value prefixes before the command
+    r="${r#"${r%%[![:space:]({]*}"}"; save="$r"; take_word
+    case "$w" in then|do|else|elif|if|while|until|'!'|time) continue ;; esac
+    [[ "$w" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]] && continue
+    r="$save"; break
+  done
+  take_word; mgr="$w"
+  case "$mgr" in npm|pnpm|bun|yarn) ;; *) printf '%s' "$seg"; return ;; esac
+  while take_word; [ "${w#-}" != "$w" ]; do   # options before the subcommand
+    case "$mgr:$w" in   # these take a value as the next word
+      npm:--prefix|npm:-C|npm:-w|npm:--workspace|npm:--loglevel|pnpm:-C|pnpm:--dir|pnpm:--filter|pnpm:-F|bun:--cwd|yarn:--cwd)
+        take_word ;;
+    esac
+  done
+  case "$mgr:$w" in
+    npm:ci|npm:clean-install|npm:ic|npm:install-clean|npm:install|npm:i|npm:add|npm:install-test|npm:it|npm:install-ci-test|npm:cit) ;;
+    pnpm:install|pnpm:i|pnpm:add|bun:install|bun:i|bun:add) ;;
+    yarn:|yarn:install|yarn:add) case "$(yarn --version 2>/dev/null)" in 1.*) ;; *) printf '%s' "$seg"; return ;; esac ;;
+    *) printf '%s' "$seg"; return ;;
   esac
+  local at=$(( ${#seg} - ${#r} ))
+  printf '%s' "${seg:0:at} --ignore-scripts${seg:at}"
 }
 
 # Runs "$2" in a child bash under the timeout, output kept in $out_file; "$3" = path: afterwards PATH
