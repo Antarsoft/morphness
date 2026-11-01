@@ -30,14 +30,14 @@ without a push, and `/morph-doctor` finishes the setup once the project is onlin
 ## 2. Copy without overwriting
 
 Copy every file under `SRC/template/` to the same path in `T`, skipping any file that already exists.
-`SRC/scripts/install.sh --merge <T>` does this and prints what it kept (`--merge` says you merge a kept `.claude/settings.json` below; without it the script stops there). Run it even when Phase 0 found an earlier copy: it then copies only the files that copy left out. If it stops before copying (it says nothing was copied), show the owner its message and wait for them to fix the cause (their own file at a kit script path such as `scripts/guard.sh`, a `.gitignore` rule that hides kit files such as `.claude/`, a kit folder that is a link, a file where the kit needs a folder); never copy around a stop. If it stops during the copy (it says how many files it moved), fix the error it shows and run it again. If the permission layer refuses the script or `cp -n` (a project allowlist without `Bash(bash:*)`), ask the owner to allow it once, or copy file by file and skip what exists, after the same checks. For each kept file:
+`SRC/scripts/install.sh --merge <T>` does this and prints what it kept (`--merge` leaves `.claude/settings.json` out, because you write it last in § 6b, merged with the user's own if they have one; without `--merge` the script stops at a user's settings.json that doesn't run the guard). Run it even when Phase 0 found an earlier copy: it then copies only the files that copy left out. If it stops before copying (it says nothing was copied), show the owner its message and wait for them to fix the cause (their own file at a kit script path such as `scripts/guard.sh`, a `.gitignore` rule that hides kit files such as `.claude/`, a kit folder that is a link, a file where the kit needs a folder); never copy around a stop. If it stops during the copy (it says how many files it moved), fix the error it shows and run it again. If the permission layer refuses the script or `cp -n` (a project allowlist without `Bash(bash:*)`), ask the owner to allow it once, or copy file by file and skip what exists, after the same checks. For each kept file:
 
 | File exists | Do |
 |-------------|----|
 | `CLAUDE.md` | Keep the user's content. Append the template's `CLAUDE.md` body under a `## Morphness` heading, or add the line `@AGENTS.md` if the template's AGENTS.md was copied. |
 | `AGENTS.md` | Keep it. Append the template's golden rules and harness table under `## Morphness`, without duplicating rules it already has. |
 | `AGENTS.md` and `CLAUDE.md` are one file (a link either way, as install.sh reports) | Keep the link. Append the template's `AGENTS.md` body under `## Morphness` to the real file once, then the template `CLAUDE.md`'s lines other than `@AGENTS.md` (a file importing itself). If the link points at a file that doesn't exist yet, create that file with the same text. |
-| `.claude/settings.json` | Merge: union `permissions.allow`, `deny`, `ask`; add the SessionStart and PreToolUse (guard) hooks if absent; an existing PreToolUse hook stays, with the guard added as one more entry; keep every existing key. Show the diff. |
+| `.claude/settings.json` | Merge in § 6b, not now: union `permissions.allow`, `deny`, `ask`; add the SessionStart and PreToolUse (guard) hooks if absent; an existing PreToolUse hook stays, with the guard added as one more entry; keep every existing key. When the user's `model` or `permissions.defaultMode` differs from the answers, ask once which to keep (unattended: keep the user's) and record the choice and why in `project/HARNESS_AGENTS.md`. Show the diff. |
 | `.github/pull_request_template.md` (GitLab: `.gitlab/merge_request_templates/Default.md`) | Keep the user's. Mention the template's sections in the hand-off, and that the tag workflow reads a `## Release notes` section. |
 | `.mcp.json` | Merge `mcpServers`; never remove one. |
 | `.gitattributes` | Keep the user's lines; append the template's `eol=lf` lines it lacks (the hook scripts and the config must keep LF line endings on a Windows checkout). |
@@ -81,7 +81,8 @@ Then continue with step 3 below; most placeholders are filled from the old files
 
 ## 3. Fill placeholders
 
-Replace every `{{key}}` in the copied files with its answer. Keys: `project.name`, `project.description`,
+Every change §§ 3 to 6 make to `.claude/settings.json` goes into § 6b's build of that file, away from
+`T`, never into `T/.claude/settings.json` itself. Replace every `{{key}}` in the copied files with its answer. Keys: `project.name`, `project.description`,
 `human.name`, `human.github` (the owner), `branches.integration`, `branches.production`, `stack.summary`,
 `stack.package_manager`, `stack.toolchain_setup`, `stack.install_cmd`, `cmd.<check-name>`, `models.tl`,
 `models.fullstack`, `models.fullstack_medium`, `models.qa`, `models.qa_medium`, `models.researcher`, `models.researcher_high`, `models.legal`, `morphness.repo`, `morphness.commit`, `morphness.release`,
@@ -126,8 +127,8 @@ App column to `project/RELEASE.md` § Where things deploy, and add each shared p
 depend on to `project/CONTROLS.md` § Cross-cutting paths. With the ci-cd module, write one deploy job
 per app that has `workflow` for some environment (the deploy scaffold's fill comment).
 
-`permissions` (answers file only, not a config key): with `accept_edits: false`, delete
-`permissions.defaultMode` from `.claude/settings.json`. With `allow_checks: true`, add one `allow` rule
+`permissions` (answers file only, not a config key): with `accept_edits: false`, delete the template's
+`permissions.defaultMode` from the settings build (a user's own `defaultMode` follows § 2's row). With `allow_checks: true`, add one `allow` rule
 per command in `project/CONTROLS.md` § Named checks: `Bash(<command up to its first quote, redirect or
 pipe>:*)`, one per `&&` or `;` part (`Bash(npx vitest run:*)`, `Bash(pnpm test:*)`). Never for a command that
 deploys, publishes, migrates a remote database or pushes, and never a bare interpreter or shell
@@ -214,15 +215,52 @@ for example `mcp__<server>__create_project`), and `deny` for tools that write a 
 (migrations, SQL that writes, database branches). List them in § Permission rules added for this
 project.
 
+## 6b. Settings last
+
+`.claude/settings.json` turns the guard on: from the moment it holds the PreToolUse hook, every later tool
+call goes through `scripts/guard.sh`, which asks before writes to the config, the hook scripts, the settings
+and CI workflows. So write it once, as the last file before the self-checks:
+
+1. Build the whole file away from `T` (the session's scratch folder): the template's
+   `.claude/settings.json` merged with the user's (§ 2's table), with every change from § 3 (placeholders,
+   the `git push` deny lines), § 3b (`defaultMode`, check allow rules, the branch deny lines, merge rules),
+   § 4 (module denies) and § 6 (connector `ask` and `deny` rules).
+2. Before writing, check that copy: it parses (`python3 -m json.tool <file>`), has no kit placeholder
+   left (`grep -cE '\{\{ *(project|human|branches|stack|cmd|models|morphness|ci|environments|branch_protection)\.' <file>` prints `0`; a user's
+   own `{{…}}` text, such as a status line format, stays), and `hooks.PreToolUse` runs `scripts/guard.sh`.
+   Fix the copy until all three hold.
+3. Write it to `T/.claude/settings.json` with one Write of its full text. Claude Code asks the owner
+   before any write to its own settings file, so this is the one prompt an attended install gets.
+
+**When the write is refused**, because nobody is there to answer (an unattended run: an answers file
+that stands in for the owner) or because the guard denies it (a file already in `T` that runs the
+guard, and the build drops a rule the guard protects, such as the merge `ask` rules under
+`merge_by_agent: integration`): save the built copy as `T/_harness/pending/settings.json`, run the
+self-checks that don't need it, and don't commit. End the hand-off with the owner's one step: check
+the file, move it into place themselves (`mv _harness/pending/settings.json .claude/settings.json`, in
+their own terminal), then run `/morph-init` again, which resumes here (SKILL.md Phase 0), runs the
+remaining checks and commits. Never write it another way: not with `cp` or a script, not by turning
+the guard or a permission off.
+
+Every other file is final by now. If a self-check below fails on a file the guard protects, the fix is
+an edit the guard asks about: say so to the owner and let them answer the prompt (unattended: stop and
+hand over the fix, never write around the guard). When `scripts/install.sh` was run by hand before
+`/morph-init`, its copy of the template's settings file is already in `T` and the guard is already on:
+tell the owner in Phase 3 that the guard will ask about the config, script and workflow writes, and
+replace the file in this step with one Write of the built copy (the guard refuses a `cp` onto it).
+
 ## 7. Self-checks
 
 All must pass before committing; fix and re-run on failure.
 
-1. No `{{` placeholder remains in `T` outside code blocks that quote the placeholder syntax (a `{{` left in
-   `.claude/settings.json` fails the render: fix it before anything else):
-   `grep -rnE '(^|[^$]){{ *[a-z]' AGENTS.md CLAUDE.md harness.config.yml project .claude scripts .github`
-   (the `[^$]` keeps CI expressions such as `${{ secrets.X }}` out of the result).
-2. No fill comment remains: `grep -rn '<!-- morph-init: fill' .` returns nothing.
+1. No kit placeholder remains in `T` outside code blocks that quote the placeholder syntax:
+   `grep -rsnE '(^|[^$]){{ *(project|human|branches|stack|cmd|models|morphness|ci|environments|branch_protection)\.[a-z]' AGENTS.md CLAUDE.md harness.config.yml project .claude scripts .github .gitlab .gitlab-ci.yml`
+   (the `[^$]` keeps CI expressions such as `${{ secrets.X }}` out of the result, and naming the kit's keys
+   keeps a project's own `{{name}}` text, such as a templating library's description, out of it).
+2. No fill comment remains:
+   `grep -rsn '<!-- morph-init: fill' AGENTS.md CLAUDE.md harness.config.yml harness project .claude scripts .github .gitlab _harness`
+   returns nothing (named folders, not `.`: the guard denies a search over a folder that holds a `.env`;
+   `-s` because a host's folder the render removed, such as `.github` on GitLab, isn't there).
 3. `.claude/settings.json`, `.mcp.json` and `.github/rulesets/*.json` parse (`jq . <file>`, or `python3 -m json.tool`), and
    `.claude/settings.json` → `hooks.PreToolUse` runs `scripts/guard.sh`.
 4. Every relative link in `AGENTS.md`, `CLAUDE.md`, `harness/**` (except `harness/templates/`, whose
@@ -232,7 +270,7 @@ All must pass before committing; fix and re-run on failure.
 6. Each named check in `checks.*` has a row with a real command in `project/CONTROLS.md` § Named
    checks, and no row there names a check missing from `checks.*` or has "none" or "not configured"
    as its command.
-7. With the ci-cd module, each workflow it wrote parses as YAML, has no `# morph-init: fill` line
+7. With the ci-cd module, each workflow it wrote is in `.github/workflows/` (and `ci_cd` names it, never `none` for a scaffold the owner accepted), parses as YAML, has no `# morph-init: fill` line
    left (`grep -rn 'morph-init: fill' .github/workflows`), and passes `actionlint` when it is installed.
    Its CI steps run the `before_qa` commands exactly as `project/CONTROLS.md` writes them.
 8. `environments` matches the branches (first entry on `branches.integration`, last on
@@ -248,9 +286,9 @@ All must pass before committing; fix and re-run on failure.
    config_get branches.integration'` prints the integration branch. The prune counter prints
    the `Rules:`, `Checklists:` and `Project docs:` gauge lines after the counter, with no `Prune is DUE`.
    `scripts/guard.sh` parses and blocks a push to the integration branch:
-   `echo '{"tool_name":"Bash","tool_input":{"command":"git push origin <integration>"}}' | bash scripts/guard.sh`
+   `bash scripts/guard.sh <<< '{"tool_name":"Bash","tool_input":{"command":"git push origin <integration>"}}'`
    exits 2 (python3 must be installed; without it the guard blocks every call, so say so in the
-   hand-off).
+   hand-off). Feed it with `<<<`, not a pipe: the settings ask before anything piped into `bash`.
 
 ## 7b. Apply host settings (owner's yes)
 

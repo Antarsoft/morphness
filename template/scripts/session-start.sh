@@ -24,10 +24,14 @@ TOOLCHAIN_SETUP='{{stack.toolchain_setup}}'
 INSTALL_CMD='{{stack.install_cmd}}'
 
 pin_file="$(git rev-parse --git-path morphness-session-commands 2>/dev/null)"
+# Commands morph-init hasn't filled yet (a copy made by install.sh) are never recorded as the pin, or the
+# first session after the install would hold the real ones as "changed". An existing pin is still compared.
+unfilled=0
+case "$TOOLCHAIN_SETUP$INSTALL_CMD" in *'{''{'*) unfilled=1 ;; esac
 if [ -n "$pin_file" ] && [ -n "$TOOLCHAIN_SETUP$INSTALL_CMD" ]; then
   current="toolchain: $TOOLCHAIN_SETUP"$'\n'"install: $INSTALL_CMD"
   if [ "$1" = "--accept" ] || [ ! -f "$pin_file" ]; then
-    printf '%s\n' "$current" > "$pin_file" 2>/dev/null
+    [ "$unfilled" = 1 ] || printf '%s\n' "$current" > "$pin_file" 2>/dev/null
   elif [ "$(cat "$pin_file" 2>/dev/null)" != "$current" ]; then
     echo "session-start: NOT RUN. The toolchain and install commands changed since this clone last ran them."
     echo "  was:"; sed 's/^/    /' "$pin_file"
