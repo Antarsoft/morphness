@@ -912,6 +912,35 @@ def check(name, fx, t):
         d = re.search(r"^description:[ \t]*(.*)$", fm.group(1), re.M) if fm else None
         if d and re.search(r":\s", d.group(1)) and d.group(1)[:1] not in "\"'|>":
             bad(f"{os.path.relpath(f, t)} description has an unquoted colon: quote it")
+    # 5b. rules reach the agent they are for. Subagents run with omitClaudeMd: they load neither CLAUDE.md,
+    # AGENTS.md nor .claude/rules/, so a rule file must not address one, and the role bodies must name what
+    # the agent reads. The researcher has no shell and no edit tools (it replies; the TL writes the file).
+    for f in glob.glob(os.path.join(t, ".claude/agents/*.md")):
+        rel, text = os.path.relpath(f, t), read(f)
+        fm = re.match(r"^---\n(.*?)\n---\n", text, re.S)
+        if re.search(r"harness/agents/[a-z-]+\.md` \(its §", text):
+            bad(f"{rel} lists sections of its role body to read: the Read tool returns the whole file, so read it in full")
+        if os.path.basename(f).startswith("researcher"):
+            d = re.search(r"^disallowedTools:\s*(.*)$", fm.group(1), re.M) if fm else None
+            have = {x.strip() for x in d.group(1).split(",")} if d else set()
+            for tool in ("Bash", "Edit", "MultiEdit", "Write", "NotebookEdit"):
+                if tool not in have:
+                    bad(f"{rel} lets the researcher use {tool}: disallowedTools needs it")
+    role_reads = set()
+    for role in ("fullstack-engineer", "qa-engineer"):
+        body = read(os.path.join(t, f"harness/agents/{role}.md"))
+        start = body.split("## Before you start", 1)[-1].split("\n## ", 1)[0]
+        role_reads |= set(re.findall(r"\.claude/rules/[\w.-]+\.md", start))
+        if ".claude/rules/testing.md" not in start:
+            bad(f"harness/agents/{role}.md § Before you start doesn't read .claude/rules/testing.md")
+        if "AGENTS.md" in start:
+            bad(f"harness/agents/{role}.md § Before you start reads AGENTS.md (the Technical Lead's file)")
+    for f in glob.glob(os.path.join(t, ".claude/rules/*.md")):
+        rel = os.path.relpath(f, t)
+        if rel in role_reads:
+            continue
+        for m in re.finditer(r"\*\*[A-Za-z -]*(subagent|engineer|researcher|writer):\*\*", read(f)):
+            bad(f"{rel} addresses a subagent ({m.group(0)}), but no subagent reads it: move it to harness/agents/<role>.md")
     # 6. named checks have commands, and no row names an unknown check
     cfg = lambda key: run(["bash", "-c", f'. scripts/lib/config.sh; config_get {key}'], t).stdout.strip()
     names = set()
