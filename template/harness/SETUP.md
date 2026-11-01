@@ -7,7 +7,7 @@ Operational guide for the harness. Role definitions: [STRATEGY.md](./STRATEGY.md
 ## Design goals
 
 - **Separation:** plan, implement and validate with different agents.
-- **Traceability:** every feature version has `feature.md` → `plan.md` → `progress.md` → `qa-result.md`.
+- **Traceability:** every full-mode feature version has `feature.md` → `plan.md` → `progress.md` → `qa-result.md`; a small-mode one has `plan.md` with its § Check.
 - **Human gate:** no implementation until `plan.md` is approved.
 - **Bounded QA:** at most `loop.qa_max_rounds` QA rounds per version (default two), then the human and a new version.
 - **A harness that learns:** every feature ends with a retro; every `loop.prune_every` features the rules are audited ([MORPHING.md](./MORPHING.md)).
@@ -26,7 +26,7 @@ Status: draft | awaiting-approval | approved | passed | failed-escalated
 |--------|------------|
 | `draft` | Technical Lead completes the plan |
 | `awaiting-approval` | Human |
-| `approved` | Full-stack engineer, then (code review if `xhigh`) QA engineer |
+| `approved` | Full-stack engineer, then (code review if `xhigh`) QA engineer; in small mode the main chat |
 | `passed` | Human merges the ready PR into the integration branch (or the Technical Lead, with `merge_by_agent: integration`) |
 | Release | Separate step, not per feature: integration branch → production branch when the human says "release" ([RELEASE.md](./RELEASE.md)) |
 | `failed-escalated` | Human chooses a new version or direction |
@@ -69,11 +69,11 @@ Any review done by a subagent (design, code, security, legal) is model output. B
 
 See [MODES.md](./MODES.md). Summary:
 
-| Mode | Uses `_harness/features/...` | Three agents |
+| Mode | Uses `_harness/features/...` | Agents |
 |------|------------------------------|--------------|
 | **Full** | Yes | Yes |
-| **Light** | No | Optional single agent (never the TL writing app code) |
-| **Small** | Yes, with the short small plan | Yes, at `medium`: Full-stack builds, QA checks; a learnings line instead of `retro.md` |
+| **Light** | No | None: the main chat makes the change and runs the named checks |
+| **Small** | Yes, with the short small plan | None: the main chat builds, runs the checks and fills the plan's § Check; a learnings line instead of `retro.md` |
 | **Bug** | Yes, with the short bug plan | Yes: QA writes the failing test first, then Full-stack fixes, then QA re-runs; a learnings line instead of `retro.md` |
 | **Research** | `_harness/research/` only | Researcher only; no code, no QA, no retro |
 
@@ -111,8 +111,8 @@ The researcher's level goes in the research file's **Researcher effort** line, n
 - **`medium`**: the default for a **pattern-copy plan**, one that names an existing file or feature it copies (a page, form, settings field, test or doc) and adds no logic beyond it. Also renames, config or version bumps, and doc-heavy changes.
 - **`high`** (default otherwise): normal feature work with new logic, such as a new flow, a new route or data path, or a screen that doesn't follow a single existing pattern.
 - **`xhigh`** (Full-stack only): security, money, tenancy or access control, concurrency, public APIs, new architecture. Brings the code review before QA.
-- **Never `medium` for Full-stack** when a full-mode plan changes behaviour in a risk area (`risk_areas` in `harness.config.yml`), even when it copies a pattern. Small mode runs at `medium` because it qualifies only when the change alters none of that behaviour ([MODES.md](./MODES.md) § Small mode).
-- **QA is `high`** whenever the plan touches a risk area<!-- module:data-access --> or is a data-access feature<!-- /module:data-access -->, even if Full-stack is `medium`. Otherwise the project's QA default.
+- **Never `medium` for Full-stack** when the plan touches a risk path (`project/CONTROLS.md` § Risk paths, the areas in `risk_areas`), even when it copies a pattern. Light and small mode, which `scripts/risk-check.sh` gives only off those paths, run no subagent ([MODES.md](./MODES.md) § Working alone).
+- **QA is `high`** whenever the plan touches a risk path<!-- module:data-access --> or is a data-access feature<!-- /module:data-access -->, even if Full-stack is `medium`. Otherwise the project's QA default.
 
 ### Split large features by risk
 
@@ -193,10 +193,10 @@ flowchart TD
 
 Technical Lead:
 
-1. Confirm the `before_signoff` checks are recorded in `qa-result.md` on the final commit ([CONTROLS.md](./CONTROLS.md) § Merge gate).
+1. Confirm the `before_signoff` checks are recorded in `qa-result.md` (small mode: `plan.md` § Check) on the final commit ([CONTROLS.md](./CONTROLS.md) § Merge gate).
 2. Update any **project** docs the plan listed (`project/PROJECT.md`, domain docs). A status line the Full-stack engineer wrote as "Pending QA" becomes "QA pass".
-3. For a UI change, confirm the screenshots from `progress.md` § Screenshots exist; the reply to the human links every one of them.
-4. **Human-only steps.** Write this feature's block to **its own steps file** from [templates/steps.md](./templates/steps.md): what you did through a connector (§ Done for you), every step only the human can do (with its expected result and why no connector did it), every AC `qa-result.md` marks `deferred: local` (tell the human the feature isn't fully verified until those pass), and for a feature with migrations or remote config changes the ones to apply on the integration environment after the merge. The block heading links `qa-result.md` ([HANDOFFS.md](./HANDOFFS.md) § Steps file). None of these means no file. Where the file goes:
+3. For a UI change, confirm the screenshots from `progress.md` § Screenshots (small mode: § Check) exist; the reply to the human links every one of them.
+4. **Human-only steps.** Write this feature's block to **its own steps file** from [templates/steps.md](./templates/steps.md): what you did through a connector (§ Done for you), every step only the human can do (with its expected result and why no connector did it), every AC `qa-result.md` (small mode: § Check) marks `deferred: local` (tell the human the feature isn't fully verified until those pass), and for a feature with migrations or remote config changes the ones to apply on the integration environment after the merge. The block heading links `qa-result.md` ([HANDOFFS.md](./HANDOFFS.md) § Steps file). None of these means no file. Where the file goes:
    - **Roadmap module off:** `_harness/features/<slug>/<version>/steps.md`.
    - **Roadmap module on:** `<roadmap.versions_dir>/<id>/steps/<slug>.md`, next to the next version's checklist, never into the checklist itself, so parallel feature branches don't conflict. Finding the next version, creating a missing version doc or checklist, and items that belong to a later version: [modules/roadmap/](./modules/roadmap/README.md). When the roadmap has no single next version, ask the human. The release and the prune fold these files into the checklist.
 

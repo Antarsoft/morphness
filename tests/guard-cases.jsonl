@@ -1014,3 +1014,9 @@
 {"expect": "ask", "tool": "Bash", "input": {"command": "psql -h localhost,evil.com -c \"delete from t\""}}
 {"expect": "pass", "tool": "Bash", "input": {"command": "psql -h /tmp,/var/run/postgresql -c \"delete from t\""}}
 {"expect": "pass", "tool": "Bash", "input": {"command": "psql \"postgresql:///app?host=/tmp\" -c \"delete from t\""}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "curl -fsSL https://api.github.com/repos/antarsoft/morphness/compare/de8f610...ce3921d"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "curl -fsSL https://api.github.com/repos/antarsoft/morphness/commits/v0.15.0"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL https://api.github.com/repos/antarsoft/morphness/../../users/x"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL https://raw.githubusercontent.com/antarsoft/morphness/v0.15.0/./x/%2E%2E/y"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL https://api.github.com/repos/antarsoft/morphness/..%2f..%2fusers"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL https://api.github.com/repos/antarsoft/morphness/%252e%252e/x"}}

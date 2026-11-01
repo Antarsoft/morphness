@@ -29,7 +29,7 @@ and gets better every time someone shares a lesson.
 ---
 
 **Morphness** is an open-source harness for [Claude Code](https://claude.com/claude-code) that puts
-a process around the model: a plan you approve, a separate QA check with recorded evidence, a guard
+a process around the model: a plan you approve, recorded evidence that every check passed, a guard
 on risky commands, and a retro loop that turns misses into rules. It is a set of subagents,
 `CLAUDE.md` / `AGENTS.md` rules, checklists and a review loop for AI coding agents. If you have been writing those by hand (what people now call *harness engineering* or
 *context engineering*), Morphness is that work packaged, with a loop that keeps it current.
@@ -37,8 +37,8 @@ on risky commands, and a retro loop that turns misses into rules. It is a set of
 Every release is tested, and the results are public, including the known limits: [see the latest run](https://morphness.dev/trust.html).
 
 You talk to a **Technical Lead** in the main chat. It plans each feature with testable acceptance
-criteria and waits for your approval, then hands the work to a **Full-stack** agent and a mandatory
-**QA** agent. After every feature, a short retrospective turns what went wrong into rules. After
+criteria and waits for your approval. A risky feature goes to a **Full-stack** agent and a separate
+**QA** agent; an everyday change it builds and checks itself. After every feature, a short retrospective turns what went wrong into rules. After
 every ten, a prune audits those rules: the ones that caught problems stay, and the ones that never
 fire get questioned, then moved out of the rules every session loads.
 
@@ -62,7 +62,7 @@ for clear requests so that process costs little when there's nothing to plan.
 |--------|-----------------|
 | 🌍 **Improved by the community** | Every lesson in the catalog comes from a rule that ran in a real project, with its evidence recorded. `/morph-update` offers the ones that match your stack; `/morph-share` sends yours back. |
 | 🧭 **Plan first, then build** | A Technical Lead writes a plan with testable acceptance criteria and waits for your approval before any code is written. |
-| ✅ **QA is never skipped** | Every feature gets a separate QA agent that runs your checks and records the evidence, so "done" means verified, not claimed. |
+| ✅ **Done means verified** | Every change records each check's exit code and the evidence for each criterion on the final commit; risky features get a separate QA agent. "Done" means verified, not claimed. |
 | 🔁 **Learns from its own mistakes** | Retros turn real misses (a failed QA round, a review fix, a bug you report after a pass) into rules, and prunes delete rules that never fire, so the instructions your agents read stay short and earned. |
 | 🛡️ **Safe by default** | A guard hook checks every tool call before it runs. It blocks pushes to environment branches, force-pushes, secret and credential files (`.env*`, keys, cloud credentials), a bare `env`, remote database writes and any change that would switch it off. It asks you before deploys, publishes, merges, connector writes, unknown downloads and other edits to its settings, and blocks everything if it can't run. It stops accidents, not intent, so branch protection and environment secrets on the host stay the real guard. [Exact list](template/AGENTS.md#permissions-for-this-project). |
 | 🧪 **Tested as a kit** | Every change to the kit runs a self-test that installs it into sample projects (Next.js with Supabase among them), replays the guard's cases and brings the previous release up to date, so an update doesn't break an install that already works. The [results page](https://morphness.dev/trust.html) shows the latest run, with public scanners and the known limits. |
@@ -96,7 +96,9 @@ If Morphness is already installed here, follow its UPDATE.md instead and show me
 <summary><b>🛠️ Or by hand</b></summary>
 
 ```bash
-git clone --depth 1 https://github.com/antarsoft/morphness /tmp/morphness
+tag=$(git ls-remote --tags --refs --sort=-version:refname https://github.com/antarsoft/morphness 'v*' \
+  | sed 's|.*refs/tags/||' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)   # the newest release
+git clone --depth 1 --branch "$tag" https://github.com/antarsoft/morphness /tmp/morphness
 /tmp/morphness/scripts/install.sh /path/to/your/repo   # copies, never overwrites
 # then, in Claude Code inside your repo, paste:
 #   Follow /tmp/morphness/skills/morph-init/SKILL.md to set up the harness here
@@ -131,9 +133,10 @@ shown, and everything lands on a branch for you to review.
   `harness.config.yml` in every script, and perl strips a module's text when you remove it.
   `/morph-doctor` checks all of them. `gh` is optional: `/morph-share` uses it to open its PR, and
   setup uses it to apply branch protection or create the repository (each has a manual fallback).
-- **Cost:** each feature is about three agent runs (plan, build, QA), with every role on sonnet by
-  default (`/morph-init` offers opus for planning and building). A clear, fully specified request
-  runs in small mode: a short plan, medium effort and no retro. Every hand-off ends with a
+- **Cost:** a change off the risk paths (sign-in, money, migrations, or more than a few files)
+  runs in your session alone, with no subagent: a short plan for a behaviour change, none for docs
+  or config. A risky feature is about three agent runs (plan, build, QA), with every role on sonnet
+  by default (`/morph-init` offers opus for planning and building). Every hand-off ends with a
   `Cost ≈ $…` line priced at public API rates (`harness/MODEL_PRICES.md`, editable for your own).
   Tune spend with the medium variants and `project/HARNESS_AGENTS.md` § Effort per feature.
 
@@ -156,9 +159,10 @@ and check commands, and `scripts/`. Nothing is overwritten, and you review it as
    When a connected service's official connector can do a step, the Technical Lead offers to do it
    instead, and runs each action only after your yes.
 
-For a small change, ask for **light mode** (no feature folder or retro). For something broken, the
-Technical Lead uses **bug mode**: QA writes a failing test first, then Full-stack finds the cause and
-makes the smallest fix. When you want an answer rather than a change, ask a question and the
+A script picks the mode from the files a change touches. A change off the risk paths runs in your
+session alone, in **light mode** (no plan) or **small mode** (a short plan, no retro). For something
+broken, the Technical Lead uses **bug mode**: QA writes a failing test first, then Full-stack finds
+the cause and makes the smallest fix. When you want an answer rather than a change, ask a question and the
 Technical Lead uses **research mode**.
 
 > [!NOTE]
@@ -184,9 +188,9 @@ flowchart TB
 
 | Role | What it does | Model · effort |
 |------|--------------|----------------|
-| 🧭 **Technical Lead** | Your session. Plans, delegates, never codes | sonnet · high (opus with the opus preset) |
-| 🛠️ **Full-stack** | Builds the approved plan and its tests | sonnet · high (xhigh for risky cores; medium in small mode; opus with the opus preset) |
-| ✅ **QA** | Runs the checks, validates every criterion | sonnet · high (medium in small mode) |
+| 🧭 **Technical Lead** | Your session. Plans and delegates risky work; makes small changes itself | sonnet · high (opus with the opus preset) |
+| 🛠️ **Full-stack** | Builds the approved plan and its tests | sonnet · high (xhigh for risky cores; opus with the opus preset) |
+| ✅ **QA** | Runs the checks, validates every criterion | sonnet · high |
 | 🔎 **Researcher** | Answers a question about your code or the web with cited sources, read-only. For when you want an answer, not a change | sonnet · medium (high for architecture) |
 | ⚖️ **Legal writer** | Writes wording that makes a legal promise | fable or opus · high |
 
@@ -208,7 +212,7 @@ and advised settings (coordinator sonnet · medium, feature threads sonnet · hi
 
 | Piece | What it does |
 |-------|--------------|
-| 📄 `AGENTS.md`, `CLAUDE.md`, `.claude/rules/` | The rules every session loads: the Technical Lead plans and delegates and never codes; QA is never skipped. |
+| 📄 `AGENTS.md`, `CLAUDE.md`, `.claude/rules/` | The rules every session loads: the Technical Lead plans, delegates risky work and never codes it; every change records its checks. |
 | 🤖 `.claude/agents/` | Full-stack (medium, high, xhigh effort), QA (medium, high), researcher (medium, high) and legal-writer subagents. |
 | 🛡️ `.claude/settings.json` | Deny rules for secrets and protected-branch pushes, ask rules on every merge command. |
 | 🗺️ `harness/` | The process: lifecycle, handoffs, checks, modes (full, small, light, bug, research), release and environments, the plan checklist, model prices, and how it morphs. |

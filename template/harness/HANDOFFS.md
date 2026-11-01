@@ -5,7 +5,7 @@
 | File | Created by | May edit | Notes |
 |------|------------|----------|--------|
 | `Plan/feature.md` | Human (draft OK with Tech Lead) | Human; Tech Lead before plan approved | Plain-language intent |
-| `Plan/plan.md` | Technical Lead | Tech Lead until approved; then frozen except Status, Steps file, Approval, Open questions, Decisions | Includes acceptance criteria |
+| `Plan/plan.md` | Technical Lead | Tech Lead until approved; then frozen except Status, Steps file, Approval, Open questions, Decisions, and a small plan's § Check | Includes acceptance criteria |
 | Steps file | Technical Lead | Technical Lead; the human ticks items | The human's steps after QA pass, or none (§ Steps file below; [SETUP.md](./SETUP.md) § After QA pass, step 4) |
 | `Plan/review.md` | Technical Lead | Technical Lead only | Pre-QA code review findings, `xhigh` Full-stack only ([SETUP.md](./SETUP.md) § Code review before QA) |
 | `Plan/retro.md` | Technical Lead | Technical Lead only | Retrospective after pass or escalation ([templates/retro.md](./templates/retro.md), [SETUP.md](./SETUP.md) § Retrospective) |
@@ -15,7 +15,7 @@
 | `QA/qa-result.md` | QA engineer | QA engineer only | Verdict and evidence |
 | `_harness/learnings/<slug>-v<version>.md` | Technical Lead | Technical Lead; the prune folds it | Retro entry and action items ([templates/learnings-entry.md](./templates/learnings-entry.md)) |
 
-**Application code:** Full-stack engineer. **No product code edits:** QA engineer, Technical Lead, researcher. One exception: in bug mode QA writes the regression test the plan assigns, before the fix ([MODES.md](./MODES.md) § Bug mode).
+**Application code:** Full-stack engineer, or the main chat itself in light and small mode, where no subagent runs ([MODES.md](./MODES.md) § Working alone). **No product code edits:** QA engineer, the Technical Lead in full and bug mode, researcher. One exception: in bug mode QA writes the regression test the plan assigns, before the fix ([MODES.md](./MODES.md) § Bug mode).
 
 ## `plan.md` minimum sections
 
@@ -42,10 +42,10 @@ The only hand-off record for the **human**, written by the Technical Lead at QA 
 
 0. **Done for you**: each action the TL took through a connector after the human approved it, with the tool used and what it now shows.
 1. **Needs you**: only (a) actions no connected tool can do (hosting, cloud environment settings, repository settings, vendor dashboards), (b) changes to the integration or production environment that no connector covers or that never go through an agent, (c) actions the TL offered through a connector that the human declined or hasn't answered, (d) judgement calls. Each item says what to do and what the human should see, and for (a) why no tool did it: no official MCP (date checked), an official one not connected (its link), or no tool for this in the connected one.
-2. **Deferred from QA**: every AC `qa-result.md` marks `deferred: local`, with where to check it.
+2. **Deferred from QA**: every AC `qa-result.md` (small mode: the plan's § Check) marks `deferred: local`, with where to check it.
 3. **Apply to the integration environment** (data-access features): the migrations to apply after the merge, files in order from `progress.md`, then the TL asks QA for stage B ([modules/data-access/](./modules/data-access/README.md)).
 
-The block heading links `qa-result.md`. What QA verified stays in `qa-result.md`, what is out of scope stays in `plan.md`, and screenshots go in the reply to the human. No items means no file, and the plan's **Steps file** line says `none`.
+The block heading links `qa-result.md` (small mode: the plan). What QA verified stays in `qa-result.md`, what is out of scope stays in `plan.md`, and screenshots go in the reply to the human. No items means no file, and the plan's **Steps file** line says `none`.
 
 ## `progress.md` minimum sections
 
@@ -78,6 +78,8 @@ Each project lists its subagents in **`project/HARNESS_AGENTS.md`**. Delegate wi
 
 ## Mandatory flow (Technical Lead)
 
+Full and bug mode. Light and small mode run no subagent ([MODES.md](./MODES.md) § Working alone).
+
 1. Approved `plan.md` → Agent **Full-stack** (the variant for the plan's Full-stack effort).
 2. Full-stack marks dev complete in `progress.md` → the Technical Lead checks it (for a UI change, `progress.md` § Screenshots lists the files and they exist; if not, back to Full-stack) → Agent **QA** (the variant for the plan's QA effort). **Never skip.** Full-stack `xhigh`<!-- module:security -->, or a security feature with the `security` module<!-- /module:security -->: the read-only review in [SETUP.md](./SETUP.md) § Code review before QA runs first.
 3. QA verdict **pass** → steps 4 and 5 below, then the human decides on the merge into the integration branch ([SETUP.md](./SETUP.md) § After QA pass); production ships later in a release ([RELEASE.md](./RELEASE.md)). **Fail** → Full-stack rework (at most `loop.qa_max_rounds` QA rounds per version).
@@ -86,7 +88,7 @@ Each project lists its subagents in **`project/HARNESS_AGENTS.md`**. Delegate wi
 
 In bug mode the order changes: QA's reproduction run (the failing test) comes before step 1 ([MODES.md](./MODES.md) § Bug mode).
 
-The Technical Lead must not implement or QA even if the human says "execute", "run", "develop" or "implement". See `harness/TECHNICAL_LEAD.md`.
+In full and bug mode the Technical Lead must not implement or QA even if the human says "execute", "run", "develop" or "implement". See `harness/TECHNICAL_LEAD.md`.
 
 ## Parallel plans
 
@@ -134,19 +136,6 @@ Run long checks to completion before handing back. A check longer than the shell
 Write logs and scratch files under the session scratchpad directory, never / or the repo root.
 For any UI change (altered or new UI): save screenshots per harness/agents/fullstack-engineer.md § UI screenshots and list them in progress.md § Screenshots.
 Hand back to the Technical Lead when done.
-```
-
-**Full-stack engineer, light mode** ([MODES.md](./MODES.md) § Light mode; this brief replaces `plan.md`)
-
-```text
-You are the Full-stack engineer for a light-mode change. There is no plan.md: this brief is the whole ask.
-Task: <one or two lines: what to change and why>
-Files: <the paths to change; touch nothing else>
-Out of scope: <anything nearby you must not change>
-Run the before_qa checks in harness/CONTROLS.md that the change touches (commands: project/CONTROLS.md), scoped by § Scoping by what changed.
-Do not create a feature folder or progress.md. Write logs under the session scratchpad directory.
-If the change turns out to need new behaviour, a test of its own, or files beyond the list, stop and hand back: it needs a full plan.
-Hand back to the Technical Lead with: files changed, each check with its scope and exit code, and anything you didn't do.
 ```
 
 **QA engineer, bug reproduction** ([MODES.md](./MODES.md) § Bug mode, step 2; before any fix)
