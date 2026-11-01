@@ -30,7 +30,9 @@ asks "what's new?"), do § 1 and § 2 and stop: change nothing, write nothing.
 
 ## 1. Find the source and the base
 
-1. **Check the target.** `harness.config.yml` must exist with no `{{` placeholders; otherwise this
+1. **Check the target.** `harness.config.yml` must exist with none of the kit's placeholders
+   (`grep -E '\{\{ *(project|human|morphness)\.' harness.config.yml` prints nothing; a project's own
+   `{{name}}` text doesn't count); otherwise this
    isn't an installed harness: suggest `/morph-init` and stop. For a full run (not a listing),
    `git status` must be clean; ask the user to commit or stash, never do it yourself.
 2. **Find the source.** `harness.config.yml` → `updates.source` says where upstream is read from

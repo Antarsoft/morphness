@@ -76,6 +76,17 @@ for key in sorted(used):
     documented = f"`{key}`" in render_md or (key.startswith("cmd.") and "`cmd.<check-name>`" in render_md)
     if not documented:
         failures.append(f"kit: placeholder {{{{{key}}}}} is used in template/ but not listed in render.md § 3")
+# render.md § 7 item 1 and the "copied, not set up" test (install.sh, UPDATE.md and the skills) look for the
+# kit's placeholders by key, so a project's own {{name}} text isn't one: every key the kit uses must be in their lists.
+m = re.search(r"\{\{ \*\(([a-z_|]+)\)\\\.\[a-z\]' AGENTS\.md", render_md)
+item1 = set(m.group(1).split("|")) if m else set()
+if not m:
+    failures.append("kit: render.md § 7 item 1 no longer names the kit's placeholder keys")
+for key in sorted(k for k in used if k.split(".")[0] not in item1):
+    failures.append(f"kit: placeholder {{{{{key}}}}} is not covered by render.md § 7 item 1's key list")
+config_keys_used = set(PLACEHOLDER.findall(read(os.path.join(template, "harness.config.yml"))))
+for key in sorted(k for k in config_keys_used if k.split(".")[0] not in ("project", "human", "morphness")):
+    failures.append(f"kit: harness.config.yml placeholder {{{{{key}}}}} is missed by the (project|human|morphness) not-set-up test")
 
 m = re.search(r"\*\*Module markers\.\*\*.*?```bash\n(.*?)\n```", harness_readme, re.S)
 if not m:
@@ -243,6 +254,176 @@ for given, want in cases_si:
             env=dict(os.environ, PATH=scratch + os.pathsep + os.environ["PATH"]))
     if r.stdout != want:
         failures.append(f"kit: session-start.sh turned the install command {given!r} into {r.stdout!r}, not {want!r}")
+shutil.rmtree(scratch)
+
+# ---- once: install.sh ends with every kit file in place, or stops before copying and says why ---------
+# A copy that stops half way is finished by a re-run (the marker, harness.config.yml, goes in last); a repo
+# whose own .claude/settings.json, kit script path or .gitignore would leave the guard unwired stops with
+# nothing copied; AGENTS.md linked to CLAUDE.md is kept as one file. install.sh never overwrote or chmodded a user file.
+scratch = tempfile.mkdtemp(prefix="morphness-install-")
+install_sh = os.path.join(root, "scripts/install.sh")
+kit_files = sorted(os.path.relpath(f, template) for f in files_under(template))
+def install(target, *args, env=None):
+    return run(["bash", install_sh, *args, target], scratch, env=env)
+def tree(target):    # every path with its bytes (a link as its text) and mode
+    out = {}
+    for dirpath, dirnames, names in os.walk(target):
+        dirnames[:] = [d for d in dirnames if d != ".git"]
+        for n in dirnames + names:
+            q = os.path.join(dirpath, n)
+            st = os.lstat(q)
+            body = os.readlink(q) if os.path.islink(q) else (read_bytes(q) if os.path.isfile(q) else None)
+            out[os.path.relpath(q, target)] = (body, st.st_mode)
+    return out
+def read_bytes(q):
+    with open(q, "rb") as fh:
+        return fh.read()
+def target(name, files=None, git=False, links=None):
+    t = os.path.join(scratch, name)
+    os.makedirs(t)
+    if git:
+        run(["git", "init", "-q"], t)
+    for rel, body in (files or {}).items():
+        os.makedirs(os.path.dirname(os.path.join(t, rel)) or t, exist_ok=True)
+        write(os.path.join(t, rel), body)
+    for rel, to in (links or {}).items():
+        os.symlink(to, os.path.join(t, rel))
+    return t
+def stopped(name, t, before, r, words):
+    if r.returncode != 1 or "nothing was copied" not in r.stderr or any(w not in r.stderr for w in words):
+        failures.append(f"kit: install.sh into a repo with {name} did not stop with a message naming {words} "
+                        f"(exit {r.returncode}): {r.stdout[-300:]!r} {r.stderr[-400:]!r}")
+    elif tree(t) != before:
+        failures.append(f"kit: install.sh into a repo with {name} stopped but changed the folder")
+# a fresh folder: every file, the scripts executable; a second run refuses and changes nothing
+t = target("fresh")
+r = install(t)
+missing_files = [f for f in kit_files if not os.path.isfile(os.path.join(t, f))]
+if r.returncode or missing_files or not os.access(os.path.join(t, "scripts/guard.sh"), os.X_OK):
+    failures.append(f"kit: install.sh into an empty folder (exit {r.returncode}) left out {missing_files[:5]} or a non-executable guard: {r.stderr[-300:]!r}")
+before = tree(t)
+r = install(t)
+if r.returncode != 1 or "not set up yet" not in r.stderr or tree(t) != before:
+    failures.append(f"kit: install.sh run twice did not refuse the second run unchanged (exit {r.returncode}): {r.stderr[-300:]!r}")
+# morph-init's copy (--merge) leaves .claude/settings.json out: it writes that file last (render.md § 6b)
+t = target("fresh-merge")
+r = install(t, "--merge")
+left = [f for f in kit_files if f != ".claude/settings.json" and not os.path.isfile(os.path.join(t, f))]
+if r.returncode or left or os.path.lexists(os.path.join(t, ".claude/settings.json")) or "Left for /morph-init" not in r.stdout:
+    failures.append(f"kit: install.sh --merge into an empty folder (exit {r.returncode}) left out {left[:5]}, or copied "
+                    f".claude/settings.json, which morph-init writes last: {r.stdout[-300:]!r}")
+# ... and when morph-init stops before that last file, a later run sends the owner back to finish it
+cfg_path = os.path.join(t, "harness.config.yml")
+write(cfg_path, re.sub(r"\{\{ *[a-z][a-z0-9_.-]* *\}\}", "x", read(cfg_path)))
+r = install(t)
+if r.returncode != 1 or "doesn't run the guard yet" not in r.stderr:
+    failures.append(f"kit: install.sh on a filled-in copy with no .claude/settings.json did not say the guard isn't wired (exit {r.returncode}): {r.stderr[-300:]!r}")
+# a filled-in config that quotes a project's own {{name}} text is installed, not an earlier copy
+t = target("filled-config", {"harness.config.yml": "project:\n  name: shop\n  greeting: 'Hi {{name}}'\n",
+                             ".claude/settings.json": read(os.path.join(template, ".claude/settings.json"))})
+before = tree(t)
+r = install(t)
+if r.returncode != 1 or "already installed" not in r.stderr or tree(t) != before:
+    failures.append(f"kit: install.sh took a filled-in harness.config.yml with a project's own {{{{name}}}} text for an "
+                    f"unfinished copy (exit {r.returncode}): {r.stdout[-300:]!r} {r.stderr[-300:]!r}")
+# a copy that stops half way (a move fails at scripts/guard.sh): no marker, and a re-run finishes it
+t = target("half")
+shim = os.path.join(scratch, "bin-failing-mv")
+os.makedirs(shim)
+write(os.path.join(shim, "mv"), '#!/bin/sh\ncase "$2" in */scripts/guard.sh) echo "mv: no space left on device" >&2; exit 1;; esac\n'
+      f'exec {shutil.which("mv")} "$@"\n')
+os.chmod(os.path.join(shim, "mv"), 0o755)
+r = install(t, env=dict(os.environ, PATH=shim + os.pathsep + os.environ["PATH"]))
+if r.returncode == 0 or os.path.exists(os.path.join(t, "harness.config.yml")) or "run install.sh again" not in r.stderr \
+        or any(n.startswith(".morphness-staging") for n in os.listdir(t)):
+    failures.append(f"kit: install.sh whose copy failed half way exited {r.returncode}, or left the set-up marker or its "
+                    f"staging folder, or did not say to re-run: {r.stderr[-300:]!r}")
+r = install(t)
+if r.returncode or [f for f in kit_files if not os.path.isfile(os.path.join(t, f))]:
+    failures.append(f"kit: install.sh did not finish a copy that had stopped half way (exit {r.returncode}): {r.stdout[-300:]!r} {r.stderr[-300:]!r}")
+# an earlier copy (marker in, scripts missing), as install.sh before this fix could leave: a re-run restores them
+shutil.rmtree(os.path.join(t, "scripts"))
+r = install(t)
+if r.returncode or "restored" not in r.stdout or not os.path.isfile(os.path.join(t, "scripts/guard.sh")):
+    failures.append(f"kit: install.sh did not restore the scripts an earlier copy left out (exit {r.returncode}): {r.stdout[-300:]!r} {r.stderr[-300:]!r}")
+# a user's own kit script, settings.json, ignored .claude/ and a file where a folder goes: stop, nothing copied
+t = target("own-guard", {"scripts/guard.sh": "#!/bin/sh\nexit 0\n"})
+os.chmod(os.path.join(t, "scripts/guard.sh"), 0o644)
+before = tree(t)
+stopped("its own scripts/guard.sh", t, before, install(t), ["scripts/guard.sh"])
+t = target("own-settings", {".claude/settings.json": '{"model": "opus"}\n'})
+before = tree(t)
+stopped("its own .claude/settings.json", t, before, install(t), [".claude/settings.json", "/morph-init"])
+r = install(t, "--merge")
+if r.returncode or "Not wired yet" not in r.stdout or read(os.path.join(t, ".claude/settings.json")) != '{"model": "opus"}\n' \
+        or not os.path.isfile(os.path.join(t, "scripts/guard.sh")):
+    failures.append(f"kit: install.sh --merge with the user's settings.json (exit {r.returncode}) changed it, copied no guard or "
+                    f"did not say the guard is not wired: {r.stdout[-300:]!r}")
+t = target("settings-names-guard", {".claude/settings.json": '{"permissions": {"deny": ["Edit(scripts/guard.sh)"]}}\n'})
+before = tree(t)
+stopped("a .claude/settings.json that names the guard but has no hook for it", t, before, install(t), [".claude/settings.json"])
+t = target("linked-folder", git=True)
+os.makedirs(os.path.join(scratch, "elsewhere"))
+os.symlink(os.path.join(scratch, "elsewhere"), os.path.join(t, ".claude"))
+before = tree(t)
+stopped("a .claude folder that is a link", t, before, install(t), [".claude"])
+if os.listdir(os.path.join(scratch, "elsewhere")):
+    failures.append("kit: install.sh wrote through a linked .claude folder")
+# an earlier copy (marker in) that kept the user's own guard.sh: /morph-init's copy step (--merge) stops
+t = target("old-copy-own-guard", {"scripts/guard.sh": "#!/bin/sh\nexit 0\n"})
+r = install(t)
+stopped("its own scripts/guard.sh", t, tree(t), r, ["scripts/guard.sh"])
+shutil.copy(os.path.join(template, "harness.config.yml"), os.path.join(t, "harness.config.yml"))
+before = tree(t)
+stopped("an earlier copy that kept its own scripts/guard.sh", t, before, install(t, "--merge"), ["scripts/guard.sh"])
+t = target("ignored", {".gitignore": "node_modules\n.claude/\n"}, git=True)
+before = tree(t)
+stopped("a .gitignore that hides .claude/", t, before, install(t), [".gitignore", ".claude/settings.json"])
+t = target("file-for-folder", {"project": "notes\n"})
+before = tree(t)
+stopped("a file named project", t, before, install(t), ["project"])
+# AGENTS.md linked to CLAUDE.md (and dangling): kept as one file, the link untouched, nothing written through it
+for name, files in (("linked", {"CLAUDE.md": "# Mine\n"}), ("linked-dangling", {})):
+    t = target(name, files, links={"AGENTS.md": "CLAUDE.md"})
+    r = install(t)
+    if r.returncode or "one file" not in r.stdout or os.readlink(os.path.join(t, "AGENTS.md")) != "CLAUDE.md" \
+            or (files and read(os.path.join(t, "CLAUDE.md")) != "# Mine\n") or (not files and os.path.lexists(os.path.join(t, "CLAUDE.md"))):
+        failures.append(f"kit: install.sh with AGENTS.md linked to CLAUDE.md ({name}, exit {r.returncode}) wrote through "
+                        f"or changed the link: {r.stdout[-300:]!r} {r.stderr[-300:]!r}")
+shutil.rmtree(scratch)
+
+# ---- once: render.md § 7's searches pass the guard in a project with a .env, and find only kit text --------
+# The install runs them after .claude/settings.json turns the guard on (render.md § 6b), and /morph-doctor runs
+# them later: a search over `.` is denied once a .env exists. Item 1 must ignore a project's own {{name}} text.
+item_cmds = {n: m.group(1) for n, m in (("1", re.search(r"^   `(grep -rs?nE '\(\^\|\[\^\$\]\)\{\{[^`]*)`$", render_md, re.M)),
+                                        ("2", re.search(r"^   `(grep -rs?n '<!-- morph-init: fill'[^`]*)`$", render_md, re.M))) if m}
+if len(item_cmds) != 2:
+    failures.append("kit: render.md § 7 items 1 and 2 have no search command the self-test can find")
+scratch = tempfile.mkdtemp(prefix="morphness-checks-")
+r = run(["bash", os.path.join(root, "scripts/install.sh"), scratch], scratch)
+write(os.path.join(scratch, ".env"), "API_KEY=selftest\n")
+for n, cmd in item_cmds.items():
+    g = run(["bash", "scripts/guard.sh"], scratch, input=json.dumps({"tool_name": "Bash", "tool_input": {"command": cmd}}),
+            env=dict(os.environ, CLAUDE_PROJECT_DIR=scratch))
+    if g.returncode or '"ask"' in g.stdout:
+        failures.append(f"kit: the guard stops render.md § 7 item {n}'s search in a project with a .env: {(g.stderr or g.stdout)[:200]!r}")
+# an unattended install saves the settings it couldn't write there (render.md § 6b): the guard lets it
+pending = os.path.join(scratch, "_harness/pending/settings.json")
+g = run(["bash", "scripts/guard.sh"], scratch, input=json.dumps({"tool_name": "Write", "tool_input": {"file_path": pending, "content": "{}\n"}}),
+        env=dict(os.environ, CLAUDE_PROJECT_DIR=scratch))
+if "_harness/pending/settings.json" not in render_md or g.returncode or '"ask"' in g.stdout:
+    failures.append(f"kit: the guard stops the write of render.md § 6b's pending settings file: {(g.stderr or g.stdout)[:200]!r}")
+if "1" in item_cmds:
+    found = run(["bash", "-c", item_cmds["1"]], scratch).stdout
+    if "{{project.name}}" not in found:
+        failures.append("kit: render.md § 7 item 1 no longer finds an unfilled {{project.name}}")
+    cfg_path = os.path.join(scratch, "harness.config.yml")
+    write(cfg_path, re.sub(r"\{\{ *[a-z][a-z0-9_.-]* *\}\}", "x", read(cfg_path)).replace('description: "x"', 'description: "A Mustache {{name}} template API"'))
+    found = run(["bash", "-c", item_cmds["1"]], scratch).stdout
+    if re.search(r"^harness\.config\.yml:", found, re.M):
+        failures.append(f"kit: render.md § 7 item 1 reports a project's own {{{{name}}}} text as a placeholder: {found[:200]!r}")
+if "2" in item_cmds and "morph-init: fill" not in run(["bash", "-c", item_cmds["2"]], scratch).stdout:
+    failures.append("kit: render.md § 7 item 2 no longer finds a fill comment the copy still has")
 shutil.rmtree(scratch)
 
 # ---- once: § references name headings that exist, and config keys match the template config ------
@@ -839,6 +1020,35 @@ def check(name, fx, t):
         d = re.search(r"^description:[ \t]*(.*)$", fm.group(1), re.M) if fm else None
         if d and re.search(r":\s", d.group(1)) and d.group(1)[:1] not in "\"'|>":
             bad(f"{os.path.relpath(f, t)} description has an unquoted colon: quote it")
+    # 5b. rules reach the agent they are for. Subagents run with omitClaudeMd: they load neither CLAUDE.md,
+    # AGENTS.md nor .claude/rules/, so a rule file must not address one, and the role bodies must name what
+    # the agent reads. The researcher has no shell and no edit tools (it replies; the TL writes the file).
+    for f in glob.glob(os.path.join(t, ".claude/agents/*.md")):
+        rel, text = os.path.relpath(f, t), read(f)
+        fm = re.match(r"^---\n(.*?)\n---\n", text, re.S)
+        if re.search(r"harness/agents/[a-z-]+\.md` \(its §", text):
+            bad(f"{rel} lists sections of its role body to read: the Read tool returns the whole file, so read it in full")
+        if os.path.basename(f).startswith("researcher"):
+            d = re.search(r"^disallowedTools:\s*(.*)$", fm.group(1), re.M) if fm else None
+            have = {x.strip() for x in d.group(1).split(",")} if d else set()
+            for tool in ("Bash", "Edit", "MultiEdit", "Write", "NotebookEdit"):
+                if tool not in have:
+                    bad(f"{rel} lets the researcher use {tool}: disallowedTools needs it")
+    role_reads = set()
+    for role in ("fullstack-engineer", "qa-engineer"):
+        body = read(os.path.join(t, f"harness/agents/{role}.md"))
+        start = body.split("## Before you start", 1)[-1].split("\n## ", 1)[0]
+        role_reads |= set(re.findall(r"\.claude/rules/[\w.-]+\.md", start))
+        if ".claude/rules/testing.md" not in start:
+            bad(f"harness/agents/{role}.md § Before you start doesn't read .claude/rules/testing.md")
+        if "AGENTS.md" in start:
+            bad(f"harness/agents/{role}.md § Before you start reads AGENTS.md (the Technical Lead's file)")
+    for f in glob.glob(os.path.join(t, ".claude/rules/*.md")):
+        rel = os.path.relpath(f, t)
+        if rel in role_reads:
+            continue
+        for m in re.finditer(r"\*\*[A-Za-z -]*(subagent|engineer|researcher|writer):\*\*", read(f)):
+            bad(f"{rel} addresses a subagent ({m.group(0)}), but no subagent reads it: move it to harness/agents/<role>.md")
     # 6. named checks have commands, and no row names an unknown check
     cfg = lambda key: run(["bash", "-c", f'. scripts/lib/config.sh; config_get {key}'], t).stdout.strip()
     names = set()
@@ -942,6 +1152,17 @@ def check(name, fx, t):
     r = start("", "echo changed", extra=("--accept",))
     if "NOT RUN" in r.stdout or "dependency install: echo changed" not in r.stdout:
         bad(f"session-start.sh --accept did not run the new commands: {r.stdout!r}")
+    repin()
+    # commands install.sh copied unfilled are not pinned: the first session after morph-init runs the real ones
+    start("", "{{stack.install_cmd}}")
+    r = start("", "echo filled")
+    if "NOT RUN" in r.stdout or "dependency install: echo filled" not in r.stdout:
+        bad(f"session-start.sh pinned unfilled commands and held the filled ones: {r.stdout!r}")
+    # but a placeholder in one command never lets a pulled change to the other one run past an existing pin
+    marker = os.path.join(t, "selftest-unpinned-ran")
+    r = start("{{stack.toolchain_setup}}", f"touch {marker}")
+    if "NOT RUN" not in r.stdout or os.path.exists(marker):
+        bad(f"session-start.sh ran a changed install command past the pin because the other command has a placeholder: {r.stdout!r}")
     repin()
     if name == once_on or FULL:
         sbin = os.path.join(t, "selftest-bin")
@@ -1082,6 +1303,111 @@ def check(name, fx, t):
         bad(f"learned-rules.sh did not list the tagged rule with its source and last fired day: {r.stdout!r}")
     open(rules_md, "w").write(saved)
     os.remove(os.path.join(ldir, "selftest-v1.md"))
+    # risk-check.sh: the mode comes from the paths, the same every time (harness/MODES.md § Choosing mode).
+    # It reads what the branch changed, so it runs on a committed copy (an updated copy has the update unstaged).
+    rk = os.path.join(tempfile.mkdtemp(prefix="risk-"), "p")
+    shutil.copytree(t, rk, symlinks=True)
+    integ = run(["bash", "-c", ". scripts/lib/config.sh; config_get branches.integration"], rk).stdout.strip() or "dev"
+    for cmd in (["add", "-A"], ["-c", "user.name=selftest", "-c", "user.email=selftest@example.com", "commit", "-q", "--allow-empty", "-m", "state"],
+                ["branch", "-f", integ]):
+        run(["git", *cmd], rk)
+    def risk(*args, cwd=None):
+        r = run(["bash", os.path.join(rk, "scripts/risk-check.sh"), *args], cwd or rk)
+        return r.returncode, r.stdout
+    section = read(os.path.join(rk, "project/CONTROLS.md")).split("## Risk paths", 1)[-1].split("\n## ", 1)[0]
+    rows = re.findall(r"^- \*\*(.+?):\*\*(.*)$", section, re.M)
+    if "Bash(bash scripts/risk-check.sh:*)" not in settings.get("permissions", {}).get("allow", []):
+        bad(".claude/settings.json doesn't allow bash scripts/risk-check.sh: every mode choice would stop at a permission prompt")
+    if not rows:
+        bad("project/CONTROLS.md § Risk paths has no rows")
+    for area, rest in rows:
+        for g in re.findall(r"`([^`\s]+)`", rest):
+            sample = g.lstrip("/").replace("**/", "a/").replace("**", "a").replace("*", "x").replace("?", "x")
+            if sample.endswith("/"):
+                sample += "f.ts"
+            outs = {risk(sample)[1] for _ in range(3)}
+            out = outs.pop() if len(outs) == 1 else f"{len(outs)} different answers"
+            if not out.startswith("Mode: full\n") or area not in out:
+                bad(f"risk-check.sh {sample} (risk path `{g}`, {area}) printed {out!r}")
+    code, out = risk("README.md", "docs/guide.md")
+    if code or out != "Mode: plain (documentation only)\n":
+        bad(f"risk-check.sh on documentation printed {out!r} (exit {code})")
+    code, out = risk("src/lib/format.ts")
+    if code or out != "Mode: plain (1 file, none on a risk path)\n":
+        bad(f"risk-check.sh on one ordinary file printed {out!r} (exit {code})")
+    code, out = risk(*[f"src/lib/f{i}.ts" for i in range(7)], "README.md")
+    if code or not out.startswith("Mode: full\n") or "more than mode.plain_max_files (6)" not in out:
+        bad(f"risk-check.sh on 7 files printed {out!r} (exit {code})")
+    code, out = risk("--force", "plain", "supabase/migrations/0001_x.sql")
+    if code or not out.startswith("Mode: plain (the owner chose plain; without that: full)\n"):
+        bad(f"risk-check.sh --force plain on a migration printed {out!r} (exit {code})")
+    code, out = risk("--force", "full", "README.md")
+    if code or not out.startswith("Mode: full (the owner chose full; without that: plain)"):
+        bad(f"risk-check.sh --force full on documentation printed {out!r} (exit {code})")
+    for args in (("--force", "maybe", "README.md"), ("--fast",), ()):
+        code, out = risk(*args)
+        if code != 2 or not out.startswith("Mode: full (risk check: "):
+            bad(f"risk-check.sh {' '.join(args) or '(no files, clean tree)'} printed {out!r} (exit {code}): it must fail toward full")
+    code, out = risk("../supabase/migrations/0001_x.sql", cwd=os.path.join(rk, "project"))
+    if not out.startswith("Mode: full\n") or "- supabase/migrations/0001_x.sql:" not in out:
+        bad(f"risk-check.sh run from a subfolder printed {out!r}")
+    code, out = risk(os.path.join(rk, "supabase/migrations/0001_x.sql"))
+    if not out.startswith("Mode: full\n") or "- supabase/migrations/0001_x.sql:" not in out:
+        bad(f"risk-check.sh with an absolute path printed {out!r}")
+    code, out = risk("requirements.txt")
+    if code or out != "Mode: plain (1 file, none on a risk path)\n":
+        bad(f"risk-check.sh on requirements.txt printed {out!r} (exit {code}): a .txt file is not documentation")
+    os.makedirs(os.path.join(rk, "src/lib"), exist_ok=True)
+    for fname, line, hit in (("purge.ts", "export const purge = (db) => db.query('DELETE FROM notes WHERE old');", "DELETE FROM"),
+                            ("reset.py", "cur.execute('TRUNCATE users;')", "TRUNCATE users"),
+                            ("slim.py", "cur.execute('ALTER TABLE users DROP email')", "ALTER TABLE users DROP"),
+                            ("old tables.go", "db.Exec(`drop table notes`)", "drop table")):
+        write(os.path.join(rk, "src/lib", fname), line + "\n")
+        write(os.path.join(rk, "docs-note.md"), f"Run {hit} by hand.\n")
+        code, out = risk()
+        if code or not out.startswith("Mode: full\n") or f'src/lib/{fname} adds "{hit}"' not in out or "docs-note.md" in out:
+            bad(f"risk-check.sh with a new file that deletes stored data ({hit}) printed {out!r} (exit {code})")
+        os.remove(os.path.join(rk, "src/lib", fname))
+        os.remove(os.path.join(rk, "docs-note.md"))
+    controls = os.path.join(rk, "project/CONTROLS.md")
+    first = rows[0][1].split("`")[1] if rows and "`" in rows[0][1] else None
+    if first:
+        saved = read(controls)
+        write(controls, saved.replace(f"`{first}`", "", 1))
+        code, out = risk()
+        if code or not out.startswith("Mode: full\n") or f"drops risk path `{first}`" not in out:
+            bad(f"risk-check.sh after § Risk paths lost `{first}` printed {out!r} (exit {code})")
+        write(controls, saved)
+    script = os.path.join(rk, "scripts/risk-check.sh")
+    saved = read(script)
+    write(script, saved + "# edited\n")
+    code, out = risk()
+    if code or not out.startswith("Mode: full\n") or "scripts/risk-check.sh: the risk check itself" not in out:
+        bad(f"risk-check.sh after an edit to itself printed {out!r} (exit {code})")
+    write(script, saved)
+    os.makedirs(os.path.join(rk, "supabase/migrations"), exist_ok=True)
+    write(os.path.join(rk, "supabase/migrations/0002_tags.sql"), "create table tags (id int);\n")
+    git_id = ["-c", "user.name=selftest", "-c", "user.email=selftest@example.com"]
+    for cmd in (["checkout", "-q", "-b", "selftest-risk"], ["add", "supabase"], [*git_id, "commit", "-q", "-m", "tags"]):
+        run(["git", *cmd], rk)
+    code, out = risk()
+    if code or not out.startswith("Mode: full\n") or "supabase/migrations/0002_tags.sql" not in out:
+        bad(f"risk-check.sh after a committed migration on a branch printed {out!r} (exit {code})")
+    code, out = risk(cwd=os.path.join(rk, "project"))
+    if code or "- supabase/migrations/0002_tags.sql:" not in out:
+        bad(f"risk-check.sh from a subfolder after a committed migration printed {out!r} (exit {code})")
+    os.makedirs(os.path.join(rk, "src/auth"), exist_ok=True)
+    write(os.path.join(rk, "src/auth/café token.ts"), "export {};\n")
+    for cmd in (["add", "src"], [*git_id, "commit", "-q", "-m", "auth"]):
+        run(["git", *cmd], rk)
+    code, out = risk()
+    if code or "- src/auth/café token.ts:" not in out:
+        bad(f"risk-check.sh after a committed file with an accent and a space printed {out!r} (exit {code})")
+    run(["git", "branch", "-D", integ], rk)
+    code, out = risk("README.md")
+    if code != 2 or not out.startswith("Mode: full (risk check: "):
+        bad(f"risk-check.sh with no `{integ}` branch printed {out!r} (exit {code}): it must fail toward full")
+    shutil.rmtree(os.path.dirname(rk))
     # prune states: proposed and approved are open (named, no DUE); declined, applied and README are not
     pdir, ldir = os.path.join(t, "_harness/prunes"), os.path.join(t, "_harness/learnings")
     os.makedirs(pdir, exist_ok=True)
