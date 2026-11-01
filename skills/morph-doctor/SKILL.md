@@ -27,12 +27,20 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
   `modules` (stale rules agents would read). Offer the fix through `/morph-module add <name>` (a
   module listed but never installed) or `/morph-module remove <name>` (a folder left behind).
 - Every agent file under `.claude/agents/` points at a body under `harness/agents/` that exists.
-- **Required tools:** `git`, `python3`, `awk` and `perl` are on PATH (`command -v`), and `bash` is the
-  shell the hooks run in (native Windows without Git Bash is not supported). Report each missing one with
-  what stops working: no `python3` makes `scripts/guard.sh` block every tool call (it fails closed; `guard.fail_open: true` lets them through) and stops the prune
-  counter and cost scripts; no `awk` stops every script that reads `harness.config.yml`; no `perl` stops
-  `/morph-module remove`; no `git` stops the process. `timeout` (or `gtimeout`) missing: say that
-  `scripts/session-start.sh` then runs without a time limit.
+- **Required tools:** `git`, `python3`, `awk`, `perl`, `grep`, `sed`, `sort`, `tr` and `wc` are on PATH
+  (`command -v`), `python3 -I -c 'import sys; print(sys.version_info >= (3, 7))'` prints `True` (a stub
+  python3, such as macOS's before the Command Line Tools are installed or the Microsoft Store alias, passes
+  `command -v` but not this), and `bash` is the shell the hooks run in (native Windows without Git Bash is
+  not supported). Report each gap with what stops working: no `python3` makes `scripts/guard.sh` block
+  every tool call (it fails closed; `guard.fail_open: true` lets them through) and stops the cost, evidence
+  and learned-rules scripts (the prune counter runs without its trial and rule-tag counts); a stub or a
+  Python older than 3.7 leaves the guard unable to check calls (a stub that fails blocks every call, one
+  that exits 0 lets every call through unchecked, an older Python misses some; `guard.fail_open` doesn't
+  apply); no `awk` makes every `harness.config.yml` setting read as
+  empty, so the guard protects no branch and the other scripts run on their defaults or stop with a
+  not-measured line; no `perl` stops `/morph-module remove`; no `grep`, `sed`, `sort`, `tr` or `wc` stops
+  the prune counter (and without `grep`, `sort` or `tr` the guard protects no branch); no `git` stops the process. Neither `timeout` nor `gtimeout` (stock macOS): say that
+  `scripts/session-start.sh` uses perl for its time limit, and runs without one when perl is missing too.
 - **Session commands:** `.git/morphness-session-commands` exists and matches the two commands in
   `scripts/session-start.sh`. A mismatch means the commands changed since this clone last ran them and
   session start is holding them: show the owner both versions and, on a yes, run

@@ -13,12 +13,12 @@
 #   tests/fixtures/*.json)
 #   KEEP=1 keeps the rendered copies and prints where they are.
 #   GUARD_FULL=1 replays every guard case on every sample project (default: cases without "every" run once).
-#   STRICT=1 (CI) fails when PyYAML is missing instead of skipping the YAML checks.
-# Needs bash, git, perl and python3. Read-only on the repo: renders into a temporary folder.
+#   STRICT=1 (CI) fails when PyYAML or shellcheck is missing instead of skipping the checks that need them.
+# Needs bash, git, perl and python3 (shellcheck for the lint check). Read-only on the repo: renders into a temporary folder.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 exec python3 -I - "$ROOT" "$@" <<'PY'
-import glob, json, os, re, shutil, subprocess, sys, tempfile
+import glob, json, os, re, shutil, subprocess, sys, tempfile, time
 
 root, wanted = sys.argv[1], sys.argv[2:]
 template = os.path.join(root, "template")
@@ -130,6 +130,77 @@ for name in ALL_MODULES:
             anchor = inline.sub("", lines[a]) if a >= 0 else None
             if anchor is None or without.count(anchor) != 1:
                 failures.append(f"kit: {rel}: a {name} span (line {s + 1}) has no unique anchor line above it")
+
+# ---- once: the module marker command handles a path with spaces, and never waits on stdin -------------
+scratch = tempfile.mkdtemp(prefix="morphness-markers-")
+spaced = os.path.join(scratch, "project/my docs/notes.md")
+os.makedirs(os.path.dirname(spaced))
+write(spaced, "keep\n<!-- module:legal -->\nlegal block\n<!-- /module:legal -->\n\nrow <!-- module:legal -->\nend\n")
+r = run(["bash", "-c", MARKER_CMD], scratch)
+if r.returncode or read(spaced) != "keep\nend\n":
+    failures.append(f"kit: the module marker command left {read(spaced)!r} in a file whose path has a space (exit {r.returncode}, {r.stderr.strip()!r})")
+os.remove(spaced)
+# nothing matches now: perl -i with no file names would read stdin, which here stays open
+errf = os.path.join(scratch, "stderr")
+with open(errf, "w") as ef:
+    proc = subprocess.Popen(["bash", "-c", MARKER_CMD], cwd=scratch, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=ef)
+    try:
+        proc.wait(timeout=20)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
+        failures.append("kit: the module marker command with nothing to change waited on stdin")
+    proc.stdin.close()
+if proc.returncode is not None and proc.returncode >= 0 and (proc.returncode or read(errf).strip()):
+    failures.append(f"kit: the module marker command with nothing to change exited {proc.returncode}: {read(errf).strip()!r}")
+if shutil.which("zsh"):   # macOS's default shell: the command must not end the shell it runs in
+    r = run(["zsh", "-c", MARKER_CMD + "; echo still-here"], scratch)
+    if "still-here" not in r.stdout:
+        failures.append(f"kit: the module marker command ended the zsh it ran in (exit {r.returncode})")
+shutil.rmtree(scratch)
+
+# ---- once: shellcheck finds nothing at warning level beyond the exceptions documented in tests/triage.jsonl
+# (the same verdicts the public results page uses). STRICT=1 needs shellcheck, as it needs PyYAML.
+if shutil.which("shellcheck"):
+    triaged = {(t["rule"], t.get("path", "*")) for t in (json.loads(l) for l in open(os.path.join(root, "tests/triage.jsonl"), encoding="utf-8") if l.strip())
+               if t["tool"] == "shellcheck" and t.get("status") in ("false-positive", "accepted")}
+    shell_files = run(["git", "ls-files", "*.sh"], root).stdout.split()
+    r = run(["shellcheck", "-x", "-S", "warning", "-f", "json", *shell_files], root)
+    try:
+        found = json.loads(r.stdout or "[]")
+    except ValueError:
+        found = None
+        failures.append(f"kit: shellcheck printed no JSON ({r.stderr.strip()[:200]!r})")
+    for x in found or []:
+        rule = f"SC{x['code']}"
+        if (rule, x["file"]) not in triaged and (rule, "*") not in triaged:
+            failures.append(f"kit: shellcheck {rule} ({x['level']}) at {x['file']}:{x['line']}: {x['message']} "
+                            "(fix it, or add a verdict to tests/triage.jsonl)")
+elif os.environ.get("STRICT") == "1":
+    failures.append("kit: shellcheck is not installed (python3 -m pip install shellcheck-py); STRICT=1 needs it")
+
+# ---- once: the guard's python fits in one command-line argument -----------------------------------------
+# guard.sh passes its program to `python3 -I -c '…'`; Linux refuses a single argument over 128 KB
+# (MAX_ARG_STRLEN), and the guard would then block every call. Move the program to its own file before then.
+m = re.search(r"\npython3 -I -c '\n(.*?)\n'", read(os.path.join(template, "scripts/guard.sh")), re.S)
+if not m:
+    failures.append("kit: scripts/guard.sh has no `python3 -I -c '…'` program to measure")
+elif len(m.group(1).encode()) > 100 * 1024:
+    failures.append(f"kit: scripts/guard.sh's python is {len(m.group(1).encode()) // 1024} KB, near Linux's 128 KB limit for one "
+                    "argument: move it to its own file (still run with python3 -I)")
+
+# ---- once: install.sh names a python3 that can't run the guard (a stub, or older than 3.7) -------------
+scratch = tempfile.mkdtemp(prefix="morphness-install-")
+stub = os.path.join(scratch, "bin/python3")
+os.makedirs(os.path.dirname(stub))
+os.makedirs(os.path.join(scratch, "proj"))
+write(stub, "#!/bin/sh\necho 'xcode-select: note: No developer tools were found' >&2\nexit 1\n")
+os.chmod(stub, 0o755)
+r = run(["bash", os.path.join(root, "scripts/install.sh"), "--dry-run", os.path.join(scratch, "proj")], scratch,
+        env=dict(os.environ, PATH=os.path.dirname(stub) + os.pathsep + os.environ["PATH"]))
+if f"python3: {stub} is not a working Python 3.7 or later" not in r.stdout:
+    failures.append(f"kit: install.sh did not name a stub python3 among the missing tools: {r.stdout[-400:]!r} {r.stderr[-200:]!r}")
+shutil.rmtree(scratch)
 
 # ---- once: § references name headings that exist, and config keys match the template config ------
 # A reference such as `harness/SETUP.md § Prune` must point at a heading (or a bold lead-in) in that
@@ -615,14 +686,15 @@ def check(name, fx, t):
     # session-start.sh: prints the command, reports a failure with the tail of its output, times out, and
     # adds --ignore-scripts to an npm install; always exits 0
     src = open(os.path.join(template, "scripts/session-start.sh"), encoding="utf-8").read()
-    def start(tool, install, limit="3", extra=()):
+    def start(tool, install, limit="3", extra=(), env_extra=None):
         body = re.sub(r"^TOOLCHAIN_SETUP=.*$", lambda m: f"TOOLCHAIN_SETUP='{tool}'", src, flags=re.M)
         body = re.sub(r"^INSTALL_CMD=.*$", lambda m: f"INSTALL_CMD='{install}'", body, flags=re.M)
         f = os.path.join(t, "scripts/.session-start-test.sh")
         open(f, "w").write(body)
         env = dict(os.environ, MORPHNESS_START_TIMEOUT=limit, CLAUDE_PROJECT_DIR=t)
         env.pop("CLAUDE_ENV_FILE", None)
-        r = run(["bash", f, *extra], t, env=env)
+        env.update(env_extra or {})
+        r = run([shutil.which("bash"), f, *extra], t, env=env)
         os.remove(f)
         return r
     pin = run(["git", "rev-parse", "--git-path", "morphness-session-commands"], t).stdout.strip()
@@ -655,6 +727,113 @@ def check(name, fx, t):
     if "NOT RUN" in r.stdout or "dependency install: echo changed" not in r.stdout:
         bad(f"session-start.sh --accept did not run the new commands: {r.stdout!r}")
     repin()
+    if name == once_on or FULL:
+        sbin = os.path.join(t, "selftest-bin")
+        def path_without(*tools, add=None):
+            # a PATH of links to every command on this one except the named tools, plus the files in add
+            shutil.rmtree(sbin, ignore_errors=True)
+            os.makedirs(sbin)
+            for d in os.environ["PATH"].split(os.pathsep):
+                for n in (os.listdir(d) if os.path.isdir(d) else []):
+                    if n not in tools and not os.path.lexists(os.path.join(sbin, n)) and os.access(os.path.join(d, n), os.X_OK):
+                        os.symlink(os.path.join(d, n), os.path.join(sbin, n))
+            for n, body in (add or {}).items():
+                if os.path.lexists(os.path.join(sbin, n)):
+                    os.remove(os.path.join(sbin, n))
+                write(os.path.join(sbin, n), body)
+                os.chmod(os.path.join(sbin, n), 0o755)
+            return sbin
+        # No timeout or gtimeout (stock macOS): perl bounds the step, and stops what it started too.
+        late = os.path.join(t, "selftest-late")
+        r = start("", f"(sleep 4; echo late > {late}) & sleep 30", "1", env_extra={"PATH": path_without("timeout", "gtimeout")})
+        time.sleep(5)
+        if r.returncode or "timed out after 1s" not in r.stdout or os.path.exists(late):
+            bad(f"session-start.sh without timeout ran a hanging install unbounded or left its children: {r.stdout!r}"
+                + (" (a child kept running)" if os.path.exists(late) else ""))
+        repin()
+        # A TERM to the perl wrapper (the hook being stopped) stops the step too, not just the wrapper.
+        if shutil.which("pgrep"):
+            body = re.sub(r"^TOOLCHAIN_SETUP=.*$", "TOOLCHAIN_SETUP=''", src, flags=re.M)
+            body = re.sub(r"^INSTALL_CMD=.*$", lambda m: f"INSTALL_CMD='sleep 4; echo late > {late}'", body, flags=re.M)
+            f = os.path.join(t, "scripts/.session-start-test.sh")
+            write(f, body)
+            env = dict(os.environ, MORPHNESS_START_TIMEOUT="60", CLAUDE_PROJECT_DIR=t, PATH=path_without("timeout", "gtimeout"))
+            env.pop("CLAUDE_ENV_FILE", None)
+            proc = subprocess.Popen([shutil.which("bash"), f], cwd=t, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            wrapper = []
+            for _ in range(50):
+                wrapper = run(["pgrep", "-P", str(proc.pid), "perl"], t).stdout.split()
+                if wrapper:
+                    break
+                time.sleep(0.1)
+            for w in wrapper:
+                os.kill(int(w), 15)
+            out = proc.communicate(timeout=30)[0].decode(errors="replace")
+            time.sleep(5)
+            os.remove(f)
+            if not wrapper or os.path.exists(late) or "failed (exit 143)" not in out:
+                bad(f"session-start.sh's perl time limit, sent TERM, left its step running: {out!r}"
+                    + (" (no perl wrapper found)" if not wrapper else ""))
+            if os.path.exists(late):
+                os.remove(late)
+            repin()
+        # Output and PATH go to a private folder under TMPDIR (mode 700), or into the git folder without mktemp;
+        # never to a fixed name in /tmp.
+        private = tempfile.mkdtemp(prefix="selftest-tmp-")
+        where = 'd="${MORPHNESS_PATH_FILE%/*}"; echo "at $MORPHNESS_PATH_FILE mode $(stat -c %a "$d" 2>/dev/null || stat -f %Lp "$d")"; exit 3'
+        r = start("", where, env_extra={"TMPDIR": private})
+        at = re.search(r"\| at (.+) mode (\d+)", r.stdout)
+        if not at or not at.group(1).startswith(private + "/morphness-start.") or at.group(2) != "700":
+            bad(f"session-start.sh kept its output outside a private (mode 700) folder under TMPDIR: {r.stdout!r}")
+        elif os.listdir(private):
+            bad(f"session-start.sh left {os.listdir(private)} in TMPDIR")
+        shutil.rmtree(private)
+        repin()
+        # without mktemp: in the git folder, by an absolute path (a step that cds elsewhere still finds it)
+        r = start("cd harness", where, env_extra={"PATH": path_without("mktemp")})
+        gitdir = os.path.realpath(os.path.join(t, run(["git", "rev-parse", "--git-dir"], t).stdout.strip()))
+        at = re.search(r"\| at (.+) mode (\d+)", r.stdout)
+        if not at or not at.group(1).startswith("/") or not os.path.realpath(at.group(1)).startswith(gitdir + "/morphness-start.") or at.group(2) != "700":
+            bad(f"session-start.sh without mktemp did not keep its output in a private folder in the git folder: {r.stdout!r}")
+        repin()
+        # A PATH with a quote, a dollar sign and a backtick survives the session's env file as text.
+        odd = os.path.join(t, 'selftest dir "q" $HOME `id`')
+        os.makedirs(odd)
+        env_file = os.path.join(t, "selftest-env")
+        write(env_file, "")
+        tool = 'export PATH="' + odd.replace("\\", "\\\\").replace('"', '\\"').replace("$", "\\$").replace("`", "\\`") + ':$PATH"'
+        r = start(tool.replace("'", "'\\''"), "", env_extra={"CLAUDE_ENV_FILE": env_file})
+        back = run(["bash", "-c", f'. "{env_file}" && printf %s "${{PATH%%:*}}"'], t)
+        if back.stdout != odd or back.stderr:
+            bad(f"session-start.sh wrote a PATH the env file doesn't give back: {read(env_file)!r} gave {back.stdout!r} {back.stderr.strip()!r}")
+        shutil.rmtree(odd)
+        os.remove(env_file)
+        repin()
+        # Output that doesn't end in a newline doesn't run into the next line.
+        r = start("", "printf nonl; exit 3")
+        if "  | nonl\nsession-start: done" not in r.stdout:
+            bad(f"session-start.sh ran a failed step's last output line into the next message: {r.stdout!r}")
+        repin()
+        # A python3 that can't run the guard (a stub that exits 0 or 1, an old version) is named.
+        for body in ("#!/bin/sh\nexit 0\n", "#!/bin/sh\necho 'xcode-select: note: No developer tools were found' >&2\nexit 1\n",
+                     "#!/bin/sh\necho False\n"):
+            r = start("", "", env_extra={"PATH": path_without(add={"python3": body})})
+            if "is not a working Python 3.7 or later" not in r.stdout:
+                bad(f"session-start.sh did not name a python3 that can't run the guard ({body.splitlines()[1]!r}): {r.stdout!r}")
+        # The hooks run with this PATH, not the toolchain step's: a real python3 the toolchain adds doesn't hide the stub.
+        real = os.path.join(t, "selftest-realpy")
+        os.makedirs(real)
+        os.symlink(shutil.which("python3"), os.path.join(real, "python3"))
+        r = start(f'export PATH="{real}:$PATH"', "", env_extra={"PATH": path_without(add={"python3": "#!/bin/sh\nexit 1\n"})})
+        if "is not a working Python 3.7 or later" not in r.stdout:
+            bad(f"session-start.sh checked the toolchain's python3 instead of the one the hooks run: {r.stdout!r}")
+        shutil.rmtree(real)
+        repin()
+        r = start("", "")
+        if "Python" in r.stdout:
+            bad(f"session-start.sh complained about a working python3: {r.stdout!r}")
+        shutil.rmtree(sbin)
+        repin()
     if cfg("branches.integration") != fx["branches"]["integration"]:
         bad("config_get branches.integration doesn't print the integration branch")
     r = run(["bash", "scripts/prune-counter.sh"], t)

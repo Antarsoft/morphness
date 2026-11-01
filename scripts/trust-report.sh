@@ -11,13 +11,16 @@
 #        scripts/trust-report.sh --render-only results.json [--out DIR]   (re-renders the page, runs nothing)
 #   --out DIR  where docs/trust.html and docs/trust/ go (default: docs/ in the repo)
 #   TRUST_FAKE_FAIL=agnix,gitleaks  makes those tools fail to start (tests that a crash is shown as "did not run")
+#   TRUST_NET_TIMEOUT=60  seconds a download may wait for the server (default 60) and, times 5, its whole time
+#   TRUST_GITLEAKS_URL, TRUST_GITLEAKS_SHA256  another gitleaks release folder and tarball checksum (for tests:
+#                         tests/trust-report-test.sh serves a fake one); the pins below are used otherwise
 # Needs bash, git, perl, python3 with pip, node with npx, uv and curl. Tools are installed into a temporary
 # folder that is deleted at the end; versions are pinned below (bump them in their own PR).
 # Run it on a clean checkout with tags (git fetch --tags), at the release being published.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 exec python3 -I - "$ROOT" "$@" <<'PY'
-import datetime, fnmatch, hashlib, html, json, os, platform, re, shutil, subprocess, sys, tempfile, tarfile, urllib.request
+import datetime, fnmatch, hashlib, html, json, os, platform, re, shutil, subprocess, sys, tempfile, tarfile, threading, urllib.request
 
 root = sys.argv[1]
 args = sys.argv[2:]
@@ -26,6 +29,14 @@ PINS = {
     "agnix": "0.59.0",
     "shellcheck-py": "0.11.0.1",
     "gitleaks": "8.28.0",
+    # sha256 of each gitleaks tarball, from the release's checksums file on the day the version was pinned. The
+    # download is checked against these, not against a checksums file fetched with it from the same place.
+    "gitleaks-sha256": {
+        "linux_x64": "a65b5253807a68ac0cafa4414031fd740aeb55f54fb7e55f386acb52e6a840eb",
+        "linux_arm64": "eff65261156100e5d94a6b3dec313d532fddfe19ae1590bf7a2b4f2699128356",
+        "darwin_x64": "edf5a507008b0d2ef4959575772772770586409c1f6f74dabf19cbe7ec341ced",
+        "darwin_arm64": "d942f3ad147250c9edbaab3fed9e482f98d3b59ba10ae97b8d75647e3ade492c",
+    },
     "skillspector": "95a52d89fa16f608f0b18ccee76b0918ea4b7eef",   # NVIDIA/SkillSpector v2.12.0
 }
 URLS = {
@@ -56,6 +67,26 @@ log_dir = os.path.join(data_dir, "logs")
 
 def now():
     return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+NET_TIMEOUT = float(os.environ.get("TRUST_NET_TIMEOUT") or 60)
+
+def download(url, dest):
+    """Fetches url into dest. A server that stops answering for NET_TIMEOUT seconds, or a download that takes
+    over five times that in all (a server sending a byte now and then), raises instead of hanging the run."""
+    done = {}
+    def fetch():
+        try:
+            with urllib.request.urlopen(url, timeout=NET_TIMEOUT) as r, open(dest, "wb") as f:
+                shutil.copyfileobj(r, f)
+        except Exception as e:
+            done["error"] = e
+    t = threading.Thread(target=fetch, daemon=True)
+    t.start()
+    t.join(5 * NET_TIMEOUT)
+    if t.is_alive():
+        raise RuntimeError(f"download of {url} took over {5 * NET_TIMEOUT:g}s")
+    if "error" in done:
+        raise done["error"]
 
 def sh(cmd, cwd=root, env=None, check=False):
     r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, env=env)
@@ -367,16 +398,24 @@ def run_gitleaks():
     ver = PINS["gitleaks"]
     sysn = {"Linux": "linux", "Darwin": "darwin"}.get(platform.system())
     arch = {"x86_64": "x64", "AMD64": "x64", "aarch64": "arm64", "arm64": "arm64"}.get(platform.machine())
-    if not sysn or not arch: raise RuntimeError(f"no gitleaks build pinned for {platform.system()} {platform.machine()}")
-    base = f"{URLS['gitleaks']}/releases/download/v{ver}/"
+    want = os.environ.get("TRUST_GITLEAKS_SHA256") or PINS["gitleaks-sha256"].get(f"{sysn}_{arch}")
+    if not sysn or not arch or not want: raise RuntimeError(f"no gitleaks build pinned for {platform.system()} {platform.machine()}")
+    base = os.environ.get("TRUST_GITLEAKS_URL") or f"{URLS['gitleaks']}/releases/download/v{ver}/"
     name = f"gitleaks_{ver}_{sysn}_{arch}.tar.gz"
     tgz = os.path.join(tools, name)
-    urllib.request.urlretrieve(base + name, tgz)
-    sums = urllib.request.urlopen(base + f"gitleaks_{ver}_checksums.txt").read().decode()
-    want = dict(l.split()[::-1] for l in sums.splitlines() if l.strip()).get(name)
+    download(base.rstrip("/") + "/" + name, tgz)
     got = hashlib.sha256(open(tgz, "rb").read()).hexdigest()
-    if want != got: raise RuntimeError("gitleaks download does not match its published checksum")
-    tarfile.open(tgz).extract("gitleaks", tools, filter="data")
+    if want != got: raise RuntimeError(f"gitleaks download does not match the pinned checksum (sha256 {got})")
+    with tarfile.open(tgz) as tar:
+        member = tar.getmember("gitleaks")
+        if not member.isfile(): raise RuntimeError("the gitleaks tarball's gitleaks entry is not a plain file")
+        try:
+            tar.extract(member, tools, filter="data")
+        except TypeError:
+            # Python without extraction filters (before 3.8.17, 3.9.17, 3.10.12 or 3.11.4; Apple's python3 is 3.9.6).
+            # The tarball matched its pin and the one member taken is a plain file named "gitleaks", so
+            # extracting it without the filter can't write outside the tools folder.
+            tar.extract(member, tools)
     rep = os.path.join(tmp, "gitleaks.json")
     r = sh([os.path.join(tools, "gitleaks"), "detect", "--no-banner", "--redact", "-s", root, "-r", rep, "-f", "json"])
     if r.returncode not in (0, 1): raise RuntimeError(f"gitleaks exit {r.returncode}: {r.stderr.strip()[-200:]}")
