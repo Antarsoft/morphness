@@ -20,7 +20,7 @@ DRY=0; MERGE=0; TARGET=""
 for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY=1 ;;
-    --merge) MERGE=1 ;;            # morph-init merges a kept .claude/settings.json, so it may stay
+    --merge) MERGE=1 ;;            # morph-init: it writes .claude/settings.json itself, last (render.md § 6b)
     --no-clobber) ;;               # accepted for clarity; never overwriting is the only mode
     -*) usage ;;
     *) [ -z "$TARGET" ] || usage; TARGET="$arg" ;;
@@ -30,11 +30,18 @@ if [ -z "$TARGET" ] || [ ! -d "$TARGET" ]; then usage; fi
 SRC="$(cd "$(dirname "$0")/.." && pwd)/template"
 TARGET="$(cd "$TARGET" && pwd)"
 
-REPAIR=0   # harness.config.yml with placeholders: an earlier copy; fill in what it left out
-if [ -f "$TARGET/harness.config.yml" ] && grep -q '{{' "$TARGET/harness.config.yml"; then
+REPAIR=0   # harness.config.yml with the kit's placeholders: an earlier copy; fill in what it left out
+# (only the kit's keys count: a filled-in config may quote a project's own {{name}} text)
+if [ -f "$TARGET/harness.config.yml" ] && grep -qE '\{\{ *(project|human|morphness)\.' "$TARGET/harness.config.yml"; then
   REPAIR=1
 elif [ -f "$TARGET/harness.config.yml" ]; then
-  echo "Morphness is already installed in $TARGET (harness.config.yml exists). Run /morph-update there for upstream changes, or /morph-doctor for a health check." >&2
+  if [ ! -f "$TARGET/.claude/settings.json" ] || ! grep -q 'scripts/guard.sh' "$TARGET/.claude/settings.json"; then
+    echo "Morphness is set up in $TARGET but .claude/settings.json doesn't run the guard yet (/morph-init stopped before its last file). Run /morph-init there: it finishes that step." >&2
+  elif git -C "$TARGET" rev-parse --verify -q HEAD >/dev/null 2>&1 && [ -z "$(git -C "$TARGET" ls-files harness.config.yml)" ]; then
+    echo "Morphness is set up in $TARGET but not committed yet (/morph-init stopped before its end). Run /morph-init there: it runs the last checks and commits." >&2
+  else
+    echo "Morphness is already installed in $TARGET (harness.config.yml exists). Run /morph-update there for upstream changes, or /morph-doctor for a health check." >&2
+  fi
   exit 1
 fi
 
@@ -94,7 +101,7 @@ PY
     grep -q 'scripts/guard\.sh' "$1" 2>/dev/null
   fi
 }
-copy=(); kept=(); present=0; stops=(); own_scripts=(); bad_parents=(); linked_parents=(); settings_kept=0
+copy=(); kept=(); present=0; stops=(); own_scripts=(); bad_parents=(); linked_parents=(); settings_kept=0; settings_left=0
 while IFS= read -r -d '' f; do
   rel="${f#"$SRC"/}"
   all+=("$rel")
@@ -124,6 +131,8 @@ while IFS= read -r -d '' f; do
     esac
     continue
   fi
+  # morph-init writes the settings itself once the rest is in place: the guard turns on with the last file
+  if [ "$MERGE" = 1 ] && [ "$rel" = .claude/settings.json ]; then settings_left=1; continue; fi
   copy+=("$rel")
 done < <(find "$SRC" -type f -print0 | sort -z)
 
@@ -210,6 +219,9 @@ if [ "${#kept[@]}" -gt 0 ]; then
 fi
 if [ "$LINKED" = 1 ]; then
   echo "Kept: AGENTS.md and CLAUDE.md are one file (a link); /morph-init adds the kit's text to it once."
+fi
+if [ "$settings_left" = 1 ]; then
+  echo "Left for /morph-init: .claude/settings.json (it writes the file last, which turns the guard on)."
 fi
 if [ "$settings_kept" = 1 ]; then
   echo

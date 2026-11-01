@@ -76,6 +76,17 @@ for key in sorted(used):
     documented = f"`{key}`" in render_md or (key.startswith("cmd.") and "`cmd.<check-name>`" in render_md)
     if not documented:
         failures.append(f"kit: placeholder {{{{{key}}}}} is used in template/ but not listed in render.md § 3")
+# render.md § 7 item 1 and the "copied, not set up" test (install.sh, UPDATE.md and the skills) look for the
+# kit's placeholders by key, so a project's own {{name}} text isn't one: every key the kit uses must be in their lists.
+m = re.search(r"\{\{ \*\(([a-z_|]+)\)\\\.\[a-z\]' AGENTS\.md", render_md)
+item1 = set(m.group(1).split("|")) if m else set()
+if not m:
+    failures.append("kit: render.md § 7 item 1 no longer names the kit's placeholder keys")
+for key in sorted(k for k in used if k.split(".")[0] not in item1):
+    failures.append(f"kit: placeholder {{{{{key}}}}} is not covered by render.md § 7 item 1's key list")
+config_keys_used = set(PLACEHOLDER.findall(read(os.path.join(template, "harness.config.yml"))))
+for key in sorted(k for k in config_keys_used if k.split(".")[0] not in ("project", "human", "morphness")):
+    failures.append(f"kit: harness.config.yml placeholder {{{{{key}}}}} is missed by the (project|human|morphness) not-set-up test")
 
 m = re.search(r"\*\*Module markers\.\*\*.*?```bash\n(.*?)\n```", harness_readme, re.S)
 if not m:
@@ -252,6 +263,27 @@ before = tree(t)
 r = install(t)
 if r.returncode != 1 or "not set up yet" not in r.stderr or tree(t) != before:
     failures.append(f"kit: install.sh run twice did not refuse the second run unchanged (exit {r.returncode}): {r.stderr[-300:]!r}")
+# morph-init's copy (--merge) leaves .claude/settings.json out: it writes that file last (render.md § 6b)
+t = target("fresh-merge")
+r = install(t, "--merge")
+left = [f for f in kit_files if f != ".claude/settings.json" and not os.path.isfile(os.path.join(t, f))]
+if r.returncode or left or os.path.lexists(os.path.join(t, ".claude/settings.json")) or "Left for /morph-init" not in r.stdout:
+    failures.append(f"kit: install.sh --merge into an empty folder (exit {r.returncode}) left out {left[:5]}, or copied "
+                    f".claude/settings.json, which morph-init writes last: {r.stdout[-300:]!r}")
+# ... and when morph-init stops before that last file, a later run sends the owner back to finish it
+cfg_path = os.path.join(t, "harness.config.yml")
+write(cfg_path, re.sub(r"\{\{ *[a-z][a-z0-9_.-]* *\}\}", "x", read(cfg_path)))
+r = install(t)
+if r.returncode != 1 or "doesn't run the guard yet" not in r.stderr:
+    failures.append(f"kit: install.sh on a filled-in copy with no .claude/settings.json did not say the guard isn't wired (exit {r.returncode}): {r.stderr[-300:]!r}")
+# a filled-in config that quotes a project's own {{name}} text is installed, not an earlier copy
+t = target("filled-config", {"harness.config.yml": "project:\n  name: shop\n  greeting: 'Hi {{name}}'\n",
+                             ".claude/settings.json": read(os.path.join(template, ".claude/settings.json"))})
+before = tree(t)
+r = install(t)
+if r.returncode != 1 or "already installed" not in r.stderr or tree(t) != before:
+    failures.append(f"kit: install.sh took a filled-in harness.config.yml with a project's own {{{{name}}}} text for an "
+                    f"unfinished copy (exit {r.returncode}): {r.stdout[-300:]!r} {r.stderr[-300:]!r}")
 # a copy that stops half way (a move fails at scripts/guard.sh): no marker, and a re-run finishes it
 t = target("half")
 shim = os.path.join(scratch, "bin-failing-mv")
@@ -316,6 +348,40 @@ for name, files in (("linked", {"CLAUDE.md": "# Mine\n"}), ("linked-dangling", {
             or (files and read(os.path.join(t, "CLAUDE.md")) != "# Mine\n") or (not files and os.path.lexists(os.path.join(t, "CLAUDE.md"))):
         failures.append(f"kit: install.sh with AGENTS.md linked to CLAUDE.md ({name}, exit {r.returncode}) wrote through "
                         f"or changed the link: {r.stdout[-300:]!r} {r.stderr[-300:]!r}")
+shutil.rmtree(scratch)
+
+# ---- once: render.md § 7's searches pass the guard in a project with a .env, and find only kit text --------
+# The install runs them after .claude/settings.json turns the guard on (render.md § 6b), and /morph-doctor runs
+# them later: a search over `.` is denied once a .env exists. Item 1 must ignore a project's own {{name}} text.
+item_cmds = {n: m.group(1) for n, m in (("1", re.search(r"^   `(grep -rs?nE '\(\^\|\[\^\$\]\)\{\{[^`]*)`$", render_md, re.M)),
+                                        ("2", re.search(r"^   `(grep -rs?n '<!-- morph-init: fill'[^`]*)`$", render_md, re.M))) if m}
+if len(item_cmds) != 2:
+    failures.append("kit: render.md § 7 items 1 and 2 have no search command the self-test can find")
+scratch = tempfile.mkdtemp(prefix="morphness-checks-")
+r = run(["bash", os.path.join(root, "scripts/install.sh"), scratch], scratch)
+write(os.path.join(scratch, ".env"), "API_KEY=selftest\n")
+for n, cmd in item_cmds.items():
+    g = run(["bash", "scripts/guard.sh"], scratch, input=json.dumps({"tool_name": "Bash", "tool_input": {"command": cmd}}),
+            env=dict(os.environ, CLAUDE_PROJECT_DIR=scratch))
+    if g.returncode or '"ask"' in g.stdout:
+        failures.append(f"kit: the guard stops render.md § 7 item {n}'s search in a project with a .env: {(g.stderr or g.stdout)[:200]!r}")
+# an unattended install saves the settings it couldn't write there (render.md § 6b): the guard lets it
+pending = os.path.join(scratch, "_harness/pending/settings.json")
+g = run(["bash", "scripts/guard.sh"], scratch, input=json.dumps({"tool_name": "Write", "tool_input": {"file_path": pending, "content": "{}\n"}}),
+        env=dict(os.environ, CLAUDE_PROJECT_DIR=scratch))
+if "_harness/pending/settings.json" not in render_md or g.returncode or '"ask"' in g.stdout:
+    failures.append(f"kit: the guard stops the write of render.md § 6b's pending settings file: {(g.stderr or g.stdout)[:200]!r}")
+if "1" in item_cmds:
+    found = run(["bash", "-c", item_cmds["1"]], scratch).stdout
+    if "{{project.name}}" not in found:
+        failures.append("kit: render.md § 7 item 1 no longer finds an unfilled {{project.name}}")
+    cfg_path = os.path.join(scratch, "harness.config.yml")
+    write(cfg_path, re.sub(r"\{\{ *[a-z][a-z0-9_.-]* *\}\}", "x", read(cfg_path)).replace('description: "x"', 'description: "A Mustache {{name}} template API"'))
+    found = run(["bash", "-c", item_cmds["1"]], scratch).stdout
+    if re.search(r"^harness\.config\.yml:", found, re.M):
+        failures.append(f"kit: render.md § 7 item 1 reports a project's own {{{{name}}}} text as a placeholder: {found[:200]!r}")
+if "2" in item_cmds and "morph-init: fill" not in run(["bash", "-c", item_cmds["2"]], scratch).stdout:
+    failures.append("kit: render.md § 7 item 2 no longer finds a fill comment the copy still has")
 shutil.rmtree(scratch)
 
 # ---- once: § references name headings that exist, and config keys match the template config ------
@@ -1044,6 +1110,17 @@ def check(name, fx, t):
     r = start("", "echo changed", extra=("--accept",))
     if "NOT RUN" in r.stdout or "dependency install: echo changed" not in r.stdout:
         bad(f"session-start.sh --accept did not run the new commands: {r.stdout!r}")
+    repin()
+    # commands install.sh copied unfilled are not pinned: the first session after morph-init runs the real ones
+    start("", "{{stack.install_cmd}}")
+    r = start("", "echo filled")
+    if "NOT RUN" in r.stdout or "dependency install: echo filled" not in r.stdout:
+        bad(f"session-start.sh pinned unfilled commands and held the filled ones: {r.stdout!r}")
+    # but a placeholder in one command never lets a pulled change to the other one run past an existing pin
+    marker = os.path.join(t, "selftest-unpinned-ran")
+    r = start("{{stack.toolchain_setup}}", f"touch {marker}")
+    if "NOT RUN" not in r.stdout or os.path.exists(marker):
+        bad(f"session-start.sh ran a changed install command past the pin because the other command has a placeholder: {r.stdout!r}")
     repin()
     if name == once_on or FULL:
         sbin = os.path.join(t, "selftest-bin")
