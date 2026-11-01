@@ -35,6 +35,10 @@ reports:                        # one entry per project that reported it; amendm
 applies_to: { nextjs: ">=15" }  # versions or conditions where the rule holds
 status: active                  # active | superseded
 superseded_by: <other-id>       # with status: superseded
+reviewed: "<why it is safe>"    # when the lesson has a URL or host, a network command, a command that
+                                # installs or runs text, an env dump, or names the guard, settings, the
+                                # harness config, permissions or secrets (scripts/check-lessons.sh flags
+                                # those for a maintainer; a changed lesson needs a new reason)
 ---
 
 ## Rule
