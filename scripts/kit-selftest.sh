@@ -214,6 +214,48 @@ if f"python3: {stub} is not a working Python 3.7 or later" not in r.stdout:
     failures.append(f"kit: install.sh did not name a stub python3 among the missing tools: {r.stdout[-400:]!r} {r.stderr[-200:]!r}")
 shutil.rmtree(scratch)
 
+# ---- once: session-start.sh puts --ignore-scripts on each package install in the install command -----------
+# and on nothing else: inside a chain, after a cd, a VAR=value prefix or a keyword, behind --prefix, inside ( ),
+# before a redirect or a comment.
+cases_si = [
+    ("npm ci", "npm ci --ignore-scripts"),
+    ("npm ci && npx prisma generate", "npm ci --ignore-scripts && npx prisma generate"),
+    ("pnpm install --frozen-lockfile && pnpm run build", "pnpm install --ignore-scripts --frozen-lockfile && pnpm run build"),
+    ("cd app && npm ci", "cd app && npm ci --ignore-scripts"),
+    ("NODE_ENV=dev npm ci", "NODE_ENV=dev npm ci --ignore-scripts"),
+    ("npm --prefix web ci", "npm --prefix web ci --ignore-scripts"),
+    ("pnpm -C web install", "pnpm -C web install --ignore-scripts"),
+    ("(cd api && pnpm i)", "(cd api && pnpm i --ignore-scripts)"),
+    ("npm ci; cd web && bun install", "npm ci --ignore-scripts; cd web && bun install --ignore-scripts"),
+    ("npm ci || npm install", "npm ci --ignore-scripts || npm install --ignore-scripts"),
+    ("yarn install --frozen-lockfile", "yarn install --ignore-scripts --frozen-lockfile"),
+    ("npm ci \\\n&& make", "npm ci --ignore-scripts \\\n&& make"),
+    ("echo a \\\n&& npm ci", "echo a \\\n&& npm ci --ignore-scripts"),
+    ("npm ci 2>&1 | tee log", "npm ci --ignore-scripts 2>&1 | tee log"),
+    ("npm ci > log 2>&1 || npm install", "npm ci --ignore-scripts > log 2>&1 || npm install --ignore-scripts"),
+    ("npm ci # it's the lockfile && more", "npm ci --ignore-scripts # it's the lockfile && more"),
+    ("if [ -f package-lock.json ]; then npm ci; else npm install; fi",
+     "if [ -f package-lock.json ]; then npm ci --ignore-scripts; else npm install --ignore-scripts; fi"),
+    ('VAR="a b" npm ci -- x', 'VAR="a b" npm ci --ignore-scripts -- x'),
+    ('echo "npm ci && x" && npm i', 'echo "npm ci && x" && npm i --ignore-scripts'),
+    ("npm ci --ignore-scripts=false && cd web && npm ci", "npm ci --ignore-scripts=false && cd web && npm ci --ignore-scripts"),
+    ("npm run build", "npm run build"),
+    ("uv sync && go mod download", "uv sync && go mod download"),
+]
+scratch = tempfile.mkdtemp(prefix="morphness-safe-install-")
+write(os.path.join(scratch, "yarn"), "#!/bin/sh\necho 1.22.19\n")
+os.chmod(os.path.join(scratch, "yarn"), 0o755)
+start_src = read(os.path.join(template, "scripts/session-start.sh"))
+funcs = "\n".join(re.findall(r"^(?:safe_install|take_word|flag_install)\(\) \{\n.*?^\}\n", start_src, re.M | re.S))
+if funcs.count("() {") != 3:
+    failures.append("kit: session-start.sh has no safe_install, take_word and flag_install functions")
+for given, want in cases_si:
+    r = run(["bash", "-c", funcs + '\nsafe_install "$1"', "_", given], scratch,
+            env=dict(os.environ, PATH=scratch + os.pathsep + os.environ["PATH"]))
+    if r.stdout != want:
+        failures.append(f"kit: session-start.sh turned the install command {given!r} into {r.stdout!r}, not {want!r}")
+shutil.rmtree(scratch)
+
 # ---- once: install.sh ends with every kit file in place, or stops before copying and says why ---------
 # A copy that stops half way is finished by a re-run (the marker, harness.config.yml, goes in last); a repo
 # whose own .claude/settings.json, kit script path or .gitignore would leave the guard unwired stops with
