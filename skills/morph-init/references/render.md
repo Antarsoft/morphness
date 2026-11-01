@@ -248,7 +248,8 @@ All must pass before committing; fix and re-run on failure.
 9. `scripts/session-start.sh` is executable and parses (`bash -n scripts/session-start.sh`). Don't
    run it here: it installs dependencies. `scripts/prune-counter.sh` runs and prints
    `Prune counter: 0/<loop.prune_every>`. `bash scripts/risk-check.sh <a path under each § Risk paths row>`
-   prints `Mode: full`, and `bash scripts/risk-check.sh README.md` prints `Mode: plain`. `scripts/feature-cost.sh` is executable and runs without a
+   prints a `- <that path>: <its area>` line (the first line says `Mode: full` until the install is
+   committed, because the kit's own files count as the change). `scripts/feature-cost.sh` is executable and runs without a
    Python error (it may print `Cost: not measured`, or this session's cost). Both read
    `harness.config.yml` through `scripts/lib/config.sh`: `bash -c '. scripts/lib/config.sh;
    config_get branches.integration'` prints the integration branch. The prune counter prints

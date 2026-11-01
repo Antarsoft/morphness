@@ -1188,7 +1188,9 @@ def check(name, fx, t):
     # It reads what the branch changed, so it runs on a committed copy (an updated copy has the update unstaged).
     rk = os.path.join(tempfile.mkdtemp(prefix="risk-"), "p")
     shutil.copytree(t, rk, symlinks=True)
-    for cmd in (["add", "-A"], ["-c", "user.name=selftest", "-c", "user.email=selftest@example.com", "commit", "-q", "--allow-empty", "-m", "state"]):
+    integ = run(["bash", "-c", ". scripts/lib/config.sh; config_get branches.integration"], rk).stdout.strip() or "dev"
+    for cmd in (["add", "-A"], ["-c", "user.name=selftest", "-c", "user.email=selftest@example.com", "commit", "-q", "--allow-empty", "-m", "state"],
+                ["branch", "-f", integ]):
         run(["git", *cmd], rk)
     def risk(*args, cwd=None):
         r = run(["bash", os.path.join(rk, "scripts/risk-check.sh"), *args], cwd or rk)
@@ -1230,14 +1232,40 @@ def check(name, fx, t):
     code, out = risk("../supabase/migrations/0001_x.sql", cwd=os.path.join(rk, "project"))
     if not out.startswith("Mode: full\n") or "- supabase/migrations/0001_x.sql:" not in out:
         bad(f"risk-check.sh run from a subfolder printed {out!r}")
+    code, out = risk(os.path.join(rk, "supabase/migrations/0001_x.sql"))
+    if not out.startswith("Mode: full\n") or "- supabase/migrations/0001_x.sql:" not in out:
+        bad(f"risk-check.sh with an absolute path printed {out!r}")
+    code, out = risk("requirements.txt")
+    if code or out != "Mode: plain (1 file, none on a risk path)\n":
+        bad(f"risk-check.sh on requirements.txt printed {out!r} (exit {code}): a .txt file is not documentation")
     os.makedirs(os.path.join(rk, "src/lib"), exist_ok=True)
-    write(os.path.join(rk, "src/lib/purge.ts"), "export const purge = (db) => db.query('DELETE FROM notes WHERE old');\n")
-    write(os.path.join(rk, "docs-note.md"), "Run DELETE FROM notes by hand.\n")
+    for name, line, hit in (("purge.ts", "export const purge = (db) => db.query('DELETE FROM notes WHERE old');", "DELETE FROM"),
+                            ("reset.py", "cur.execute('TRUNCATE users;')", "TRUNCATE users"),
+                            ("slim.py", "cur.execute('ALTER TABLE users DROP email')", "ALTER TABLE users DROP"),
+                            ("old tables.go", "db.Exec(`drop table notes`)", "drop table")):
+        write(os.path.join(rk, "src/lib", name), line + "\n")
+        write(os.path.join(rk, "docs-note.md"), f"Run {hit} by hand.\n")
+        code, out = risk()
+        if code or not out.startswith("Mode: full\n") or f'src/lib/{name} adds "{hit}"' not in out or "docs-note.md" in out:
+            bad(f"risk-check.sh with a new file that deletes stored data ({hit}) printed {out!r} (exit {code})")
+        os.remove(os.path.join(rk, "src/lib", name))
+        os.remove(os.path.join(rk, "docs-note.md"))
+    controls = os.path.join(rk, "project/CONTROLS.md")
+    first = rows[0][1].split("`")[1] if rows and "`" in rows[0][1] else None
+    if first:
+        saved = read(controls)
+        write(controls, saved.replace(f"`{first}`", "", 1))
+        code, out = risk()
+        if code or not out.startswith("Mode: full\n") or f"drops risk path `{first}`" not in out:
+            bad(f"risk-check.sh after § Risk paths lost `{first}` printed {out!r} (exit {code})")
+        write(controls, saved)
+    script = os.path.join(rk, "scripts/risk-check.sh")
+    saved = read(script)
+    write(script, saved + "# edited\n")
     code, out = risk()
-    if code or not out.startswith("Mode: full\n") or "src/lib/purge.ts adds" not in out or "docs-note.md" in out:
-        bad(f"risk-check.sh with a new file that deletes rows printed {out!r} (exit {code})")
-    os.remove(os.path.join(rk, "src/lib/purge.ts"))
-    os.remove(os.path.join(rk, "docs-note.md"))
+    if code or not out.startswith("Mode: full\n") or "scripts/risk-check.sh: the risk check itself" not in out:
+        bad(f"risk-check.sh after an edit to itself printed {out!r} (exit {code})")
+    write(script, saved)
     os.makedirs(os.path.join(rk, "supabase/migrations"), exist_ok=True)
     write(os.path.join(rk, "supabase/migrations/0002_tags.sql"), "create table tags (id int);\n")
     git_id = ["-c", "user.name=selftest", "-c", "user.email=selftest@example.com"]
@@ -1246,6 +1274,20 @@ def check(name, fx, t):
     code, out = risk()
     if code or not out.startswith("Mode: full\n") or "supabase/migrations/0002_tags.sql" not in out:
         bad(f"risk-check.sh after a committed migration on a branch printed {out!r} (exit {code})")
+    code, out = risk(cwd=os.path.join(rk, "project"))
+    if code or "- supabase/migrations/0002_tags.sql:" not in out:
+        bad(f"risk-check.sh from a subfolder after a committed migration printed {out!r} (exit {code})")
+    os.makedirs(os.path.join(rk, "src/auth"), exist_ok=True)
+    write(os.path.join(rk, "src/auth/café token.ts"), "export {};\n")
+    for cmd in (["add", "src"], [*git_id, "commit", "-q", "-m", "auth"]):
+        run(["git", *cmd], rk)
+    code, out = risk()
+    if code or "- src/auth/café token.ts:" not in out:
+        bad(f"risk-check.sh after a committed file with an accent and a space printed {out!r} (exit {code})")
+    run(["git", "branch", "-D", integ], rk)
+    code, out = risk("README.md")
+    if code != 2 or not out.startswith("Mode: full (risk check: "):
+        bad(f"risk-check.sh with no `{integ}` branch printed {out!r} (exit {code}): it must fail toward full")
     shutil.rmtree(os.path.dirname(rk))
     # prune states: proposed and approved are open (named, no DUE); declined, applied and README are not
     pdir, ldir = os.path.join(t, "_harness/prunes"), os.path.join(t, "_harness/learnings")
