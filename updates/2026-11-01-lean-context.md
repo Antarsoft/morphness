@@ -31,6 +31,7 @@ files:
   - scripts/guard.sh
   - scripts/prune-counter.sh
 removed: []
+reviewed: "It moves the guard's documentation from AGENTS.md to harness/GUARD.md word for word and repoints links to it; it changes no guard rule, settings, permission or secret handling. The only scripts/guard.sh change appends the GUARD.md pointer to deny messages. The harness.config.yml change adds loop.owner_rules_kb and lowers loop.rule_budget_kb. Secrets are named only in the unchanged golden rule (never read or write .env files)."
 ---
 
 ## What changed
