@@ -2,7 +2,7 @@
 id: 2026-10-31-guard-fewer-false-positives
 title: Fewer false alarms from the guard on local databases and project-wide searches
 kind: fix
-release: unreleased
+release: v0.15.0
 applies_to: { modules: [] }
 files:
   - scripts/guard.sh

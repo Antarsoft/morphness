@@ -2,7 +2,7 @@
 id: 2026-10-31-guard-exfil-writes
 title: The guard blocks env piped to the network, and checks migration tools, gists, more MCP verbs and WebFetch
 kind: fix
-release: unreleased
+release: v0.15.0
 applies_to: { modules: [] }
 files:
   - scripts/guard.sh

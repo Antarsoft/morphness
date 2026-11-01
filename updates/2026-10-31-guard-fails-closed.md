@@ -2,7 +2,7 @@
 id: 2026-10-31-guard-fails-closed
 title: The guard blocks the call when it can't run or runs too long
 kind: fix
-release: unreleased
+release: v0.15.0
 applies_to: { modules: [] }
 files:
   - .claude/settings.json

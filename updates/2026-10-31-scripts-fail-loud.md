@@ -2,7 +2,7 @@
 id: 2026-10-31-scripts-fail-loud
 title: prune-counter, evidence and learned-rules stop with a message instead of passing silently
 kind: fix
-release: unreleased
+release: v0.15.0
 applies_to: { modules: [] }
 files:
   - scripts/prune-counter.sh
