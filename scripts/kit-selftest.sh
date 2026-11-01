@@ -203,6 +203,121 @@ if f"python3: {stub} is not a working Python 3.7 or later" not in r.stdout:
     failures.append(f"kit: install.sh did not name a stub python3 among the missing tools: {r.stdout[-400:]!r} {r.stderr[-200:]!r}")
 shutil.rmtree(scratch)
 
+# ---- once: install.sh ends with every kit file in place, or stops before copying and says why ---------
+# A copy that stops half way is finished by a re-run (the marker, harness.config.yml, goes in last); a repo
+# whose own .claude/settings.json, kit script path or .gitignore would leave the guard unwired stops with
+# nothing copied; AGENTS.md linked to CLAUDE.md is kept as one file. install.sh never overwrote or chmodded a user file.
+scratch = tempfile.mkdtemp(prefix="morphness-install-")
+install_sh = os.path.join(root, "scripts/install.sh")
+kit_files = sorted(os.path.relpath(f, template) for f in files_under(template))
+def install(target, *args, env=None):
+    return run(["bash", install_sh, *args, target], scratch, env=env)
+def tree(target):    # every path with its bytes (a link as its text) and mode
+    out = {}
+    for dirpath, dirnames, names in os.walk(target):
+        dirnames[:] = [d for d in dirnames if d != ".git"]
+        for n in dirnames + names:
+            q = os.path.join(dirpath, n)
+            st = os.lstat(q)
+            body = os.readlink(q) if os.path.islink(q) else (read_bytes(q) if os.path.isfile(q) else None)
+            out[os.path.relpath(q, target)] = (body, st.st_mode)
+    return out
+def read_bytes(q):
+    with open(q, "rb") as fh:
+        return fh.read()
+def target(name, files=None, git=False, links=None):
+    t = os.path.join(scratch, name)
+    os.makedirs(t)
+    if git:
+        run(["git", "init", "-q"], t)
+    for rel, body in (files or {}).items():
+        os.makedirs(os.path.dirname(os.path.join(t, rel)) or t, exist_ok=True)
+        write(os.path.join(t, rel), body)
+    for rel, to in (links or {}).items():
+        os.symlink(to, os.path.join(t, rel))
+    return t
+def stopped(name, t, before, r, words):
+    if r.returncode != 1 or "nothing was copied" not in r.stderr or any(w not in r.stderr for w in words):
+        failures.append(f"kit: install.sh into a repo with {name} did not stop with a message naming {words} "
+                        f"(exit {r.returncode}): {r.stdout[-300:]!r} {r.stderr[-400:]!r}")
+    elif tree(t) != before:
+        failures.append(f"kit: install.sh into a repo with {name} stopped but changed the folder")
+# a fresh folder: every file, the scripts executable; a second run refuses and changes nothing
+t = target("fresh")
+r = install(t)
+missing_files = [f for f in kit_files if not os.path.isfile(os.path.join(t, f))]
+if r.returncode or missing_files or not os.access(os.path.join(t, "scripts/guard.sh"), os.X_OK):
+    failures.append(f"kit: install.sh into an empty folder (exit {r.returncode}) left out {missing_files[:5]} or a non-executable guard: {r.stderr[-300:]!r}")
+before = tree(t)
+r = install(t)
+if r.returncode != 1 or "not set up yet" not in r.stderr or tree(t) != before:
+    failures.append(f"kit: install.sh run twice did not refuse the second run unchanged (exit {r.returncode}): {r.stderr[-300:]!r}")
+# a copy that stops half way (a move fails at scripts/guard.sh): no marker, and a re-run finishes it
+t = target("half")
+shim = os.path.join(scratch, "bin-failing-mv")
+os.makedirs(shim)
+write(os.path.join(shim, "mv"), '#!/bin/sh\ncase "$2" in */scripts/guard.sh) echo "mv: no space left on device" >&2; exit 1;; esac\n'
+      f'exec {shutil.which("mv")} "$@"\n')
+os.chmod(os.path.join(shim, "mv"), 0o755)
+r = install(t, env=dict(os.environ, PATH=shim + os.pathsep + os.environ["PATH"]))
+if r.returncode == 0 or os.path.exists(os.path.join(t, "harness.config.yml")) or "run install.sh again" not in r.stderr \
+        or any(n.startswith(".morphness-staging") for n in os.listdir(t)):
+    failures.append(f"kit: install.sh whose copy failed half way exited {r.returncode}, or left the set-up marker or its "
+                    f"staging folder, or did not say to re-run: {r.stderr[-300:]!r}")
+r = install(t)
+if r.returncode or [f for f in kit_files if not os.path.isfile(os.path.join(t, f))]:
+    failures.append(f"kit: install.sh did not finish a copy that had stopped half way (exit {r.returncode}): {r.stdout[-300:]!r} {r.stderr[-300:]!r}")
+# an earlier copy (marker in, scripts missing), as install.sh before this fix could leave: a re-run restores them
+shutil.rmtree(os.path.join(t, "scripts"))
+r = install(t)
+if r.returncode or "restored" not in r.stdout or not os.path.isfile(os.path.join(t, "scripts/guard.sh")):
+    failures.append(f"kit: install.sh did not restore the scripts an earlier copy left out (exit {r.returncode}): {r.stdout[-300:]!r} {r.stderr[-300:]!r}")
+# a user's own kit script, settings.json, ignored .claude/ and a file where a folder goes: stop, nothing copied
+t = target("own-guard", {"scripts/guard.sh": "#!/bin/sh\nexit 0\n"})
+os.chmod(os.path.join(t, "scripts/guard.sh"), 0o644)
+before = tree(t)
+stopped("its own scripts/guard.sh", t, before, install(t), ["scripts/guard.sh"])
+t = target("own-settings", {".claude/settings.json": '{"model": "opus"}\n'})
+before = tree(t)
+stopped("its own .claude/settings.json", t, before, install(t), [".claude/settings.json", "/morph-init"])
+r = install(t, "--merge")
+if r.returncode or "Not wired yet" not in r.stdout or read(os.path.join(t, ".claude/settings.json")) != '{"model": "opus"}\n' \
+        or not os.path.isfile(os.path.join(t, "scripts/guard.sh")):
+    failures.append(f"kit: install.sh --merge with the user's settings.json (exit {r.returncode}) changed it, copied no guard or "
+                    f"did not say the guard is not wired: {r.stdout[-300:]!r}")
+t = target("settings-names-guard", {".claude/settings.json": '{"permissions": {"deny": ["Edit(scripts/guard.sh)"]}}\n'})
+before = tree(t)
+stopped("a .claude/settings.json that names the guard but has no hook for it", t, before, install(t), [".claude/settings.json"])
+t = target("linked-folder", git=True)
+os.makedirs(os.path.join(scratch, "elsewhere"))
+os.symlink(os.path.join(scratch, "elsewhere"), os.path.join(t, ".claude"))
+before = tree(t)
+stopped("a .claude folder that is a link", t, before, install(t), [".claude"])
+if os.listdir(os.path.join(scratch, "elsewhere")):
+    failures.append("kit: install.sh wrote through a linked .claude folder")
+# an earlier copy (marker in) that kept the user's own guard.sh: /morph-init's copy step (--merge) stops
+t = target("old-copy-own-guard", {"scripts/guard.sh": "#!/bin/sh\nexit 0\n"})
+r = install(t)
+stopped("its own scripts/guard.sh", t, tree(t), r, ["scripts/guard.sh"])
+shutil.copy(os.path.join(template, "harness.config.yml"), os.path.join(t, "harness.config.yml"))
+before = tree(t)
+stopped("an earlier copy that kept its own scripts/guard.sh", t, before, install(t, "--merge"), ["scripts/guard.sh"])
+t = target("ignored", {".gitignore": "node_modules\n.claude/\n"}, git=True)
+before = tree(t)
+stopped("a .gitignore that hides .claude/", t, before, install(t), [".gitignore", ".claude/settings.json"])
+t = target("file-for-folder", {"project": "notes\n"})
+before = tree(t)
+stopped("a file named project", t, before, install(t), ["project"])
+# AGENTS.md linked to CLAUDE.md (and dangling): kept as one file, the link untouched, nothing written through it
+for name, files in (("linked", {"CLAUDE.md": "# Mine\n"}), ("linked-dangling", {})):
+    t = target(name, files, links={"AGENTS.md": "CLAUDE.md"})
+    r = install(t)
+    if r.returncode or "one file" not in r.stdout or os.readlink(os.path.join(t, "AGENTS.md")) != "CLAUDE.md" \
+            or (files and read(os.path.join(t, "CLAUDE.md")) != "# Mine\n") or (not files and os.path.lexists(os.path.join(t, "CLAUDE.md"))):
+        failures.append(f"kit: install.sh with AGENTS.md linked to CLAUDE.md ({name}, exit {r.returncode}) wrote through "
+                        f"or changed the link: {r.stdout[-300:]!r} {r.stderr[-300:]!r}")
+shutil.rmtree(scratch)
+
 # ---- once: § references name headings that exist, and config keys match the template config ------
 # A reference such as `harness/SETUP.md § Prune` must point at a heading (or a bold lead-in) in that
 # file, and a config key the scripts and docs name (`loop.prune_every`, `config_get guard.deploys`)
