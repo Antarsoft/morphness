@@ -11,17 +11,28 @@
 #   --json       the same figures as JSON
 #   --out        also write _harness/evidence/<today>.md and .json
 #   --force      print even when more than a fifth of the folded entries could not be read
+# Exits 0 with the summary; 1 when a tool it needs is missing; 2 on an unknown option; 3 when a record
+# can't be read (not UTF-8, or most folded entries in an unknown format), with nothing written.
 
-. "$(cd "$(dirname "$0")" && pwd)/lib/config.sh" || exit 0
+for arg in "$@"; do
+  case "$arg" in
+    --json|--out|--force) ;;
+    *) echo "usage: bash scripts/evidence.sh [--json] [--out] [--force] (unknown option: $arg)" >&2; exit 2 ;;
+  esac
+done
+# awk reads harness.config.yml; without it the release and the integration branch read as empty.
+for tool in awk python3; do
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    echo "Evidence: not measured ($tool not found)"
+    exit 1
+  fi
+done
+. "$(cd "$(dirname "$0")" && pwd)/lib/config.sh" || { echo "Evidence: not measured (scripts/lib/config.sh is missing or unreadable)"; exit 1; }
 cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)" || exit 1
-
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "Evidence: not measured (python3 not found)"
-  exit 0
-fi
-export EVIDENCE_RELEASE="$(config_get installed_from.release)"
-export EVIDENCE_PRUNE_EVERY="$(config_get loop.prune_every)"
-export EVIDENCE_BRANCH="$(config_get branches.integration)"
+EVIDENCE_RELEASE="$(config_get installed_from.release)"
+EVIDENCE_PRUNE_EVERY="$(config_get loop.prune_every)"
+EVIDENCE_BRANCH="$(config_get branches.integration)"
+export EVIDENCE_RELEASE EVIDENCE_PRUNE_EVERY EVIDENCE_BRANCH
 
 python3 -I - "$@" <<'PY'
 import glob, json, os, re, statistics, subprocess, sys
@@ -36,6 +47,10 @@ def read(path):
         return open(path, encoding="utf-8").read()
     except OSError:
         return ""
+    except UnicodeDecodeError as err:
+        sys.stderr.write(f"Evidence: {path} is not valid UTF-8 (at byte {err.start}). Nothing was written. "
+                         "Save it as UTF-8 and run it again.\n")
+        sys.exit(3)
 
 def num(s):
     return float(s.replace(",", ""))
