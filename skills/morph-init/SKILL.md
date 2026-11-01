@@ -31,9 +31,14 @@ with real values filled in (repository, branch, file, folder), never a bare comm
 
 1. **Locate the Morphness source.** In order: this skill's own plugin folder (`template/` two levels up
    from this file), or a local clone the user names (INSTALL.md has the user or their agent clone it
-   first). Never download it yourself. Record the source repo URL and commit (`git rev-parse HEAD`)
-   for `installed_from`, and the release: the newest release heading in the source's `CHANGELOG.md` (`2026-10-14` or
-   `2026-10-14.2`, the first one below `## Unreleased`).
+   first). Never download it yourself. Record for `installed_from` the source repo URL, its full
+   commit (`git -C <source> rev-parse HEAD`) and the release: the release tag that commit is
+   (the newest `v*` tag that `git -C <source> tag --points-at HEAD` lists, such as `v0.15.0`), else the newest release heading in
+   the source's `CHANGELOG.md` (the first one below `## Unreleased`) with `+` and the commit's first 7
+   characters, as in `v0.15.0+ce3921d`: changes merged after that release. A source with no git
+   history of its own (`git -C <source> rev-parse --show-toplevel` isn't the source folder, as in a
+   plugin folder): commit `unknown` and the newest heading alone; `/morph-update` then starts from that
+   release's tag.
 2. **Check the target.** `git status` must be clean, apart from files `scripts/install.sh` just copied
    (ask the user to commit or stash anything else; never do it yourself). If `harness.config.yml`
    exists and still has the kit's placeholders (`grep -E '\{\{ *(project|human|morphness)\.'

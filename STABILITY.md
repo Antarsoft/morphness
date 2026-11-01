@@ -14,7 +14,10 @@ From 1.0, within one major version:
 - New things may be added in a minor release: a config key with a default, a field in a record, a
   module, a skill. A copy that never uses them keeps working.
 - `/morph-update` takes an install from any supported release to the current one without losing its
-  records or its own edits. The kit's self-test replays that update from the oldest supported release.
+  records or its own edits. The kit's self-test replays that update from the oldest supported release,
+  with owner edits next to upstream changes, changed config values and an update put off for later.
+  The replay merges with git the way the skill describes; in a real update the model does the merge,
+  and that part is checked by update runs made by hand.
 - Something we plan to remove is marked deprecated in the changelog and keeps working for at least
   one minor release first.
 
@@ -28,8 +31,9 @@ and what each one means: `project`, `humans`, `environment`, `branches`, `enviro
 are not part of the promise (see **May change**).
 
 **2. `installed_from`.** The block `/morph-update` reads to know where an install came from: `repo`,
-`commit`, `release` and `updates` (`applied`, `declined`, `deferred`). Updates depend on it, so it
-changes only with a major version.
+`commit`, `release`, `updates` (`applied`, `declined`, `deferred`) and `lessons` (`declined`,
+`deferred`; a copy without it reads as empty lists). Updates depend on it, so it changes only with a
+major version, apart from added keys like that one.
 
 **3. `_harness/` records.** The folder layout in [template/_harness/README.md](template/_harness/README.md)
 and the forms the kit's scripts read:
