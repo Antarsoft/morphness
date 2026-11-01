@@ -25,22 +25,26 @@ guard_closed() {
   exit 2
 }
 
-. "$(cd "$(dirname "$0")" && pwd)/lib/config.sh" 2>/dev/null || guard_closed "scripts/lib/config.sh is missing or unreadable, so harness.config.yml can't be read."
+GUARD_LIB_DIR="$(cd "$(dirname "$0")" && pwd)/lib"
+GUARD_SELF="${GUARD_LIB_DIR%/lib}/${0##*/}"
+. "$GUARD_LIB_DIR/config.sh" 2>/dev/null || guard_closed "scripts/lib/config.sh is missing or unreadable, so harness.config.yml can't be read."
 cd "${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}" 2>/dev/null || guard_closed "the project folder can't be entered."
+command -v awk >/dev/null 2>&1 || guard_closed "awk is not installed, so harness.config.yml can't be read."
 if ! command -v python3 >/dev/null 2>&1; then
-  case "$(config_get guard.fail_open | tr 'A-Z' 'a-z')" in
-    true|yes|on) echo "scripts/guard.sh: python3 is missing and guard.fail_open is set, so this call is not checked." >&2; exit 0 ;;
+  case "$(config_get guard.fail_open)" in
+    [Tt][Rr][Uu][Ee]|[Yy][Ee][Ss]|[Oo][Nn]) echo "scripts/guard.sh: python3 is missing and guard.fail_open is set, so this call is not checked." >&2; exit 0 ;;
   esac
   guard_closed "python3 is not installed, so the call can't be checked. Install python3, or set guard.fail_open: true in harness.config.yml to accept unchecked calls."
 fi
 
-GUARD_BRANCHES="$(
-  {
-    config_get branches.integration
-    config_get branches.production
-    config_env_branches
-  } | tr -d "\"'" | grep . | sort -u | tr '\n' ' '
-)"
+# The environment branches, one per line. The Python part checks them and blocks every push when they
+# can't be read (file missing, key missing, a value that isn't a branch name), so a broken config never
+# leaves the branches unprotected.
+GUARD_CONFIG_READABLE=0
+[ -f harness.config.yml ] && [ -r harness.config.yml ] && GUARD_CONFIG_READABLE=1
+GUARD_INTEGRATION="$(config_get_all branches.integration)"
+GUARD_PRODUCTION="$(config_get_all branches.production)"
+GUARD_ENV_BRANCHES="$(config_env_branches)"
 GUARD_MCP_WRITES="$(config_get guard.mcp_writes)"
 GUARD_DEPLOYS="$(config_get guard.deploys)"
 GUARD_PUBLISHES="$(config_get guard.publishes)"
@@ -49,10 +53,19 @@ GUARD_NETWORK="$(config_get guard.network)"
 GUARD_INSTALLS="$(config_get guard.installs)"
 GUARD_PR_WRITES="$(config_get guard.pr_writes)"
 GUARD_ALLOW_HOSTS="$(config_get guard.allow_hosts)"
-export GUARD_BRANCHES GUARD_MCP_WRITES GUARD_DEPLOYS GUARD_PUBLISHES GUARD_SCHEMA_PUSHES GUARD_NETWORK GUARD_INSTALLS GUARD_PR_WRITES GUARD_ALLOW_HOSTS
+GUARD_FAIL_OPEN="$(config_get guard.fail_open)"
+export GUARD_LIB_DIR GUARD_FAIL_OPEN GUARD_CONFIG_READABLE GUARD_INTEGRATION GUARD_PRODUCTION GUARD_ENV_BRANCHES GUARD_MCP_WRITES GUARD_DEPLOYS GUARD_PUBLISHES GUARD_SCHEMA_PUSHES GUARD_NETWORK GUARD_INSTALLS GUARD_PR_WRITES GUARD_ALLOW_HOSTS
 
-python3 -I -c '
-import fnmatch, json, os, re, shlex, subprocess, sys, tempfile, threading
+# The checks below run in python3. It reads them from this file (the GUARD_PY block at the end) rather than from a
+# `-c` argument, because Linux caps a single argument at 128 KB. Line numbers in a traceback match this file.
+python3 -I -c 'import sys; f = sys.argv[1]; t = open(f, encoding="utf-8").read(); s = t.index("\nimport fnmatch") + 1; e = t.rindex("\nGUARD_PY\n"); exec(compile("\n" * t.count("\n", 0, s) + t[s:e], f, "exec"))' "$GUARD_SELF"
+rc=$?
+# 0 = pass or ask (JSON on stdout), 2 = deny. Anything else is a crash inside the hook: block, don't pass.
+[ "$rc" -eq 0 ] || [ "$rc" -eq 2 ] || guard_closed "the guard script crashed (exit $rc), so the call can't be checked."
+exit "$rc"
+
+: <<'GUARD_PY'
+import fnmatch, glob as globmod, json, os, re, shlex, subprocess, sys, tempfile, threading
 
 # Claude Code lets a call through when a hook runs past its timeout (60 s in .claude/settings.json), so the guard
 # stops its own check after 15 s and blocks the call. GUARD_TIME_LIMIT can only lower the limit (the self-test uses it).
@@ -71,28 +84,66 @@ _watchdog = threading.Timer(TIME_LIMIT, too_slow)
 _watchdog.daemon = True
 _watchdog.start()
 
-PROTECTED = set(os.environ.get("GUARD_BRANCHES", "").split())
+# What a branch name read from the config may hold: git rules (no `..`, `@{`, spaces, ~^:?*[\\ or control characters, no
+# leading `-`) plus the characters the config reader would have kept from YAML syntax (&{}"#,). A YAML null or boolean is no name.
+BRANCH_WORD = re.compile(r"^(?!-)(?!.*\.\.)(?!.*@\{)[^\s~^:?*\[\\\x00-\x1f\x7f&{}\x27\",#]+$")
+NOT_A_BRANCH = {"null", "~", "true", "false", "yes", "no", "on", "off", "none"}
+
+def config_branches(env=os.environ):
+    """The environment branches from harness.config.yml, and what made them unreadable (then every push is blocked)."""
+    found, problems = set(), []
+    if env.get("GUARD_CONFIG_READABLE") != "1":
+        return found, ["harness.config.yml is missing or can\u2019t be read"]
+    for key, var in (("branches.integration", "GUARD_INTEGRATION"), ("branches.production", "GUARD_PRODUCTION"),
+                     ("environments", "GUARD_ENV_BRANCHES")):
+        values = [v.strip().strip("\"\x27") for v in env.get(var, "").splitlines() if v.strip()]
+        if not values and key != "environments":
+            problems.append(f"`{key}` was not found in harness.config.yml")
+        for v in values:
+            b = v[len("refs/heads/"):] if v.startswith("refs/heads/") else v
+            if BRANCH_WORD.match(b) and b.lower() not in NOT_A_BRANCH:
+                found.add(b)
+            else:
+                problems.append(f"`{key}: {v}` is not a branch name the guard can read")
+    return found, problems
+
+PROTECTED, CONFIG_PROBLEMS = config_branches()
 PROTECTED_LOW = {b.lower() for b in PROTECTED}
 def protected_branch(name):
     # Branch names are case sensitive on the code host but not on every remote or file system, so `Main` counts as `main`.
     return str(name).lower() in PROTECTED_LOW
-def switch(name):
-    return os.environ.get(name, "ask").strip().lower() not in ("off", "false", "no")
+def switch(name, env=os.environ):
+    return env.get(name, "ask").strip().lower() not in ("off", "false", "no")
+def pr_allow(env=os.environ):
+    return env.get("GUARD_PR_WRITES", "allow").strip().lower() not in ("ask", "no", "false")
+def allow_hosts(env=os.environ):
+    return {"localhost", "127.0.0.1", "::1"} | set(re.split(r"[\s,]+", env.get("GUARD_ALLOW_HOSTS", "").lower()))
+def fail_open(env=os.environ):
+    return env.get("GUARD_FAIL_OPEN", "").strip().lower() in ("true", "yes", "on")
 
 MCP_ASK = switch("GUARD_MCP_WRITES")
 # `pr_writes: allow` (the default, also when the key is missing) lets a pull request be opened, updated and commented on
 # in this project own repo without a prompt; `ask` brings the prompt back for those tools.
-PR_ALLOW = os.environ.get("GUARD_PR_WRITES", "allow").strip().lower() not in ("ask", "no", "false")
+PR_ALLOW = pr_allow()
 GROUP_ASK = {"deploys": switch("GUARD_DEPLOYS"), "publishes": switch("GUARD_PUBLISHES"),
              "schema_pushes": switch("GUARD_SCHEMA_PUSHES"), "network": switch("GUARD_NETWORK"),
              "installs": switch("GUARD_INSTALLS")}
-ALLOW_HOSTS = {"localhost", "127.0.0.1", "::1"} | set(re.split(r"[\s,]+", os.environ.get("GUARD_ALLOW_HOSTS", "").lower()))
+ALLOW_HOSTS = allow_hosts()
 
 def deny(reason):
     sys.stderr.write("Blocked by scripts/guard.sh: " + reason + "\n")
     sys.exit(2)
 
+# While a Bash command is checked, an ask is held until the whole command has been read, so a deny anywhere in it wins:
+# `curl -d x https://h; git push --force` must not turn into one prompt whose yes also runs the force-push.
+HELD_ASK = []
+
 def ask(reason):
+    if HELD_ASK and HELD_ASK[0] is None:
+        HELD_ASK[0] = reason
+        return
+    if HELD_ASK:
+        return
     print(json.dumps(ensure_ascii=False, obj={"hookSpecificOutput": {
         "hookEventName": "PreToolUse",
         "permissionDecision": "ask",
@@ -114,12 +165,19 @@ if event.get("hook_event_name") == "ConfigChange":
     sys.exit(0)
 tool = event.get("tool_name") or ""
 args = event.get("tool_input") or {}
+if not isinstance(args, dict):
+    deny("the tool input is not a JSON object, so the call can\u2019t be checked.")
 
 # ---- the guard own files -------------------------------------------------------------------------
-# A write here switches the guard off for every later call, so these ask (the owner reads the change);
-# settings.local.json is the owner alone and is denied.
-GUARD_FILES = ["scripts/guard.sh", "scripts/session-start.sh", "scripts/lib/*", ".claude/settings.json",
-               "harness.config.yml", ".git/hooks/*", ".git/config"]
+# One approved write here could switch the guard off for every later call. scripts/guard.sh and scripts/lib/ (the guard
+# itself) are never written by a tool call: the owner changes them by hand. .claude/settings.json and harness.config.yml
+# change through Edit or Write only, so the guard can work out the result: a change that removes a protection is denied,
+# any other change asks. The other files the guard rests on ask; settings.local.json is the owner alone and is denied.
+CORE_FILES = ["scripts/guard.sh", "scripts/lib/*"]
+HOLDER_DIRS = ["scripts", "scripts/lib", ".claude"]   # the folders that hold the guard and its wiring
+SETTINGS_FILES = [".claude/settings.json"]
+CONFIG_FILES = ["harness.config.yml"]
+GUARD_FILES = ["scripts/session-start.sh", ".git/hooks/*", ".git/config"]
 OWNER_FILES = [".claude/settings.local.json"]
 # CI definitions run with the repository\u2019s secrets, so a change to one asks (the `deploys` switch turns it off).
 CI_FILES = [".github/workflows/*", ".github/actions/*", ".gitlab-ci.yml"]
@@ -128,7 +186,7 @@ CD_DIRS = []   # directories a `cd` in the same command moves to; a relative pat
 
 def rels_to_root(word):
     """Where a path word points, relative to the project root, once per directory a `cd` could set."""
-    w = str(word).strip("\"\x27")
+    w = expand_home(str(word).strip())
     for var in ("${CLAUDE_PROJECT_DIR}", "$CLAUDE_PROJECT_DIR", "${PWD}", "$PWD"):
         w = w.replace(var, ROOT)
     if not w or any(c in w for c in "$`"):
@@ -177,23 +235,240 @@ def home_kind(word):
     return ""
 
 def protected_kind(word):
-    """"owner" for settings.local.json, "guard" for the guard files, "persist" for shell startup files and
-    schedules, "ci" for CI definitions, "" for anything else."""
-    for part in re.split(r"[=:<>|,;()]", str(word)):
+    """"owner" for settings.local.json, "core" for the guard itself, "settings" and "config" for .claude/settings.json and
+    harness.config.yml, "guard" for the other files it rests on, "persist" for shell startup files and schedules, "ci" for
+    CI definitions, "" for anything else."""
+    # also split on spaces and braces: a one-liner names a path as `copy( \x27/tmp/x\x27, \x27scripts/guard.sh\x27 )` or `q{scripts/guard.sh}`
+    for part in re.split(r"[=:<>|,;(){}\s]", str(word)):
+        part = part.strip("\"\x27")
         if part and home_kind(part) == "persist":
             return "persist"
         globbed = any(c in part for c in "*?[")
         for rel in rels_to_root(part) if part else ():
-            for kind, names in (("owner", OWNER_FILES), ("guard", GUARD_FILES), ("ci", CI_FILES if GROUP_ASK["deploys"] else [])):
+            for kind, names in (("owner", OWNER_FILES), ("holder", HOLDER_DIRS), ("core", CORE_FILES), ("settings", SETTINGS_FILES),
+                                ("config", CONFIG_FILES), ("guard", GUARD_FILES), ("ci", CI_FILES if GROUP_ASK["deploys"] else [])):
                 for name in names:
-                    if fnmatch.fnmatch(rel, name) or (globbed and fnmatch.fnmatch(name.replace("/*", "/x"), rel)):
+                    # Without letter case: on macOS and Windows `Scripts/Guard.sh` is the guard itself.
+                    low, pat = rel.lower(), name.lower()
+                    if fnmatch.fnmatchcase(low, pat) or (globbed and fnmatch.fnmatchcase(pat.replace("/*", "/x"), low)):
+                        # a new file in scripts/lib/ changes nothing the guard runs (a `cd` into a monorepo app makes many such paths)
+                        if kind == "core" and name.endswith("/*") and not globbed and not os.path.lexists(os.path.join(ROOT, rel)):
+                            continue
                         return kind
     return ""
 
-def protect(path, how):
+CONFIG_VARS = [("GUARD_INTEGRATION", "config_get_all branches.integration"), ("GUARD_PRODUCTION", "config_get_all branches.production"),
+               ("GUARD_ENV_BRANCHES", "config_env_branches")] + [
+               (f"GUARD_{k.upper()}", f"config_get guard.{k}") for k in ("mcp_writes", "deploys", "publishes", "schema_pushes",
+                                                                        "network", "installs", "pr_writes", "allow_hosts", "fail_open")]
+
+def read_config(text):
+    """The values the guard would read from a harness.config.yml holding `text`, through the same reader (scripts/lib/config.sh)."""
+    try:
+        fd, tmp = tempfile.mkstemp(suffix=".yml")
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as f:
+            f.write(text)
+        body = "; ".join(f"printf \"%s=%s\\0\" {var} \"$({call} \"$2\")\"" for var, call in CONFIG_VARS)
+        r = subprocess.run(["bash", "-c", ". \"$1/config.sh\" || exit 3; " + body, "guard", os.environ.get("GUARD_LIB_DIR", ""), tmp],
+                           capture_output=True, text=True, timeout=5)
+    except (OSError, UnicodeError, subprocess.SubprocessError):
+        r = None
+    finally:
+        try:
+            os.unlink(tmp)
+        except (OSError, NameError):
+            pass
+    if r is None or r.returncode != 0:
+        deny("the new harness.config.yml can\u2019t be checked (its reader did not run), so the change is blocked. Retry.")
+    env = {"GUARD_CONFIG_READABLE": "1"}
+    for record in r.stdout.split("\0"):
+        if "=" in record:
+            key, value = record.split("=", 1)
+            env[key] = value
+    return env
+
+SWITCH_WHAT = {"mcp_writes": "a connector write", "deploys": "a deploy or cloud CLI call", "publishes": "a publish or tag push",
+               "schema_pushes": "a database client or schema push", "network": "a request that sends data out",
+               "installs": "a downloaded package runs"}
+
+def config_lost(after):
+    """The protections a harness.config.yml holding `after` would drop, compared with the one the guard reads now."""
+    new, lost = read_config(after), []
+    for key, what in SWITCH_WHAT.items():
+        if switch(f"GUARD_{key.upper()}") and not switch(f"GUARD_{key.upper()}", new):
+            lost.append(f"`guard.{key}` goes to off (nothing asks before {what})")
+    if not pr_allow() and pr_allow(new):
+        lost.append("`guard.pr_writes` goes from ask to allow")
+    hosts = ", ".join(sorted(allow_hosts(new) - ALLOW_HOSTS - {""}))
+    if hosts:
+        lost.append(f"`guard.allow_hosts` adds {hosts} (data can be sent there without a prompt)")
+    if fail_open(new) and not fail_open():
+        lost.append("`guard.fail_open` turns on (calls run unchecked when python3 is missing)")
+    branches, problems = config_branches(new)
+    if not problems:
+        kept = {b.lower() for b in branches}
+        gone = ", ".join(sorted(b for b in PROTECTED if b.lower() not in kept))
+        if gone:
+            lost.append(f"{gone} would no longer be an environment branch (a push to it would pass)")
+    return lost
+
+# Settings that run a command outside the guard: a new or changed one runs code that no check sees.
+COMMAND_SETTINGS = ("apiKeyHelper", "awsAuthRefresh", "awsCredentialExport", "otelHeadersHelper", "statusLine")
+
+def guard_hooks(settings):
+    """{event: [(matcher, command, timeout)]} for each hook in a settings object that runs scripts/guard.sh."""
+    out = {}
+    hooks = settings.get("hooks")
+    for event, groups in (hooks.items() if isinstance(hooks, dict) else ()):
+        for group in (groups if isinstance(groups, list) else ()):
+            entries = group.get("hooks") if isinstance(group, dict) else None
+            for h in (entries if isinstance(entries, list) else ()):
+                if isinstance(h, dict) and "scripts/guard.sh" in str(h.get("command", "")):
+                    t = h.get("timeout")
+                    out.setdefault(event, []).append((str(group.get("matcher", "")), str(h.get("command")),
+                                                      t if isinstance(t, (int, float)) and not isinstance(t, bool) else 60,
+                                                      str(h.get("type"))))
+    return out
+
+def hook_commands(settings):
+    """Every command a settings object runs: hook commands and the helper settings (apiKeyHelper, statusLine ...)."""
+    out = set()
+    hooks = settings.get("hooks")
+    for groups in (hooks.values() if isinstance(hooks, dict) else ()):
+        for group in (groups if isinstance(groups, list) else ()):
+            entries = group.get("hooks") if isinstance(group, dict) else None
+            for h in (entries if isinstance(entries, list) else ()):
+                if not (isinstance(h, dict) and "scripts/guard.sh" in str(h.get("command", ""))):   # checked on its own
+                    out.add(json.dumps(h, sort_keys=True))
+    for key in COMMAND_SETTINGS:
+        if key in settings:
+            out.add(key + "=" + json.dumps(settings[key], sort_keys=True))
+    return out
+
+def matcher_covers(new, old):
+    try:
+        re.compile(new)
+    except re.error:
+        return False   # Claude Code drops a hook whose matcher is not a valid pattern
+    if new in ("", "*") or new == old:
+        return True
+    return old not in ("", "*") and set(old.split("|")) <= set(new.split("|"))
+
+def settings_lost(path, after):
+    """The protections a .claude/settings.json holding `after` would drop, compared with the file as it is now."""
+    def strict(value):
+        raise ValueError(value)   # NaN and Infinity: Python reads them, Claude Code does not
+    try:
+        with open(os.path.join(ROOT, path), encoding="utf-8") as f:
+            before = json.loads(f.read(), parse_constant=strict)
+    except Exception:
+        before = None
+    if not isinstance(before, dict):
+        # the file as it is can\u2019t be read: the new one must at least wire the guard as the template does
+        before = {"hooks": {"PreToolUse": [{"matcher": "Bash|Read|Edit|MultiEdit|Write|NotebookEdit|Grep|WebFetch|mcp__.*",
+                                            "hooks": [{"type": "command", "command": "scripts/guard.sh", "timeout": 30}]}],
+                            "ConfigChange": [{"hooks": [{"type": "command", "command": "scripts/guard.sh", "timeout": 30}]}]}}
+        loose = True
+    else:
+        loose = False
+    try:
+        new = json.loads(after, parse_constant=strict)
+    except Exception:
+        new = None
+    if not isinstance(new, dict):
+        return ["the file would no longer be a valid settings object, so Claude Code would drop its hooks and rules"]
+    lost = []
+    if new.get("disableAllHooks") not in (None, False) and before.get("disableAllHooks") in (None, False):
+        lost.append("`disableAllHooks` turns every hook off, the guard with it")
+    hooks = guard_hooks(new)
+    for event, entries in guard_hooks(before).items():
+        for matcher, command, timeout, kind in entries:
+            # a timeout of 30 s or more is enough: the guard stops itself at 15 s
+            if not any((c == command or (loose and "scripts/guard.sh" in c)) and matcher_covers(m, matcher) and t >= min(timeout, 30)
+                       and k == kind for m, c, t, k in hooks.get(event, [])):
+                lost.append(f"the {event} hook that runs scripts/guard.sh is removed, narrowed or changed")
+                break
+    added = sorted(hook_commands(new) - hook_commands(before))
+    if added and not loose:
+        lost.append(f"a hook or helper command is added or changed ({added[0][:80]}), and it would run with no check")
+    def rules(settings, key):
+        perms = settings.get("permissions")
+        values = perms.get(key) if isinstance(perms, dict) else None
+        return {str(r) for r in values} if isinstance(values, list) else set()
+    # a rule with an unfilled render placeholder is filled or dropped by the render, so it is not a protection yet
+    for key in ("deny", "ask"):
+        gone = sorted(r for r in rules(before, key) - rules(new, key) if "{{" not in r)
+        if gone:
+            lost.append(f"{key} rule " + ", ".join(f"`{r}`" for r in gone[:5]) + (f" and {len(gone) - 5} more" if len(gone) > 5 else "") + " removed")
+    def mode(settings):
+        perms = settings.get("permissions")
+        return perms.get("defaultMode") if isinstance(perms, dict) else None
+    if mode(new) == "bypassPermissions" and mode(before) != "bypassPermissions":
+        lost.append("`defaultMode: bypassPermissions` skips every permission prompt")
+    # every `env` variable reaches the hook too (PATH, BASH_ENV, an exported bash function named like python3 ...)
+    env_before = before.get("env") if isinstance(before.get("env"), dict) else {}
+    env_new = new.get("env") if isinstance(new.get("env"), dict) else {}
+    changed = ", ".join(sorted(str(k) for k in env_new if env_new.get(k) != env_before.get(k)))
+    if changed:
+        lost.append(f"`env` sets {changed}, which reaches the guard hook too")
+    return lost
+
+def planned_text(tool, args, path):
+    """The text the file would hold after this Edit, MultiEdit or Write; None when it can\u2019t be worked out."""
+    if tool == "Write":
+        return str(args.get("content") or "")
+    try:
+        with open(os.path.join(ROOT, path), encoding="utf-8", newline="") as f:
+            text = f.read()
+    except FileNotFoundError:
+        text = ""
+    except (OSError, UnicodeError):
+        return None
+    edits = args.get("edits") if tool == "MultiEdit" else [args] if tool == "Edit" else None
+    if not isinstance(edits, list):
+        return None
+    for e in edits:
+        if not isinstance(e, dict):
+            return None
+        old, new = str(e.get("old_string") or ""), str(e.get("new_string") or "")
+        if not old:
+            if text:
+                return None
+            text = new
+        elif old in text:
+            text = text.replace(old, new) if e.get("replace_all") else text.replace(old, new, 1)
+        else:
+            # Edit also matches straight quotes in old_string to curly ones in the file: do the same (same length, so
+            # positions agree)
+            flat = lambda t: t.translate({0x201c: 34, 0x201d: 34, 0x2018: 39, 0x2019: 39})
+            at = flat(text).find(flat(old))
+            if at >= 0:
+                text = text[:at] + new + text[at + len(old):]
+    return text
+
+def protect(path, how, after=None):
+    """Deny or ask for a write to a protected file. `after` is the text the file would hold (Edit and Write), when known."""
     kind = protected_kind(path)
     if kind == "owner":
         deny(f"`{path}` is the owner\u2019s file ({how}); an agent never writes settings.local.json.")
+    if kind == "holder":
+        deny(f"`{path}` holds the guard or its wiring ({how}); removing, moving or replacing it would switch the guard off, "
+             "so the owner does it by hand.")
+    if kind == "core":
+        deny(f"`{path}` is the guard itself ({how}). No tool call changes it, because one approved change could switch every "
+             "check off: the owner edits it by hand. For a kit update, write the new copy under /tmp and give the owner the "
+             f"command to run in a terminal (`cp /tmp/<file> {path}`).")
+    if kind in ("settings", "config"):
+        if after is None:
+            deny(f"`{path}` holds the guard\u2019s own settings, and the guard can\u2019t work out what this change does to it "
+                 f"({how}). Make the change with the Edit or Write tool: the guard checks that it removes no protection, "
+                 "and the owner approves it.")
+        lost = settings_lost(path, after) if kind == "settings" else config_lost(after)
+        if lost:
+            what = "; ".join(lost)
+            deny(f"this change to `{path}` removes a protection: {what}. One approval must not switch a protection off, so "
+                 "an agent never makes this change. If the owner wants it, they edit the file by hand.")
+        kind = "guard"
     if kind == "guard":
         ask(f"`{path}` is one of the files the guard rests on ({how}); the owner approves each change to it.")
     if kind == "persist":
@@ -205,12 +480,16 @@ def protect(path, how):
 # ---- secret and credential files ---------------------------------------------------------------
 SAFE_SUFFIX = (".example", ".sample", ".template")
 SECRET_DIRS = {".aws", ".ssh", ".gnupg", ".azure", ".kube"}
-SECRET_NAMES = {".envrc", ".netrc", "_netrc", ".pgpass", ".git-credentials", ".my.cnf", ".htpasswd"}
+SECRET_NAMES = {".envrc", ".netrc", "_netrc", ".pgpass", ".git-credentials", ".my.cnf", ".htpasswd", ".dockercfg", ".dev.vars", ".secrets"}
 ASK_NAMES = {".npmrc", ".pypirc"}
-SECRET_SUFFIX = (".pem", ".key", ".p12", ".pfx", ".jks", ".keystore", ".ppk", ".tfstate")
+SECRET_SUFFIX = (".pem", ".key", ".p12", ".pfx", ".jks", ".keystore", ".ppk", ".tfstate", ".tfvars", ".tfvars.json")
 SECRET_RE = re.compile(r"^(id_(rsa|dsa|ecdsa|ed25519)(_[a-z0-9_]+)?"
                        r"|(credentials?|client_secrets?|service[-_]account[-_a-z0-9]*|[a-z0-9_-]+[-_]credentials?)\.(json|ya?ml|toml|ini|xml|csv|txt)"
-                       r"|(secrets?|[a-z0-9_-]+[-_.]secrets?)\.(json|ya?ml|toml|env|ini|txt|properties|cfg|conf)"
+                       r"|([a-z0-9_.-]+[-_])?service[-_]?account[-_a-z0-9]*\.json"
+                       r"|[a-z0-9_.-]*firebase-adminsdk[-_a-z0-9]*\.json"
+                       r"|(secrets?|[a-z0-9_-]+[-_.]secrets?)(\.sops)?\.(json|ya?ml|toml|env|ini|txt|properties|cfg|conf)"
+                       r"|\.dev\.vars\.[a-z0-9_-]+"
+                       r"|kubeconfig([-_][a-z0-9_-]+)?(\.(ya?ml|json))?|[a-z0-9_.-]+[-_.]kubeconfig(\.ya?ml)?"
                        r"|[a-z0-9_.-]+\.(secrets?|credentials?))$")
 GLOB_PROBES = (".env", ".envrc", ".netrc", ".npmrc", ".pypirc", ".pgpass", ".git-credentials")
 
@@ -233,7 +512,37 @@ def secret_kind(path, read=False):
     under ~/.claude, "" otherwise. `read`: the caller only reads the path, so the tool-results folder of this project is fine."""
     if read and own_tool_results(path):
         return ""
-    return file_secret_kind(path) or ("home" if home_kind(path) == "home" else "")
+    w = expand_home(str(path).strip("\"\x27"))
+    try:
+        folder = bool(w) and "$" not in w and os.path.isdir(os.path.join(ROOT, w))
+    except (ValueError, OSError):
+        folder = False
+    # a folder is read only through the files in it: `pkg/kubeconfig/` is code, `.ssh/` is not
+    named = file_secret_kind(os.path.join(w, "x") if folder else path)
+    return named or link_kind(path) or ("home" if home_kind(path) == "home" else "")
+
+def link_kind(path):
+    """file_secret_kind of what a path resolves to, when a symlink (the file or a folder above it) makes that a
+    different path: `notes.txt -> .env` reads the secret under another name."""
+    w = expand_home(str(path).strip("\"\x27"))
+    if not w or any(c in w for c in "$`"):
+        return ""
+    bases = [""] if os.path.isabs(w) else [ROOT] + [os.path.join(ROOT, d) for d in CD_DIRS]
+    try:
+        for base in bases:
+            full = os.path.normpath(os.path.join(base, w))
+            # a glob (`note?.txt`) is checked on each file it matches
+            for cand in sorted(globmod.glob(full))[:200] if any(c in w for c in "*?[") else [full]:
+                real = os.path.realpath(cand)
+                kind = file_secret_kind(os.path.join(real, "x") if os.path.isdir(real) else real) if real != cand else ""
+                # after a `cd`, a relative path is read where the cd leads (`cd supabase && cat .temp/pooler-url`)
+                if not kind and base not in ("", ROOT):
+                    kind = file_secret_kind(os.path.relpath(cand, ROOT))
+                if kind:
+                    return kind
+    except (ValueError, OSError):
+        return ""
+    return ""
 
 def file_secret_kind(path):
     parts = [c for c in str(path).strip("\"\x27").split("/") if c]
@@ -250,8 +559,9 @@ def file_secret_kind(path):
         return "" if low.endswith(".pub") else "deny"
     for i, c in enumerate(dirs):
         nxt = dirs[i + 1] if i + 1 < len(dirs) else low
-        if (c == ".config" and nxt in ("gcloud", "gh", "doctl")) or (c == ".docker" and low == "config.json"):
-            return "deny"
+        if (c == ".config" and nxt in ("gcloud", "gh", "doctl")) or (c == ".docker" and low == "config.json") \
+                or (c == "supabase" and nxt == ".temp" and i + 1 < len(dirs)):
+            return "deny"   # supabase/.temp holds the linked project\u2019s database address and password (pooler-url)
     if low in SECRET_NAMES or (low.endswith(SECRET_SUFFIX) and low not in SECRET_SUFFIX) or SECRET_RE.match(low):
         return "deny"
     if low in ASK_NAMES:
@@ -363,8 +673,11 @@ def ask_fetched():
     ask("this runs code that `curl` or `wget` fetches in the same command, and nobody has read it. Download it to a file, "
         "read it, then run it, or leave it to the owner.")
 
+ENV_LISTERS = {"export", "declare", "typeset"}
+
 def expand(words, depth):
     first = os.path.basename(words[0]) if words else ""
+    stripped_env = False
     # Strip what only starts the real command: wrappers (with their options), `VAR=value` prefixes and keywords.
     while words:
         w, base = words[0], os.path.basename(words[0])
@@ -375,6 +688,7 @@ def expand(words, depth):
             continue
         if base not in WRAPPERS:
             break
+        stripped_env = stripped_env or base == "env"
         words = words[1:]
         values = WRAPPER_VALUE_OPTS.get(base, set())
         while words and words[0].startswith("-") and words[0] != "--":
@@ -388,12 +702,17 @@ def expand(words, depth):
             if run in SHELLS or run == "eval" or INTERP_RE.match(run):
                 ask("`xargs` starts a shell or an interpreter on text it reads, so the guard cannot see the commands it runs. "
                     "Name the command itself.")
+    # `env` with nothing to run (also `env -0`, `env 2>&1`, `sudo env > f`) prints every variable, secrets included
+    if stripped_env and not operands(words):
+        BARE_ENV.append("env")
     if not words:
-        if first == "env":
-            BARE_ENV.append(first)
         return
     name = os.path.basename(words[0])
-    if name == "printenv" and len(words) == 1:
+    args_ = operands(words[1:])
+    if (name == "printenv" and not args_) or (name in ENV_LISTERS and not args_) or (name == "set" and len(words) == 1) \
+            or (name == "compgen" and any(w in ("-v", "-e") or w in ("variable", "export") for w in words[1:])) \
+            or (name in ("jq", "gojq", "jaq") and any(re.search(r"(^|[^\w$.])(env|\$ENV)\b", w) for w in args_)) \
+            or (name == "ps" and len(words) > 1 and not words[1].startswith("-") and "e" in words[1]):
         BARE_ENV.append(name)
     if words[0].startswith(("$", "`")) and "/" not in words[0]:
         ask(f"`{words[0]}` builds the command name at run time, so the guard cannot see which command runs. Write the command out.")
@@ -432,7 +751,43 @@ def expand(words, depth):
     yield Cmd([name] + words[1:], words[0])
 
 # ---- git push --------------------------------------------------------------------------------
-GIT_OPTS_WITH_VALUE = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path"}
+GIT_OPTS_WITH_VALUE = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path", "--config-env"}
+# git config keys whose value is a command, a script folder or another config file that git runs or reads later, out of
+# the guard\u2019s sight: setting one (`git config`, `git -c`, `--config-env`) asks. Matched without letter case.
+CMD_CONFIG_KEYS = ("core.hookspath", "core.sshcommand", "core.pager", "core.editor", "core.fsmonitor", "core.askpass",
+                   "core.gitproxy", "core.alternaterefscommand", "credential.helper", "credential.*.helper",
+                   "sequence.editor", "diff.external", "diff.*.textconv", "diff.*.command", "difftool.*.cmd",
+                   "mergetool.*.cmd", "merge.*.driver", "filter.*.clean", "filter.*.smudge", "filter.*.process", "alias.*",
+                   "pager.*", "gpg.program", "gpg.*.program", "init.templatedir", "include.path", "includeif.*.path",
+                   "remote.*.uploadpack", "remote.*.receivepack", "protocol.allow", "protocol.ext.allow", "uploadpack.packobjectshook",
+                   "submodule.*.update", "sendemail.sendmailcmd", "sendemail.smtpserver", "web.browser", "browser.*.cmd",
+                   "browser.*.path", "man.*.cmd", "man.*.path", "interactive.difffilter", "trailer.*.command", "trailer.*.cmd",
+                   "gpg.ssh.defaultkeycommand", "mergetool.*.path", "difftool.*.path", "imap.tunnel", "sendemail.tocmd",
+                   "sendemail.cccmd", "sendemail.headercmd")
+# An editor or pager that only quiets git (`git -c core.editor=true rebase --continue`, `-c core.pager=cat`) is fine.
+QUIET_VALUE = re.compile(r"^(true|false|:|cat|more|less( -[A-Za-z]+)*)$")
+CONFIG_READS = {"--get", "--get-all", "--get-regexp", "--get-urlmatch", "--get-color", "--get-colorbool", "-l", "--list",
+                "--unset", "--unset-all", "--remove-section", "-e", "--edit"}
+
+def config_ask(key, how):
+    ask(f"`{key}` ({how}) names a command, hook folder or config file that git runs or reads later, out of the guard\u2019s "
+        "sight (hooks, ssh, pager, editor, credential helper, alias, filter); the owner approves it.")
+
+def check_config_key(key, value, how):
+    k = str(key).strip("\"\x27").lower()
+    if "$" in k or "`" in k:
+        ask(f"`{key}` ({how}) is a config key built at run time, so the guard cannot see which key is set. Write the key out.")
+    if not any(fnmatch.fnmatchcase(k, p) for p in CMD_CONFIG_KEYS):
+        return
+    if (k in ("core.pager", "core.editor", "sequence.editor") or k.startswith("pager.")) and QUIET_VALUE.match(str(value).strip()):
+        return
+    config_ask(key, how)
+
+def check_config_section(name, how):
+    """Renaming a section into one whose keys run commands (`alias`, `core`, `filter.x`) sets those keys."""
+    n = str(name).strip("\"\x27").lower()
+    if "$" in n or "`" in n or any(fnmatch.fnmatchcase(n, p.rsplit(".", 1)[0]) for p in CMD_CONFIG_KEYS):
+        config_ask(name, how)
 PUSH_OPTS_WITH_VALUE = {"--repo", "--receive-pack", "--exec", "-o", "--push-option", "--signed", "--recurse-submodules"}
 
 # State a command chain leaves behind for the next git command: where HEAD points after a checkout,
@@ -500,6 +855,31 @@ def follow_git(sub, rest, git_dir_args):
     elif sub == "config":
         if len(positional) >= 2 and re.match(r"^remote\..+\.push$", positional[0]):
             SIM["push"].append(positional[1])
+        pos, verb = positional, ""
+        if pos and pos[0] in ("set", "get", "list", "unset", "remove-section", "rename-section", "edit"):
+            verb, pos = pos[0], pos[1:]
+        if verb == "rename-section" or "--rename-section" in flags:
+            for w in pos[1:]:
+                check_config_section(w, "git config renames a section to it")
+        # a read flag counts only when no `--no-…` flag (`--no-list`) cancels it
+        reads = any(f.split("=", 1)[0] in CONFIG_READS for f in flags) and not any(f.startswith("--no-") for f in flags)
+        if verb in ("", "set") and "--rename-section" not in flags and not reads:
+            if pos and ("$" in pos[0] or "`" in pos[0]):
+                check_config_key(pos[0], "", "git config sets it")
+            # `git config [-f file] <key> <value>`: a key with a value after it is set (a key alone is a read).
+            for k, w in enumerate(pos[:-1]):
+                check_config_key(w, pos[k + 1], "git config sets it")
+    elif sub in ("clone", "init", "submodule"):
+        # `git clone -c key=value` / `--config` sets config in the new repository, and `--template` copies its hooks.
+        for k, w in enumerate(rest):
+            if w in ("-c", "--config") and k + 1 < len(rest):
+                key, _, value = rest[k + 1].partition("=")
+                check_config_key(key, value, f"git {sub} {w} sets it")
+            elif w.startswith("--config="):
+                key, _, value = w.split("=", 1)[1].partition("=")
+                check_config_key(key, value, f"git {sub} --config sets it")
+            elif w == "--template" or w.startswith("--template="):
+                config_ask("--template", f"git {sub} copies hooks from a template folder")
     elif sub == "tag":
         if positional and not any(f in ("-d", "--delete", "-l", "--list") for f in flags):
             SIM["tags"].add(positional[0])
@@ -508,6 +888,9 @@ def follow_git(sub, rest, git_dir_args):
     elif sub == "clean" and ("--force" in flags or "f" in short) and "--dry-run" not in flags and "n" not in short:
         ask("`git clean -f` deletes untracked files, ignored ones too with `-x`, and nothing brings them back; the owner approves it. Run `git clean -n` to see what it would delete.")
     elif sub == "branch":
+        if CONFIG_PROBLEMS and positional and (any(f in ("--delete", "--force", "--move") for f in flags) or re.search("[dDfmM]", short)):
+            deny("`git branch` deletes, moves or forces a branch while the environment branches can\u2019t be read from "
+                 "harness.config.yml (" + "; ".join(CONFIG_PROBLEMS[:3]) + "). Fix the config, then retry.")
         names = [x for x in positional if protected_branch(x)]
         if names and (any(f in ("--delete", "--force", "--move") for f in flags) or re.search("[dDfmM]", short)):
             deny(f"agents never delete, move or force `{names[0]}`: it is an environment branch and changes only through a PR "
@@ -522,7 +905,12 @@ def check_git(words):
     i, git_dir_args, cfg_push = 1, [], []
     while i < len(words) and words[i].startswith("-"):
         opt = words[i]
+        if opt.startswith("--config-env="):
+            check_config_key(opt.split("=")[1], "", "git --config-env sets it")
         if opt in GIT_OPTS_WITH_VALUE and i + 1 < len(words):
+            if opt in ("-c", "--config-env"):
+                key, _, value = words[i + 1].partition("=")
+                check_config_key(key, "" if opt == "--config-env" else value, f"git {opt} sets it")
             if opt == "-C":
                 git_dir_args += ["-C", words[i + 1]]
             m = re.match(r"^remote\..+\.push=(.*)$", words[i + 1]) if opt == "-c" else None
@@ -536,6 +924,10 @@ def check_git(words):
     if words[i] != "push":
         follow_git(words[i], words[i + 1:], git_dir_args)
         return
+    if CONFIG_PROBLEMS:
+        deny("every `git push` is blocked because the environment branches can\u2019t be read: " + "; ".join(CONFIG_PROBLEMS[:3])
+             + ". Fix `branches.integration`, `branches.production` and `environments` in harness.config.yml, then retry "
+             "(/morph-doctor shows what the scripts read).")
     rest = words[i + 1:]
     positional, flags, j = [], [], 0
     while j < len(rest):
@@ -659,7 +1051,8 @@ def dry_run(words):
 GH_ASK = {"repo": {"delete", "archive", "unarchive", "rename", "create", "edit", "transfer"},
           "release": {"create", "delete", "edit", "upload", "delete-asset"},
           "workflow": {"run", "enable", "disable"}, "pr": {"merge"}, "auth": {"token", "login", "logout", "refresh", "setup-git"},
-          "issue": {"delete", "transfer"}, "extension": {"install", "upgrade", "exec"}, "alias": {"set", "import"}}
+          "issue": {"delete", "transfer"}, "extension": {"install", "upgrade", "exec"}, "alias": {"set", "import"},
+          "gist": {"create", "new", "edit", "delete", "rename"}}
 
 def check_gh(words):
     if len(words) > 2 and words[2] in GH_ASK.get(words[1], ()):
@@ -763,17 +1156,274 @@ WRITERS = {"cp", "mv", "rm", "ln", "install", "tee", "truncate", "chmod", "chown
            "patch", "ed", "ex", "vi", "vim", "nano", "touch", "unlink", "shred"}
 INTERPRETERS = {"python", "python3", "node", "ruby", "perl", "php", "deno", "bun"}
 
+def copy_targets(words):
+    """The paths `cp`, `mv`, `install`, `ln` or `rsync` writes: the target, or each source name inside it when it is a
+    folder (or `-t <dir>`), with every file of a source folder below that. `mv` also removes its sources, and `ln` makes
+    a second name for them (a write through it changes them)."""
+    name, ops, target = words[0], operands(words[1:]), None
+    for k, w in enumerate(words[1:], 1):
+        if w in ("-t", "--target-directory") and k + 1 < len(words):
+            target = words[k + 1]
+        elif w.startswith("--target-directory="):
+            target = w.split("=", 1)[1]
+    no_dir = any(w == "--no-target-directory" or re.match(r"^-[A-Za-z]*T", w) for w in words[1:] if not w.startswith("--") or w == "--no-target-directory")
+    if target is not None:
+        sources, into = [o for o in ops if o != target], True
+    elif len(ops) > 1:
+        target, sources = ops[-1], ops[:-1]
+        t = expand_home(target.strip("\"\x27"))
+        into = not no_dir and (name == "rsync" or target.endswith("/") or len(sources) > 1
+                               or os.path.isdir(t if os.path.isabs(t) else os.path.join(ROOT, t)))
+    else:
+        return list(ops) if name == "mv" else []
+    out = []
+    for src in sources:
+        s = expand_home(src.strip("\"\x27"))
+        contents = (name == "rsync" and s.endswith("/")) or s.endswith("/.")
+        base = os.path.join(target, os.path.basename(s.rstrip("/"))) if into and not contents else target
+        out.append(base)
+        full = s if os.path.isabs(s) else os.path.join(ROOT, s)
+        if os.path.isdir(full) and not os.path.islink(full):
+            seen = 0
+            for top, dirs, names in os.walk(full):
+                for n in names + dirs:
+                    seen += 1
+                    if seen > 5000:
+                        break
+                    out.append(os.path.join(base, os.path.relpath(os.path.join(top, n), full)))
+    if not into:
+        out.append(target)
+    if name == "mv":
+        out += sources
+    if name == "ln":
+        out += sources + [os.path.join(os.path.dirname(target.strip("\"\x27")), src) for src in sources if not os.path.isabs(src)]
+    return out
+
+def patch_paths(path):
+    """The files a patch or mbox file changes (each path with its first one or two folders also stripped, for `-p`)."""
+    try:
+        with open(os.path.join(ROOT, expand_home(path.strip("\"\x27"))), encoding="utf-8", errors="replace") as f:
+            text = f.read(2000000)
+    except OSError:
+        return None
+    out = []
+    for m in re.finditer(r"(?m)^(?:diff --git (\S+) (\S+)|(?:---|\+\+\+) (\S+)|rename (?:from|to) (\S+)|copy (?:from|to) (\S+))", text):
+        for p in m.groups():
+            if p and p != "/dev/null":
+                parts = p.strip("\"").split("/")
+                out += ["/".join(parts[k:]) for k in range(min(3, len(parts)))]
+    return out
+
+def archive_paths(name, words):
+    """The files `tar -x` or `unzip` writes, read from the archive listing; None when it can\u2019t be listed."""
+    dest, archive = ".", None
+    rest = words[1:]
+    if name == "unzip":
+        for k, w in enumerate(rest):
+            if w == "-d" and k + 1 < len(rest):
+                dest = rest[k + 1]
+        ops = [w for k, w in enumerate(rest) if not w.startswith("-") and not (k and rest[k - 1] in ("-d", "-x", "-P"))]
+        archive = ops[0] if ops else None
+        listing = ["unzip", "-Z1"]
+    else:
+        for k, w in enumerate(rest):
+            if w in ("-C", "--directory") and k + 1 < len(rest):
+                dest = rest[k + 1]
+            elif w.startswith("--directory="):
+                dest = w.split("=", 1)[1]
+            elif w.startswith("--file="):
+                archive = w.split("=", 1)[1]
+            elif w == "--file" and k + 1 < len(rest):
+                archive = rest[k + 1]
+            elif re.match(r"^-?[A-Za-z]*f[A-Za-z]*$", w) and not w.startswith("--") and (k == 0 or w.startswith("-")):
+                tail = w.lstrip("-")
+                if tail.endswith("f") and k + 1 < len(rest):
+                    archive = rest[k + 1]
+                elif "f" in tail:
+                    archive = tail[tail.index("f") + 1:] or None
+        listing = ["tar", "-tf"]
+    if not archive or archive == "-":
+        return None, dest
+    try:
+        r = subprocess.run(listing + [os.path.join(ROOT, expand_home(archive.strip("\"\x27")))], capture_output=True, text=True, timeout=5)
+    except (OSError, subprocess.SubprocessError):
+        return None, dest
+    if r.returncode:
+        return None, dest
+    out = []
+    for line in r.stdout.splitlines()[:20000]:
+        parts = line.strip().lstrip("./").split("/")
+        out += [os.path.join(dest, "/".join(parts[k:])) for k in range(min(3, len(parts)))]
+    return out, dest
+
+def git_globals(words):
+    """(folders from `git -C`, the index of the subcommand) for a git command."""
+    dirs, i = [], 1
+    while i < len(words) and words[i].startswith("-"):
+        if words[i] in GIT_OPTS_WITH_VALUE and i + 1 < len(words):
+            if words[i] == "-C":
+                dirs.append(words[i + 1].strip("\"\x27"))
+            i += 2
+        else:
+            i += 1
+    return dirs, i
+
+def guarded_files():
+    """The guard and the settings it rests on, as they are in this project (paths from the project root)."""
+    lib = os.path.join(ROOT, "scripts/lib")
+    return ["scripts/guard.sh", ".claude/settings.json", "harness.config.yml"] + sorted(
+        "scripts/lib/" + n for n in (os.listdir(lib) if os.path.isdir(lib) else ()))
+
+def git_restores(dirs, sub, args):
+    """For `git checkout <commit> -- <paths>`, `git restore --source=<commit> <paths>` and `git stash pop|apply`, the
+    guarded files this would change; None when the guard can\u2019t tell."""
+    base = ["-C", dirs[-1]] if dirs else []
+    def run(*a):
+        try:
+            r = subprocess.run(["git"] + base + list(a), capture_output=True, text=True, timeout=5)
+            return r.stdout if r.returncode == 0 else None
+        except (OSError, subprocess.SubprocessError):
+            return None
+    top = (run("rev-parse", "--show-toplevel") or "").strip()
+    if sub == "stash":
+        if not args or args[0] not in ("pop", "apply"):
+            return []
+        refs = [a for a in args[1:] if not a.startswith("-")]
+        names = run("stash", "show", "--include-untracked", "--name-only", refs[0] if refs else "stash@{0}")
+        if names is None:
+            names = run("stash", "show", "--name-only", refs[0] if refs else "stash@{0}")
+        return None if names is None else [n for n in names.split() if n in guarded_files()]
+    source, paths = None, []
+    if sub == "restore":
+        for k, a in enumerate(args):
+            if a in ("-s", "--source") and k + 1 < len(args):
+                source = args[k + 1]
+            elif a.startswith("--source="):
+                source = a.split("=", 1)[1]
+        paths = [a for k, a in enumerate(args) if not a.startswith("-") and not (k and args[k - 1] in ("-s", "--source"))]
+    else:
+        before = args[:args.index("--")] if "--" in args else args[:1]
+        after = args[args.index("--") + 1:] if "--" in args else args[1:]
+        commits = [a for a in before if not a.startswith("-")]
+        source, paths = (commits[0] if commits else None), [a for a in after if not a.startswith("-")]
+    if not source or not paths:
+        return []
+    here = os.path.relpath(os.path.join(ROOT, dirs[-1]) if dirs else ROOT, top or ROOT) if top else "."
+    def covers(spec, f):
+        spec = os.path.normpath(os.path.join(here, spec.strip("\"\x27"))) if not spec.startswith(":/") else spec[2:] or "."
+        return spec in (".", "") or f == spec or f.startswith(spec.rstrip("/") + "/") or fnmatch.fnmatchcase(f, spec)
+    hit = [f for f in guarded_files() if any(covers(sp, f) for sp in paths)]
+    if not hit:
+        return []
+    changed = run("diff", "--name-only", source, "--", *[os.path.join(top or ROOT, f) for f in hit])
+    return None if changed is None else [f for f in hit if f in changed.split()]
+
 def guard_file_write(cmd, words):
-    """Ask or deny when a Bash command writes one of the protected files."""
+    """Deny or ask when a Bash command writes one of the protected files."""
     name = words[0]
-    named = [w for w in words[1:] if protected_kind(w)]
+    if name in ("chmod", "chown", "chattr", "touch"):
+        # no content change: only a guard file named outright counts (`chmod +x scripts/*.sh` is fine)
+        named = [w for w in words[1:] if not any(c in w for c in "*?[") and protected_kind(w)]
+        if named and name != "touch":
+            protect(named[0], f"`{name}` changes it")
+        return
+    if name in ("cp", "mv", "install", "ln", "rsync"):
+        named = [w for w in copy_targets(words) if protected_kind(w)]
+        if named:
+            protect(named[0], "`ln` links to it, and a write through the link changes it" if name == "ln" else f"`{name}` writes it")
+        return
+    if name in ("tar", "bsdtar", "gtar", "unzip"):
+        if name == "unzip" or any(w in ("--extract", "--get") or (not w.startswith("--") and "x" in w.lstrip("-") and re.match(r"^-?[A-Za-z]+$", w))
+                                  for w in words[1:2] + [w for w in words[2:] if w.startswith("-")]):
+            files, dest = archive_paths(name, words)
+            if files is None:
+                if rel_inside(dest):
+                    ask(f"`{name}` extracts an archive the guard can\u2019t list into the project, so it can\u2019t tell whether it "
+                        "replaces the guard\u2019s own files; the owner approves it.")
+                return
+            named = [f for f in files if protected_kind(f)]
+            if named:
+                protect(named[0], f"`{name}` extracts over it")
+        return
+    if name in ("patch",) or (name == "git" and len(words) > 1):
+        dirs, i = git_globals(words) if name == "git" else ([], 0)
+        sub = words[i] if name == "git" and i < len(words) else name
+        args = words[i + 1:] if name == "git" else words[1:]
+        if sub in ("apply", "am", "patch"):
+            if sub == "patch":
+                files = [args[k + 1] for k, a in enumerate(args[:-1]) if a in ("-i", "--input", "<")]
+                files += [a.split("=", 1)[1] for a in args if a.startswith("--input=")] + [a[1:] for a in args if a.startswith("<") and len(a) > 1]
+                named = [w for w in args if protected_kind(w) and not w.startswith("-")]
+            else:
+                files = [a for k, a in enumerate(args) if not a.startswith("-") and not (k and args[k - 1] in ("--directory", "-p", "--include", "--exclude"))]
+                named = []
+            if sub == "apply" and any(a in ("--check", "--stat", "--numstat", "--summary") for a in args) and "--apply" not in args:
+                return
+            for f in files:
+                changed = patch_paths(os.path.join(dirs[-1], f) if dirs else f)
+                if changed is None:
+                    continue
+                named += [c for c in changed if protected_kind(os.path.join(dirs[-1], c) if dirs else c)]
+            if not files:
+                ask(f"`{sub}` reads a patch the guard can\u2019t see (from a pipe), so it can\u2019t tell whether it changes the "
+                    "guard\u2019s own files; the owner approves it. Save the patch to a file and apply that.")
+            if named:
+                protect(named[0], f"`{sub}` patches it")
+            return
+        if name == "git":
+            if sub in ("checkout", "restore", "stash"):
+                changed = git_restores(dirs, sub, args)
+                if changed is None:
+                    ask(f"`git {sub}` may bring back an older copy of the guard\u2019s own files and the guard can\u2019t tell; "
+                        "the owner approves it.")
+                elif changed:
+                    protect(changed[0], f"`git {sub}` replaces it with another version")
+            named = [w for w in args if protected_kind(w)]
+            named += [os.path.join(d, part) for d in dirs for w in args for part in re.split(r"[=:,\s]", w)
+                      if part and protected_kind(os.path.join(d, part))]
+            if named and sub in ("update-index", "checkout", "restore", "rm", "mv", "apply", "stash", "reset"):
+                protect(named[0], f"`git {sub}` writes it")
+            return
+    if name == "dd":
+        named = [w[3:] for w in words[1:] if w.startswith("of=") and protected_kind(w[3:])]
+    elif name in ("curl", "wget"):
+        from urllib.parse import urlparse
+        rest = words[1:]
+        outdir = "."
+        for k, w in enumerate(rest):
+            if w in ("--output-dir", "-P", "--directory-prefix") and k + 1 < len(rest):
+                outdir = rest[k + 1]
+            elif w.startswith(("--output-dir=", "--directory-prefix=")):
+                outdir = w.split("=", 1)[1]
+            elif re.match(r"^-P\S", w):
+                outdir = w[2:]
+        named = [os.path.join(outdir, rest[k + 1]) for k, w in enumerate(rest[:-1])
+                 if (w in ("--output", "--output-document") or re.match(r"^-[A-Za-z]*[oO]$", w)) and protected_kind(os.path.join(outdir, rest[k + 1]))]
+        named += [os.path.join(outdir, w.split("=", 1)[1]) for w in rest if w.startswith(("--output=", "--output-document="))
+                  and protected_kind(os.path.join(outdir, w.split("=", 1)[1]))]
+        # a remote name: `curl -O`, and wget whenever no `-O` names the file
+        remote = name == "wget" and not any(w in ("-O", "--output-document") or w.startswith("--output-document=") for w in rest) \
+            or name == "curl" and any(w in ("--remote-name", "--remote-name-all") or re.match(r"^-[A-Za-z]*O[A-Za-z]*$", w) for w in rest)
+        if remote:
+            for w in rest:
+                if "://" in w:
+                    try:
+                        base = os.path.basename(urlparse(w.strip("\"\x27")).path) or "index.html"
+                    except ValueError:
+                        continue
+                    if protected_kind(os.path.join(outdir, base)):
+                        named.append(os.path.join(outdir, base))
+        if named:
+            protect(named[0], f"`{name}` downloads into it")
+        return
+    else:
+        named = [w for w in words[1:] if protected_kind(w)]
     if not named:
         return
     sub = words[1] if len(words) > 1 else ""
     writes = (name in WRITERS
               or (name in ("sed", "perl", "ruby") and any(re.match(r"^-[A-Za-z]*i", w) or w.startswith("--in-place") for w in words[1:]))
               or (name in INTERPRETERS and any(w in ("-c", "-e", "-p", "-pe", "-pi") or w.startswith("-i") for w in words[1:]))
-              or (name == "git" and sub in ("update-index", "checkout", "restore", "rm", "mv", "apply", "stash", "reset"))
               or (name in ("awk", "gawk") and "-i" in words[1:] and "inplace" in " ".join(words)))
     if writes:
         protect(named[0], f"`{name}` writes it")
@@ -881,22 +1531,40 @@ def cli_asks(label):
     return ask(f"`{label}` can change a shared cloud, deploy or database resource unless it is a read; only the owner approves it "
                "(the Shared remote environments golden rule in AGENTS.md). The `guard:` switch in harness.config.yml turns this prompt off.")
 
+def local_socket(host):
+    """The hosts in a host value, one per entry of a comma list (libpq tries each): a folder path (`/tmp/pg`, `%2Ftmp%2Fpg`
+    in a URL) names a Unix socket on this machine, so it counts as `localhost`."""
+    from urllib.parse import unquote
+    return ["localhost" if unquote(h).strip().startswith("/") else unquote(h).strip() for h in host.split(",")]
+
+def db_url_hosts(url):
+    """The hosts a database URL names: each entry of its host list and a `host=` or `hostaddr=` query value."""
+    from urllib.parse import urlparse, parse_qsl
+    u = urlparse(url)
+    hosts = []
+    for part in u.netloc.rsplit("@", 1)[-1].split(","):
+        hosts.append(part[1:part.find("]")] if part.startswith("[") and "]" in part else part.split(":")[0])
+    query = [v for k, v in parse_qsl(u.query) if k.lower() in ("host", "hostaddr")]
+    if query:
+        hosts = [h for h in hosts if h] + query
+    return [h for v in hosts for h in local_socket(v.lower())] or [""]
+
 def hosts_in(words):
     from urllib.parse import urlparse
     hosts = []
     for k, w in enumerate(words):
         if "://" in w:
             try:
-                hosts.append((urlparse(w.strip("\"\x27")).hostname or "").lower())
+                hosts += db_url_hosts(w.strip("\"\x27"))
             except ValueError:
                 hosts.append("?")
         elif w in ("-h", "-H", "--host", "--hostname") and k + 1 < len(words):
-            hosts.append(words[k + 1].lower())
+            hosts.append(words[k + 1].strip("\"\x27").lower())
         elif re.match(r"^--host(name)?=", w):
-            hosts.append(w.split("=", 1)[1].lower())
+            hosts.append(w.split("=", 1)[1].strip("\"\x27").lower())
         elif re.match(r"^-[hH]\S", w):
-            hosts.append(w[2:].lower())
-    return hosts
+            hosts.append(w[2:].strip("\"\x27").lower())
+    return [h for v in hosts for h in local_socket(v)]
 
 def check_db(name, words):
     """Ask when a database client reaches a host that is not local, unless the statement is a read."""
@@ -952,6 +1620,75 @@ def runner_words(words):
     if w and w[0] == "--":
         w = w[1:]
     return w[:1] and [pkg_bin(w[0]) if "@" in w[0] or w[0] in PKG_BIN else os.path.basename(w[0])] + w[1:] or w
+
+# Database migration tools: the subcommands that change the database. A target that is not local is denied (like
+# `prisma migrate deploy`); a target the command line doesn\u2019t show (an env var, a config file) asks.
+MIGRATE_WRITES = {"atlas": {"apply", "down", "clean"}, "sqitch": {"deploy", "revert", "rebase", "checkout"},
+                  "flyway": {"migrate", "clean", "repair", "undo", "baseline"},
+                  "goose": {"up", "up-by-one", "up-to", "down", "down-to", "redo", "reset"},
+                  "dbmate": {"up", "migrate", "down", "rollback", "drop", "create", "load"},
+                  "liquibase": {"drop-all", "dropall", "execute-sql", "executesql", "changelog-sync", "changelogsync", "tag",
+                                "release-locks", "releaselocks", "changelog-sync-to-tag", "changelogsynctotag", "clear-checksums",
+                                "clearchecksums", "mark-next-changeset-ran", "marknextchangesetran"}}
+MIGRATE_WRITES["atlas"].add("set")
+SERVICE_HOSTS = {"db", "database", "postgres", "postgresql", "pg", "mysql", "mariadb", "mongo", "mongodb", "redis"}
+MIGRATE_LOCAL_SCHEMES = ("sqlite", "sqlite3", "file", "docker")
+CMD_ASSIGNED_URLS = []   # URLs set in `VAR=value` prefixes of the command being checked (`DATABASE_URL=… goose up`)
+
+def db_targets(rest):
+    """The database hosts a migration command names: URLs (the host after the last `@`), `host=` DSNs, `tcp(host)`,
+    `jdbc:…@host`, and `-h`/`--host`/`--db-host` values. A sqlite, file or docker URL is local; `--dev-url` is a scratch database."""
+    from urllib.parse import urlparse
+    hosts, skip = [], False
+    for k, w in enumerate(rest):
+        if skip:
+            skip = False
+            continue
+        if w in ("--dev-url",):
+            skip = True
+            continue
+        if w.startswith("--dev-url="):
+            continue
+        v = w.split("=", 1)[1] if re.match(r"^-{1,2}[\w-]+=", w) else w
+        v = v.strip("\"\x27")
+        if "://" in v:
+            try:
+                u = urlparse(re.sub(r"^(jdbc|db):", "", v, flags=re.I))
+                hosts += ["localhost"] if u.scheme.lower() in MIGRATE_LOCAL_SCHEMES else db_url_hosts(re.sub(r"^(jdbc|db):", "", v, flags=re.I))
+            except ValueError:
+                hosts.append("?")
+        for m in re.finditer(r"(?:^|\s)host=([^\s;]+)|tcp\(([^:)]+)|^jdbc:[\w:]+@(?://)?([\w.-]+)", v):
+            hosts += local_socket((m.group(1) or m.group(2) or m.group(3)).lower())
+        if w in ("-h", "--host", "--db-host", "--hostname") and k + 1 < len(rest):
+            hosts += local_socket(rest[k + 1].strip("\"\x27").lower())
+    return hosts
+
+def check_migrate(words):
+    name = words[0] if words else ""
+    if name not in MIGRATE_WRITES or (name == "atlas" and dry_run(words)):
+        return
+    rest = [w for w in words[1:] if w != "--"]
+    verbs = [w.lower() for w in rest if not w.startswith("-")]
+    writes = [v for v in verbs if v in MIGRATE_WRITES[name]
+              or (name == "liquibase" and re.match(r"^(update|rollback)", v) and not re.search(r"-?sql$", v))]
+    if not writes:
+        return
+    # help only before the subcommand (`goose up -h` runs up), and `-h` is the database host in sqitch
+    before = rest[:rest.index(next(w for w in rest if w.lower() == writes[0]))]
+    if any(w in ("--help", "help", "--version", "version") or (w == "-h" and name != "sqitch") for w in before):
+        return
+    hosts = db_targets(rest) + [h for u in CMD_ASSIGNED_URLS for h in db_targets([u])]
+    local_file = any(w.lower() in ("sqlite", "sqlite3") or re.search(r"\.(db|sqlite3?)$", w.lower()) for w in rest)
+    remote = [h for h in hosts if h not in LOCAL_HOSTS]
+    # a usual container service name (`db`, `postgres`) asks: it is often a local compose service; any other host is denied
+    named = [h for h in remote if h not in SERVICE_HOSTS]
+    if named:
+        deny(f"`{name} {writes[0]}` changes the database at `{named[0]}`, which is not local; that is the owner\u2019s step "
+             "(the Shared remote environments golden rule in AGENTS.md).")
+    if remote and GROUP_ASK["schema_pushes"]:
+        cli_asks(f"{name} {writes[0]} (the database host `{remote[0]}` may be a local service or another machine)")
+    if not hosts and not local_file and GROUP_ASK["schema_pushes"]:
+        cli_asks(f"{name} {writes[0]} (the database it targets is not on the command line)")
 
 def check_cli(words):
     name = words[0]
@@ -1140,22 +1877,185 @@ def check_deploy_script(words):
 
 SCAN_SKIP = {".git", "node_modules", ".next", ".venv", "venv", "dist", "build", "target", "__pycache__", ".cache"}
 
-def secret_in_tree(path, limit=20000):
-    """The first secret or credential file below a directory (skipping dependency and build folders), else None."""
-    seen = 0
-    for top, dirs, names in os.walk(path):
+TOO_BIG = "(too many files to check)"
+
+def secrets_in_tree(path, limit=20000, cap=200, follow=False):
+    """The secret and credential files below a directory (a secret folder counts with each file in it), up to `cap`;
+    dependency and build folders are skipped. TOO_BIG past `limit` entries. `follow`: the search follows folder links
+    (`grep -R`), so the scan does too; a link to a secret folder that is not followed counts as one entry."""
+    found, seen, visited = [], 0, set()
+    for top, dirs, names in os.walk(path, followlinks=follow):
+        real_top = os.path.realpath(top)
+        if real_top in visited:
+            dirs[:] = []
+            continue
+        visited.add(real_top)
         dirs[:] = [d for d in dirs if d not in SCAN_SKIP]
+        # a folder counts by what is inside it: `.ssh/` does, a `kubeconfig/` package does not
+        inside = top != path and (any(part in SECRET_DIRS for part in os.path.relpath(top, path).split(os.sep))
+                                  or file_secret_kind(os.path.join(real_top, "x")) == "deny")
         for n in names + dirs:
             seen += 1
             if seen > limit:
-                return None
+                return TOO_BIG
+            if len(found) >= cap:
+                return found
             full = os.path.join(top, n)
-            if file_secret_kind(full) == "deny" or (n in SECRET_DIRS and os.path.isdir(full)):
-                return full
-    return None
+            if n in dirs:
+                hit = not follow and os.path.islink(full) and file_secret_kind(os.path.join(os.path.realpath(full), "x")) == "deny"
+            else:
+                hit = (inside and not n.endswith(".pub")) or file_secret_kind(full) == "deny" \
+                    or (os.path.islink(full) and file_secret_kind(os.path.realpath(full)) == "deny")
+            if hit:
+                found.append(full)
+    return found
+
+def search_filters(name, rest):
+    """The file filters of a recursive grep or rg search, in command-line order (the last one that matches a file decides):
+    a list of (kind, glob, case_insensitive), kind include, exclude or exclude_dir for grep, glob for rg (`!` kept).
+    Words after `--` are operands, not filters."""
+    if "--" in rest:
+        rest = rest[:rest.index("--")]
+    rg_icase = name == "rg" and "--glob-case-insensitive" in rest
+    out = []
+    for k, w in enumerate(rest):
+        flag, value = w, None
+        if w.startswith("--") and "=" in w:
+            flag, value = w.split("=", 1)
+        elif name == "rg" and w.startswith("-g") and len(w) > 2:
+            flag, value = "-g", w[2:]
+        elif k + 1 < len(rest) and w in ("--include", "--exclude", "--exclude-dir", "--glob", "--iglob", "-g"):
+            value = rest[k + 1]
+        if value is None:
+            continue
+        value = value.strip("\"\x27")
+        if name == "rg" and flag in ("--glob", "-g", "--iglob"):
+            out.append(("glob", value, flag == "--iglob" or rg_icase))
+        elif name != "rg" and flag in ("--include", "--exclude", "--exclude-dir"):
+            out.append((flag[2:].replace("-", "_"), value, False))
+    return out
+
+def glob_regex(glob, rg):
+    """A grep (fnmatch) or rg glob as a regex for a whole name or path. rg: `*` and `?` stop at `/`, `**` crosses it, one
+    level of `{a,b}`; grep: no braces. `[!x]` and `[^x]` negate in both. None for a glob the guard cannot read."""
+    out, i, depth = "", 0, 0
+    while i < len(glob):
+        c = glob[i]
+        if c == "\\" and i + 1 < len(glob):
+            out += re.escape(glob[i + 1]); i += 2; continue
+        if c == "*":
+            if rg and glob.startswith("**", i):
+                after = glob[i + 2:i + 3]
+                if after == "/":
+                    out += "(?:.*/)?"; i += 3; continue
+                out += ".*"; i += 2; continue
+            out += "[^/]*" if rg else ".*"
+        elif c == "?":
+            out += "[^/]" if rg else "."
+        elif c == "[":
+            j = glob.find("]", i + 2 if glob[i + 1:i + 2] in ("!", "^") else i + 1)
+            if j < 0:
+                out += re.escape(c)
+            else:
+                body = glob[i + 1:j]
+                neg = body[:1] in ("!", "^")
+                body = body[1:] if neg else body
+                out += "[" + ("^" if neg else "") + body.replace("\\", "\\\\").replace("[", "\\[") + "]"
+                i = j
+        elif rg and c == "{":
+            if depth:
+                return None
+            depth += 1; out += "(?:"
+        elif rg and c == "}" and depth:
+            depth -= 1; out += ")"
+        elif rg and c == "," and depth:
+            out += "|"
+        else:
+            out += re.escape(c)
+        i += 1
+    return None if depth else out
+
+def search_reads(name, display, rel, filters):
+    """True when a recursive grep or rg with these filters may read the file at `rel` (relative to the searched folder;
+    `display` is the path as rg prints it). An unreadable glob counts as reading the file."""
+    parts = [p for p in rel.split("/") if p not in ("", ".")]
+    base, dirs = parts[-1], parts[:-1]
+    def hit(glob, text, icase, rg):
+        rx = glob_regex(glob, rg)
+        return rx is None or re.fullmatch(rx, text, re.S | (re.I if icase else 0)) is not None
+    if name != "rg":
+        # GNU grep: --exclude-dir skips a folder whose base name matches; --include and --exclude match the base name,
+        # the last matching one wins, and with none matching the file is read unless the first filter is --include.
+        if any(hit(g, d, False, False) and glob_regex(g, False) is not None for kind, g, _ in filters if kind == "exclude_dir" for d in dirs):
+            return False
+        files = [(kind, g) for kind, g, _ in filters if kind in ("include", "exclude")]
+        last = None
+        for kind, g in files:
+            if glob_regex(g, False) is None or hit(g, base, False, False):
+                last = kind if glob_regex(g, False) is not None else "include"
+        if last:
+            return last == "include"
+        return not (files and files[0][0] == "include")
+    # rg: the last matching glob wins; `!glob` leaves a file (or a folder) out; with any plain glob, a file that matches
+    # none is left out. A glob without `/` matches a name at any depth, one with `/` the path rg prints.
+    dparts = [p for p in display.split("/") if p not in ("", ".")]
+    def rg_match(glob, icase, as_dir):
+        g = glob.rstrip("/") if as_dir else glob
+        if glob.endswith("/") and not as_dir:
+            return False
+        if "/" not in g:
+            names = dirs if as_dir else [base]
+            return any(hit(g, n, icase, True) for n in names)
+        g = g.lstrip("/")
+        targets = ["/".join(dparts[:k]) for k in range(1, len(dparts))] if as_dir else ["/".join(dparts)]
+        return any(hit(g, t, icase, True) for t in targets)
+    decision, plain = None, False
+    for kind, glob, icase in filters:
+        neg = glob.startswith("!")
+        g = glob[1:] if neg else glob
+        if not neg:
+            plain = True
+            if glob_regex(g.lstrip("/"), True) is None or rg_match(g, icase, False):
+                decision = True
+        elif glob_regex(g.lstrip("/").rstrip("/"), True) is not None and (rg_match(g, icase, False) or rg_match(g, icase, True)):
+            decision = False
+    if decision is not None:
+        return decision
+    return not plain
+
+def glob_escape(text):
+    return re.sub(r"([*?\[\]{}\\!])", r"\\\1", text)
+
+def exclude_hint(name, full, rel):
+    """The filter that leaves this secret file out of a grep or rg search: its secret folder, else its exact name."""
+    parts = rel.split("/")
+    folder = None
+    for k in range(len(parts) - 1):
+        sub = os.path.join(full, *parts[:k + 1])
+        if parts[k] in SECRET_DIRS or file_secret_kind(os.path.join(os.path.realpath(sub), "x")) == "deny":
+            folder = parts[k]
+            break
+    base = parts[-1]
+    glob = ".env*" if base.startswith(".env") else glob_escape(base)
+    if name == "rg":
+        return f"-g \"!{glob_escape(folder)}/\"" if folder else f"-g \"!{glob}\""
+    return f"--exclude-dir=\"{glob_escape(folder)}\"" if folder else f"--exclude=\"{glob}\""
+
+SEARCH_VALUE_OPTS = ({"-m", "-A", "-B", "-C", "-d", "-D", "-e", "-f", "--regexp", "--file", "--include", "--exclude", "--exclude-dir",
+                      "--exclude-from", "--label", "--group-separator", "--max-count", "--context", "--after-context",
+                      "--before-context", "--devices", "--directories", "--binary-files"},
+                     {"-g", "--glob", "--iglob", "-t", "--type", "-T", "--type-not", "-m", "--max-count", "-A", "-B", "-C", "-M",
+                      "-e", "-f", "--regexp", "--file", "--max-columns", "-j", "--threads", "-d", "--max-depth", "--sort", "--sortr",
+                      "-r", "--replace", "-E", "--encoding", "--max-filesize", "--type-add", "--type-clear", "--ignore-file", "--pre",
+                      "--pre-glob", "--context-separator", "--color", "--colors", "--engine", "--path-separator",
+                      "--field-match-separator", "--field-context-separator", "--dfa-size-limit", "--regex-size-limit",
+                      "--hyperlink-format"})
+
+SEARCH_SHORT = set("rRnilLwxvcohHsqIEFPzZUuSNap.")   # short grep and rg flags that take no value
 
 def check_tree_search(words):
-    """A recursive grep (or `rg --hidden`) over a tree that holds a secret file reads it; deny unless the secret names are excluded."""
+    """A recursive grep (or `rg --hidden`) over a tree that holds a secret file reads it; deny unless its filters
+    (`--include`, `--exclude`, `--exclude-dir`, rg `-g`) leave every secret file out, and name the filter that would."""
     name, rest = words[0], words[1:]
     flags = [w for w in rest if w.startswith("-")]
     if name in ("grep", "egrep", "fgrep", "zgrep"):
@@ -1164,31 +2064,127 @@ def check_tree_search(words):
         recursive = any(w in ("--hidden", "-.", "--no-ignore", "--no-ignore-vcs") or re.match(r"^-u{2,}$", w) for w in flags)
     else:
         return
-    excludes = [w.split("=", 1)[1] if "=" in w else "" for w in rest if re.match(r"^--(exclude(-dir)?|glob|iglob)=", w)]
-    excludes += [rest[k + 1] for k, w in enumerate(rest[:-1]) if w in ("--exclude", "--exclude-dir", "--glob", "--iglob", "-g")]
-    excludes += [w for w in rest if w.startswith("!")]
-    if not recursive or any("env" in x for x in excludes):
+    if not recursive:
         return
-    ops = operands(rest)
-    own_pattern = any(w in ("-e", "--regexp", "-f", "--file") or w.startswith(("--regexp=", "--file=")) for w in flags)
+    follow = any(w == "--dereference-recursive" or re.match(r"^-[A-Za-z]*R[A-Za-z]*$", w) for w in flags) if name != "rg" \
+        else any(w in ("-L", "--follow") for w in flags)
+    filters = search_filters(name, rest)
+    # an option value given as the next word (`-g x`, `-e pat`) is not the pattern or a path
+    takes_value = SEARCH_VALUE_OPTS[name == "rg"]
+    value_next = lambda w: w in takes_value or re.match(r"^-[A-Za-z]*[ef]$", w)
+    ops = operands([w for k, w in enumerate(rest) if not (k and value_next(rest[k - 1]))])
+    own_pattern = any(w in ("-e", "--regexp", "-f", "--file") or w.startswith(("--regexp=", "--file=")) or re.match(r"^-[A-Za-z]*[ef]", w)
+                      for w in flags if not w.startswith("--") or w.startswith(("--regexp", "--file")))
     paths = ops if own_pattern else ops[1:]
-    for pth in paths or ["."]:
+    # a short option the guard does not know may take the next word: then, if no path given exists, `.` may be searched
+    risky = any(k and re.match(r"^-[^-]", rest[k - 1]) and not set(rest[k - 1][1:]) <= SEARCH_SHORT and not value_next(rest[k - 1])
+                for k, w in enumerate(rest) if w in ops)
+    if not paths or (risky and not any(os.path.exists(os.path.join(ROOT, expand_home(p))) for p in paths)):
+        paths = paths + ["."]
+    for pth in paths:
         full = os.path.normpath(os.path.join(ROOT, expand_home(pth)))
         if os.path.isdir(full) and rel_inside(pth):
-            hit = secret_in_tree(full)
-            if hit:
-                deny(f"`{name}` over `{pth}` would read `{os.path.relpath(hit, ROOT)}`, a secret or credential file; agents never read it "
-                     "(AGENTS.md \u00a7 Golden rules). Search `src/` (or the folder you mean), exclude it (`--exclude=.env*`) or use the Grep tool.")
+            found = secrets_in_tree(full, follow=follow)
+            if found == TOO_BIG:
+                ask(f"`{name}` over `{pth}` searches more files than the guard can check for secret files; the owner approves it. "
+                    "Search the folder you mean (`src/`).")
+                continue
+            def shown(h):
+                r = os.path.relpath(h, full).replace(os.sep, "/")
+                return r if pth in (".", "./") else os.path.normpath(pth).replace(os.sep, "/") + "/" + r
+            hits = [h for h in found if search_reads(name, shown(h), os.path.relpath(h, full).replace(os.sep, "/"), filters)]
+            if hits:
+                hints = []
+                for h in hits:
+                    hint = exclude_hint(name, full, os.path.relpath(h, full).replace(os.sep, "/"))
+                    if hint not in hints:
+                        hints.append(hint)
+                more = f" (and {len(hints) - 5} more)" if len(hints) > 5 else ""
+                flags_to_add = " ".join(hints[:5])
+                deny(f"`{name}` over `{pth}` would read `{os.path.relpath(hits[0], ROOT)}`, a secret or credential file; agents never "
+                     f"read it (AGENTS.md § Golden rules). Add `{flags_to_add}`{more} after the other filters to leave the secret "
+                     "files out, or search the folder you mean (`src/`).")
 
+
+# The Grep tool `type` filter, for the types that can hold the name of a secret file (secrets.json, credentials.yml).
+# A type not listed here counts as searching every file.
+GREP_TYPE_EXT = {"json": ("json",), "yaml": ("yaml", "yml"), "toml": ("toml",), "xml": ("xml",), "ini": ("ini",),
+                 "config": ("conf", "cfg", "ini", "json", "yaml", "yml", "toml", "properties", "xml", "config"),
+                 "txt": ("txt",), "md": ("md", "markdown"), "markdown": ("md", "markdown"), "ts": ("ts", "tsx", "mts", "cts"),
+                 "js": ("js", "jsx", "mjs", "cjs", "vue"), "py": ("py", "pyi"), "go": ("go",), "rust": ("rs",), "java": ("java",),
+                 "css": ("css", "scss"), "html": ("html", "htm"), "sh": ("sh", "bash", "zsh"), "sql": ("sql",), "rb": ("rb",)}
+
+def grep_glob_names(glob):
+    """The Grep tool glob as fnmatch patterns: `*.{ts,tsx}` -> `*.ts`, `*.tsx` (one brace list)."""
+    m = re.match(r"^(.*)\{([^{}]*)\}(.*)$", glob)
+    return [m.group(1) + p + m.group(3) for p in m.group(2).split(",")] if m else [glob]
+
+def check_grep_tree(path, glob, typ):
+    """The Grep tool over a folder that holds a secret file asks, as `grep -r` denies, unless its glob or type leaves the file out."""
+    full = os.path.normpath(os.path.join(ROOT, expand_home(path)))
+    try:
+        real = os.path.realpath(full)
+    except (ValueError, OSError):
+        return
+    if file_secret_kind(os.path.join(real, "x")) == "deny":
+        deny(f"Grep over `{path}` searches `{real}`, a folder of secret or credential files; agents never read it.")
+    if not os.path.isdir(real):
+        return
+    negate = glob.startswith("!")
+    globs = [g.lower().rsplit("/", 1)[-1] for g in grep_glob_names(glob.lstrip("!"))] if glob else []
+    def searched(name):
+        low = name.lower()
+        if globs and any(fnmatch.fnmatchcase(low, g) for g in globs) == negate:
+            return False
+        if typ and typ.lower() in GREP_TYPE_EXT and not low.endswith(tuple("." + e for e in GREP_TYPE_EXT[typ.lower()])):
+            return False
+        return True
+    top_hit, seen, visited = None, 0, set()
+    for top, dirs, names in os.walk(real):
+        if os.path.realpath(top) in visited:
+            dirs[:] = []
+            continue
+        visited.add(os.path.realpath(top))
+        dirs[:] = [d for d in dirs if d not in SCAN_SKIP]
+        seen += len(names) + len(dirs)
+        if seen > 20000:
+            ask(f"Grep over `{path}` searches more files than the guard can check for secret files; the owner approves it. "
+                "Search the folder you mean, or narrow it with `glob` or `type`.")
+        for n in names + dirs:
+            f = os.path.join(top, n)
+            # a folder is walked into, so only a link to a secret folder (which the search does not enter) counts as one
+            secret = os.path.islink(f) and file_secret_kind(os.path.join(os.path.realpath(f), "x")) == "deny" if n in dirs else \
+                (file_secret_kind(f) == "deny" or (os.path.islink(f) and file_secret_kind(os.path.realpath(f)) == "deny"))
+            if secret and (n in dirs or searched(n)):
+                top_hit = f
+                break
+        if top_hit:
+            break
+    if top_hit:
+        ask(f"Grep over `{path}` would read `{os.path.relpath(top_hit, ROOT)}`, a secret or credential file. Narrow it with `glob` "
+            "or `type` (`*.ts`), or search the folder you mean; otherwise the owner approves it.")
 
 def check_bash(cmd):
     # `$(git branch --show-current)` and its kin are the current branch: read them as HEAD.
     cmd = HEAD_SUBST.sub("HEAD", cmd)
+    CMD_ASSIGNED_URLS[:] = [m.group(2) for m in re.finditer(
+        r"(?:^|[\s;&|(])[A-Za-z_]\w*=([\"\x27]?)([A-Za-z][\w+.-]*://[^\s\"\x27]+)\1", cmd)]
     # Heredoc bodies are text (a commit message, a PR body), not commands: keep only their first line.
     cmd = re.sub(r"(<<-?\s*([\x27\"]?)(\w+)\2[^\n]*)\n.*?\n[ \t]*\3[ \t]*(?=\n|\)|$)", r"\1", cmd, flags=re.S)
     for words in simple_commands(cmd):
-        if words[0] == "cd" and len(words) > 1:
-            CD_DIRS.append(words[1].strip("\"\x27"))
+        if words[0] in ("cd", "pushd") and len(words) > 1:
+            CD_DIRS.append(words[-1].strip("\"\x27"))
+        if words[0] == "ln":
+            # a link to a secret file or folder reads it under another name in the same command (`ln -s ~/.ssh k && cat k/config`)
+            for w in operands(words[1:]):
+                t = expand_home(w.strip("\"\x27"))
+                if file_secret_kind(t) == "deny" or ((os.path.basename(t.rstrip("/")) in SECRET_DIRS or os.path.isdir(os.path.join(ROOT, t)))
+                                                     and file_secret_kind(os.path.join(t, "x")) == "deny"):
+                    deny(f"`ln` to `{w}` would let a secret or credential file be read under another name; agents never read it.")
+    if BARE_ENV:
+        # Before any ask below: `env | curl -d @- …` would otherwise stop at the curl prompt, and one yes sends every secret.
+        deny(f"`{BARE_ENV[0]}` here prints every environment variable, secrets included (as a bare `env` or `printenv` does). "
+             "Name the variable you need (`printenv NAME`).")
     check_pipes(cmd)
     if SHELL_FETCH.search(cmd):
         ask_fetched()
@@ -1272,9 +2268,11 @@ def check_bash(cmd):
                 ask(f"`{label}` changes a shared remote environment or registry; only the owner approves it (the Shared remote environments golden rule in AGENTS.md). "
                     f"`guard.{group}: off` in harness.config.yml turns this prompt off.")
         check_cli(runner_words(words))
+        check_migrate(runner_words(words))
 
     if BARE_ENV:
-        deny("a bare `env` or `printenv` prints every variable, secrets included. Name the variable you need (`printenv NAME`).")
+        deny(f"`{BARE_ENV[0]}` here prints every environment variable, secrets included (as a bare `env` or `printenv` does). "
+             "Name the variable you need (`printenv NAME`).")
 
 # ---- dispatch ------------------------------------------------------------------------------------
 # An MCP tool passes when a word of its name is a read verb and none is a write verb
@@ -1289,6 +2287,10 @@ WRITE_VERBS = {"create", "update", "delete", "remove", "write", "set", "put", "p
                "disable", "approve", "reply", "comment", "start", "stop", "kill", "rerun", "fork",
                "import", "connect", "disconnect", "activate", "accept", "drop", "truncate", "grant",
                "register", "archive", "unarchive", "promote", "resolve", "unresolve", "react"}
+# Verbs that make a connector tool a write even next to a read verb (`get_and_destroy_resource`). MCP only: in a CLI
+# call these words are often values (`helm list --filter flush`).
+MCP_WRITE_EXTRA = {"destroy", "purge", "terminate", "scale", "flush", "overwrite", "wipe", "evict", "clone", "teardown",
+                   "restart", "reboot", "provision", "deprovision", "detach"}
 
 # The pull request tools of the GitHub connector that never merge or change files; the kit own process
 # opens a draft PR at the first push and marks it ready after QA, so these do not need the owner each time.
@@ -1305,11 +2307,15 @@ def own_repo(a):
     return bool(m) and str(a.get("owner", "")).lower() == m.group(1).lower() and str(a.get("repo", "")).lower() == m.group(2).lower()
 
 if tool == "Bash":
+    HELD_ASK.append(None)
     check_bash(str(args.get("command", "")))
+    held = HELD_ASK.pop()
+    if held:
+        ask(held)
 elif tool in ("Read", "Edit", "MultiEdit", "Write", "NotebookEdit"):
     p = args.get("file_path") or args.get("notebook_path") or ""
-    if tool != "Read":
-        protect(p, f"{tool} writes it")
+    if tool != "Read" and protected_kind(p):
+        protect(p, f"{tool} writes it", planned_text(tool, args, p))
     kind = secret_kind(p, tool == "Read")
     if kind == "deny":
         deny(f"`{p}` is a secret or credential file; agents never read or write it (AGENTS.md § Golden rules).")
@@ -1319,6 +2325,17 @@ elif tool in ("Read", "Edit", "MultiEdit", "Write", "NotebookEdit"):
         ask(f"`{p}` is under ~/.claude: Claude Code settings, permissions and other projects\u2019 transcripts; the owner approves a read or change of it.")
     if tool != "Read" and p and outside_repo(p) and not rel_inside(p):
         ask(f"`{p}` is outside this project, and {tool} would write it; the owner approves a write anywhere but the repo and /tmp.")
+elif tool == "WebFetch":
+    # .claude/settings.json allows WebFetch on the whole api.github.com and raw.githubusercontent.com domains for the
+    # update checks; anything on those hosts outside the two Morphness paths asks. Browsers and URL parsers read
+    # `https:/\api.github.com`, `https:api.github.com` or a trailing dot as that host too, so any URL naming one asks
+    # unless it is a plain Morphness path. Other domains get Claude Code\u2019s own prompt.
+    url = str(args.get("url") or "").strip()
+    low = url.lower()
+    if re.search(r"api\.github\.com|raw\.githubusercontent\.com", low) and not (
+            low.startswith(MORPHNESS_URLS) and not re.search(r"[\\@\s]|\.\.|%2e|%5c|%2f", low)):
+        ask(f"WebFetch of `{url}`: .claude/settings.json allows only the Morphness update paths on GitHub without a prompt; "
+            "the owner approves any other page there.")
 elif tool == "Grep":
     for key in ("path", "glob"):
         v = str(args.get(key) or "")
@@ -1326,18 +2343,15 @@ elif tool == "Grep":
             deny(f"`{v}` names a secret or credential file; agents never read it.")
         if v and env_in_word(v, True) == "home":
             ask(f"`{v}` is under ~/.claude: Claude Code settings, permissions and other projects\u2019 transcripts; the owner approves a read or change of it.")
+    check_grep_tree(str(args.get("path") or "."), str(args.get("glob") or ""), str(args.get("type") or ""))
 elif tool.startswith("mcp__") and MCP_ASK:
     short = tool.split("__", 2)[-1]
     if PR_ALLOW and tool.startswith("mcp__github__") and short in PR_TOOLS and own_repo(args) \
             and not (short == "update_pull_request" and str(args.get("state", "")).lower() == "closed"):
         sys.exit(0)
     words = {w.lower() for w in re.split(r"[_\-.]|(?<=[a-z])(?=[A-Z])", short) if w}
-    if words & WRITE_VERBS or not words & READ_VERBS:
+    if words & (WRITE_VERBS | MCP_WRITE_EXTRA) or not words & READ_VERBS:
         ask(f"`{tool}` can change something outside this repo; every connector write needs the owner’s yes "
             "(harness/SKILLS_AND_MCPS.md § Connector actions).")
 sys.exit(0)
-'
-rc=$?
-# 0 = pass or ask (JSON on stdout), 2 = deny. Anything else is a crash inside the hook: block, don't pass.
-[ "$rc" -eq 0 ] || [ "$rc" -eq 2 ] || guard_closed "the guard script crashed (exit $rc), so the call can't be checked."
-exit "$rc"
+GUARD_PY

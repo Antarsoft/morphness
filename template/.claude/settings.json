@@ -140,7 +140,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash|Read|Edit|MultiEdit|Write|NotebookEdit|Grep|mcp__.*",
+        "matcher": "Bash|Read|Edit|MultiEdit|Write|NotebookEdit|Grep|WebFetch|mcp__.*",
         "hooks": [
           {
             "type": "command",

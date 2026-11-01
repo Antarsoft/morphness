@@ -39,6 +39,7 @@ Copy every file under `SRC/template/` to the same path in `T`, skipping any file
 | `.claude/settings.json` | Merge: union `permissions.allow`, `deny`, `ask`; add the SessionStart and PreToolUse (guard) hooks if absent; an existing PreToolUse hook stays, with the guard added as one more entry; keep every existing key. Show the diff. |
 | `.github/pull_request_template.md` (GitLab: `.gitlab/merge_request_templates/Default.md`) | Keep the user's. Mention the template's sections in the hand-off, and that the tag workflow reads a `## Release notes` section. |
 | `.mcp.json` | Merge `mcpServers`; never remove one. |
+| `.gitattributes` | Keep the user's lines; append the template's `eol=lf` lines it lacks (the hook scripts and the config must keep LF line endings on a Windows checkout). |
 | Anything else | Keep the user's file; list it in the hand-off. |
 
 ## 2b. Migrating an earlier harness
@@ -89,6 +90,9 @@ and in ci-cd workflow scaffolds `ci.docs_regex` (a regex for the documentation p
 (the first name), and in `.github/rulesets/environment-branches.json` `branch_protection.refs` (each
 distinct environment branch as `"refs/heads/<branch>"`, comma-separated) and
 `branch_protection.required_approvals` (a number).
+In `.claude/settings.json` the `git push` deny lines name `{{branches.integration}}` and `{{branches.production}}`: fill
+every one. When the two branches are the same, keep the four lines for that branch and delete the four duplicates;
+never leave a `{{` there, because those lines are the static backstop behind the guard.
 Model placeholders (`{{models.tl}}` etc.) take the model alias the user accepted. Check commands
 (`{{cmd.<name>}}`) take the command. A check the project doesn't have gets no placeholder text: its
 rows go, per § 3b.
@@ -213,7 +217,8 @@ project.
 
 All must pass before committing; fix and re-run on failure.
 
-1. No `{{` placeholder remains in `T` outside code blocks that quote the placeholder syntax:
+1. No `{{` placeholder remains in `T` outside code blocks that quote the placeholder syntax (a `{{` left in
+   `.claude/settings.json` fails the render: fix it before anything else):
    `grep -rnE '(^|[^$]){{ *[a-z]' AGENTS.md CLAUDE.md harness.config.yml project .claude scripts .github`
    (the `[^$]` keeps CI expressions such as `${{ secrets.X }}` out of the result).
 2. No fill comment remains: `grep -rn '<!-- morph-init: fill' .` returns nothing.
@@ -243,7 +248,7 @@ All must pass before committing; fix and re-run on failure.
    the `Rules:`, `Checklists:` and `Project docs:` gauge lines after the counter, with no `Prune is DUE`.
    `scripts/guard.sh` parses and blocks a push to the integration branch:
    `echo '{"tool_name":"Bash","tool_input":{"command":"git push origin <integration>"}}' | bash scripts/guard.sh`
-   exits 2 (python3 must be installed; without it the guard lets everything through, so say so in the
+   exits 2 (python3 must be installed; without it the guard blocks every call, so say so in the
    hand-off).
 
 ## 7b. Apply host settings (owner's yes)
