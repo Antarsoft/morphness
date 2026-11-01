@@ -2,5 +2,3 @@
 {"tool": "agnix", "rule": "PE-004", "path": "install/AGENTS.md", "status": "accepted", "reason": "'usually' is a deliberate hedge in a role description; the rule is a style check."}
 {"tool": "agnix", "rule": "XML-001", "path": "install/harness/templates/steps.md", "status": "false-positive", "reason": "<Service> and <tool> are placeholders in an example sentence, not XML."}
 {"tool": "shellcheck", "rule": "SC1112", "path": "template/scripts/guard.sh", "status": "false-positive", "reason": "A typographic apostrophe inside the text of a user-facing message, on purpose."}
-{"tool": "shellcheck", "rule": "SC2155", "path": "template/scripts/evidence.sh", "status": "accepted", "reason": "Declare-and-assign of config values that cannot fail in a way the script needs to see; style warning."}
-{"tool": "shellcheck", "rule": "SC2010", "path": "template/scripts/prune-counter.sh", "status": "accepted", "reason": "Lists the kit's own prune files, whose names are dated slugs; style warning."}
