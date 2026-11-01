@@ -35,14 +35,7 @@ The Technical Lead runs in the main chat, so its model is the session's, not a f
 
 Each `plan.md` has an **Agent effort** section naming the Full-stack and QA level, with a one-line reason; the owner approves it with the plan. The levels, how to pick one and when to split a feature by risk are in [harness/SETUP.md](../harness/SETUP.md) § Effort per feature. This project's defaults are the variants marked "(default)" in § Agents; its risk areas are below. A prune that tunes effort for this project (for example "architecture research defaults to `high`") adds a bullet here.
 
-**Risk areas (never `medium`):**
-
-<!-- morph-init: fill one bullet per entry in harness.config.yml → risk_areas, each with the paths it covers. Example:
-- **Auth:** `src/auth/`, the session middleware, sign-in and sign-up pages.
-- **Billing:** `src/billing/`, the payment webhook handler, plan limits.
-- **Database:** migrations, access-control policies, tenancy tables.
-- **Public API:** `src/api/v1/`.
--->
+**Risk areas (never `medium`):** the areas in `harness.config.yml` → `risk_areas`, with their paths in [CONTROLS.md](CONTROLS.md) § Risk paths; `bash scripts/risk-check.sh` names the one a change touches.
 
 ## Trials
 

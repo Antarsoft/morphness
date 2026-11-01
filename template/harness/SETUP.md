@@ -72,7 +72,7 @@ See [MODES.md](./MODES.md). Summary:
 | Mode | Uses `_harness/features/...` | Three agents |
 |------|------------------------------|--------------|
 | **Full** | Yes | Yes |
-| **Light** | No | Optional single agent (never the TL writing app code) |
+| **Light** | No | None: the TL edits documentation, Full-stack any application code with the light brief; no QA |
 | **Small** | Yes, with the short small plan | Yes, at `medium`: Full-stack builds, QA checks; a learnings line instead of `retro.md` |
 | **Bug** | Yes, with the short bug plan | Yes: QA writes the failing test first, then Full-stack fixes, then QA re-runs; a learnings line instead of `retro.md` |
 | **Research** | `_harness/research/` only | Researcher only; no code, no QA, no retro |
@@ -111,8 +111,8 @@ The researcher's level goes in the research file's **Researcher effort** line, n
 - **`medium`**: the default for a **pattern-copy plan**, one that names an existing file or feature it copies (a page, form, settings field, test or doc) and adds no logic beyond it. Also renames, config or version bumps, and doc-heavy changes.
 - **`high`** (default otherwise): normal feature work with new logic, such as a new flow, a new route or data path, or a screen that doesn't follow a single existing pattern.
 - **`xhigh`** (Full-stack only): security, money, tenancy or access control, concurrency, public APIs, new architecture. Brings the code review before QA.
-- **Never `medium` for Full-stack** when a full-mode plan changes behaviour in a risk area (`risk_areas` in `harness.config.yml`), even when it copies a pattern. Small mode runs at `medium` because it qualifies only when the change alters none of that behaviour ([MODES.md](./MODES.md) § Small mode).
-- **QA is `high`** whenever the plan touches a risk area<!-- module:data-access --> or is a data-access feature<!-- /module:data-access -->, even if Full-stack is `medium`. Otherwise the project's QA default.
+- **Never `medium` for Full-stack** when the plan touches a risk path (`project/CONTROLS.md` § Risk paths, the areas in `risk_areas`), even when it copies a pattern. Small mode runs at `medium` because `scripts/risk-check.sh` gives plain only off those paths ([MODES.md](./MODES.md) § Choosing mode).
+- **QA is `high`** whenever the plan touches a risk path<!-- module:data-access --> or is a data-access feature<!-- /module:data-access -->, even if Full-stack is `medium`. Otherwise the project's QA default.
 
 ### Split large features by risk
 

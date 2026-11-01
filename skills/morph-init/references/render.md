@@ -126,6 +126,11 @@ App column to `project/RELEASE.md` § Where things deploy, and add each shared p
 depend on to `project/CONTROLS.md` § Cross-cutting paths. With the ci-cd module, write one deploy job
 per app that has `workflow` for some environment (the deploy scaffold's fill comment).
 
+`risk_areas`: write the paths that hold each area to `project/CONTROLS.md` § Risk paths, one bullet per
+area, from the repo scan and the answer to question 12a. Narrow or drop the kit's three generic rows to
+the folders this repo has (a row whose paths match nothing here is dropped), and keep every path to the
+code that holds the risky behaviour, not a whole layer.
+
 `permissions` (answers file only, not a config key): with `accept_edits: false`, delete
 `permissions.defaultMode` from `.claude/settings.json`. With `allow_checks: true`, add one `allow` rule
 per command in `project/CONTROLS.md` § Named checks: `Bash(<command up to its first quote, redirect or
@@ -242,7 +247,9 @@ All must pass before committing; fix and re-run on failure.
    Each `apps` entry's `path` exists, and its `deploy` keys are names in `environments`.
 9. `scripts/session-start.sh` is executable and parses (`bash -n scripts/session-start.sh`). Don't
    run it here: it installs dependencies. `scripts/prune-counter.sh` runs and prints
-   `Prune counter: 0/<loop.prune_every>`. `scripts/feature-cost.sh` is executable and runs without a
+   `Prune counter: 0/<loop.prune_every>`. `bash scripts/risk-check.sh <a path under each § Risk paths row>`
+   prints a `- <that path>: <its area>` line (the first line says `Mode: full` until the install is
+   committed, because the kit's own files count as the change). `scripts/feature-cost.sh` is executable and runs without a
    Python error (it may print `Cost: not measured`, or this session's cost). Both read
    `harness.config.yml` through `scripts/lib/config.sh`: `bash -c '. scripts/lib/config.sh;
    config_get branches.integration'` prints the integration branch. The prune counter prints

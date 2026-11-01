@@ -116,7 +116,7 @@ Some stacks have a separate command for remote writes (a platform CLI's `db push
 
 - Fill [project/STACK.md](../../../project/STACK.md) § Database and § Local stack (QA), and [project/RELEASE.md](../../../project/RELEASE.md) § Production migrations and § Break-glass.
 - Add to `.claude/settings.json`: `deny` every command that only writes a remote database (a platform CLI's push or remote migrate) and every MCP tool that applies migrations or creates, merges or resets remote branches; `ask` for MCP tools that run arbitrary SQL. When the same migrate command targets local or remote by settings (§ When one command targets local and remote), keep remote credentials out of agent sessions and add the `ask` rules for its remote settings instead of a `deny`. List them in `project/SKILLS_AND_MCPS.md` § Permission rules added for this project.
-- Add the database paths (schema, migrations) to [project/CONTROLS.md](../../../project/CONTROLS.md) § Cross-cutting paths, and "Database" to `harness.config.yml` → `risk_areas`.
+- Add the database paths (schema, migrations) to [project/CONTROLS.md](../../../project/CONTROLS.md) § Cross-cutting paths and to its § Risk paths database row, and "Database" to `harness.config.yml` → `risk_areas`.
 - Keep the `qa-result.md` template's **Data-access feature (from plan)** line and its sections **Data-access validation** and **Data-access validation: post-apply**, and the plan template's **Data-access feature** line (the templates ship with them).
 - Fill `project/agents/qa-engineer.md` § Remote read-only checks and § Guard against remote writes.
 
