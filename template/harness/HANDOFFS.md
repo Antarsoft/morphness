@@ -15,7 +15,7 @@
 | `QA/qa-result.md` | QA engineer | QA engineer only | Verdict and evidence |
 | `_harness/learnings/<slug>-v<version>.md` | Technical Lead | Technical Lead; the prune folds it | Retro entry and action items ([templates/learnings-entry.md](./templates/learnings-entry.md)) |
 
-**Application code:** Full-stack engineer. **No product code edits:** QA engineer, Technical Lead, researcher. One exception: in bug mode QA writes the regression test the plan assigns, before the fix ([MODES.md](./MODES.md) § Bug mode).
+**Application code:** Full-stack engineer, or the main chat itself in light and small mode, where no subagent runs ([MODES.md](./MODES.md) § Working alone). **No product code edits:** QA engineer, the Technical Lead in full and bug mode, researcher. One exception: in bug mode QA writes the regression test the plan assigns, before the fix ([MODES.md](./MODES.md) § Bug mode).
 
 ## `plan.md` minimum sections
 
@@ -134,19 +134,6 @@ Run long checks to completion before handing back. A check longer than the shell
 Write logs and scratch files under the session scratchpad directory, never / or the repo root.
 For any UI change (altered or new UI): save screenshots per harness/agents/fullstack-engineer.md § UI screenshots and list them in progress.md § Screenshots.
 Hand back to the Technical Lead when done.
-```
-
-**Full-stack engineer, light mode** ([MODES.md](./MODES.md) § Light mode; this brief replaces `plan.md`)
-
-```text
-You are the Full-stack engineer for a light-mode change. There is no plan.md: this brief is the whole ask.
-Task: <one or two lines: what to change and why>
-Files: <the paths to change; touch nothing else>
-Out of scope: <anything nearby you must not change>
-Run the before_qa checks in harness/CONTROLS.md that the change touches (commands: project/CONTROLS.md), scoped by § Scoping by what changed.
-Do not create a feature folder or progress.md. Write logs under the session scratchpad directory.
-If the change turns out to need new behaviour, a test of its own, or files beyond the list, stop and hand back: it needs a full plan.
-Hand back to the Technical Lead with: files changed, each check with its scope and exit code, and anything you didn't do.
 ```
 
 **QA engineer, bug reproduction** ([MODES.md](./MODES.md) § Bug mode, step 2; before any fix)

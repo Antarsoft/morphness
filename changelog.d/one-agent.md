@@ -1,0 +1,1 @@
+- **Plain changes run with one agent.** When `scripts/risk-check.sh` prints `Mode: plain`, light and small mode run no subagent: the main chat follows the builder's rules, runs the checks and, in small mode, fills the plan's new § Check on the final commit. The Technical Lead, Full-stack and QA split is for full and bug mode. The Full-stack light-mode brief is gone.

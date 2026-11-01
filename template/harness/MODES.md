@@ -1,5 +1,16 @@
 # Harness modes
 
+## Working alone (plain changes)
+
+When `bash scripts/risk-check.sh` prints `Mode: plain`, the main chat makes the change itself: no Full-stack or QA subagent. That is light mode and small mode below. The three roles (the Technical Lead plans, Full-stack builds, QA checks) split only for full mode, bug mode and research mode (learned: on everyday changes the hand-offs between agents cost more than the work, and the risk check already sends risky ones to full mode).
+
+Working alone, the main chat follows the builder's rules as well as its own:
+
+- Before the first edit, read `harness/agents/fullstack-engineer.md` § Do, § UI screenshots and § Before handoff, and `project/agents/fullstack-engineer.md` (this project's builder rules). Tests follow `.claude/rules/testing.md`.
+- Same branch, commit and PR rules as any feature (`AGENTS.md` § Golden rules), and the same guard hook: a deny is final.
+- The `before_qa` checks after the change, scoped by what changed; then, for small mode, the `before_signoff` checks once in full on the final commit ([CONTROLS.md](./CONTROLS.md)). A check the environment refused is **not run**, never a pass.
+- Before the hand-off, run `bash scripts/risk-check.sh` again with no files (§ Choosing mode, step 4). When it prints `Mode: full`, stop: write a full plan with this change linked, and the agents take it from there.
+
 ## Full harness
 
 **Use when** `bash scripts/risk-check.sh` prints `Mode: full` for the change (it touches a risk path in `project/CONTROLS.md` § Risk paths, deletes stored data, or changes more files than `mode.plain_max_files`), when the Technical Lead raises a plain change to full because the request leaves a real product choice open, or when the owner asks for full mode (§ Choosing mode).
@@ -17,7 +28,7 @@
 
 **Process**
 
-- Documentation and harness files outside application code (`README.md`, `docs/`, `harness/`, `project/`): the Technical Lead edits them itself. Anything in application code, a comment or a dependency bump included: the Full-stack subagent with the light brief in [HANDOFFS.md](./HANDOFFS.md) § Subagent prompt blocks, which replaces `plan.md`. The owner's request is the approval; there is no plan to approve.
+- The main chat makes the change itself (§ Working alone), application code included. The owner's request is the approval; there is no plan to approve.
 - No `_harness/` feature folder required, no QA agent, no retro: the named checks are the only verification.
 - Still run the applicable named checks if the change touches code ([CONTROLS.md](./CONTROLS.md)): the `before_qa` checks, scoped by what changed. The record is the PR (or the commit message with no PR): the checks run with their exit codes, under a **Light mode** line saying why the change qualified.
 - With `cost.track` on, the closing message ends with the `Cost ≈ $…` line from `bash scripts/feature-cost.sh` (with `--since <time the task started>` when the session did other work first). It goes in the message only; light mode writes no file for it.
@@ -28,12 +39,12 @@
 
 **Process**
 
-The three agents and the merge gate stay as in full mode; the planning is what shrinks (learned: on small, fully specified changes, full mode cost many times a plain session for the same result, and small mode cut it by more than half with the same result).
+The main chat plans, builds and checks the change itself (§ Working alone); the plan and the merge gate stay (learned: on small, fully specified changes, full mode cost many times a plain session for the same result).
 
-1. **Plan (Technical Lead).** Read the code the change touches, then write `_harness/features/<slug>/<version>/Plan/plan.md` from [templates/small-plan.md](./templates/small-plan.md): the risk check's output, the change, the files, 3 to 8 acceptance criteria with their tests, and the limit. No `feature.md` and no plan checklist run. The human approves it as any plan.
-2. **Build (Full-stack, `medium`).** The full Full-stack brief with the small plan's path. Full-stack writes the tests the criteria name, runs the `before_qa` checks and records them in `progress.md` § Validation. A change that needs more than § Limit allows stops before the change and hands back; the Technical Lead writes a full plan with this one linked.
-3. **Check (QA, `medium`).** One QA pass on the criteria and the `before_signoff` checks, recorded in `QA/qa-result.md`. Rework and escalation as in full mode.
-4. **Close.** § After QA pass as in full mode. No `retro.md`: the learnings file has the verdict and cost lines and **Retro:** `none (small mode)`, with an action item only when something went wrong. It counts toward the prune counter, so the prune sees whether small mode lets problems through.
+1. **Plan.** Read the code the change touches, then write `_harness/features/<slug>/<version>/Plan/plan.md` from [templates/small-plan.md](./templates/small-plan.md): the risk check's output, the change, the files, 3 to 8 acceptance criteria with their tests, and the limit. No `feature.md` and no plan checklist run. The human approves it as any plan.
+2. **Build.** Make the change and write the tests the criteria name, then run the `before_qa` checks. A change that needs more than § Limit allows stops before the change: write a full plan with this one linked.
+3. **Check.** On the final commit, run the `before_signoff` checks in full and fill the plan's § Check: each check with its exit code, and each criterion with the test or output that shows it holds. A criterion nothing shows is not met: fix it or stop and tell the human. No `progress.md` or `qa-result.md`.
+4. **Close.** § After QA pass as in full mode, with § Check in place of the QA verdict. No `retro.md`: the learnings file has the verdict and cost lines and **Retro:** `none (small mode)`, with an action item only when something went wrong. It counts toward the prune counter, so the prune sees whether small mode lets problems through.
 
 ## Bug mode
 
@@ -80,5 +91,5 @@ The first match wins. The human's wording ("quick fix", "ship it fast", "no time
 
 1. **A question, no change asked** ("how does", "why does", "which should we use", "compare") → research mode. A question one or two files the Technical Lead reads anyway can answer gets a direct answer, with no research file.
 2. **Something that worked is broken and a fix is asked** ("bug", "broken", "error in production", "this used to work") → bug mode, on a hotfix branch when it can't wait for the next release. A bug fix that touches a risk path never runs Full-stack at `medium`.
-3. **Any other change:** name the files it will touch and run `bash scripts/risk-check.sh <files>`. `Mode: full` → full mode. `Mode: plain` → light mode when the change alters no behaviour (§ Light mode), small mode otherwise. When the owner forced plain and the script still names a risk path, Full-stack and QA run at `high`, never `medium`. The Technical Lead may raise plain to full when the request leaves a real product choice open, naming the choice; it never lowers full to plain. The script's output goes in the small plan's § Why small, or in a light change's PR or commit record.
+3. **Any other change:** name the files it will touch and run `bash scripts/risk-check.sh <files>`. `Mode: full` → full mode. `Mode: plain` → light mode when the change alters no behaviour (§ Light mode), small mode otherwise. When the owner forced plain and the script still names a risk path, the change still runs alone (§ Working alone): forcing plain is the owner's choice to go without the agents. The Technical Lead may raise plain to full when the request leaves a real product choice open, naming the choice; it never lowers full to plain. The script's output goes in the small plan's § Why small, or in a light change's PR or commit record.
 4. **Before the hand-off** of a small or light change, run `bash scripts/risk-check.sh` again with no files: it reads what the branch really changed. When it now prints `Mode: full`, stop and switch to full mode (a plan, with the first one linked, and QA) before anything is handed off.

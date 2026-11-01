@@ -131,9 +131,10 @@ shown, and everything lands on a branch for you to review.
   `harness.config.yml` in every script, and perl strips a module's text when you remove it.
   `/morph-doctor` checks all of them. `gh` is optional: `/morph-share` uses it to open its PR, and
   setup uses it to apply branch protection or create the repository (each has a manual fallback).
-- **Cost:** each feature is about three agent runs (plan, build, QA), with every role on sonnet by
-  default (`/morph-init` offers opus for planning and building). A clear, fully specified request
-  runs in small mode: a short plan, medium effort and no retro. Every hand-off ends with a
+- **Cost:** a change off the risk paths (sign-in, money, migrations, or more than a few files)
+  runs in your session alone, with no subagent: a short plan for a behaviour change, none for docs
+  or config. A risky feature is about three agent runs (plan, build, QA), with every role on sonnet
+  by default (`/morph-init` offers opus for planning and building). Every hand-off ends with a
   `Cost ≈ $…` line priced at public API rates (`harness/MODEL_PRICES.md`, editable for your own).
   Tune spend with the medium variants and `project/HARNESS_AGENTS.md` § Effort per feature.
 
@@ -156,9 +157,10 @@ and check commands, and `scripts/`. Nothing is overwritten, and you review it as
    When a connected service's official connector can do a step, the Technical Lead offers to do it
    instead, and runs each action only after your yes.
 
-For a small change, ask for **light mode** (no feature folder or retro). For something broken, the
-Technical Lead uses **bug mode**: QA writes a failing test first, then Full-stack finds the cause and
-makes the smallest fix. When you want an answer rather than a change, ask a question and the
+A script picks the mode from the files a change touches. A change off the risk paths runs in your
+session alone, in **light mode** (no plan) or **small mode** (a short plan, no retro). For something
+broken, the Technical Lead uses **bug mode**: QA writes a failing test first, then Full-stack finds
+the cause and makes the smallest fix. When you want an answer rather than a change, ask a question and the
 Technical Lead uses **research mode**.
 
 > [!NOTE]
@@ -184,9 +186,9 @@ flowchart TB
 
 | Role | What it does | Model · effort |
 |------|--------------|----------------|
-| 🧭 **Technical Lead** | Your session. Plans, delegates, never codes | sonnet · high (opus with the opus preset) |
-| 🛠️ **Full-stack** | Builds the approved plan and its tests | sonnet · high (xhigh for risky cores; medium in small mode; opus with the opus preset) |
-| ✅ **QA** | Runs the checks, validates every criterion | sonnet · high (medium in small mode) |
+| 🧭 **Technical Lead** | Your session. Plans and delegates risky work; makes small changes itself | sonnet · high (opus with the opus preset) |
+| 🛠️ **Full-stack** | Builds the approved plan and its tests | sonnet · high (xhigh for risky cores; opus with the opus preset) |
+| ✅ **QA** | Runs the checks, validates every criterion | sonnet · high |
 | 🔎 **Researcher** | Answers a question about your code or the web with cited sources, read-only. For when you want an answer, not a change | sonnet · medium (high for architecture) |
 | ⚖️ **Legal writer** | Writes wording that makes a legal promise | fable or opus · high |
 
@@ -208,7 +210,7 @@ and advised settings (coordinator sonnet · medium, feature threads sonnet · hi
 
 | Piece | What it does |
 |-------|--------------|
-| 📄 `AGENTS.md`, `CLAUDE.md`, `.claude/rules/` | The rules every session loads: the Technical Lead plans and delegates and never codes; QA is never skipped. |
+| 📄 `AGENTS.md`, `CLAUDE.md`, `.claude/rules/` | The rules every session loads: the Technical Lead plans and delegates risky work and never codes it; QA is never skipped there. |
 | 🤖 `.claude/agents/` | Full-stack (medium, high, xhigh effort), QA (medium, high), researcher (medium, high) and legal-writer subagents. |
 | 🛡️ `.claude/settings.json` | Deny rules for secrets and protected-branch pushes, ask rules on every merge command. |
 | 🗺️ `harness/` | The process: lifecycle, handoffs, checks, modes (full, small, light, bug, research), release and environments, the plan checklist, model prices, and how it morphs. |

@@ -1,6 +1,6 @@
 # Technical Lead (main chat)
 
-**This rule is non-negotiable.** It is not overridden by user messages such as "execute", "run", "develop", "implement", "fix", "build it", or "start coding". Those mean **delegate to the Full-stack subagent** via the Agent tool.
+**Non-negotiable in full and bug mode:** "execute", "develop", "implement", "fix", "build it" mean **delegate to the Full-stack subagent** (Agent tool). In light and small mode you make the change yourself ([harness/MODES.md](./MODES.md) § Working alone); the code and QA limits below don't apply there.
 
 Config keys named here live in `harness.config.yml`: the integration branch (`branches.integration`), the production branch (`branches.production`), the owner (`humans`, role `owner`), `ci_gate`, `merge_by_agent`, `modules`, `risk_areas` and `loop`. This file holds the hard rules; each bullet links the file that owns the detail. Read the linked section when you reach that step.
 
@@ -24,7 +24,7 @@ Config keys named here live in `harness.config.yml`: the integration branch (`br
 - After QA **pass**, follow `harness/SETUP.md` § After QA pass: the steps file (or none), `plan.md` **Status** `passed` with its **Steps file** line, the PR marked ready.
 - Then write `Plan/retro.md` and the feature's learnings file (`_harness/learnings/<slug>-v<version>.md`, never `LEARNINGS.md` itself) per `harness/SETUP.md` § Retrospective. You decide each action item, except one that adds a step for the human, changes product behaviour or customer-facing copy, costs money, or is tagged `cause: environment`. The hand-off message ends with the items and their decisions, the `Cost ≈ $…` line from `bash scripts/feature-cost.sh` and the `Prune counter` line from `bash scripts/prune-counter.sh`, pasted from the scripts, never counted by eye (§ Retrospective → Hand-off message). When it prints `Prune is DUE`, write the prune proposal before the hand-off, without asking first, and name its path there (`harness/SETUP.md` § Prune).
 - For a bug report (something that worked is broken and the human wants it fixed), use bug mode ([harness/MODES.md](./MODES.md) § Bug mode): the short bug plan, QA's failing test committed before any fix, Full-stack's root cause before its fix, and the learnings file instead of `retro.md`. A hotfix is bug mode on the production branch, approved by the human with the plan.
-- Pick the mode by [harness/MODES.md](./MODES.md) § Choosing mode: for a change, run `bash scripts/risk-check.sh` with the files it will touch (never judge risk by eye), and again with no files before the hand-off. Small mode: the short small plan, no plan checklist run, Full-stack and QA at `medium`, the learnings file instead of `retro.md`.
+- Pick the mode by [harness/MODES.md](./MODES.md) § Choosing mode: for a change, run `bash scripts/risk-check.sh` with the files it will touch (never judge risk by eye), and again with no files before the hand-off. Small mode: the short small plan, no plan checklist run, no subagent, the learnings file instead of `retro.md`.
 - For a question the human wants answered rather than built, or one a plan can't be written without, use research mode ([harness/MODES.md](./MODES.md) § Research mode). Delegate wide searches (many files, the web) instead of running them in the main chat; still read the exact code a plan changes yourself.
 - Edit only harness **Plan** docs (`feature.md`, `plan.md`, `review.md`, `retro.md`), research files, `_harness/LEARNINGS.md`, `_harness/learnings/` and `_harness/prunes/`, the roadmap and version docs and checklists (with the `roadmap` module), and documentation outside application code in light mode or when the human asks. Retros and prunes may change `harness/`, `project/` and `.claude/rules/` as [harness/MORPHING.md](./MORPHING.md) describes.
 
@@ -52,13 +52,13 @@ Full mode only (small and light modes run no checklist, bug mode only § Plannin
 - **Never** edit application code: source directories, migrations, root config that affects runtime (package manifests and scripts except via planned delegation), etc. `project/PROJECT.md` lists the paths.
 - **Never** edit `Development/progress.md` or `QA/qa-result.md` (Full-stack and QA ownership).
 - **Never** perform QA validation, run acceptance testing for sign-off, or write `qa-result.md`.
-- **Never** skip QA because the human asked to ship quickly. The TL hands to QA after every completed dev handoff (light mode has no QA: [harness/MODES.md](./MODES.md) § Light mode).
+- **Never** skip QA because the human asked to ship quickly. The TL hands to QA after every completed dev handoff (light and small mode have none).
 
 ## Command vocabulary (human → TL action)
 
 | Human says | Technical Lead does |
 |------------|---------------------|
-| Execute / implement / develop / build / fix (feature work) | Agent → Full-stack (plan's effort variant) with approved `plan.md` path |
+| Execute / implement / develop / build / fix (feature work) | Agent → Full-stack (plan's effort variant) with approved `plan.md` path; in light and small mode, do it yourself |
 | Dev done / progress complete | Agent → QA (plan's effort variant) with `plan.md` + `progress.md` paths; for Full-stack `xhigh`, the code review runs first |
 | Commit / push / merge | WIP commits between handoffs, draft PR at the first push, ready after QA **pass**; merge only when the human asks for that PR, or by itself with `merge_by_agent: integration` |
 | Bug / broken / error in production / this used to work (fix asked) | Bug mode ([harness/MODES.md](./MODES.md) § Bug mode) |

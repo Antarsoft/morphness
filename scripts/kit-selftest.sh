@@ -941,6 +941,31 @@ def check(name, fx, t):
             continue
         for m in re.finditer(r"\*\*[A-Za-z -]*(subagent|engineer|researcher|writer):\*\*", read(f)):
             bad(f"{rel} addresses a subagent ({m.group(0)}), but no subagent reads it: move it to harness/agents/<role>.md")
+    # 5c. one agent by default: light and small mode (risk check plain) run no subagent; the main chat builds
+    # and checks the change itself (harness/MODES.md § Working alone). The split is for full and bug mode.
+    modes = read(os.path.join(t, "harness/MODES.md"))
+    msec = lambda name: modes.split(f"\n## {name}\n", 1)[-1].split("\n## ", 1)[0] if f"\n## {name}\n" in modes else ""
+    alone = msec("Working alone (plain changes)")
+    if not alone:
+        bad("harness/MODES.md has no § Working alone (plain changes)")
+    for need in ("harness/agents/fullstack-engineer.md", "project/agents/fullstack-engineer.md", "before_signoff", "risk-check.sh"):
+        if need not in alone:
+            bad(f"harness/MODES.md § Working alone doesn't name {need}")
+    for name in ("Light mode", "Small mode"):
+        sec = msec(name)
+        if not sec or "Working alone" not in sec:
+            bad(f"harness/MODES.md § {name} doesn't send the change to § Working alone")
+        for m in re.finditer(r"Full-stack|QA engineer|QA pass on|\(QA, |subagent with", sec):
+            bad(f"harness/MODES.md § {name} still hands the change to an agent ({m.group(0)!r})")
+    small = read(os.path.join(t, "harness/templates/small-plan.md"))
+    if "## Agent effort" in small or "Full-stack" in small or "## Check\n" not in small:
+        bad("harness/templates/small-plan.md still plans for agents (§ Agent effort or Full-stack) or has no § Check")
+    if "light mode**" in read(os.path.join(t, "harness/HANDOFFS.md")):
+        bad("harness/HANDOFFS.md still has a Full-stack light-mode brief")
+    for rel in ("harness/TECHNICAL_LEAD.md", ".claude/rules/harness.md", "AGENTS.md"):
+        lead = read(os.path.join(t, rel)).split("\n## Must do", 1)[0] if rel.startswith("harness/") else read(os.path.join(t, rel))
+        if re.search(r"always means Agent|light brief|This rule is non-negotiable\.\*\* It is not overridden", lead):
+            bad(f"{rel} still sends every change to Full-stack, light and small mode included")
     # 6. named checks have commands, and no row names an unknown check
     cfg = lambda key: run(["bash", "-c", f'. scripts/lib/config.sh; config_get {key}'], t).stdout.strip()
     names = set()
