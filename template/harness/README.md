@@ -50,7 +50,7 @@ Switched on in `harness.config.yml` → `modules`. A module that is off is ignor
 **Module markers.** Text in the kit that exists only for one module is marked, so adding or removing a module is mechanical: a block between `<!-- module:<name> -->` and `<!-- /module:<name> -->` lines, the same pair inside a line for part of a sentence, or a line (a table row, a list item) ending in `<!-- module:<name> -->`. To remove a module, delete every marked span and line for it:
 
 ```bash
-m=legal; perl -0pi -e "s/^<!-- module:$m -->\n.*?^<!-- \/module:$m -->\n\n?//msg; s/<!-- module:$m -->[^\n]*?<!-- \/module:$m -->//g; s/^[^\n]*<!-- module:$m -->\n//mg" $(grep -rl "module:$m -->" --include='*.md' harness project .claude/rules .github .gitlab 2>/dev/null)
+m=legal; grep -rl --null "module:$m -->" --include='*.md' harness project .claude/rules .github .gitlab 2>/dev/null | (rc=0; while IFS= read -r -d '' f; do perl -0pi -e "s/^<!-- module:$m -->\n.*?^<!-- \/module:$m -->\n\n?//msg; s/<!-- module:$m -->[^\n]*?<!-- \/module:$m -->//g; s/^[^\n]*<!-- module:$m -->\n//mg" "$f" || rc=1; done; exit $rc)
 ```
 
 To add or remove one on a live project, run `/morph-module add <name>` or `/morph-module remove <name>`: it runs the module's On install or On remove steps, copies each marked span back from the kit's copy of the same file to the same place (adding) or deletes them with the command above (removing), updates `modules`, and runs `/morph-doctor`. Markers of modules that stay are kept. `AGENTS.md`, `CLAUDE.md`, `harness.config.yml` and code blocks carry no markers, and `.claude/rules/` carries only a short inline span where a rule names a module (keep it to one clause); each module's § On remove lists their lines.

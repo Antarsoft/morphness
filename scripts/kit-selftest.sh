@@ -13,8 +13,8 @@
 #   tests/fixtures/*.json)
 #   KEEP=1 keeps the rendered copies and prints where they are.
 #   GUARD_FULL=1 replays every guard case on every sample project (default: cases without "every" run once).
-#   STRICT=1 (CI) fails when PyYAML is missing instead of skipping the YAML checks.
-# Needs bash, git, perl and python3. Read-only on the repo: renders into a temporary folder.
+#   STRICT=1 (CI) fails when PyYAML or shellcheck is missing instead of skipping the checks that need them.
+# Needs bash, git, perl and python3 (shellcheck for the lint check). Read-only on the repo: renders into a temporary folder.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 exec python3 -I - "$ROOT" "$@" <<'PY'
@@ -130,6 +130,77 @@ for name in ALL_MODULES:
             anchor = inline.sub("", lines[a]) if a >= 0 else None
             if anchor is None or without.count(anchor) != 1:
                 failures.append(f"kit: {rel}: a {name} span (line {s + 1}) has no unique anchor line above it")
+
+# ---- once: the module marker command handles a path with spaces, and never waits on stdin -------------
+scratch = tempfile.mkdtemp(prefix="morphness-markers-")
+spaced = os.path.join(scratch, "project/my docs/notes.md")
+os.makedirs(os.path.dirname(spaced))
+write(spaced, "keep\n<!-- module:legal -->\nlegal block\n<!-- /module:legal -->\n\nrow <!-- module:legal -->\nend\n")
+r = run(["bash", "-c", MARKER_CMD], scratch)
+if r.returncode or read(spaced) != "keep\nend\n":
+    failures.append(f"kit: the module marker command left {read(spaced)!r} in a file whose path has a space (exit {r.returncode}, {r.stderr.strip()!r})")
+os.remove(spaced)
+# nothing matches now: perl -i with no file names would read stdin, which here stays open
+errf = os.path.join(scratch, "stderr")
+with open(errf, "w") as ef:
+    proc = subprocess.Popen(["bash", "-c", MARKER_CMD], cwd=scratch, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=ef)
+    try:
+        proc.wait(timeout=20)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
+        failures.append("kit: the module marker command with nothing to change waited on stdin")
+    proc.stdin.close()
+if proc.returncode is not None and proc.returncode >= 0 and (proc.returncode or read(errf).strip()):
+    failures.append(f"kit: the module marker command with nothing to change exited {proc.returncode}: {read(errf).strip()!r}")
+if shutil.which("zsh"):   # macOS's default shell: the command must not end the shell it runs in
+    r = run(["zsh", "-c", MARKER_CMD + "; echo still-here"], scratch)
+    if "still-here" not in r.stdout:
+        failures.append(f"kit: the module marker command ended the zsh it ran in (exit {r.returncode})")
+shutil.rmtree(scratch)
+
+# ---- once: shellcheck finds nothing at warning level beyond the exceptions documented in tests/triage.jsonl
+# (the same verdicts the public results page uses). STRICT=1 needs shellcheck, as it needs PyYAML.
+if shutil.which("shellcheck"):
+    triaged = {(t["rule"], t.get("path", "*")) for t in (json.loads(l) for l in open(os.path.join(root, "tests/triage.jsonl"), encoding="utf-8") if l.strip())
+               if t["tool"] == "shellcheck" and t.get("status") in ("false-positive", "accepted")}
+    shell_files = run(["git", "ls-files", "*.sh"], root).stdout.split()
+    r = run(["shellcheck", "-x", "-S", "warning", "-f", "json", *shell_files], root)
+    try:
+        found = json.loads(r.stdout or "[]")
+    except ValueError:
+        found = None
+        failures.append(f"kit: shellcheck printed no JSON ({r.stderr.strip()[:200]!r})")
+    for x in found or []:
+        rule = f"SC{x['code']}"
+        if (rule, x["file"]) not in triaged and (rule, "*") not in triaged:
+            failures.append(f"kit: shellcheck {rule} ({x['level']}) at {x['file']}:{x['line']}: {x['message']} "
+                            "(fix it, or add a verdict to tests/triage.jsonl)")
+elif os.environ.get("STRICT") == "1":
+    failures.append("kit: shellcheck is not installed (python3 -m pip install shellcheck-py); STRICT=1 needs it")
+
+# ---- once: the guard's python fits in one command-line argument -----------------------------------------
+# guard.sh passes its program to `python3 -I -c '…'`; Linux refuses a single argument over 128 KB
+# (MAX_ARG_STRLEN), and the guard would then block every call. Move the program to its own file before then.
+m = re.search(r"\npython3 -I -c '\n(.*?)\n'", read(os.path.join(template, "scripts/guard.sh")), re.S)
+if not m:
+    failures.append("kit: scripts/guard.sh has no `python3 -I -c '…'` program to measure")
+elif len(m.group(1).encode()) > 100 * 1024:
+    failures.append(f"kit: scripts/guard.sh's python is {len(m.group(1).encode()) // 1024} KB, near Linux's 128 KB limit for one "
+                    "argument: move it to its own file (still run with python3 -I)")
+
+# ---- once: install.sh names a python3 that can't run the guard (a stub, or older than 3.7) -------------
+scratch = tempfile.mkdtemp(prefix="morphness-install-")
+stub = os.path.join(scratch, "bin/python3")
+os.makedirs(os.path.dirname(stub))
+os.makedirs(os.path.join(scratch, "proj"))
+write(stub, "#!/bin/sh\necho 'xcode-select: note: No developer tools were found' >&2\nexit 1\n")
+os.chmod(stub, 0o755)
+r = run(["bash", os.path.join(root, "scripts/install.sh"), "--dry-run", os.path.join(scratch, "proj")], scratch,
+        env=dict(os.environ, PATH=os.path.dirname(stub) + os.pathsep + os.environ["PATH"]))
+if f"python3: {stub} is not a working Python 3.7 or later" not in r.stdout:
+    failures.append(f"kit: install.sh did not name a stub python3 among the missing tools: {r.stdout[-400:]!r} {r.stderr[-200:]!r}")
+shutil.rmtree(scratch)
 
 # ---- once: § references name headings that exist, and config keys match the template config ------
 # A reference such as `harness/SETUP.md § Prune` must point at a heading (or a bold lead-in) in that
@@ -788,14 +859,15 @@ def check(name, fx, t):
     # session-start.sh: prints the command, reports a failure with the tail of its output, times out, and
     # adds --ignore-scripts to an npm install; always exits 0
     src = open(os.path.join(template, "scripts/session-start.sh"), encoding="utf-8").read()
-    def start(tool, install, limit="3", extra=()):
+    def start(tool, install, limit="3", extra=(), env_extra=None):
         body = re.sub(r"^TOOLCHAIN_SETUP=.*$", lambda m: f"TOOLCHAIN_SETUP='{tool}'", src, flags=re.M)
         body = re.sub(r"^INSTALL_CMD=.*$", lambda m: f"INSTALL_CMD='{install}'", body, flags=re.M)
         f = os.path.join(t, "scripts/.session-start-test.sh")
         open(f, "w").write(body)
         env = dict(os.environ, MORPHNESS_START_TIMEOUT=limit, CLAUDE_PROJECT_DIR=t)
         env.pop("CLAUDE_ENV_FILE", None)
-        r = run(["bash", f, *extra], t, env=env)
+        env.update(env_extra or {})
+        r = run([shutil.which("bash"), f, *extra], t, env=env)
         os.remove(f)
         return r
     pin = run(["git", "rev-parse", "--git-path", "morphness-session-commands"], t).stdout.strip()
@@ -828,6 +900,113 @@ def check(name, fx, t):
     if "NOT RUN" in r.stdout or "dependency install: echo changed" not in r.stdout:
         bad(f"session-start.sh --accept did not run the new commands: {r.stdout!r}")
     repin()
+    if name == once_on or FULL:
+        sbin = os.path.join(t, "selftest-bin")
+        def path_without(*tools, add=None):
+            # a PATH of links to every command on this one except the named tools, plus the files in add
+            shutil.rmtree(sbin, ignore_errors=True)
+            os.makedirs(sbin)
+            for d in os.environ["PATH"].split(os.pathsep):
+                for n in (os.listdir(d) if os.path.isdir(d) else []):
+                    if n not in tools and not os.path.lexists(os.path.join(sbin, n)) and os.access(os.path.join(d, n), os.X_OK):
+                        os.symlink(os.path.join(d, n), os.path.join(sbin, n))
+            for n, body in (add or {}).items():
+                if os.path.lexists(os.path.join(sbin, n)):
+                    os.remove(os.path.join(sbin, n))
+                write(os.path.join(sbin, n), body)
+                os.chmod(os.path.join(sbin, n), 0o755)
+            return sbin
+        # No timeout or gtimeout (stock macOS): perl bounds the step, and stops what it started too.
+        late = os.path.join(t, "selftest-late")
+        r = start("", f"(sleep 4; echo late > {late}) & sleep 30", "1", env_extra={"PATH": path_without("timeout", "gtimeout")})
+        time.sleep(5)
+        if r.returncode or "timed out after 1s" not in r.stdout or os.path.exists(late):
+            bad(f"session-start.sh without timeout ran a hanging install unbounded or left its children: {r.stdout!r}"
+                + (" (a child kept running)" if os.path.exists(late) else ""))
+        repin()
+        # A TERM to the perl wrapper (the hook being stopped) stops the step too, not just the wrapper.
+        if shutil.which("pgrep"):
+            body = re.sub(r"^TOOLCHAIN_SETUP=.*$", "TOOLCHAIN_SETUP=''", src, flags=re.M)
+            body = re.sub(r"^INSTALL_CMD=.*$", lambda m: f"INSTALL_CMD='sleep 4; echo late > {late}'", body, flags=re.M)
+            f = os.path.join(t, "scripts/.session-start-test.sh")
+            write(f, body)
+            env = dict(os.environ, MORPHNESS_START_TIMEOUT="60", CLAUDE_PROJECT_DIR=t, PATH=path_without("timeout", "gtimeout"))
+            env.pop("CLAUDE_ENV_FILE", None)
+            proc = subprocess.Popen([shutil.which("bash"), f], cwd=t, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            wrapper = []
+            for _ in range(50):
+                wrapper = run(["pgrep", "-P", str(proc.pid), "perl"], t).stdout.split()
+                if wrapper:
+                    break
+                time.sleep(0.1)
+            for w in wrapper:
+                os.kill(int(w), 15)
+            out = proc.communicate(timeout=30)[0].decode(errors="replace")
+            time.sleep(5)
+            os.remove(f)
+            if not wrapper or os.path.exists(late) or "failed (exit 143)" not in out:
+                bad(f"session-start.sh's perl time limit, sent TERM, left its step running: {out!r}"
+                    + (" (no perl wrapper found)" if not wrapper else ""))
+            if os.path.exists(late):
+                os.remove(late)
+            repin()
+        # Output and PATH go to a private folder under TMPDIR (mode 700), or into the git folder without mktemp;
+        # never to a fixed name in /tmp.
+        private = tempfile.mkdtemp(prefix="selftest-tmp-")
+        where = 'd="${MORPHNESS_PATH_FILE%/*}"; echo "at $MORPHNESS_PATH_FILE mode $(stat -c %a "$d" 2>/dev/null || stat -f %Lp "$d")"; exit 3'
+        r = start("", where, env_extra={"TMPDIR": private})
+        at = re.search(r"\| at (.+) mode (\d+)", r.stdout)
+        if not at or not at.group(1).startswith(private + "/morphness-start.") or at.group(2) != "700":
+            bad(f"session-start.sh kept its output outside a private (mode 700) folder under TMPDIR: {r.stdout!r}")
+        elif os.listdir(private):
+            bad(f"session-start.sh left {os.listdir(private)} in TMPDIR")
+        shutil.rmtree(private)
+        repin()
+        # without mktemp: in the git folder, by an absolute path (a step that cds elsewhere still finds it)
+        r = start("cd harness", where, env_extra={"PATH": path_without("mktemp")})
+        gitdir = os.path.realpath(os.path.join(t, run(["git", "rev-parse", "--git-dir"], t).stdout.strip()))
+        at = re.search(r"\| at (.+) mode (\d+)", r.stdout)
+        if not at or not at.group(1).startswith("/") or not os.path.realpath(at.group(1)).startswith(gitdir + "/morphness-start.") or at.group(2) != "700":
+            bad(f"session-start.sh without mktemp did not keep its output in a private folder in the git folder: {r.stdout!r}")
+        repin()
+        # A PATH with a quote, a dollar sign and a backtick survives the session's env file as text.
+        odd = os.path.join(t, 'selftest dir "q" $HOME `id`')
+        os.makedirs(odd)
+        env_file = os.path.join(t, "selftest-env")
+        write(env_file, "")
+        tool = 'export PATH="' + odd.replace("\\", "\\\\").replace('"', '\\"').replace("$", "\\$").replace("`", "\\`") + ':$PATH"'
+        r = start(tool.replace("'", "'\\''"), "", env_extra={"CLAUDE_ENV_FILE": env_file})
+        back = run(["bash", "-c", f'. "{env_file}" && printf %s "${{PATH%%:*}}"'], t)
+        if back.stdout != odd or back.stderr:
+            bad(f"session-start.sh wrote a PATH the env file doesn't give back: {read(env_file)!r} gave {back.stdout!r} {back.stderr.strip()!r}")
+        shutil.rmtree(odd)
+        os.remove(env_file)
+        repin()
+        # Output that doesn't end in a newline doesn't run into the next line.
+        r = start("", "printf nonl; exit 3")
+        if "  | nonl\nsession-start: done" not in r.stdout:
+            bad(f"session-start.sh ran a failed step's last output line into the next message: {r.stdout!r}")
+        repin()
+        # A python3 that can't run the guard (a stub that exits 0 or 1, an old version) is named.
+        for body in ("#!/bin/sh\nexit 0\n", "#!/bin/sh\necho 'xcode-select: note: No developer tools were found' >&2\nexit 1\n",
+                     "#!/bin/sh\necho False\n"):
+            r = start("", "", env_extra={"PATH": path_without(add={"python3": body})})
+            if "is not a working Python 3.7 or later" not in r.stdout:
+                bad(f"session-start.sh did not name a python3 that can't run the guard ({body.splitlines()[1]!r}): {r.stdout!r}")
+        # The hooks run with this PATH, not the toolchain step's: a real python3 the toolchain adds doesn't hide the stub.
+        real = os.path.join(t, "selftest-realpy")
+        os.makedirs(real)
+        os.symlink(shutil.which("python3"), os.path.join(real, "python3"))
+        r = start(f'export PATH="{real}:$PATH"', "", env_extra={"PATH": path_without(add={"python3": "#!/bin/sh\nexit 1\n"})})
+        if "is not a working Python 3.7 or later" not in r.stdout:
+            bad(f"session-start.sh checked the toolchain's python3 instead of the one the hooks run: {r.stdout!r}")
+        shutil.rmtree(real)
+        repin()
+        r = start("", "")
+        if "Python" in r.stdout:
+            bad(f"session-start.sh complained about a working python3: {r.stdout!r}")
+        shutil.rmtree(sbin)
+        repin()
     if cfg("branches.integration") != fx["branches"]["integration"]:
         bad("config_get branches.integration doesn't print the integration branch")
     r = run(["bash", "scripts/prune-counter.sh"], t)
@@ -915,6 +1094,71 @@ def check(name, fx, t):
         if r.returncode or not ok:
             bad(f"feature-cost.sh with feature_budget_usd {cap} printed {r.stdout!r} (stderr {r.stderr.strip()!r})")
     open(cfg, "w").write(keep_cfg)
+    # feature-cost.sh on bad input: a torn line, a bad byte, a BOM, string counts and naive times are
+    # skipped or read, never fatal; a call copied into a second session counts once; a json.py in the
+    # project doesn't run; prices match Claude Code's (Sonnet 5.5 cache reads at $0.10 per million)
+    if name == once_on or FULL:
+        def cost_entry(mid, usage, ts="2026-10-21T09:00:00Z", branch="main", model="claude-sonnet-5-5"):
+            return json.dumps({"type": "assistant", "timestamp": ts, "gitBranch": branch, "uuid": "u-" + mid,
+                               "requestId": "r-" + mid, "message": {"id": mid, "model": model, "usage": usage}})
+        def cost_run(*args, home=home, cwd=t):
+            r = run(["bash", os.path.join(t, "scripts/feature-cost.sh"), *args], cwd, env=dict(os.environ, HOME=home))
+            return r, (r.stdout.strip().splitlines() or [""])[-1]
+        mtok = {"input_tokens": 0, "output_tokens": 0, "cache_read_input_tokens": 1000000, "cache_creation_input_tokens": 0}
+        open(os.path.join(proj, "s2.jsonl"), "wb").write(
+            "\ufeff".encode() + cost_entry("m2", mtok).encode() + b"\n"                         # BOM on line 1: $0.10
+            + cost_entry("m3", dict(mtok, cache_read_input_tokens="1000000")).replace("u-m3", "u-\xc3").encode("latin-1") + b"\n"   # string count, bad byte: $0.10
+            + cost_entry("m4", dict(mtok, cache_read_input_tokens=1000000), ts="2026-10-21T09:00:00").encode() + b"\n"   # naive time: $0.10
+            + cost_entry("m6", mtok, ts="2026-10-21T09:00:00.12Z").encode() + b"\n"                # 2-digit fraction (Python < 3.11 couldn't parse it): $0.10
+            + cost_entry("m7", mtok, ts="2026-10-21T07:59:59.5Z").encode() + b"\n"                 # before --since: left out
+            + b'{"type": "assistant", "message": {"id": "torn", "usage": {"inp\n'                 # torn write
+            + b"[1, 2]\n")                                                                           # not an object
+        r, last = cost_run("--session", "s2", "--since", "2026-10-21T08:00")
+        if (r.returncode or not last.startswith("Cost ≈ $0.40 ") or "2 unreadable transcript lines skipped" not in last
+                or "no readable time" in last or "Traceback" in r.stderr):
+            bad(f"feature-cost.sh on a transcript with bad lines printed {r.stdout!r} (exit {r.returncode}, stderr {r.stderr.strip()[-300:]!r})")
+        # resumed session: s3 repeats s2's first call and adds one; --branch counts m2 once
+        open(os.path.join(proj, "s3.jsonl"), "w").write(cost_entry("m2", mtok) + "\n" + cost_entry("m5", mtok) + "\n")
+        r, last = cost_run("--branch", "main")
+        if r.returncode or not last.startswith("Cost ≈ $3.60 "):   # s1's call $3.00, then m2 to m7 at $0.10 each
+            bad(f"feature-cost.sh --branch counted a call copied into a resumed session twice: {r.stdout!r}")
+        planted = os.path.join(t, "json.py")
+        open(planted, "w").write("print('PLANTED json.py ran')\nraise SystemExit(0)\n")
+        r, last = cost_run("--session", "s3")
+        os.remove(planted)
+        if r.returncode or "PLANTED" in r.stdout + r.stderr or not last.startswith("Cost ≈ $0.20 "):
+            bad(f"feature-cost.sh ran a json.py from the project: {r.stdout!r} (stderr {r.stderr.strip()[-200:]!r})")
+        r, last = cost_run("--sinse", "2026-10-21")
+        if r.returncode != 2 or "bad option: --sinse" not in r.stdout:
+            bad(f"feature-cost.sh with an unknown option exited {r.returncode}: {r.stdout!r}")
+        # a project path with an emoji: Claude Code names its folder with "--" for it (JavaScript string length)
+        emo = os.path.join(t, "cost-emoji", "app \U0001F600")
+        os.makedirs(os.path.join(emo, "harness"))
+        shutil.copytree(os.path.join(t, "scripts"), os.path.join(emo, "scripts"))
+        shutil.copy(os.path.join(t, "harness/MODEL_PRICES.md"), os.path.join(emo, "harness"))
+        shutil.copy(cfg, emo)
+        run(["git", "init", "-q"], emo)
+        emo_proj = os.path.join(home, ".claude/projects", re.sub(r"[^A-Za-z0-9]", "-", os.path.realpath(emo).replace("\U0001F600", "  ")))
+        os.makedirs(emo_proj)
+        open(os.path.join(emo_proj, "s9.jsonl"), "w").write(cost_entry("m9", mtok) + "\n")   # no cwd field: found by name only
+        r = run(["bash", "scripts/feature-cost.sh", "--session", "s9"], emo, env=dict(os.environ, HOME=home))
+        if r.returncode or "Cost ≈ $0.10 " not in r.stdout:
+            bad(f"feature-cost.sh in a project path with an emoji did not find its transcripts: {r.stdout!r} (stderr {r.stderr.strip()[-200:]!r})")
+        # the fallback search survives a damaged transcript elsewhere (a NUL in its cwd)
+        shutil.rmtree(emo_proj)
+        other = os.path.join(home, ".claude/projects", "-elsewhere")
+        os.makedirs(other)
+        open(os.path.join(other, "s8.jsonl"), "w").write(json.dumps({"cwd": "/x\u0000y", "type": "user"}) + "\n")
+        r = run(["bash", "scripts/feature-cost.sh"], emo, env=dict(os.environ, HOME=home))
+        if r.returncode or not r.stdout.startswith("Cost: not measured (no Claude Code transcripts"):
+            bad(f"feature-cost.sh crashed on a transcript with a NUL in its cwd: {r.stdout!r} (stderr {r.stderr.strip()[-200:]!r})")
+        shutil.rmtree(other)
+        # without scripts/lib/config.sh it says so and exits 1 (it used to exit 0 with nothing on stdout)
+        os.remove(os.path.join(emo, "scripts/lib/config.sh"))
+        r = run(["bash", "scripts/feature-cost.sh"], emo, env=dict(os.environ, HOME=home))
+        if r.returncode != 1 or not r.stdout.startswith("Cost: not measured (scripts/lib/config.sh"):
+            bad(f"feature-cost.sh without scripts/lib/config.sh exited {r.returncode}: {r.stdout!r}")
+        shutil.rmtree(os.path.join(t, "cost-emoji"))
     r = run(["bash", "scripts/evidence.sh"], t)
     if r.returncode or "# Morphness evidence summary" not in r.stdout or "0 features finished" not in r.stdout or "Traceback" in r.stdout + r.stderr:
         bad(f"evidence.sh on a fresh install printed {r.stdout!r} (stderr {r.stderr.strip()!r})")
@@ -933,6 +1177,96 @@ def check(name, fx, t):
         bad(f"evidence.sh printed a summary that left most entries out (exit {r.returncode}): {r.stdout!r}")
     open(lf, "w").write(keep)
     os.remove(pf)
+    # evidence.sh options are stable (STABILITY.md § Stable item 7): the field names of --json (none renamed
+    # or removed; new ones may be added), --out files, a bad option fails
+    r = run(["bash", "scripts/evidence.sh", "--json"], t)
+    def key_paths(v, at=""):
+        if isinstance(v, dict):
+            for k, x in v.items():
+                yield at + k
+                yield from key_paths(x, at + k + ".")
+    try:
+        keys = set(key_paths(json.loads(r.stdout)))
+    except ValueError:
+        keys = set()
+    want_keys = {"generated", "morphness_release", "first_feature", "last_feature", "windows", "escapes_recorded",
+                 "failure_causes_unfolded", "modes_unfolded", "prunes", "prune_decisions", "lessons_adopted", "git",
+                 "overall", "overall.features", "overall.enough_data", "overall.first_time_pass", "overall.avg_qa_rounds",
+                 "overall.cost_measured", "overall.avg_cost_usd", "overall.median_cost_usd",
+                 "retro_items", "retro_items.applied", "retro_items.deferred", "retro_items.open", "retro_items.skipped",
+                 "rule_audit", "rule_audit.fired", "rule_audit.insurance", "rule_audit.never fired", "rule_audit.other",
+                 "rule_audit.too new", "trials",
+                 "records", "records.audit_rows", "records.folded_entries", "records.learnings_files", "records.prune_files",
+                 "records.prunes_read", "records.unread_entries"}
+    if r.returncode or want_keys - keys:
+        bad(f"evidence.sh --json (exit {r.returncode}) lacks the fields {sorted(want_keys - keys)}")
+    r = run(["bash", "scripts/evidence.sh", "--out"], t)
+    outs = glob.glob(os.path.join(t, "_harness/evidence/*"))
+    if r.returncode or sorted(os.path.splitext(o)[1] for o in outs) != [".json", ".md"]:
+        bad(f"evidence.sh --out wrote {outs} (exit {r.returncode}, stderr {r.stderr.strip()!r})")
+    shutil.rmtree(os.path.join(t, "_harness/evidence"), ignore_errors=True)
+    for script, opt in (("evidence.sh", "--jsn"), ("learned-rules.sh", "--al"), ("prune-counter.sh", "--prun")):
+        r = run(["bash", f"scripts/{script}", opt], t)
+        if r.returncode != 2 or f"unknown option: {opt}" not in r.stderr:
+            bad(f"{script} {opt} (an unknown option) exited {r.returncode}: {r.stdout!r} {r.stderr!r}")
+    # a record saved in another encoding stops each reader with its name, never a traceback or a silent pass
+    cp1252 = os.path.join(t, "_harness/learnings/cp1252-v1.md")
+    open(cp1252, "wb").write(b"### cp1252 v1, 2026-01-03\n- **Fired:** caf\xe9\n")
+    for script, code in (("evidence.sh", 3), ("learned-rules.sh", 1), ("prune-counter.sh", 2)):
+        r = run(["bash", f"scripts/{script}"], t)
+        if r.returncode != code or "cp1252-v1.md is not valid UTF-8" not in r.stdout + r.stderr or "Traceback" in r.stderr:
+            bad(f"{script} on a learnings file that isn't UTF-8 exited {r.returncode}: {r.stdout[-200:]!r} {r.stderr[-300:]!r}")
+    # with a budget over as well, exit 1 (the proposal still waits) wins over 2, and the line is still printed
+    keep_cfg = read(os.path.join(t, "harness.config.yml"))
+    write(os.path.join(t, "harness.config.yml"), re.sub(r"rule_budget_kb: *\S+", "rule_budget_kb: 1", keep_cfg))
+    r = run(["bash", "scripts/prune-counter.sh"], t)
+    if r.returncode != 1 or "cp1252-v1.md is not valid UTF-8" not in r.stdout:
+        bad(f"prune-counter.sh over budget with a record that isn't UTF-8 exited {r.returncode}: {r.stdout[-300:]!r}")
+    write(os.path.join(t, "harness.config.yml"), keep_cfg)
+    os.remove(cp1252)
+    # without a tool they need (awk, git, python3, ...) the scripts say so and exit non-zero instead of printing
+    # blank gauges or skipping the trials
+    nobin = os.path.join(t, "selftest-no-tool")
+    def without(tool):
+        shutil.rmtree(nobin, ignore_errors=True)
+        os.makedirs(nobin)
+        for name in ("awk", "bash", "cat", "dirname", "git", "grep", "head", "ls", "sed", "sort", "tr", "wc", "python3"):
+            if name != tool and shutil.which(name):
+                os.symlink(shutil.which(name), os.path.join(nobin, name))
+        return dict(os.environ, PATH=nobin)
+    bash_bin = shutil.which("bash")
+    r = run([bash_bin, "scripts/prune-counter.sh"], t, env=without("awk"))
+    if r.returncode != 2 or "Prune counter: not measured (missing: awk;" not in r.stdout:
+        bad(f"prune-counter.sh without awk exited {r.returncode}: {r.stdout!r} (stderr {r.stderr.strip()[-200:]!r})")
+    r = run([bash_bin, "scripts/evidence.sh"], t, env=without("awk"))
+    if r.returncode != 1 or "Evidence: not measured (awk not found)" not in r.stdout:
+        bad(f"evidence.sh without awk exited {r.returncode}: {r.stdout!r}")
+    r = run([bash_bin, "scripts/prune-counter.sh"], t, env=without("git"))
+    if r.returncode != 2 or "Prune counter: not measured (missing: git;" not in r.stdout:
+        bad(f"prune-counter.sh without git exited {r.returncode}: {r.stdout!r}")
+    r = run([bash_bin, "scripts/learned-rules.sh"], t, env=without("git"))
+    if r.returncode != 1 or "needs git" not in r.stderr:
+        bad(f"learned-rules.sh without git exited {r.returncode}: {r.stdout!r} {r.stderr!r}")
+    r = run([bash_bin, "scripts/prune-counter.sh"], t, env=without("python3"))
+    if r.returncode != 2 or "trials and rule tags not measured (python3 not found" not in r.stdout or "Rules:" not in r.stdout:
+        bad(f"prune-counter.sh without python3 exited {r.returncode}: {r.stdout!r}")
+    shutil.rmtree(nobin)
+    # a budget written 09 is nine (bash read it as a bad octal number and skipped the check); a prune
+    # file name with spaces is still found
+    pdir = os.path.join(t, "_harness/prunes")
+    os.makedirs(pdir, exist_ok=True)
+    keep_cfg = read(os.path.join(t, "harness.config.yml"))
+    write(os.path.join(t, "harness.config.yml"), re.sub(r"rule_budget_kb: *\S+", "rule_budget_kb: 09", keep_cfg))
+    r = run(["bash", "scripts/prune-counter.sh"], t)
+    if r.returncode != 1 or "/9 KB always loaded" not in r.stdout or "value too great" in r.stderr:
+        bad(f"prune-counter.sh with rule_budget_kb: 09 exited {r.returncode}: {r.stdout!r} (stderr {r.stderr.strip()!r})")
+    spaced = os.path.join(pdir, "2026-01-07 second look.md")
+    open(spaced, "w").write("# Prune\n\n**Status:** proposed\n")
+    r = run(["bash", "scripts/prune-counter.sh"], t)
+    if r.returncode or "Prune proposal waiting: _harness/prunes/2026-01-07 second look.md" not in r.stdout:
+        bad(f"prune-counter.sh did not see a proposal whose name has spaces: {r.stdout!r} (stderr {r.stderr.strip()!r})")
+    os.remove(spaced)
+    write(os.path.join(t, "harness.config.yml"), keep_cfg)
     # guard hook cases
     # {I^} and {P^} are the same branches in capitals (a guard case for `git push origin Main`).
     branches = {"{I}": fx["branches"]["integration"], "{P}": fx["branches"]["production"],
@@ -1072,6 +1406,28 @@ EDITS = [
     (".claude/settings.json", '"allow": [', '\n      "Bash(make:*)",'),
 ]
 
+# Run records an owner's project has built up by the time it updates; the update must leave them byte
+# for byte (STABILITY.md § Stable: "without losing its records").
+RECORDS = [
+    ("_harness/learnings/selftest-records-v1.md", "### selftest-records v1, 2026-01-05\n- **Verdict:** pass\n- **Fired:** `retry-flow`\n"),
+    ("_harness/prunes/2026-01-06.md", "# Prune\n\n**Status:** applied\n"),
+    ("_harness/LEARNINGS.md", "\n- selftest-records v1, 2026-01-05: pass, QA rounds 1, ≈ $1.20; Fired: retry-flow\n"),
+]
+
+def add_records(base):
+    for rel, text in RECORDS:
+        path = os.path.join(base, rel)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        write(path, (read(path) if os.path.exists(path) else "") + text)
+
+def drop_records(base, saved):
+    for rel, _ in RECORDS:
+        path = os.path.join(base, rel)
+        if rel in saved:
+            write(path, saved[rel])
+        elif os.path.exists(path):
+            os.remove(path)
+
 def edit_file(path, anchor, text):
     s = read(path)
     write(path, s + text if anchor is None else s.replace(anchor, anchor + text, 1))
@@ -1086,6 +1442,7 @@ def update_case(name, fx, tag, base_tpl, edits):
     if edits:
         for rel, anchor, text in EDITS:
             edit_file(os.path.join(proj, rel), anchor, text)
+    add_records(proj)
     ls = lambda ref, d: set(run(["git", "ls-tree", "-r", "--name-only", ref, d], root).stdout.split()) if ref else set()
     added = sorted(f for f in glob.glob(os.path.join(root, "updates", "*.md"))
                    if os.path.basename(f) != "README.md" and f"updates/{os.path.basename(f)}" not in ls(tag, "updates/"))
@@ -1135,12 +1492,13 @@ def update_case(name, fx, tag, base_tpl, edits):
     for rel in removed:
         if rd(proj, rel) is not None and rd(proj, rel) == rd(old, rel):
             os.remove(os.path.join(proj, rel))
-    expected = new
+    expected = os.path.join(work_u, "expected")
+    shutil.copytree(new, expected)
     if edits:
-        expected = os.path.join(work_u, "expected")
-        shutil.copytree(new, expected)
         for rel, anchor, text in EDITS:
             edit_file(os.path.join(expected, rel), anchor, text)
+    saved = {rel: read(os.path.join(new, rel)) for rel, _ in RECORDS if os.path.exists(os.path.join(new, rel))}
+    add_records(expected)
     for base in (expected, proj):
         other = proj if base == expected else expected
         for f in files_under(base):
@@ -1151,7 +1509,13 @@ def update_case(name, fx, tag, base_tpl, edits):
             if b is None:
                 bad(f"{rel} is {'missing from' if base == expected else 'left in'} the updated project")
             elif base == expected and a != b:
-                bad(f"{rel} differs from a fresh install of this checkout")
+                bad(f"{rel} differs from a fresh install of this checkout"
+                    + (" (a run record the update must leave as it was)" if rel in dict(RECORDS) else ""))
+    for rel, _ in RECORDS:   # byte for byte: line endings and encoding included
+        a, b = (open(os.path.join(d, rel), "rb").read() if os.path.exists(os.path.join(d, rel)) else None for d in (expected, proj))
+        if a != b:
+            bad(f"{rel} (a run record) is not byte for byte what it was before the update")
+    drop_records(proj, saved)   # the merged project then gets the fresh-install checks
     return proj, work_u
 
 # Guard cases marked "every" (branches, environments, guard switches, broken input) or "only" replay on each
@@ -1180,6 +1544,14 @@ if not os.environ.get("UPDATE_FROM") and OLDEST_SUPPORTED != prev_tag and OLDEST
     tpl_dir = tempfile.mkdtemp(prefix="morphness-oldest-")
     if old_template(OLDEST_SUPPORTED, tpl_dir):
         starts.append((OLDEST_SUPPORTED, os.path.join(tpl_dir, "template")))
+elif (not os.environ.get("UPDATE_FROM") and prev_tag and OLDEST_SUPPORTED not in release_tags()
+      and release_key(OLDEST_SUPPORTED) < release_key(prev_tag)):
+    # A shallow clone, or a deleted tag, would skip the oldest replay and still pass.
+    msg = f"no release tag {OLDEST_SUPPORTED} (the oldest supported release) in this checkout (fetch the tags: git fetch --tags)"
+    if os.environ.get("STRICT") == "1":
+        failures.append("update: " + msg)
+    else:
+        print("note: " + msg + "; the update-from-the-oldest-release case is skipped")
 for path in fixtures:
     name = os.path.splitext(os.path.basename(path))[0]
     fx = json.load(open(path))
