@@ -53,8 +53,17 @@ Show the user each draft in full with a short "what I removed" note. Drop any th
 ## 4. Check
 
 Run the source's `scripts/check-lessons.sh` on the drafts (frontmatter, unique id, no denylisted
-terms from this project). Grep the drafts for this project's name, the owner's name, repo name,
-domain and any id from `project/STACK.md`; there must be none.
+terms from this project, and no URL or host, network command, command that installs or runs text,
+env dump or mention of the guard, settings, harness config, permissions or secrets). Pass this
+project's own names as `DENY`, a `|`-separated list of plain names (each matched as a whole word): the project name, the owner's name and GitHub login, the
+repo name, every branch, environment and app name in `harness.config.yml` that isn't a generic word
+(`main`, `dev`, `staging`, `production`, `web`, `api`), and every variable name in `.env.example` or
+`project/STACK.md`. Then search the drafts for hostnames and email addresses:
+`grep -nEo '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}|([A-Za-z0-9-]+\.)+(com|net|org|io|dev|app|co|ai|cloud|me|xyz|tech|site|shop|run|example|local|lan|corp|internal|test|uk|de|fr|eu|ca|us)\b|\b[0-9]{1,3}(\.[0-9]{1,3}){3}\b' <drafts>`.
+Every hit must go, apart from a generic example such as `example.com` and code or file names it
+catches (`config.test.ts`). When the check flags a Rule that really needs a command or a
+mention of the guard, keep it only with `reviewed: <why it is safe>` in the frontmatter, and say so
+to the user: the maintainers read those first.
 
 ## 5. Open the PR
 
