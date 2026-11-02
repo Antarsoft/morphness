@@ -988,11 +988,35 @@ SETTLED = [
     ("harness/TECHNICAL_LEAD.md", "send nothing into a thread that needs no action", "the thread rule lives in harness/HANDOFFS.md § Threads"),
     ("harness/HANDOFFS.md", "send nothing into a thread that needs no action", "a message to a thread asks for an action (§ Threads)"),
     ("harness/modules/claude-projects/README.md", "send nothing into a thread that needs no action", "a message to a thread asks for an action (harness/HANDOFFS.md § Threads)"),
+    ("harness/SETUP.md", "**QA is `high`** whenever the plan touches a risk path", "QA is medium unless Full-stack is xhigh (G5, harness/agents/qa-engineer.md § Lean QA)"),
+    ("harness/modules/data-access/README.md", "QA effort is `high`", "a data-access feature's QA effort follows harness/SETUP.md § Effort per feature (G5)"),
+    (".claude/agents/qa-engineer.md", "Default (effort high)", "the medium QA agent is the default (G5)"),
 ]
 # Text that must be gone from every rendered file: the browser suites no longer depend on what a change touches.
 SETTLED_ANYWHERE = [
     (r"(screens?|pages), auth or (a |the )?public API", "the browser suites run for every change (harness/CONTROLS.md)"),
 ]
+
+def check_lean_qa(bad, t):
+    """G5: QA gets the plan, the diff and the check results, reviews the diff, makes one pass, and runs at medium
+    unless Full-stack is xhigh (harness/agents/qa-engineer.md § Lean QA)."""
+    role = read(os.path.join(t, "harness/agents/qa-engineer.md"))
+    lean = role.split("\n## Lean QA\n", 1)[1].split("\n## ", 1)[0] if "\n## Lean QA\n" in role else ""
+    for want in ("git diff <base>", "**One pass.**", "checks.sh status", "`medium` unless the plan's Full-stack effort is `xhigh`"):
+        if want not in lean:
+            bad(f"harness/agents/qa-engineer.md § Lean QA doesn't say {want!r}")
+    handoffs = read(os.path.join(t, "harness/HANDOFFS.md"))
+    parts = handoffs.split("**QA engineer**\n", 1)[-1].split("```", 2) if "**QA engineer**\n" in handoffs else []
+    block = parts[1] if len(parts) > 2 else ""
+    for want in ("§ Lean QA", "base <git merge-base", "git diff --stat", "untracked: <", "Check results: <bash scripts/checks.sh status", "one pass"):
+        if want not in block:
+            bad(f"harness/HANDOFFS.md QA prompt block doesn't hand QA {want!r}")
+    cfg = read_agents_config(read(os.path.join(t, "harness.config.yml")))
+    if cfg.get("qa", {}).get("default") != "medium":
+        bad(f"harness.config.yml → agents.qa.default is {cfg.get('qa', {}).get('default')!r}: lean QA runs at medium unless Full-stack is xhigh")
+    med = read(os.path.join(t, ".claude/agents/qa-engineer-medium.md")).split("\n---", 1)[0]
+    if "Default (effort medium)" not in med:
+        bad(".claude/agents/qa-engineer-medium.md's description doesn't make it the default QA agent")
 
 def check_settled(bad, t):
     for rel, gone, why in SETTLED:
@@ -1546,6 +1570,7 @@ def check(name, fx, t):
     # 5e. one source for models, and the rules WS4 found saying two things now say one
     check_one_model_source(bad, t)
     check_settled(bad, t)
+    check_lean_qa(bad, t)
     # 6. named checks have commands, and no row names an unknown check
     cfg = lambda key: run(["bash", "-c", f'. scripts/lib/config.sh; config_get {key}'], t).stdout.strip()
     names = set()
