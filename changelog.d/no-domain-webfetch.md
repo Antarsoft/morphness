@@ -1,0 +1,1 @@
+`.claude/settings.json` no longer allows WebFetch on the whole of `api.github.com` and `raw.githubusercontent.com`. Those rules let any page on either host through with no prompt. The update checks read GitHub through the repo-scoped `gh api` and `curl` rules they already had, and WebFetch now asks.

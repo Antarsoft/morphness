@@ -2332,15 +2332,16 @@ elif tool in ("Read", "Edit", "MultiEdit", "Write", "NotebookEdit"):
     if tool != "Read" and p and outside_repo(p) and not rel_inside(p):
         ask(f"`{p}` is outside this project, and {tool} would write it; the owner approves a write anywhere but the repo and /tmp.")
 elif tool == "WebFetch":
-    # .claude/settings.json allows WebFetch on the whole api.github.com and raw.githubusercontent.com domains for the
-    # update checks; anything on those hosts outside the two Morphness paths asks. Browsers and URL parsers read
-    # `https:/\api.github.com`, `https:api.github.com` or a trailing dot as that host too, so any URL naming one asks
-    # unless it is a plain Morphness path. Other domains get Claude Code\u2019s own prompt.
+    # The update checks read GitHub with `gh api` or `curl` (allowed by path in .claude/settings.json); WebFetch
+    # has no allow rule, so Claude Code asks for every page. A project that adds a domain-wide allow for
+    # api.github.com or raw.githubusercontent.com still gets an ask for anything there outside the two Morphness
+    # paths. Browsers and URL parsers read `https:/\api.github.com`, `https:api.github.com` or a trailing dot as
+    # that host too, so any URL naming one asks unless it is a plain Morphness path.
     url = str(args.get("url") or "").strip()
     low = url.lower()
     if re.search(r"api\.github\.com|raw\.githubusercontent\.com", low) and not (
             low.startswith(MORPHNESS_URLS) and not re.search(r"[\\@\s]|\.\.|%2e|%5c|%2f", low)):
-        ask(f"WebFetch of `{url}`: .claude/settings.json allows only the Morphness update paths on GitHub without a prompt; "
+        ask(f"WebFetch of `{url}`: on GitHub's API and raw hosts only the Morphness update paths are plain reads; "
             "the owner approves any other page there.")
 elif tool == "Grep":
     for key in ("path", "glob"):
