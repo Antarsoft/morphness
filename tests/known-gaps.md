@@ -1,6 +1,6 @@
 # Known limits, shown on the public results page
 
-One line per limit, each starting with "- ". `scripts/trust-report.sh` copies these onto the page as they are, so write them for a reader who does not know the kit. Keep them at the level of categories. The same limits are described for owners in `template/AGENTS.md` § Permissions for this project ("What it does not see").
+One line per limit, each starting with "- ". `scripts/trust-report.sh` copies these onto the page as they are, so write them for a reader who does not know the kit. Keep them at the level of categories. The same limits are described for owners in `template/harness/GUARD.md` ("What it does not see").
 
 - The guard hook is a safety net for an agent that makes mistakes. It is not a sandbox, and it does not stop an agent or script that is determined to get around it.
 - The guard reads Bash commands as the shell does, but it does not see inside a script file or Makefile target that an earlier call wrote, code that an interpreter decodes or builds at run time, or a command-line tool it has no rule for.

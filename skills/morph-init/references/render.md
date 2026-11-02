@@ -35,13 +35,15 @@ Copy every file under `SRC/template/` to the same path in `T`, skipping any file
 | File exists | Do |
 |-------------|----|
 | `CLAUDE.md` | Keep the user's content. Append the template's `CLAUDE.md` body under a `## Morphness` heading, or add the line `@AGENTS.md` if the template's AGENTS.md was copied. |
-| `AGENTS.md` | Keep it. Append the template's golden rules and harness table under `## Morphness`, without duplicating rules it already has. Full-stack and QA don't read it: copy any of its rules they must follow (a convention, a path not to touch) to `project/agents/<role>.md`. |
+| `AGENTS.md` | Keep it. Append the template's golden rules and § Where things are under `## Morphness`, without duplicating rules it already has. Full-stack and QA don't read it: copy any of its rules they must follow (a convention, a path not to touch) to `project/agents/<role>.md`. |
 | `AGENTS.md` and `CLAUDE.md` are one file (a link either way, as install.sh reports) | Keep the link. Append the template's `AGENTS.md` body under `## Morphness` to the real file once, then the template `CLAUDE.md`'s lines other than `@AGENTS.md` (a file importing itself). If the link points at a file that doesn't exist yet, create that file with the same text. |
 | `.claude/settings.json` | Merge in § 6b, not now: union `permissions.allow`, `deny`, `ask`; add the SessionStart and PreToolUse (guard) hooks if absent; an existing PreToolUse hook stays, with the guard added as one more entry; keep every existing key. When the user's `model` or `permissions.defaultMode` differs from the answers, ask once which to keep (unattended: keep the user's) and record the choice and why in `project/HARNESS_AGENTS.md`. Show the diff. |
 | `.github/pull_request_template.md` (GitLab: `.gitlab/merge_request_templates/Default.md`) | Keep the user's. Mention the template's sections in the hand-off, and that the tag workflow reads a `## Release notes` section. |
 | `.mcp.json` | Merge `mcpServers`; never remove one. |
 | `.gitattributes` | Keep the user's lines; append the template's `eol=lf` lines it lacks (the hook scripts and the config must keep LF line endings on a Windows checkout). |
 | Anything else | Keep the user's file; list it in the hand-off. |
+
+**Owner allowance.** When the user's own `CLAUDE.md`, `AGENTS.md` or `.claude/rules/*.md` files were kept, their text loads in every session next to the kit's. Measure what they add: the user's own text in `CLAUDE.md` and `AGENTS.md` (the bytes above `## Morphness`, or the whole file minus the `@AGENTS.md` line when only that line was added), each file the user's `CLAUDE.md` imports with `@` other than `AGENTS.md`, and each kept `.claude/rules/*.md` without a `paths:` line, and set `loop.owner_rules_kb` in `harness.config.yml` to that size in KB, rounded up. The size gauge then gives the user's text its own allowance on top of `loop.rule_budget_kb`, so a long existing file doesn't make a prune due on day one.
 
 ## 2b. Migrating an earlier harness
 
@@ -53,7 +55,7 @@ keeps everything it learned; it moves into the places Morphness reads it from.
    `LEARNINGS.md`, the backlog and any archive). Copy only `_harness/` template files that don't exist,
    and refresh `_harness/README.md`'s layout block if it lacks folders the kit uses.
 2. **Replace the kit files.** Copy over, overwriting: `harness/**` (kit docs, `agents/`, `modules/`,
-   `templates/`), `.claude/rules/{harness,testing}.md`, the `.claude/agents/*.md` files
+   `templates/`), `.claude/rules/{harness,testing,data,auth,deploy}.md`, the `.claude/agents/*.md` files
    the template has, `AGENTS.md` and `CLAUDE.md`, and add `harness.config.yml`. Delete kit files the
    template no longer has (a version file, a doc a module now covers) once step 3 has moved their
    project content. Every old file stays readable with `git show <integration branch>:<path>`.
@@ -292,7 +294,7 @@ All must pass before committing; fix and re-run on failure.
    Python error (it may print `Cost: not measured`, or this session's cost). Both read
    `harness.config.yml` through `scripts/lib/config.sh`: `bash -c '. scripts/lib/config.sh;
    config_get branches.integration'` prints the integration branch. The prune counter prints
-   the `Rules:`, `Checklists:` and `Project docs:` gauge lines after the counter, with no `Prune is DUE`.
+   the `Rules:`, `Checklists:` and `Project docs:` gauge lines after the counter, with no `Prune is DUE` (a fresh install loads about 8 KB).
    `scripts/guard.sh` parses and blocks a push to the integration branch:
    `bash scripts/guard.sh <<< '{"tool_name":"Bash","tool_input":{"command":"git push origin <integration>"}}'`
    exits 2 (python3 must be installed; without it the guard blocks every call, so say so in the

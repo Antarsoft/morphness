@@ -1,3 +1,15 @@
+---
+paths:
+  - "**/*.test.*"
+  - "**/*.spec.*"
+  - "**/*_test.*"
+  - "**/test_*.py"
+  - "**/test/**"
+  - "**/tests/**"
+  - "**/__tests__/**"
+  - "**/e2e/**"
+---
+
 # Testing
 
 Add **useful** automated tests when implementing behavior, not ceremony. Skip tests that only restate the implementation (e.g. asserting a constant is returned).

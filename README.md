@@ -212,7 +212,7 @@ and advised settings (coordinator sonnet · medium, feature threads sonnet · hi
 
 | Piece | What it does |
 |-------|--------------|
-| 📄 `AGENTS.md`, `CLAUDE.md`, `.claude/rules/` | The rules every session loads: the Technical Lead plans, delegates risky work and never codes it; every change records its checks. |
+| 📄 `AGENTS.md`, `CLAUDE.md`, `.claude/rules/` | A short core every session loads (pick the mode, who merges, no remote writes), and rules for tests, schema, sign-in and deploy files that load only when a task touches them. |
 | 🤖 `.claude/agents/` | Full-stack (medium, high, xhigh effort), QA (medium, high), researcher (medium, high) and legal-writer subagents. |
 | 🛡️ `.claude/settings.json` | Deny rules for secrets and protected-branch pushes, ask rules on every merge command. |
 | 🗺️ `harness/` | The process: lifecycle, handoffs, checks, modes (full, small, light, bug, research), release and environments, the plan checklist, model prices, and how it morphs. |

@@ -6,7 +6,7 @@ Morphness never pushes changes into an installed harness, and nothing upstream o
 
 ## Where a lesson lands
 
-A retro action item or a prune decision is applied to exactly one owner file ([README.md](./README.md) § Rule owners). Pick the narrowest file that every agent who needs the rule already reads. Subagents load neither `CLAUDE.md`, `AGENTS.md` nor `.claude/rules/`; they read their role bodies, and Full-stack and QA also read `.claude/rules/testing.md`.
+A retro action item or a prune decision is applied to exactly one owner file ([README.md](./README.md) § Rule owners). Pick the narrowest file that every agent who needs the rule already reads. Subagents load neither `CLAUDE.md`, `AGENTS.md` nor `.claude/rules/`; they read their role bodies, and Full-stack and QA also read `.claude/rules/testing.md` and the path rules their prompt names. The main chat loads `CLAUDE.md` and `AGENTS.md` in every session, and a `.claude/rules/` file only when it touches a file the rule's `paths:` match.
 
 | The lesson is about | It lands in | Example |
 |---------------------|-------------|---------|
@@ -17,8 +17,10 @@ A retro action item or a prune decision is applied to exactly one owner file ([R
 | How a role works, for any project | `harness/agents/<role>.md` | "QA reports a run only once its new exit file exists" |
 | A value or example that sharpens a kit process rule here (a check interval, the feature that taught it) | `project/PROCESS.md` | "Signs-of-life check every 10 minutes (learned in `<slug>`)" |
 | How a role works here | `project/agents/<role>.md` | "Full-stack captures screenshots at these widths and themes" |
-| A hard limit on the Technical Lead (one line; the how goes to the owner file above, linked) | `harness/TECHNICAL_LEAD.md` | "Set the plan's status in the same turn as the approval" |
+| A hard limit on the Technical Lead in full and bug mode (one line; the how goes to the owner file above, linked). A limit for every mode goes to `AGENTS.md` § Golden rules (below) | `harness/TECHNICAL_LEAD.md` | "Set the plan's status in the same turn as the approval" |
 | What tests to write | `.claude/rules/testing.md` (generic) or `project/TESTING.md` (this stack) | "A bug fix gets a regression test proven by a negative run" |
+| Work on one kind of path (schema and migrations, sign-in, CI and deploy) | `.claude/rules/data.md`, `auth.md` or `deploy.md`, which load only for matching files, or a new `.claude/rules/<area>.md` with its own `paths:` | "A migration that renames a column ships the old name as a view for one release" |
+| A rule every session needs, whatever it touches (rare: these cost tokens on every turn) | `AGENTS.md` § Golden rules, one line | "No agent writes a shared remote environment" |
 | A structural setting (branches, modules, checks, effort variants, loop limits) | `harness.config.yml`, plus the rendered files that use it | "QA default effort becomes medium" |
 | A model or effort mapping | `project/HARNESS_AGENTS.md` and `.claude/agents/*.md` | "A cheaper Full-stack variant for UI-only features" (as a trial first, like any change to how a role works) |
 

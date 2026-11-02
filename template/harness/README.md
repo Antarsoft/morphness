@@ -16,6 +16,8 @@ This folder is the **kit**. It was installed from Morphness, but it now belongs 
 | [RELEASE.md](./RELEASE.md) | Release from the integration branch to the production branch: steps, roles, rollback, hotfix |
 | [MORPHING.md](./MORPHING.md) | How this harness changes itself: where lessons land, trials, pruning, sharing upstream |
 | [SKILLS_AND_MCPS.md](./SKILLS_AND_MCPS.md) | When to use skills and MCPs (project details in `project/SKILLS_AND_MCPS.md`) |
+| [TECHNICAL_LEAD.md](./TECHNICAL_LEAD.md) | The Technical Lead's hard rules, read when a full or bug mode plan starts |
+| [GUARD.md](./GUARD.md) | What the guard hook denies, asks and does not see, and its switches |
 | [PLAN_CHECKLIST.md](./PLAN_CHECKLIST.md) | The Technical Lead's checklist before asking for plan approval |
 | [templates/](./templates/) | `feature.md`, `plan.md`, `small-plan.md`, `bug-plan.md`, `progress.md`, `qa-result.md`, `retro.md`, `prune.md`, `research.md`, `trial.md`, `release-qa-result.md`,<!-- module:roadmap --> `version.md`, `version-checklist.md`,<!-- /module:roadmap --> `learnings-entry.md`, `steps.md` |
 | [agents/](./agents/) | Generic role bodies for the Full-stack, QA<!-- module:legal -->, legal-writer<!-- /module:legal --> and researcher subagents (project addenda in `project/agents/`) |
@@ -31,7 +33,7 @@ This folder is the **kit**. It was installed from Morphness, but it now belongs 
 | `_harness/features/` | **Runtime**: one folder per feature and version |
 | `_harness/LEARNINGS.md`, `_harness/learnings/` | **Runtime**: one learnings file per feature until the prune folds it into `LEARNINGS.md` ([SETUP.md § Retrospective](./SETUP.md#retrospective)) |
 | `_harness/prunes/`, `_harness/releases/`, `_harness/research/` | **Runtime**: prune proposals, release QA records and research files |
-| `AGENTS.md`, `CLAUDE.md` | **Entry points**: agents read these first |
+| `AGENTS.md`, `CLAUDE.md` | **Entry points**: the only files every session loads; keep them short |
 
 ## Modules
 
@@ -53,7 +55,7 @@ Switched on in `harness.config.yml` → `modules`. A module that is off is ignor
 m=legal; grep -rl --null "module:$m -->" --include='*.md' harness project .claude/rules .github .gitlab 2>/dev/null | (rc=0; while IFS= read -r -d '' f; do perl -0pi -e "s/^<!-- module:$m -->\n.*?^<!-- \/module:$m -->\n\n?//msg; s/<!-- module:$m -->[^\n]*?<!-- \/module:$m -->//g; s/^[^\n]*<!-- module:$m -->\n//mg" "$f" || rc=1; done; exit $rc)
 ```
 
-To add or remove one on a live project, run `/morph-module add <name>` or `/morph-module remove <name>`: it runs the module's On install or On remove steps, copies each marked span back from the kit's copy of the same file to the same place (adding) or deletes them with the command above (removing), updates `modules`, and runs `/morph-doctor`. Markers of modules that stay are kept. `AGENTS.md`, `CLAUDE.md`, `harness.config.yml` and code blocks carry no markers, and `.claude/rules/` carries only a short inline span where a rule names a module (keep it to one clause); each module's § On remove lists their lines.
+To add or remove one on a live project, run `/morph-module add <name>` or `/morph-module remove <name>`: it runs the module's On install or On remove steps, copies each marked span back from the kit's copy of the same file to the same place (adding) or deletes them with the command above (removing), updates `modules`, and runs `/morph-doctor`. Markers of modules that stay are kept. `AGENTS.md`, `CLAUDE.md`, `harness.config.yml` and code blocks carry no markers, and `.claude/rules/` carries only a short inline span where a rule names a module (keep it to one sentence); each module's § On remove lists their lines.
 
 ## Rule owners
 
@@ -70,7 +72,9 @@ Each rule lives in **one** owner file. Every other doc links to the owner instea
 | Subagent names, models, effort mapping, project trials | `project/HARNESS_AGENTS.md` | (none) |
 | Release flow | [RELEASE.md](./RELEASE.md) | Link to it |
 | How the harness changes itself | [MORPHING.md](./MORPHING.md) | (none) |
-| TL hard limits (incl. commit policy) | `harness/TECHNICAL_LEAD.md` | `AGENTS.md` keeps a one-line pointer |
+| TL hard limits (incl. commit policy) | `harness/TECHNICAL_LEAD.md` | `AGENTS.md` keeps the short mode, merge and remote-environment rules every session needs |
+| Rules for risky paths (schema, sign-in, CI and deploy) | `.claude/rules/data.md`, `auth.md`, `deploy.md` (load only for matching files) | Hand-offs name them on the `Path rules:` line |
+| What the guard hook checks | `harness/GUARD.md` | Link to it |
 | What tests to write and where | `.claude/rules/testing.md` and `project/TESTING.md` | (none) |
 
 ## Wired or not

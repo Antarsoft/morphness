@@ -73,7 +73,7 @@ Agents can't do these; they go in `project/RELEASE.md` § Manual steps, and morp
 
 ## On remove
 
-When the project doesn't choose this module, morph-init deletes this folder and the items below. The clause that names the module in the always-loaded Technical Lead rule (`harness/TECHNICAL_LEAD.md`, the "xhigh, or, with the `security` module" bullet), the Full-stack and QA body lines, and the matching lines in `harness/SETUP.md` and `harness/HANDOFFS.md` are marked and go with the command below; the bullet then reads "When the plan's Full-stack effort is `xhigh`, run …".
+When the project doesn't choose this module, morph-init deletes this folder and the items below. The clause that names the module in the Technical Lead rule (`harness/TECHNICAL_LEAD.md`, the "xhigh, or, with the `security` module" bullet), the Full-stack and QA body lines, and the matching lines in `harness/SETUP.md` and `harness/HANDOFFS.md` are marked and go with the command below; the bullet then reads "When the plan's Full-stack effort is `xhigh`, run …".
 
 **Delete these files:** none outside this folder.
 

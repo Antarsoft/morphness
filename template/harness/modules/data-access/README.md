@@ -130,6 +130,6 @@ When the project doesn't choose this module, morph-init deletes this folder and 
 
 **Delete or reword these lines** (unmarked: always-loaded, config or code-block text):
 
-- `AGENTS.md` § Golden rules → **Shared remote environments**: drop the sentence "Details, when the `data-access` module is enabled: …".
+- None: its clause in `.claude/rules/data.md` is marked and goes with **Delete the marked text**.
 
 **Unlink:** every Markdown link left pointing into `harness/modules/data-access/` becomes plain text, or goes with its line (`/morph-doctor` fails on a broken link). Find them with `grep -rn 'modules/data-access' --include='*.md' . | grep -v '^./harness/modules/'`.
