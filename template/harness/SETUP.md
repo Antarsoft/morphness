@@ -101,7 +101,7 @@ Each `plan.md` has an **Agent effort** section naming the Full-stack and QA leve
 | Role | Min | Default | Max | Not used |
 |------|-----|---------|-----|----------|
 | Full-stack | `medium` | `high` | `xhigh` | `low` (too careless for shipped code), `max` (slow and costly; little gain over `xhigh` at normal feature sizes) |
-| QA | `medium` | the project's `agents.qa.default` | `high` | `low`; `xhigh` and above (QA works through a fixed AC list, so extra depth pays off less) |
+| QA | `medium` | `medium` (the project's `agents.qa.default`) | `high`, when Full-stack is `xhigh` | `low`; `xhigh` and above (QA works through a fixed AC list, so extra depth pays off less) |
 | Researcher | `medium` | `medium` | `high` | `low` (misses what it isn't pointed at); `xhigh` and above (breadth matters more than depth, and the TL checks the key findings) |
 
 The researcher's level goes in the research file's **Researcher effort** line, not in a plan: `high` when the question is about architecture, touches a risk area, or decides a feature that will run at `xhigh`; `medium` otherwise.
@@ -112,7 +112,7 @@ The researcher's level goes in the research file's **Researcher effort** line, n
 - **`high`** (default otherwise): normal feature work with new logic, such as a new flow, a new route or data path, or a screen that doesn't follow a single existing pattern.
 - **`xhigh`** (Full-stack only): security, money, tenancy or access control, concurrency, public APIs, new architecture. Brings the code review before QA.
 - **Never `medium` for Full-stack** when the plan touches a risk path (`project/CONTROLS.md` § Risk paths, the areas in `risk_areas`), even when it copies a pattern. Light and small mode, which `scripts/risk-check.sh` gives only off those paths, run no subagent ([MODES.md](./MODES.md) § Working alone).
-- **QA is `high`** whenever the plan touches a risk path<!-- module:data-access --> or is a data-access feature<!-- /module:data-access -->, even if Full-stack is `medium`. Otherwise the project's QA default.
+- **QA is `medium`, and `high` only when Full-stack is `xhigh`.** QA gets the plan, the diff and the check results, reviews the diff and makes one pass over the criteria ([agents/qa-engineer.md](./agents/qa-engineer.md) § Lean QA), so depth comes from the criteria, the checks and, at `xhigh`, the code review before QA. A risk path doesn't raise QA on its own: it already put the change in full mode and keeps Full-stack off `medium`.
 
 ### Split large features by risk
 

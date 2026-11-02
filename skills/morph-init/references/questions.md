@@ -16,7 +16,7 @@ Read, without running project code:
 - An earlier harness, if any: `.claude/agents/*.md` (model and effort per agent, extra variants),
   `.claude/rules/*.md`, `project/*.md`, the agent table and trials in its agents doc, and its
   checklists. Its values are the suggestions for Q5, Q6, Q6b, Q9 to Q13, including defaults that differ
-  from the advised ones (for example QA at `medium` by default).
+  from the advised ones (for example QA at `high` by default).
 
 Look for manifests in workspace packages too (`apps/*/`, `packages/*/`, or the globs in
 `pnpm-workspace.yaml`, the `workspaces` field, `go.work` and similar): in a monorepo the framework is
@@ -251,7 +251,7 @@ when `cost.track` is off.
 |------|-------|--------|
 | Technical Lead (main chat) | sonnet / opus | high |
 | Full-stack | sonnet / opus (sonnet for the medium variant) | high by default; xhigh for risky cores |
-| QA | sonnet / sonnet | high by default |
+| QA | sonnet / sonnet | medium by default; high when Full-stack is xhigh |
 | Researcher (read-only, research mode) | sonnet / sonnet (opus for the high variant) | medium by default; high for architecture or risk areas |
 | Legal writer | fable (opus if fable isn't available) | high |
 
@@ -324,7 +324,7 @@ legal: { sources: [docs/LEGAL.md] }
 risk_areas: []
 agents: { technical_lead: { model: opus, effort: high },
           fullstack: { model: opus, medium_model: sonnet, default: high },
-          qa: { model: sonnet, medium_model: sonnet, default: high },
+          qa: { model: sonnet, medium_model: sonnet, default: medium },
           researcher: { model: sonnet, high_model: opus, default: medium },
           legal_writer: { model: fable, effort: high } }
 claude_projects: { coordinator: { model: sonnet, effort: medium }, feature_threads: { model: sonnet, effort: high },

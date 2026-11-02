@@ -81,7 +81,7 @@ Each project lists its subagents in **`project/HARNESS_AGENTS.md`**. Delegate wi
 Full and bug mode. Light and small mode run no subagent ([MODES.md](./MODES.md) § Working alone).
 
 1. Approved `plan.md` → Agent **Full-stack** (the variant for the plan's Full-stack effort).
-2. Full-stack marks dev complete in `progress.md` → the Technical Lead checks it (for a UI change, `progress.md` § Screenshots lists the files and they exist; if not, back to Full-stack) → Agent **QA** (the variant for the plan's QA effort). **Never skip.** Full-stack `xhigh`<!-- module:security -->, or a security feature with the `security` module<!-- /module:security -->: the read-only review in [SETUP.md](./SETUP.md) § Code review before QA runs first.
+2. Full-stack marks dev complete in `progress.md` → the Technical Lead checks it (for a UI change, `progress.md` § Screenshots lists the files and they exist; if not, back to Full-stack) → Agent **QA** (the variant for the plan's QA effort), its prompt filled with the merge base, `git diff --stat <base>`, the untracked files and `bash scripts/checks.sh status` (§ Subagent prompt blocks). **Never skip.** Full-stack `xhigh`<!-- module:security -->, or a security feature with the `security` module<!-- /module:security -->: the read-only review in [SETUP.md](./SETUP.md) § Code review before QA runs first.
 3. QA verdict **pass** → steps 4 and 5 below, then the human decides on the merge into the integration branch ([SETUP.md](./SETUP.md) § After QA pass); production ships later in a release ([RELEASE.md](./RELEASE.md)). **Fail** → Full-stack rework (at most `loop.qa_max_rounds` QA rounds per version).
 4. After QA **pass**, the Technical Lead writes the steps file (or none) and sets `plan.md` to `passed` with its **Steps file** line, then hands to the human; for a UI change the reply shows every screenshot. The retro follows without waiting for the human ([SETUP.md](./SETUP.md) § Retrospective).
 5. **Features with migrations:** the steps file lists the migrations in order. They reach the integration environment after the feature PR merges, by the project's migration workflow or by the human (`project/RELEASE.md`). Agents never apply them.<!-- module:data-access --> Once they are applied, the Technical Lead runs a QA stage B pass (read-only, [modules/data-access/](./modules/data-access/README.md)). The feature is done when it passes.<!-- /module:data-access -->
@@ -164,14 +164,16 @@ Do not edit the regression test. If the fix needs anything § Fix limit names as
 **QA engineer**
 
 ```text
-You are the QA engineer for this harness feature.
-Read: <abs-path>/Plan/plan.md and <abs-path>/Development/progress.md
-Test against acceptance criteria only.
+You are the QA engineer for this harness feature. Follow harness/agents/qa-engineer.md § Lean QA.
+Read: <abs-path>/Plan/plan.md and <abs-path>/Development/progress.md (§ Validation and the handoff note).
+The change: base <git merge-base origin/<integration> HEAD; in round 2, the commit round 1 tested>; files: <git diff --stat <base> output>, untracked: <new files from git status --porcelain, or none>. Review it with git diff <base> (it includes uncommitted changes) and read each untracked file, not the whole codebase.
+Check results: <bash scripts/checks.sh status output>.
+Test against acceptance criteria only: one pass, each criterion once.
 Path rules: <the same .claude/rules/*.md files as the Full-stack prompt, or none>. Read them first.
 Update only: <abs-path>/QA/qa-result.md
 Include Started and Ended in qa-result.md.
 Do not change application code.
-Run the before_signoff checks in harness/CONTROLS.md (commands: project/CONTROLS.md) and any manual steps the plan requires. First run bash scripts/checks.sh status: a check it lists as pass on this code is recorded as pass (end-of-task hook), not run again.
+Run the before_signoff checks in harness/CONTROLS.md (commands: project/CONTROLS.md) and any manual steps the plan requires. A check the Check results list as pass is recorded as pass (end-of-task hook), not run again.
 If Plan/review.md exists, confirm each `fix` item.
 If plan.md § QA scope says Data-access feature: yes, follow harness/modules/data-access/README.md stage A on the local stack and fill qa-result.md § Data-access validation. Never change a shared remote environment. Stage B runs later, only when the Technical Lead asks, after the migrations reach the integration environment.
 If plan.md § QA scope lists ACs under Needs live app/services, check whether the app's services are reachable here (harness/SETUP.md § Where QA can run). If yes, run them. If not, mark them deferred: local, cover everything in them that doesn't need the services, and list them under Verdict → Deferred to local run. Never fail an AC only because a service is unreachable.

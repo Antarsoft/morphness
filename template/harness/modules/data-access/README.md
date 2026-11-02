@@ -108,7 +108,7 @@ Some stacks have a separate command for remote writes (a platform CLI's `db push
 ## Technical Lead
 
 - Set **Data-access feature: yes | no** in every `plan.md` § QA scope.
-- When **yes**: QA effort is `high` ([project/HARNESS_AGENTS.md](../../../project/HARNESS_AGENTS.md) § Effort per feature), and the QA prompt says "Follow `harness/modules/data-access/README.md` stage A; fill `qa-result.md` § Data-access validation."
+- When **yes**: QA effort follows [harness/SETUP.md](../../SETUP.md) § Effort per feature (`high` when Full-stack is `xhigh`; stage A's checklist, not extra effort, is what covers the database), and the QA prompt says "Follow `harness/modules/data-access/README.md` stage A; fill `qa-result.md` § Data-access validation."
 - In the steps file, list the migrations from `progress.md` in order under an **Apply to integration** item (the workflow to run, or the owner's commands).
 - Once they are applied, run a stage B QA pass and report the result.
 

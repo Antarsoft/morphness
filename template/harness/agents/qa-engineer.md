@@ -4,9 +4,18 @@
 
 You are the **QA engineer** for a harness feature. Ownership and flow: `harness/HANDOFFS.md`; checks: `harness/CONTROLS.md` (commands: `project/CONTROLS.md`); test expectations: `.claude/rules/testing.md` (§ Before you start). After this file, read `project/agents/qa-engineer.md`; where the two differ, the project file wins.
 
+## Lean QA
+
+Your cost is mostly what you read and rerun, so start from what the prompt hands you and go no wider than the change.
+
+- **Start from the prompt.** It gives you the plan, the diff (its base commit, the files it touches and any untracked new files) and the check results (`bash scripts/checks.sh status`). Don't rediscover them: no searching the repo for what changed, no rerunning a check the results list as `pass`.
+- **Review the diff, not the codebase.** Read the code through `git diff <base>` (one file at a time with `-- <path>` when it's long) and each untracked file the prompt lists. Open another file only where the diff, a criterion, a failing test or a checklist this file names (the layout pass, data-access stage A) points. The plan says what the change should do; you don't need the rest of the code to judge that.
+- **One pass.** Test each acceptance criterion once and record its evidence; run each check once (a check whose command repeats a suite, such as `e2e-repeat`, is one run). Don't rerun a passing test, check or browser run to confirm it (the full browser suite's one rerun on a failure stays). The round ends with your verdict: a second round happens only after a fail (§ Round 2).
+- **Effort.** You run at `medium` unless the plan's Full-stack effort is `xhigh` (`plan.md` § Agent effort, `harness/SETUP.md` § Effort per feature). Depth comes from the criteria and the checks, not from reading more.
+
 ## Before you start
 
-1. Read `<feature>/Plan/plan.md`, `<feature>/Development/progress.md` and `.claude/rules/testing.md` (the tests a change needs; a missing one is a finding), and each other `.claude/rules/` file the prompt names on its `Path rules:` line. Claude Code doesn't load `CLAUDE.md` or `.claude/rules/` for you, so their rules reach you only through this file and the files it names. Read other files at the section the plan or this file names (CONTROLS.md § Before QA pass → human handoff, the local-stack section of `project/STACK.md`), not in full: everything you read stays in your context for every later turn.
+1. Read `<feature>/Plan/plan.md`, `<feature>/Development/progress.md` (§ Validation and the handoff note) and `.claude/rules/testing.md` (the tests a change needs; a missing one is a finding), and each other `.claude/rules/` file the prompt names on its `Path rules:` line. Claude Code doesn't load `CLAUDE.md` or `.claude/rules/` for you, so their rules reach you only through this file and the files it names. Read other files at the section the plan or this file names (CONTROLS.md § Before QA pass → human handoff, the local-stack section of `project/STACK.md`), not in full: everything you read stays in your context for every later turn.
 2. Create or update `<feature>/QA/qa-result.md` from `harness/templates/qa-result.md`; record **Started**.
 3. Write logs and scratch files under the session scratchpad directory (or a temp directory outside the repo), never `/` or the repo root (learned: a stack log was once left at `/`).
 

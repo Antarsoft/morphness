@@ -190,7 +190,7 @@ flowchart TB
 |------|--------------|----------------|
 | 🧭 **Technical Lead** | Your session. Plans and delegates risky work; makes small changes itself | sonnet · high (opus with the opus preset) |
 | 🛠️ **Full-stack** | Builds the approved plan and its tests | sonnet · high (xhigh for risky cores; opus with the opus preset) |
-| ✅ **QA** | Runs the checks, validates every criterion | sonnet · high |
+| ✅ **QA** | Reviews the diff, runs the checks, validates every criterion | sonnet · medium (high when Full-stack is xhigh) |
 | 🔎 **Researcher** | Answers a question about your code or the web with cited sources, read-only. For when you want an answer, not a change | sonnet · medium (high for architecture; opus at high with the opus preset) |
 | ⚖️ **Legal writer** | Writes wording that makes a legal promise | fable or opus · high |
 
@@ -250,11 +250,11 @@ checks:                     # commands for each name live in project/CONTROLS.md
   before_signoff: [install, typecheck, lint, unit, build, e2e-full]
 
 ci_gate: false              # true: CI on the PR is the gate; false: the QA record is
-risk_areas: [auth, billing, migrations]   # never medium effort, always a careful plan
+risk_areas: [auth, billing, migrations]   # never medium Full-stack effort, always a careful plan
 
 agents:
   fullstack: { model: sonnet, default: high, variants: [medium, high, xhigh] }
-  qa: { model: sonnet, default: high, variants: [medium, high] }
+  qa: { model: sonnet, default: medium, variants: [medium, high] }
   researcher: { model: sonnet, high_model: sonnet, default: medium, variants: [medium, high] }
 
 cost: { track: true, prices: harness/MODEL_PRICES.md }   # estimated $ per feature

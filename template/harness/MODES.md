@@ -19,7 +19,7 @@ Working alone, the main chat follows the builder's rules as well as its own:
 **Process**
 
 1. Create the feature folder under `_harness/features/<slug>/<version>/`.
-2. Technical Lead → Full-stack engineer → QA engineer per [STRATEGY.md](./STRATEGY.md) and [SETUP.md](./SETUP.md).
+2. Technical Lead → Full-stack engineer → QA engineer per [STRATEGY.md](./STRATEGY.md) and [SETUP.md](./SETUP.md). QA is lean: the Technical Lead hands it the plan, the diff and the check results, and it reviews the diff and makes one pass over the criteria, at `medium` unless Full-stack is `xhigh` ([agents/qa-engineer.md](./agents/qa-engineer.md) § Lean QA).
 3. Run the checks from [CONTROLS.md](./CONTROLS.md) before each handoff.
 4. Retro and learnings file at the end ([SETUP.md](./SETUP.md) § Retrospective).
 
