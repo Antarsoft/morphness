@@ -32,7 +32,7 @@ Include a final plan step **Validation** (or track below); it must be `done` bef
 
 ## Validation (required before handoff)
 
-Run every `before_qa` check in `harness/CONTROLS.md` § Before Full-stack → QA handoff from the **repo root** after the implementation steps (commands: `project/CONTROLS.md`). Record each check and its **exit code** (0 = pass), one row per check CONTROLS.md requires for this feature. Do not hand to the Technical Lead until all required checks pass.
+Run every `before_qa` check in `harness/CONTROLS.md` § Before Full-stack → QA handoff from the **repo root** after the implementation steps (commands: `project/CONTROLS.md`). Record each check and its **exit code** (0 = pass), one row per check CONTROLS.md requires for this feature. The `checks.on_stop` checks get `end-of-task hook` in the Exit code column: they run when you finish, and a failure sends you back (`harness/CONTROLS.md` § End-of-task checks). Do not hand to the Technical Lead until all required checks pass.
 
 Scope each check by the diff (`harness/CONTROLS.md` § Scoping by what changed). Diff command: <paste it>
 

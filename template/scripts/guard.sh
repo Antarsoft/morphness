@@ -177,7 +177,7 @@ CORE_FILES = ["scripts/guard.sh", "scripts/lib/*"]
 HOLDER_DIRS = ["scripts", "scripts/lib", ".claude"]   # the folders that hold the guard and its wiring
 SETTINGS_FILES = [".claude/settings.json"]
 CONFIG_FILES = ["harness.config.yml"]
-GUARD_FILES = ["scripts/session-start.sh", ".git/hooks/*", ".git/config"]
+GUARD_FILES = ["scripts/session-start.sh", ".git/hooks/*", ".git/config", ".git/morphness/*"]   # .git/morphness: the end-of-task check records
 OWNER_FILES = [".claude/settings.local.json"]
 # CI definitions run with the repository\u2019s secrets, so a change to one asks (the `deploys` switch turns it off).
 CI_FILES = [".github/workflows/*", ".github/actions/*", ".gitlab-ci.yml"]

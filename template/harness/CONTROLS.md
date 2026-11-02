@@ -23,16 +23,26 @@ A project may add its own names (for example a schema-drift check or an integrat
 
 `ci_gate` in `harness.config.yml` decides what gates a merge:
 
-- **`ci_gate: false`** (QA is the gate): QA's local run is the only gate before a merge, so `qa-result.md` must record the exit code of every `before_signoff` check, including, with the `browser-e2e` module, the full end-to-end run on the final commit (or its reuse under § After merging the integration branch). The Technical Lead does not recommend a merge, mark a PR ready, or sign off without that record, checked against `git rev-parse HEAD`. A stale or missing record goes back to QA. In small mode the record is the plan's § Check, written by the main chat, with the commit the checks ran on; a later commit may change only documentation and `_harness/` files, or the checks run again ([MODES.md](./MODES.md) § Small mode). A check recorded **not run** (no command, or the environment refused it, § Notes) is not a pass: it runs, or the owner accepts it in `plan.md` § Decisions, before the merge.
+- **`ci_gate: false`** (QA is the gate): QA's local run is the only gate before a merge, so `qa-result.md` must record the exit code of every `before_signoff` check (or its `pass (end-of-task hook)` record, § End-of-task checks), including, with the `browser-e2e` module, the full end-to-end run on the final commit (or its reuse under § After merging the integration branch). The Technical Lead does not recommend a merge, mark a PR ready, or sign off without that record, checked against `git rev-parse HEAD` (an `end-of-task hook` entry against `bash scripts/checks.sh status`, run with that commit checked out and nothing uncommitted). A stale or missing record goes back to QA. In small mode the record is the plan's § Check, written by the main chat, with the commit the checks ran on; a later commit may change only documentation and `_harness/` files, or the checks run again ([MODES.md](./MODES.md) § Small mode). A check recorded **not run** (no command, or the environment refused it, § Notes) is not a pass: it runs, or the owner accepts it in `plan.md` § Decisions, before the merge.
 - **`ci_gate: true`** (CI is also a gate): the same `qa-result.md` record (small mode: § Check) is still required, and the PR's CI checks must be green on the final commit before the TL recommends a merge. CI does not replace QA's acceptance testing. Where the pipeline lives and what it runs: `project/CONTROLS.md` § CI.
 
 An offline `audit` recorded **not run** with its reason is the one exception (`harness/modules/security/README.md` § Named checks). <!-- module:security -->
 
-After merging the integration branch into a feature branch, the TL hands to QA with § After merging the integration branch named: when only documentation was combined, QA re-runs the fast checks and keeps its browser-suite result.
+After merging the integration branch into a feature branch, the TL hands to QA with § After merging the integration branch named: when only documentation was combined, QA re-runs the fast checks (a `pass` in `bash scripts/checks.sh status` counts, § End-of-task checks) and keeps its browser-suite result.
+
+## End-of-task checks
+
+The checks in `checks.on_stop` (by default `typecheck`, `lint` and `unit`<!-- module:security -->, plus `secrets` with the security module<!-- /module:security -->) run as code, not as agent turns: `scripts/checks.sh hook` runs them when a task ends, at the end of each main chat turn (Claude Code's Stop hook) and when a Full-stack agent finishes (SubagentStop), both wired in `.claude/settings.json`.
+
+- **When:** only when the code differs from the integration branch and from the code they last ran on; a documentation-only change (§ Documentation paths) doesn't rerun them, and neither does a main chat turn that ends while background agents are still working.
+- **What:** each check's full command from `project/CONTROLS.md` § Named checks, as committed on the integration branch (a command changes once the human merges it, never from a working copy), inside its § End-of-task checks → **Run through:** command.
+- **Pass:** nothing is printed and no model turn is spent. **Fail:** the agent is sent back with the check, its exit code and the end of its log (a secret scan's log is never shown). A fix that still fails sends it back again, at most `checks.stop_retries` times in a row; finishing with no code change since the failure (it isn't this change's: say so with the log line) isn't sent back. The failure stays on record either way.
+- **The record is the evidence.** `bash scripts/checks.sh status` lists each check's result for the code as it is now (any commit or worktree with the same files has the same record). Where a handoff below asks for an `on_stop` check, write `end-of-task hook` instead of running it; whoever checks the handoff (the Technical Lead, QA, the merge gate) reads `checks.sh status` on that code, and a `pass` there counts as that check run in full on it. `fail`, `not run` or `not recorded` runs by hand as usual. `bash scripts/checks.sh run <check> ...` runs and records named checks in one call when one is needed now. The records live in `.git/morphness/`; the guard asks before any other write there.
+- Don't run an `on_stop` check by hand only to see whether it passes: finish, and the hook runs it. Running one test file while building is development, not the check.
 
 ## Before Full-stack → QA handoff
 
-The Full-stack engineer **must** run every check in `checks.before_qa` from the repo root, confirm **exit 0**, and record results in `Development/progress.md` § **Validation (required before handoff)** before marking ready for QA.
+The Full-stack engineer **must** run every check in `checks.before_qa` from the repo root, confirm **exit 0**, and record results in `Development/progress.md` § **Validation (required before handoff)** before marking ready for QA. The `on_stop` checks are recorded as `end-of-task hook` (§ End-of-task checks): they run when Full-stack finishes, and a failure sends it back before the handoff reaches the Technical Lead, who reads `bash scripts/checks.sh status` before QA.
 
 | Check | Required |
 |-------|----------|
@@ -84,7 +94,7 @@ Some paths can break pages or features they don't name: shared packages, the dat
 
 ### Documentation paths
 
-Several rules below treat a documentation-only change differently, and CI skips its checks on one. This is the only list; `project/CONTROLS.md` § Documentation paths holds only this project's additions and removals. Documentation means `_harness/`, `docs/`, `harness/`, `project/`, `.claude/agents/`, `.claude/rules/`, the root `README` and `LICENSE`, and any `*.md` outside CI configuration. Files that run or set permissions are never documentation, even under those folders: `.claude/settings.json`, hook scripts, and skill scripts under `.claude/skills/` or `.agents/` (a change there gets every check). A path with a `..` segment never counts.
+Several rules below treat a documentation-only change differently, CI skips its checks on one, and `scripts/checks.sh` leaves it out of the code it checks. This is the only list; `project/CONTROLS.md` § Documentation paths holds only this project's additions and removals. Documentation means `_harness/`, `docs/`, `harness/`, `project/`, `.claude/agents/`, `.claude/rules/`, the root `README` and `LICENSE`, and any `*.md` outside CI configuration. Files that run or set permissions are never documentation, even under those folders: `.claude/settings.json`, hook scripts, and skill scripts under `.claude/skills/` or `.agents/` (a change there gets every check). A path with a `..` segment never counts.
 
 <!-- module:data-access -->
 ### Data-access features (`plan.md` → **Data-access feature: yes**)
@@ -109,7 +119,7 @@ A `git grep` quoted as acceptance-criterion evidence must run with `--untracked`
 
 ## Before QA pass → human handoff
 
-QA runs every check in `checks.before_signoff` on the final commit, each with its full command: § Scoping by what changed never applies here.
+QA runs every check in `checks.before_signoff` on the final commit, each with its full command: § Scoping by what changed never applies here. A check `bash scripts/checks.sh status` lists as `pass` on the final commit's code was run in full on it by the end-of-task hook: QA records it as `pass (end-of-task hook)` with the code key `status` printed, and doesn't run it again.
 
 | Check | Required |
 |-------|----------|

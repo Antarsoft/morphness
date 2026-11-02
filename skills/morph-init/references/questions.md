@@ -69,7 +69,7 @@ then a table of named checks (`install`, `typecheck`, `lint`, `unit`, `build`, `
 project doesn't have (render.md § 3b then leaves it out). A new project with no tooling yet gets "none" for all and a note that the first
 feature should add them. Also ask: "Any other checks agents should run (a migrations check, a
 security scan)?" and add each as a named check. Follow-up: "Which must pass before QA, and which before sign-off?" Suggest
-`before_qa`: everything but e2e; `before_signoff`: everything. → `cmd.*`, `checks.*`
+`before_qa`: everything but e2e; `before_signoff`: everything. The end-of-task hook (`checks.on_stop`) gets the fast ones the project has among `typecheck`, `lint` and `unit` (plus `secrets` with the security module); ask only when `unit` usually takes more than a few minutes, and then leave it out. It runs them with no prompt, so it stays empty when the owner answers Q14 with `allow_checks: false` (they chose a prompt for each check command). → `cmd.*`, `checks.*`
 
 Follow-up when the stack has a tool that can narrow a check to what changed (a monorepo runner such as
 Turborepo, Nx or pnpm filters; a test runner's changed-files mode such as `vitest --changed`,
@@ -299,7 +299,7 @@ humans: [{ name: "", github: "", role: owner }]
 environment: [claude-code-cli]
 stack: { summary: "", package_manager: "", toolchain_setup: "", install_cmd: "" }
 cmd: { install: "", typecheck: "", lint: "", unit: "", build: "", e2e-targeted: "", e2e-full: "", e2e-repeat: "", secrets: "", audit: "" }  # plus any extra named checks; secrets and audit with the security module
-checks: { before_qa: [], before_signoff: [] }
+checks: { before_qa: [], before_signoff: [], on_stop: [] }   # on_stop: the fast checks the end-of-task hook runs
 check_scope:   # Q5 follow-up; one entry per check Full-stack may narrow; [] = every check runs in full
   - { check: unit, scope: affected, command: "" }   # scope: full | affected (command) | paths (paths: [globs])
 apps: []        # Q4 follow-up, monorepos only; deploy keys are environment names (Q6b)

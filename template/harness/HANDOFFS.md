@@ -52,7 +52,7 @@ The block heading links `qa-result.md` (small mode: the plan). What QA verified 
 1. Title, version, dates; link to `plan.md`
 2. Step tracker: `| Step | Status | Notes |`, status `todo` | `doing` | `done`
 3. Validation: what was run per step, or a summary at the end
-4. **`Validation (required before handoff)`**: one row per `before_qa` check that [CONTROLS.md](./CONTROLS.md) § Before Full-stack → QA handoff requires, with its exit code
+4. **`Validation (required before handoff)`**: one row per `before_qa` check that [CONTROLS.md](./CONTROLS.md) § Before Full-stack → QA handoff requires, with its exit code (`end-of-task hook` for the `checks.on_stop` checks, § End-of-task checks)
 5. **Started**, **Ended** (the agent's note from `date`; update Ended on QA rework; the TL records real duration)
 6. **Screenshots** (UI changes only): one line per file, or "no UI change" ([agents/fullstack-engineer.md](./agents/fullstack-engineer.md) § UI screenshots)
 7. Handoff note when dev is complete
@@ -131,7 +131,7 @@ Path rules: <each .claude/rules/*.md file whose paths: match the plan's files, s
 Update only: <abs-path>/Development/progress.md
 Include Started and Ended in progress.md when handing off.
 Do not edit plan.md, feature.md, qa-result.md, the steps file or Legal/legal-copy.md.
-Run every before_qa check in harness/CONTROLS.md § Before Full-stack → QA handoff (commands: project/CONTROLS.md), scoped by § Scoping by what changed; record each check, its scope and exit code in progress.md § Validation (required before handoff).
+Run every before_qa check in harness/CONTROLS.md § Before Full-stack → QA handoff (commands: project/CONTROLS.md), scoped by § Scoping by what changed; record each check, its scope and exit code in progress.md § Validation (required before handoff). The checks.on_stop checks are recorded as end-of-task hook: they run when you finish (harness/CONTROLS.md § End-of-task checks).
 Do not mark Ready for QA until validation is recorded.
 Run long checks to completion before handing back. A check longer than the shell's foreground limit runs as a background command with a long enough time limit, and you wait for it to finish in the same turn. A job that outlives your turn is not allowed.
 Write logs and scratch files under the session scratchpad directory, never / or the repo root.
@@ -171,7 +171,7 @@ Path rules: <the same .claude/rules/*.md files as the Full-stack prompt, or none
 Update only: <abs-path>/QA/qa-result.md
 Include Started and Ended in qa-result.md.
 Do not change application code.
-Run the before_signoff checks in harness/CONTROLS.md (commands: project/CONTROLS.md) and any manual steps the plan requires.
+Run the before_signoff checks in harness/CONTROLS.md (commands: project/CONTROLS.md) and any manual steps the plan requires. First run bash scripts/checks.sh status: a check it lists as pass on this code is recorded as pass (end-of-task hook), not run again.
 If Plan/review.md exists, confirm each `fix` item.
 If plan.md § QA scope says Data-access feature: yes, follow harness/modules/data-access/README.md stage A on the local stack and fill qa-result.md § Data-access validation. Never change a shared remote environment. Stage B runs later, only when the Technical Lead asks, after the migrations reach the integration environment.
 If plan.md § QA scope lists ACs under Needs live app/services, check whether the app's services are reachable here (harness/SETUP.md § Where QA can run). If yes, run them. If not, mark them deferred: local, cover everything in them that doesn't need the services, and list them under Verdict → Deferred to local run. Never fail an AC only because a service is unreachable.

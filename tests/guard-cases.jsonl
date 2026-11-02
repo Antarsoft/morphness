@@ -1020,3 +1020,6 @@
 {"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL https://raw.githubusercontent.com/antarsoft/morphness/v0.15.0/./x/%2E%2E/y"}}
 {"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL https://api.github.com/repos/antarsoft/morphness/..%2f..%2fusers"}}
 {"expect": "ask", "tool": "Bash", "input": {"command": "curl -fsSL https://api.github.com/repos/antarsoft/morphness/%252e%252e/x"}}
+{"expect": "ask", "tool": "Write", "input": {"file_path": ".git/morphness/checks/0123456789abcdef0123/unit.json", "content": "{\"result\": \"pass\"}"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "echo '{\"result\": \"pass\"}' > .git/morphness/checks/0123456789abcdef0123/unit.json"}}
+{"expect": "pass", "tool": "Read", "input": {"file_path": ".git/morphness/checks/0123456789abcdef0123/unit.log"}}

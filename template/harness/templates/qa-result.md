@@ -15,7 +15,7 @@
 
 - **Branch:**
 - **Commit / PR:** (`git rev-parse HEAD`; the merge gate checks the final commit)
-- **Checks run:** one line per `before_signoff` check with its exit code (harness/CONTROLS.md § Before QA pass → human handoff), or the reuse record (§ After merging the integration branch)
+- **Checks run:** one line per `before_signoff` check with its exit code (harness/CONTROLS.md § Before QA pass → human handoff), `pass (end-of-task hook)` with the code key from `bash scripts/checks.sh status` for one the hook passed on this code, or the reuse record (§ After merging the integration branch)
 - **Data-access feature (from plan):** yes | no | n/a <!-- module:data-access -->
 - **Legal wording (from plan):** yes | no | n/a <!-- module:legal -->
 
