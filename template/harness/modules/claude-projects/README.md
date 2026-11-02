@@ -62,7 +62,7 @@ Feature threads (Technical Lead):
 
 ## Thread rules
 
-The thread rules (one feature and one PR per thread, nothing sent into a thread that needs no action, decisions in files, shared lines between threads, background agents) are in `harness/HANDOFFS.md` § Threads and § Background agents. The playbook above repeats the few a coordinator needs, because Project instructions are read before the repo.
+The thread rules (one feature and one PR per thread, a message to a thread only when it asks for an action, decisions in files, shared lines between threads, background agents) are in `harness/HANDOFFS.md` § Threads and § Background agents. The playbook above repeats the few a coordinator needs, because Project instructions are read before the repo.
 
 ## On install
 

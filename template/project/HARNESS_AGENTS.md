@@ -1,6 +1,6 @@
 # Harness subagents: {{project.name}}
 
-The Technical Lead delegates the **Full-stack engineer**, the **QA engineer**<!-- module:legal -->, the **legal writer** (legal wording)<!-- /module:legal --> and the **researcher** (research mode) with Claude Code's **Agent** tool. This file is the single place that states which agent, model and effort each piece of work gets.
+The Technical Lead delegates the **Full-stack engineer**, the **QA engineer**<!-- module:legal -->, the **legal writer** (legal wording)<!-- /module:legal --> and the **researcher** (research mode) with Claude Code's **Agent** tool. This file states which agent and effort each piece of work gets; the models are in `harness.config.yml` → `agents` (§ Agents).
 
 ## Agents
 
@@ -8,24 +8,26 @@ Subagents are defined in `.claude/agents/`. Each file sets only `model`, `effort
 
 **Tool limits.** The researcher files set `disallowedTools: Bash, Edit, MultiEdit, Write, NotebookEdit` (no shell and no edit tools, so nothing can be run, sent or changed from there; it replies, and the Technical Lead writes the reply into the research file)<!-- module:legal --> and the legal writer's sets `tools: Read, Grep, Glob, Edit, Write` (no shell, web or MCP tools)<!-- /module:legal -->. Claude Code can't limit Edit to one path or Bash to read-only commands, so which file the others may edit stays a rule in the role bodies. Full-stack and QA keep every tool: QA needs the shell and scratch edits for its checks. Keep these lines when adding a variant (`harness/MORPHING.md` § Trials).
 
-| Role | `subagent_type` | Model | Effort |
+| Role | `subagent_type` | Model (`harness.config.yml` → `agents`) | Effort |
 |------|-----------------|-------|--------|
-| Full-stack engineer | `fullstack-engineer-medium` | `{{models.fullstack_medium}}` | `medium` |
-| Full-stack engineer | `fullstack-engineer` (default) | `{{models.fullstack}}` | `high` |
-| Full-stack engineer | `fullstack-engineer-xhigh` | `{{models.fullstack}}` | `xhigh` |
-| QA engineer | `qa-engineer-medium` | `{{models.qa_medium}}` | `medium` |
-| QA engineer | `qa-engineer` (default) | `{{models.qa}}` | `high` |
-| Researcher | `researcher` (default) | `{{models.researcher}}` | `medium` |
-| Researcher | `researcher-high` | `{{models.researcher_high}}` | `high` |
-| Legal writer | `legal-writer` | `{{models.legal}}` | `high` | <!-- module:legal -->
+| Full-stack engineer | `fullstack-engineer-medium` | `fullstack.medium_model` | `medium` |
+| Full-stack engineer | `fullstack-engineer` (default) | `fullstack.model` | `high` |
+| Full-stack engineer | `fullstack-engineer-xhigh` | `fullstack.model` | `xhigh` |
+| QA engineer | `qa-engineer-medium` | `qa.medium_model` | `medium` |
+| QA engineer | `qa-engineer` (default) | `qa.model` | `high` |
+| Researcher | `researcher` (default) | `researcher.model` | `medium` |
+| Researcher | `researcher-high` | `researcher.high_model` | `high` |
+| Legal writer | `legal-writer` | `legal_writer.model` | `high` | <!-- module:legal -->
 
-<!-- morph-init: fill the default marks from harness.config.yml → agents. Advised models: all `sonnet` by default; the Opus preset sets the Technical Lead, Full-stack (high and xhigh) and the high researcher to `opus`; legal writer `fable` (fallback `opus`). Change a row and its `.claude/agents/*.md` file together. Drop the legal writer row when the legal module is off. -->
+**One source for models:** `harness.config.yml` → `agents` holds each model. Claude Code reads the copies: each agent file's `model:` line and, for the Technical Lead, `.claude/settings.json` → `model`. To change a model, change the config, then the files it maps to in the table above, in the same commit; `/morph-doctor` reports a copy that disagrees with the config.
+
+<!-- morph-init: fill the default marks from harness.config.yml → agents (advised models: all `sonnet` by default; the Opus preset sets the Technical Lead, Full-stack (high and xhigh) and the high researcher to `opus`; legal writer `fable`, fallback `opus`), and write the same models into the config, the agent files and `.claude/settings.json`. Drop the legal writer row when the legal module is off. -->
 
 Pass the absolute feature folder path (and the `plan.md` / `progress.md` paths) in the prompt. QA-fail rework goes to the same Full-stack variant as the first round.
 
 ## Technical Lead model
 
-The Technical Lead runs in the main chat, so its model is the session's, not a file in `.claude/agents/`. `.claude/settings.json` sets `{{models.tl}}` as the project default; a person can still override it with `/model`.
+The Technical Lead runs in the main chat, so its model is the session's, not a file in `.claude/agents/`. `.claude/settings.json` → `model` sets `agents.technical_lead.model` as the project default; a person can still override it with `/model`.
 
 **Effort:** the Technical Lead runs at `high` effort by default: it plans, reviews and decides retro items, where a miss costs a rework round. Effort is the session's (`/effort high` in a local session; the project default in a hosted one). Handing research to the researcher doesn't change this level: the Technical Lead still frames the question, checks the findings and decides. If usage gets tight, dropping the Technical Lead to `medium` on one-shot threads (a status check, a docs-only PR) is the first saving; feature threads stay at `high`.
 

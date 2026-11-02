@@ -39,9 +39,10 @@ except ImportError:
 PLACEHOLDER = re.compile(r"(?<!\$)\{\{ *([a-z][a-z0-9_.-]*) *\}\}")
 DEFAULTS = {
     "human.name": "Sam Owner", "human.github": "samowner",
-    "models.tl": "opus", "models.fullstack": "opus", "models.fullstack_medium": "sonnet",
+    # the shipped default preset (harness.config.yml → agents): every role on sonnet, the legal writer on fable
+    "models.tl": "sonnet", "models.fullstack": "sonnet", "models.fullstack_medium": "sonnet",
     "models.qa": "sonnet", "models.qa_medium": "sonnet", "models.researcher": "sonnet",
-    "models.researcher_high": "opus", "models.legal": "opus",
+    "models.researcher_high": "sonnet", "models.legal": "fable",
     "morphness.repo": "https://github.com/antarsoft/morphness", "morphness.commit": "0000000",
     "morphness.release": "unreleased", "ci.on_drafts": "false",
     "ci.docs_regex": r"^(_harness|docs|harness|project)/|\.md$",
@@ -904,6 +905,114 @@ PATH_RULE_CASES = [
     ("docs/guide.md", None), ("README.md", None), ("src/components/Button.tsx", None),
 ]
 
+# The agent file each `agents` key in harness.config.yml is copied into (project/HARNESS_AGENTS.md § Agents), with its effort.
+def read_agents_config(cfg):
+    """harness.config.yml → agents as {role: {key: value}}, with `variants` as a list. Values may be quoted or carry
+    an id suffix such as `[1m]`."""
+    block = cfg.split("\nagents:\n", 1)[1].split("\n\n", 1)[0] if "\nagents:\n" in cfg else ""
+    agents = {}
+    for m in re.finditer(r"^  (\w+): *\{(.*)\}", block, re.M):
+        body = m.group(2)
+        variants = re.search(r"variants: *\[([^\]]*)\]", body)
+        body = re.sub(r"variants: *\[[^\]]*\]", "", body)
+        vals = {k: v.strip("\"'") for k, v in re.findall(r"(\w+): *(\"[^\"]*\"|'[^']*'|[\w.\-]+(?:\[\w+\])?)", body)}
+        if variants:
+            vals["variants"] = [v.strip() for v in variants.group(1).split(",") if v.strip()]
+        agents[m.group(1)] = vals
+    return agents
+
+def check_one_model_source(bad, t):
+    """C4 (WS4-15): harness.config.yml → agents is the one source for models. project/HARNESS_AGENTS.md § Agents names
+    each agent file's config key and effort; the agent files and settings.json are copies Claude Code reads, so they
+    must match the config."""
+    agents = read_agents_config(read(os.path.join(t, "harness.config.yml")))
+    if not agents:
+        bad("harness.config.yml has no agents block the self-test can read")
+        return
+    table = read(os.path.join(t, "project/HARNESS_AGENTS.md")).split("\n## Agents\n", 1)[-1].split("\n## ", 1)[0]
+    rows = re.findall(r"^\| [A-Z][^|]*\| `([a-z-]+)`( \(default\))? *\| ([^|]+)\| ([^|]+)\|", table, re.M)
+    if not rows:
+        bad("project/HARNESS_AGENTS.md § Agents has no table rows the self-test can read")
+        return
+    efforts = {}
+    for name, default, keycell, effcell in rows:
+        key = re.fullmatch(r"`(\w+)\.(\w+)`", keycell.strip())
+        eff = effcell.strip().strip("`")
+        if not key:
+            bad(f"project/HARNESS_AGENTS.md § Agents gives {name} the model {keycell.strip()!r}: name its harness.config.yml → agents key (role.key) instead")
+            continue
+        role, k = key.groups()
+        efforts.setdefault(role, []).append(eff)
+        if default and agents.get(role, {}).get("default") != eff:
+            bad(f"project/HARNESS_AGENTS.md § Agents marks {name} (effort {eff}) as the default, but agents.{role}.default is {agents.get(role, {}).get('default')!r}")
+        p = os.path.join(t, f".claude/agents/{name}.md")
+        if not os.path.exists(p):
+            bad(f"project/HARNESS_AGENTS.md § Agents names .claude/agents/{name}.md, which does not exist")
+            continue
+        fm = read(p).split("\n---", 1)[0]
+        model = re.search(r'^model: *"?([^"\n]+?)"? *$', fm, re.M)
+        feff = re.search(r"^effort: *(\S+)", fm, re.M)
+        want = agents.get(role, {}).get(k)
+        if not model or model.group(1) != want:
+            bad(f".claude/agents/{name}.md runs {model and model.group(1)!r}, but harness.config.yml → agents.{role}.{k} is {want!r}")
+        if not feff or feff.group(1) != eff:
+            bad(f".claude/agents/{name}.md has effort {feff and feff.group(1)!r}, but project/HARNESS_AGENTS.md § Agents says {eff!r}")
+    for role, effs in efforts.items():
+        cfg = agents.get(role, {})
+        want = cfg.get("variants") or ([cfg["effort"]] if "effort" in cfg else None)
+        if want is not None and sorted(effs) != sorted(want):
+            bad(f"project/HARNESS_AGENTS.md § Agents gives {role} the efforts {effs}, but harness.config.yml → agents.{role} has {want}")
+    named = {r[0] for r in rows}
+    d = os.path.join(t, ".claude/agents")
+    for f in sorted(os.listdir(d)) if os.path.isdir(d) else []:
+        if f.endswith(".md") and f[:-3] not in named:
+            bad(f".claude/agents/{f} has no row in project/HARNESS_AGENTS.md § Agents")
+    settings = read(os.path.join(t, ".claude/settings.json"))
+    m = re.search(r'"model": *"([^"]+)"', settings)
+    want = agents.get("technical_lead", {}).get("model")
+    if not m:
+        bad(".claude/settings.json sets no model: it should copy harness.config.yml → agents.technical_lead.model")
+    elif m.group(1) != want:
+        bad(f".claude/settings.json runs the main chat on {m.group(1)!r}, but agents.technical_lead.model is {want!r}")
+
+# C4: each pair of rules WS4 found contradicting now has one rule. (file, text that must be gone, why)
+SETTLED = [
+    ("harness/CONTROLS.md", "for features touching screens, auth or a public API", "the browser suites run for every change, as the QA role, the config and the browser-e2e module say"),
+    ("harness/HANDOFFS.md", "then runs the full `before_signoff` suite on the merge", "the Technical Lead never runs QA's gate; a parallel merge goes back to QA"),
+    ("AGENTS.md", "through `head`/`tail`", "an exit code read through a pipe is the pipe's (CONTROLS.md § Command output)"),
+    ("AGENTS.md", "Prefer files over memory", "a vague rule: it says which file a fact comes from instead"),
+    (".claude/rules/testing.md", "when setup cost is reasonable", "a vague rule: it says when instead"),
+    (".claude/rules/testing.md", "stable and small", "a vague rule: it says when instead"),
+    ("harness/HANDOFFS.md", "meaningful automated tests", "a vague rule: one test per behaviour changed instead"),
+    ("harness/agents/fullstack-engineer.md", "**meaningful**", "a vague rule: one test per behaviour changed instead"),
+    ("harness/TECHNICAL_LEAD.md", "send nothing into a thread that needs no action", "the thread rule lives in harness/HANDOFFS.md § Threads"),
+    ("harness/HANDOFFS.md", "send nothing into a thread that needs no action", "a message to a thread asks for an action (§ Threads)"),
+    ("harness/modules/claude-projects/README.md", "send nothing into a thread that needs no action", "a message to a thread asks for an action (harness/HANDOFFS.md § Threads)"),
+]
+# Text that must be gone from every rendered file: the browser suites no longer depend on what a change touches.
+SETTLED_ANYWHERE = [
+    (r"(screens?|pages), auth or (a |the )?public API", "the browser suites run for every change (harness/CONTROLS.md)"),
+]
+
+def check_settled(bad, t):
+    for rel, gone, why in SETTLED:
+        p = os.path.join(t, rel)
+        if os.path.exists(p) and gone in read(p):
+            bad(f"{rel} still says {gone!r}: {why}")
+    for root, dirs, files in os.walk(t):
+        dirs[:] = [d for d in dirs if d not in (".git", "node_modules")]
+        for f in files:
+            if not f.endswith((".md", ".yml", ".yaml", ".sh", ".json")):
+                continue
+            p = os.path.join(root, f)
+            text = open(p, encoding="utf-8", errors="replace").read()
+            for pat, why in SETTLED_ANYWHERE:
+                if re.search(pat, text):
+                    bad(f"{os.path.relpath(p, t)} still makes a change's browser suites depend on what it touches: {why}")
+    p = os.path.join(t, "harness/PLAN_CHECKLIST.md")
+    if os.path.exists(p) and read(p).count("\n## How to use it\n") != 1:
+        bad("harness/PLAN_CHECKLIST.md has § How to use it more than once (or not at all): keep one copy")
+
 def check_path_rules(bad, t):
     """G4: a fresh install loads only CLAUDE.md and AGENTS.md in every session. The Technical Lead's file is read when
     a full or bug plan starts, and each .claude/rules/ file has `paths:`, so a migration task loads the data rules and
@@ -1310,6 +1419,9 @@ def check(name, fx, t):
             prev = line
     # 5d. the always-loaded core is CLAUDE.md and AGENTS.md; every other rule loads by path
     check_path_rules(bad, t)
+    # 5e. one source for models, and the rules WS4 found saying two things now say one
+    check_one_model_source(bad, t)
+    check_settled(bad, t)
     # 6. named checks have commands, and no row names an unknown check
     cfg = lambda key: run(["bash", "-c", f'. scripts/lib/config.sh; config_get {key}'], t).stdout.strip()
     names = set()

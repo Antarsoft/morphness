@@ -11,7 +11,7 @@ The handoff rules (who runs which checks, when, and how the output is logged) ar
 | `lint` | `{{cmd.lint}}` | yes |
 | `unit` | `{{cmd.unit}}` | yes |
 | `build` | `{{cmd.build}}` | yes |
-| `e2e-targeted` | `{{cmd.e2e-targeted}}` followed by the specs: the plan's **Targeted e2e specs**, plus the smoke and accessibility specs and every spec the diff adds or edits | yes, for features touching pages, auth or the public API | <!-- module:browser-e2e -->
+| `e2e-targeted` | `{{cmd.e2e-targeted}}` followed by the specs: the plan's **Targeted e2e specs**, plus the smoke and accessibility specs and every spec the diff adds or edits | yes | <!-- module:browser-e2e -->
 | `e2e-full` | `{{cmd.e2e-full}}` | QA, once on the final commit; Full-stack when the plan says `full` or the diff touches a cross-cutting path | <!-- module:browser-e2e -->
 | `e2e-repeat` | `{{cmd.e2e-repeat}}` | yes, when a new or changed browser test uses a fake clock, hover or focus timing: five runs, record the pass count | <!-- module:browser-e2e -->
 | `secrets` | `{{cmd.secrets}}` | yes; the output is redacted and never pasted | <!-- module:security -->

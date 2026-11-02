@@ -12,18 +12,18 @@ paths:
 
 # Testing
 
-Add **useful** automated tests when implementing behavior, not ceremony. Skip tests that only restate the implementation (e.g. asserting a constant is returned).
+Add a test for each behaviour a change adds or changes: one that fails when that behaviour breaks. Skip tests that only restate the implementation (e.g. asserting a constant is returned).
 
 ## Where tests live
 
 Test tools, file locations and run commands for this stack are in [project/TESTING.md](../../project/TESTING.md) (commands behind the `unit`, `e2e-targeted` and `e2e-full` checks: [project/CONTROLS.md](../../project/CONTROLS.md)). Browser end-to-end rules, when the `browser-e2e` module is enabled, are in [harness/modules/browser-e2e/README.md](../../harness/modules/browser-e2e/README.md).
 
-Prefer testing **pure logic** (business rules, parsers, calculations, matching, schemas, payload parsing) in unit tests close to the code, or in a shared package when the project has one. Test request handlers and server actions with focused tests when setup cost is reasonable.
+Prefer testing **pure logic** (business rules, parsers, calculations, matching, schemas, payload parsing) in unit tests close to the code, or in a shared package when the project has one. Test request handlers and server actions with focused tests when they run without a live service (a local stack or a fake is fine).
 
 ## When to add tests
 
 - New or changed **business rules**, parsers, aggregations, or shared schemas → unit tests.
-- **Bug fixes** → regression test when reproduction is stable and small. Prove it with a negative test: with the fix taken out (back up the file and restore it; never `git checkout`/`stash`), the new test fails. Record that run in `progress.md`. In bug mode, QA's failing-test commit before the fix is that proof ([harness/MODES.md](../../harness/MODES.md) § Bug mode).
+- **Bug fixes** → a regression test when the bug reproduces on every run without a live service, a local stack or a fake being fine (otherwise `progress.md` says why there is none). Prove it with a negative test: with the fix taken out (back up the file and restore it; never `git checkout`/`stash`), the new test fails. Record that run in `progress.md`. In bug mode, QA's failing-test commit before the fix is that proof ([harness/MODES.md](../../harness/MODES.md) § Bug mode).
 - **Security boundaries** (webhook signature checks, API or ingest authentication, access policies) → tests for the verification and rejection paths where feasible without live keys.
 - **New UI flows** (a new page, form or auth step): with the `browser-e2e` module, add or extend a browser end-to-end test, following the project's shared fixtures; without it, the plan names the manual or automated check that covers the flow.
 - **New page or dialog reachable from the app** → add it to the project's accessibility scan when it has one (`project/TESTING.md`).

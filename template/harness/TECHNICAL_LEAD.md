@@ -42,7 +42,7 @@ Config keys named here live in `harness.config.yml`: the integration branch (`br
 
 ## One feature per thread
 
-Every message re-reads the whole thread, so long threads cost more per step. One feature and one PR per thread, resolved when the PR merges; a new ask goes to a new thread; recurring checks get a new thread each time; send nothing into a thread that needs no action; decisions the human makes in chat go into `plan.md` § Decisions the same turn. Hand-over, shared lines between threads and the reasons: [harness/HANDOFFS.md](./HANDOFFS.md) § Threads. In a plain CLI session, "thread" means one session.
+Every message re-reads the whole thread, so long threads cost more per step. One feature and one PR per thread, resolved when the PR merges; a new ask goes to a new thread; recurring checks get a new thread each time; a message you send to a thread asks it to do something ([harness/HANDOFFS.md](./HANDOFFS.md) § Threads); decisions the human makes in chat go into `plan.md` § Decisions the same turn. Hand-over, shared lines between threads and the reasons: [harness/HANDOFFS.md](./HANDOFFS.md) § Threads. In a plain CLI session, "thread" means one session.
 
 ## Before asking for approval
 

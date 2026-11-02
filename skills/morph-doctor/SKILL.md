@@ -72,8 +72,12 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
   `project/CONTROLS.md` (update note `2026-10-20-fewer-permission-prompts`). A project that answered no
   keeps its prompts; don't offer again. A `Bash(<interpreter>:*)` allow rule (`bash`, `sh`, `npx`, `node`,
   `python`) lets any code through without a prompt: report it.
-- **Settings and config agree:** `.claude/settings.json` → `model`, when set, is `agents.technical_lead.model`
-  (or that model's full id), and `permissions.defaultMode` is what the install answers asked
+- **Settings, agent files and config agree:** `.claude/settings.json` → `model`, when set, is `agents.technical_lead.model`
+  (or that model's full id). Each row of `project/HARNESS_AGENTS.md` § Agents names an agent file and the `agents`
+  key its model comes from: that file exists, its `model:` is the key's value (or that model's full id) and its `effort:` is
+  the row's. Every `.claude/agents/*.md` file has a row (a trial variant too, § Trials). For each role, the row marked
+  `(default)` has the effort of the role's `default` in the config, and its rows' efforts are the role's `variants`;
+  and `permissions.defaultMode` is what the install answers asked
   (`_harness/morph-answers.yml` → `permissions.accept_edits`: `acceptEdits` when true, no key when false;
   skip the mode check when that file or its `permissions` key isn't there).
   Report each difference, unless `project/HARNESS_AGENTS.md` records that the owner chose it: the main chat

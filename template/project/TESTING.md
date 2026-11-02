@@ -1,6 +1,6 @@
 # Testing: project specifics
 
-The general test rules (useful tests, not ceremony; regression tests for bug fixes; who adds what) are in [.claude/rules/testing.md](../.claude/rules/testing.md).<!-- module:browser-e2e --> With the `browser-e2e` module, the browser-test rules are in [harness/modules/browser-e2e/README.md](../harness/modules/browser-e2e/README.md).<!-- /module:browser-e2e --> This file holds what is specific to this project.
+The general test rules (a test for each behaviour a change adds or changes; regression tests for bug fixes; who adds what) are in [.claude/rules/testing.md](../.claude/rules/testing.md).<!-- module:browser-e2e --> With the `browser-e2e` module, the browser-test rules are in [harness/modules/browser-e2e/README.md](../harness/modules/browser-e2e/README.md).<!-- /module:browser-e2e --> This file holds what is specific to this project.
 
 ## Where tests live
 
@@ -8,7 +8,7 @@ The general test rules (useful tests, not ceremony; regression tests for bug fix
 |------|------|----------|
 <!-- morph-init: fill one row per package or area. Example rows: "| Shared logic | <unit runner> | `lib/**/*.test.ts` |", "| API handlers | <unit runner> | colocated `*.test.ts` |", "| Browser | <e2e runner> | `e2e/*.spec.ts`, run with the `e2e-targeted` / `e2e-full` checks |". -->
 
-Prefer testing **pure logic** (calculations, parsers, matching rules, schemas, webhook payload parsing) in unit tests close to the code. Test request handlers with focused tests when the setup cost is reasonable.
+Prefer testing **pure logic** (calculations, parsers, matching rules, schemas, webhook payload parsing) in unit tests close to the code. Test request handlers with focused tests when they run without a live service (a local stack or a fake is fine).
 
 ## Project-specific test rules
 
