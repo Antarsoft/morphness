@@ -160,9 +160,9 @@ and check commands, and `scripts/`. Nothing is overwritten, and you review it as
    instead, and runs each action only after your yes.
 
 A script picks the mode from the files a change touches. A change off the risk paths runs in your
-session alone, in **light mode** (no plan) or **small mode** (a short plan, no retro). For something
-broken, the Technical Lead uses **bug mode**: QA writes a failing test first, then Full-stack finds
-the cause and makes the smallest fix. When you want an answer rather than a change, ask a question and the
+session alone, in **light mode** (no plan) or **small mode** (a short plan, no retro). A fix for
+something broken writes a failing test first, then finds the cause and makes the smallest fix: in your
+session off the risk paths, and in **bug mode** on them, where QA writes the test and Full-stack fixes. When you want an answer rather than a change, ask a question and the
 Technical Lead uses **research mode**.
 
 > [!NOTE]
