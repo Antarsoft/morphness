@@ -12,17 +12,9 @@ These are the seed principles: each one comes from a failure that reached a buil
 - Each item ends with the reason it exists in brackets. When a retro sharpens an item, add the sentence and the feature slug that taught it.
 - "Full-stack to confirm" means the plan states the claim as unverified and the Full-stack engineer checks it first, before building on it. Use it only where the item allows it.
 
-## How to use it
-
-- Work through every item. For each, record in `plan.md` § References → **Greps** the grep or check you ran and its hit count, or "n/a" with a few words on why the item doesn't apply: one line per kit item (`K1`, `K2`, …, applying the project's specifics for that item from `project/PLAN_CHECKLIST.md`) and one per project item (`P1`, `P2`, …). A plan with no Greps record is not ready for approval.
-- **A whole group can be n/a in one line.** When a group doesn't fit the project or the plan (a CLI tool, a library or a data pipeline has no UI; a plan that stores nothing has no Data items), write one line for the group with its range and the reason, for example `K14–K20 n/a: no user interface (CLI tool)`. The line under each group heading says when that happens. A group that applies in part gets one line per item as usual.
-- Item numbers are stable once the project cites them in retros and prunes ("checklist item 12"). A new item takes the next free number inside its group's range or at the end; a removed item leaves its number unused.
-- Each item ends with the reason it exists in brackets. When a retro sharpens an item, add the sentence and the feature slug that taught it.
-- "Full-stack to confirm" means the plan states the claim as unverified and the Full-stack engineer checks it first, before building on it. Use it only where the item allows it.
-
 ## Group index
 
-Read this table first. A group whose "skip" condition holds takes one `n/a` line in `plan.md` (see below) and its items are not read; read the other groups in full.
+Read this table first. A group whose "skip" condition holds takes one `n/a` line in `plan.md` (§ How to use it) and its items are not read; read the other groups in full.
 
 | Group | Items | Skip the group when |
 |-------|-------|---------------------|

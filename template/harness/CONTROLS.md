@@ -41,7 +41,7 @@ The Full-stack engineer **must** run every check in `checks.before_qa` from the 
 | `unit` | yes |
 | `build` | yes |
 | `lint` | yes |
-| `e2e-targeted` (browser-e2e module) | yes, for features touching screens, auth or a public API: the specs in `plan.md` § QA scope → **Targeted e2e specs**, the project's always-run specs, and every spec the diff adds or edits. When the plan says `full`, or the diff touches a path in § Cross-cutting paths, run `e2e-full` instead. Record the specs run with the exit code. Details: [modules/browser-e2e/](./modules/browser-e2e/README.md) |
+| `e2e-targeted` (browser-e2e module) | yes, for every change: the specs in `plan.md` § QA scope → **Targeted e2e specs**, the project's always-run specs, and every spec the diff adds or edits. When the plan says `full`, or the diff touches a path in § Cross-cutting paths, run `e2e-full` instead. Record the specs run with the exit code. Details: [modules/browser-e2e/](./modules/browser-e2e/README.md) |
 | `e2e-repeat` (browser-e2e module) | yes, when a new or changed end-to-end test uses a fake clock, hover or focus timing: run it five times and record the pass count (learned: a timing test passed once at handoff and failed most repeats later) |
 
 Any check the project marks as by hand only (for example a performance audit) is not a handoff check; run it only when a plan asks.
@@ -114,7 +114,7 @@ QA runs every check in `checks.before_signoff` on the final commit, each with it
 | Check | Required |
 |-------|----------|
 | Every `before_qa` check | yes |
-| `e2e-full` (browser-e2e module) | yes, for features touching screens, auth or a public API: the whole suite, once on the final commit (Full-stack ran only targeted specs, so this is the suite's only full run). On a failure re-run once to tell a flaky test from a real failure (a second failure is real). QA may reuse its own earlier full-suite exit code instead of repeating the run when `git diff --name-only <the commit that run used>..HEAD` lists only documentation paths; `qa-result.md` then names that commit and the diff check. After merging the integration branch in, reuse follows § After merging the integration branch |
+| `e2e-full` (browser-e2e module) | yes, for every change: the whole suite, once on the final commit (Full-stack ran only targeted specs, so this is the suite's only full run). On a failure re-run once to tell a flaky test from a real failure (a second failure is real). QA may reuse its own earlier full-suite exit code instead of repeating the run when `git diff --name-only <the commit that run used>..HEAD` lists only documentation paths; `qa-result.md` then names that commit and the diff check. After merging the integration branch in, reuse follows § After merging the integration branch |
 | Manual smoke | if UI changed: the project's smoke steps that apply (`project/CONTROLS.md` § Manual smoke) |
 
 ### After merging the integration branch

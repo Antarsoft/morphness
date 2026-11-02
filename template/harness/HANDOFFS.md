@@ -74,7 +74,7 @@ Copy from [templates/qa-result.md](./templates/qa-result.md).
 
 ## Subagents, model and effort (per project)
 
-Each project lists its subagents in **`project/HARNESS_AGENTS.md`**. Delegate with Claude Code's Agent tool; model and effort are set in each `.claude/agents/*.md` file, and the plan's **Agent effort** section picks which variant to use. Levels and criteria: [SETUP.md](./SETUP.md) § Effort per feature.
+Each project lists its subagents in **`project/HARNESS_AGENTS.md`**. Delegate with Claude Code's Agent tool; each `.claude/agents/*.md` file sets its model (copied from `harness.config.yml` → `agents`, `project/HARNESS_AGENTS.md` § Agents) and effort, and the plan's **Agent effort** section picks which variant to use. Levels and criteria: [SETUP.md](./SETUP.md) § Effort per feature.
 
 ## Mandatory flow (Technical Lead)
 
@@ -95,7 +95,7 @@ In full and bug mode the Technical Lead must not implement or QA even if the hum
 When two plans are built at the same time:
 
 - Each plan's § Out of scope names the shared files (and functions) the other plan owns; neither agent edits the other's files. A change the owner's file needs goes to the owner, or waits until both have merged (learned: naming the other plan's functions kept a parallel merge to one docs conflict).
-- The second builder works in a git worktree, and the TL merges the branches after both pass QA, then runs the full `before_signoff` suite on the merge.
+- The second builder works in a git worktree. Each PR merges like any other ([AGENTS.md](../AGENTS.md) § Golden rules, Branches and merges). When one lands first, the other branch merges the integration branch in and goes back to QA under [CONTROLS.md](./CONTROLS.md) § After merging the integration branch, which re-runs the checks when the merge combined code.
 - Shared local resources (a local service stack, a fixed port, a browser test server) are serialized: every delegation prompt says to wrap each command that starts or uses them in the lock command from `project/CONTROLS.md` § Shared resources, and to stop any server before releasing the lock.
 
 ## Background agents
@@ -113,7 +113,7 @@ Every message a thread handles re-reads its whole history, so a long thread cost
 - **No cut-off mid-feature.** After two or more QA rework rounds, the TL may hand over to a new thread once QA passes, at a natural break (QA pass, PR marked ready).
 - **Decisions go in the file when they're made.** When the human decides something in chat (an answer, a default, a scope change), add one line to `plan.md` § Decisions in the same turn, with the date. A thread that gets handed over must leave nothing in chat that the files don't hold.
 - **Shared lines between threads:** when two threads must split who edits a shared file or line (a design-doc rule, a checklist row), the thread whose plan was approved first (else the older thread) owns it; the other plans around it and never counter-proposes, so peer messages can't cross (learned: crossed messages left the same line edited on both branches).
-- **Nothing into a thread that needs no action.** Every message in a thread, an "ok" or a "thanks" included, wakes its Claude to re-read the whole thread, at full price once the cache has expired after an idle gap. Answer all of a thread's questions in one message, ask for status outside the thread (with the `claude-projects` module, in the project chat, where the coordinator answers from memory), and send nothing into a thread that needs no action.
+- **A message to a thread asks for an action.** Every message in a thread, an "ok" or a "thanks" included, wakes its Claude to re-read the whole thread, at full price once the cache has expired after an idle gap. Answer all of a thread's questions in one message, ask for status outside the thread (with the `claude-projects` module, in the project chat, where the coordinator answers from memory), and send a thread a message only when it asks that thread to do something, never only an ok or a thanks.
 - **Hand-over:** the closing reply lists any open decisions and links the new thread. The new thread's brief links the old thread (it stays readable, so check it when the files don't settle a question). The new thread's first reply lists the decisions it inherited in one or two lines, so the human can catch a gap at once.
 
 Where threads and a coordinator exist depends on the environment (`environment` in `harness.config.yml`; the `claude-projects` module covers project chats). In a plain CLI session, "thread" means one session.
@@ -126,7 +126,7 @@ Where threads and a coordinator exist depends on the environment (`environment` 
 You are the Full-stack engineer for this harness feature.
 Read: <abs-path>/Plan/plan.md (must be approved).
 Implement the plan in the application codebase.
-Add or update meaningful automated tests for new behavior (.claude/rules/testing.md); avoid trivial tests.
+Add or update a test for each behaviour the change adds or changes (.claude/rules/testing.md): one that fails when that behaviour breaks.
 Path rules: <each .claude/rules/*.md file whose paths: match the plan's files, such as data.md for a migration, or none>. Read them before the first edit.
 Update only: <abs-path>/Development/progress.md
 Include Started and Ended in progress.md when handing off.

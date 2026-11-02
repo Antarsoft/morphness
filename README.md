@@ -191,7 +191,7 @@ flowchart TB
 | 🧭 **Technical Lead** | Your session. Plans and delegates risky work; makes small changes itself | sonnet · high (opus with the opus preset) |
 | 🛠️ **Full-stack** | Builds the approved plan and its tests | sonnet · high (xhigh for risky cores; opus with the opus preset) |
 | ✅ **QA** | Runs the checks, validates every criterion | sonnet · high |
-| 🔎 **Researcher** | Answers a question about your code or the web with cited sources, read-only. For when you want an answer, not a change | sonnet · medium (high for architecture) |
+| 🔎 **Researcher** | Answers a question about your code or the web with cited sources, read-only. For when you want an answer, not a change | sonnet · medium (high for architecture; opus at high with the opus preset) |
 | ⚖️ **Legal writer** | Writes wording that makes a legal promise | fable or opus · high |
 
 These are defaults; change any of them (see [Make it yours](#-make-it-yours)).
@@ -255,7 +255,7 @@ risk_areas: [auth, billing, migrations]   # never medium effort, always a carefu
 agents:
   fullstack: { model: sonnet, default: high, variants: [medium, high, xhigh] }
   qa: { model: sonnet, default: high, variants: [medium, high] }
-  researcher: { model: sonnet, high_model: opus, default: medium, variants: [medium, high] }
+  researcher: { model: sonnet, high_model: sonnet, default: medium, variants: [medium, high] }
 
 cost: { track: true, prices: harness/MODEL_PRICES.md }   # estimated $ per feature
 
