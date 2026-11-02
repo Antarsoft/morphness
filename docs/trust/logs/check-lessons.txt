@@ -1,1 +1,2 @@
-112 lesson file(s) checked, 0 problem(s)
+note: 12 older lesson(s) have risky prose and no 'reviewed' key (checked only when added or changed)
+116 lesson file(s) checked, 0 problem(s)

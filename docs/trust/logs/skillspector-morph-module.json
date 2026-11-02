@@ -2,7 +2,7 @@
  "skill": {
   "name": "morph-module",
   "source": "<repo>/skills/morph-module",
-  "scanned_at": "2026-10-20T17:14:30.443694+00:00"
+  "scanned_at": "2026-11-02T06:28:09.956509+00:00"
  },
  "risk_assessment": {
   "score": 0,
@@ -16,7 +16,7 @@
    "type": "markdown",
    "lines": 102,
    "executable": false,
-   "size_bytes": 7726,
+   "size_bytes": 7849,
    "source_url": null,
    "source_identity": null,
    "source_digest": null
@@ -634,7 +634,7 @@
     "source_path": "SKILL.md",
     "line": 21,
     "column": 5,
-    "evidence": "1. `harness.config.yml` exists with no `{{` placeholders; otherwise suggest `/morph-init` and stop.",
+    "evidence": "1. `harness.config.yml` exists with none of the kit's placeholders (`grep -E '\\{\\{ *(project|human|morphness)\\.' harness.config.yml` prints nothing); otherwise ",
     "target_path": null,
     "status": "missing",
     "disposition": "partial",
@@ -644,7 +644,7 @@
     "source_path": "SKILL.md",
     "line": 29,
     "column": 33,
-    "evidence": "clone, use the tag named by `installed_from.release`. Without a clone, use this plugin's own",
+    "evidence": "clone, use the tag named by `installed_from.release` (without a `+<commit>` suffix). Without a clone, use this plugin's own",
     "target_path": null,
     "status": "missing",
     "disposition": "partial",
