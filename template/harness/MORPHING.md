@@ -22,7 +22,7 @@ A retro action item or a prune decision is applied to exactly one owner file ([R
 | Work on one kind of path (schema and migrations, sign-in, CI and deploy) | `.claude/rules/data.md`, `auth.md` or `deploy.md`, which load only for matching files, or a new `.claude/rules/<area>.md` with its own `paths:` | "A migration that renames a column ships the old name as a view for one release" |
 | A rule every session needs, whatever it touches (rare: these cost tokens on every turn) | `AGENTS.md` § Golden rules, one line | "No agent writes a shared remote environment" |
 | A structural setting (branches, modules, checks, effort variants, loop limits) | `harness.config.yml`, plus the rendered files that use it | "QA default effort becomes medium" |
-| A model or effort mapping | `project/HARNESS_AGENTS.md` and `.claude/agents/*.md` | "A cheaper Full-stack variant for UI-only features" (as a trial first, like any change to how a role works) |
+| A model or effort mapping | `harness.config.yml` → `agents`, then the copies Claude Code reads (each `.claude/agents/*.md` file's `model:` or `effort:` line, `.claude/settings.json` → `model` for the Technical Lead) in the same commit; the reason in `project/HARNESS_AGENTS.md` | "A cheaper Full-stack variant for UI-only features" (as a trial first, like any change to how a role works) |
 
 When a lesson fits two places, it goes to the one owner and the other links to it. Never restate a rule in a second file: two copies drift.
 

@@ -40,7 +40,7 @@ Merge after: none <!-- or #N, when the merge-order check found an open PR that s
 <!-- At ready. What was run and the result. Link the QA record rather than repeating it. For a UI change, screenshots are linked from the thread reply and progress.md § Screenshots; add links here only if the reviewer won't see the thread. -->
 
 - [ ] Named checks before QA: each name in `harness.config.yml` → `checks.before_qa` (commands: project/CONTROLS.md)
-- [ ] Full browser suite on the final commit (when pages, auth or the public API change) <!-- module:browser-e2e -->
+- [ ] Full browser suite on the final commit <!-- module:browser-e2e -->
 - [ ] Recorded in `qa-result.md` (small mode: `plan.md` § Check) on the final commit <!-- morph-init: fill "and CI passed on this PR" when harness.config.yml → ci_gate is true -->
 
 ## Needs the owner

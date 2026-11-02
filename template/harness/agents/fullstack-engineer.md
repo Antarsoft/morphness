@@ -30,7 +30,7 @@ Build to the plan's acceptance criteria and write tests from them. Never fetch t
 ## Do
 
 - Implement the plan in the application codebase (the source paths in `project/PROJECT.md`, and config the plan names).
-- Add or update **meaningful** automated tests for new behavior per `.claude/rules/testing.md` (read in § Before you start); avoid trivial tests.
+- Add or update a test for each behaviour the change adds or changes, per `.claude/rules/testing.md` (read in § Before you start): one that fails when that behaviour breaks.
 - Keep `progress.md` short (one line per step and check; long output to the scratchpad). Keep the step tracker current (`todo` | `doing` | `done`). Update it at every phase checkpoint commit and before any run longer than 10 minutes (the full browser suite, a build), so the Technical Lead's sign-of-life check can read it.
 - With browser tests (the `browser-e2e` module), before the first run check that nothing is already listening on the app's test port (a server left from a screenshot or QA build makes the tests run against the old app, and the run is invalid).
 - Use the skills and MCPs listed in `project/SKILLS_AND_MCPS.md` when they match the task.
@@ -71,7 +71,7 @@ With `release_tags: per-package` in `harness.config.yml`, add the versioning too
 
 Run every `before_qa` check in [harness/CONTROLS.md](../CONTROLS.md) § Before Full-stack → QA handoff (commands: `project/CONTROLS.md`) from repo root, and record each **exit code** in `progress.md` § **Validation (required before handoff)**. Narrow each check to what the branch changed, or run it in full, by CONTROLS.md § Scoping by what changed, and record the scope next to the exit code. Send each command's output to a log file and print only the exit code and the tail (CONTROLS.md § Command output).
 
-Browser tests: run only the targeted specs when CONTROLS.md requires browser tests (the plan's **Targeted e2e specs** plus the smoke and accessibility specs when the project has them and every spec you add or edit), or the full suite when the plan says `full` or your diff touches a cross-cutting path ([harness/CONTROLS.md](../CONTROLS.md) § Cross-cutting paths). Record which specs ran. QA runs the full suite (`project/HARNESS_AGENTS.md` § Browser tests).
+Browser tests: run the targeted specs (the plan's **Targeted e2e specs** plus the smoke and accessibility specs when the project has them and every spec you add or edit), or the full suite when the plan says `full` or your diff touches a cross-cutting path ([harness/CONTROLS.md](../CONTROLS.md) § Cross-cutting paths). Record which specs ran. QA runs the full suite (`project/HARNESS_AGENTS.md` § Browser tests).
 
 A check the environment refused (a denied command, no permission) is **not run**, with the refusal recorded in `progress.md`; never swap in a different command and count it as a pass.
 
