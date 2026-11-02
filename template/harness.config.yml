@@ -85,6 +85,10 @@ modules: [roadmap]
 checks:
   before_qa: [install, typecheck, lint, unit, build]
   before_signoff: [install, typecheck, lint, unit, build, e2e-full]
+  # on_stop: the checks scripts/checks.sh runs as code when a task ends (harness/CONTROLS.md § End-of-task checks):
+  # a pass costs no model turn, a failure sends the agent back. Keep it to fast checks; [] turns the hook off.
+  on_stop: [typecheck, lint, unit]
+  stop_retries: 2   # times in a row one failure sends the agent back before the turn ends with it on record
 
 # true: CI on the PR is a required gate. false: QA/qa-result.md on the final commit is the gate.
 ci_gate: false

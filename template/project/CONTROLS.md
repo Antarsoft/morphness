@@ -26,6 +26,14 @@ How Full-stack narrows each `before_qa` check to what the branch changed ([harne
 |-------|-------|----------------------------------------------|
 <!-- morph-init: fill one row per check that can be narrowed, from the stack's own tooling. Scope is `full`, `affected` (a scoped command) or `paths` (globs; the check runs in full only when the diff touches one). Examples: "| `unit` | `affected` | `pnpm --filter '...[origin/dev]' test` |", "| `unit` | `affected` | `npx vitest run --changed origin/dev` |", "| `unit` | `affected` | `npx jest --changedSince=origin/dev` |", "| `typecheck` | `affected` | `npx turbo run typecheck --filter=...[origin/dev]` |", "| `integration` | `paths` | `src/api/`, `db/` |". Keep `typecheck` and `build` at `full` unless the tool computes affected packages itself (a file's change can break its importers). With no tool that scopes, write "None: every check runs in full." -->
 
+## End-of-task checks
+
+How the end-of-task hook runs the `checks.on_stop` checks here ([harness/CONTROLS.md](../harness/CONTROLS.md) § End-of-task checks). The hook reads this file as committed on the integration branch, so a change here takes effect once it merges.
+
+**Run through:** none
+
+<!-- morph-init: fill when project/agents/qa-engineer.md names a wrapper that keeps commands on the local stack, or § Shared resources names a lock command, write it here in backticks, the way the check's command follows it. Example: "**Run through:** `scripts/local-env.sh`" or "**Run through:** `flock /tmp/<project>-stack.lock`". Otherwise leave "none". -->
+
 ## Command output
 
 Log location for every check (the discipline itself is in [harness/CONTROLS.md](../harness/CONTROLS.md) § Command output):

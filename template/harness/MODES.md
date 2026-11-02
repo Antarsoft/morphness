@@ -9,7 +9,7 @@ Working alone, the main chat follows the builder's rules as well as its own:
 - Before the first edit, read `harness/agents/fullstack-engineer.md` § Do, § UI screenshots and § Before handoff, and `project/agents/fullstack-engineer.md` (this project's builder rules). Read `.claude/rules/testing.md` for the tests to write. Where those sections say `progress.md`, write the PR record (light mode) or the plan's § Check (small mode); § Ownership limits and § Hand back are for the subagent.
 - With **UI change: yes**, also follow `harness/agents/qa-engineer.md` on screenshots and the layout pass (open each after-shot; check every page at the narrowest width when styles or a shared component change). With **Needs live app/services**, its rules for the local stack and `deferred: local` apply, and `project/CONTROLS.md` § Manual smoke when it has rows.
 - Same branch, commit and PR rules as any feature (`AGENTS.md` § Golden rules, `harness/TECHNICAL_LEAD.md` § Commits and branches), and the same guard hook: a deny is final.
-- The `before_qa` checks after the change, scoped by what changed; then, for small mode, the `before_signoff` checks once in full on the final commit ([CONTROLS.md](./CONTROLS.md)). A check the environment refused is **not run**, never a pass.
+- The `before_qa` checks after the change, scoped by what changed (`end-of-task hook` for the `checks.on_stop` checks, which run when the turn ends: [CONTROLS.md](./CONTROLS.md) § End-of-task checks); then, for small mode, the `before_signoff` checks once in full on the final commit ([CONTROLS.md](./CONTROLS.md)). A check the environment refused is **not run**, never a pass.
 - Before the hand-off, run `bash scripts/risk-check.sh` again with no files (§ Choosing mode, step 4). When it prints `Mode: full`, stop: write a full plan with this change linked, and the agents take it from there.
 
 ## Full harness
@@ -32,7 +32,7 @@ Working alone, the main chat follows the builder's rules as well as its own:
 - The main chat makes the change itself (§ Working alone), application code included. The owner's request is the approval; there is no plan to approve.
 - No `_harness/` feature folder required, no QA agent, no retro: the named checks are the only verification.
 - When the change turns out to alter behaviour or to need a test of its own, stop before going further: it is small mode, with a plan the human approves.
-- Still run the applicable named checks if the change touches code ([CONTROLS.md](./CONTROLS.md)): the `before_qa` checks, scoped by what changed. The record is the PR (or the commit message with no PR): the checks run with their exit codes, under a **Light mode** line saying why the change qualified.
+- Still run the applicable named checks if the change touches code ([CONTROLS.md](./CONTROLS.md)): the `before_qa` checks, scoped by what changed. The record is the PR (or the commit message with no PR): the checks run with their exit codes (`end-of-task hook` for the `checks.on_stop` checks), under a **Light mode** line saying why the change qualified.
 - With `cost.track` on, the closing message ends with the `Cost ≈ $…` line from `bash scripts/feature-cost.sh` (with `--since <time the task started>` when the session did other work first). It goes in the message only; light mode writes no file for it.
 
 ## Small mode
@@ -45,7 +45,7 @@ The main chat plans, builds and checks the change itself (§ Working alone); the
 
 1. **Plan.** Read the code the change touches, then write `_harness/features/<slug>/<version>/Plan/plan.md` from [templates/small-plan.md](./templates/small-plan.md): the risk check's output, the change, the files, 3 to 8 acceptance criteria with their tests, and the limit. No `feature.md` and no plan checklist run. The human approves it as any plan.
 2. **Build.** Make the change and write the tests the criteria name, then run the `before_qa` checks. A change that needs more than § Limit allows stops before the change: write a full plan with this one linked.
-3. **Check.** On the final commit, run the `before_signoff` checks in full and fill the plan's § Check: each check with its exit code, and each criterion with the test or output that shows it holds. A criterion nothing shows is not met: fix it or stop and tell the human. No `progress.md` or `qa-result.md`.
+3. **Check.** On the final commit, run the `before_signoff` checks in full and fill the plan's § Check: each check with its exit code (`end-of-task hook` for the `checks.on_stop` checks, which run when the turn ends: [CONTROLS.md](./CONTROLS.md) § End-of-task checks), and each criterion with the test or output that shows it holds. A criterion nothing shows is not met: fix it or stop and tell the human. No `progress.md` or `qa-result.md`.
 4. **Close.** § After QA pass as in full mode, with § Check in place of the QA verdict. No `retro.md`: the learnings file has the verdict and cost lines and **Retro:** `none (small mode)`, with an action item only when something went wrong. It counts toward the prune counter, so the prune sees whether small mode lets problems through.
 
 ## Bug mode

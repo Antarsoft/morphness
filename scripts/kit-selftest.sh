@@ -1292,6 +1292,130 @@ def check_guard_config(bad, fx, t):
         if r.returncode != (2 if missing == "awk" else 0):
             bad(f"guard config: without {missing}, `git status` exited {r.returncode} ({r.stderr.strip()[:200]})")
 
+def check_end_of_task(bad, t, settings):
+    """G3: the fast checks run as code when a task ends (harness/CONTROLS.md § End-of-task checks): a pass costs
+    no model turn, a failure goes back to the agent a bounded number of times, documentation never reruns them,
+    and the commands come from the integration branch, never from a working-copy edit."""
+    hooks = settings.get("hooks", {})
+    want_cmd = 'bash "$CLAUDE_PROJECT_DIR/scripts/checks.sh" hook'
+    stop = [h for e in hooks.get("Stop", []) for h in e.get("hooks", [])]
+    sub = [(e.get("matcher", ""), h) for e in hooks.get("SubagentStop", []) for h in e.get("hooks", [])]
+    if not any(h.get("command") == want_cmd for h in stop):
+        bad(".claude/settings.json has no Stop hook running scripts/checks.sh hook")
+    matchers = [m for m, h in sub if h.get("command") == want_cmd]
+    if not matchers:
+        bad(".claude/settings.json has no SubagentStop hook running scripts/checks.sh hook")
+    agents = [f[:-3] for f in os.listdir(os.path.join(t, ".claude/agents")) if f.endswith(".md")]
+    for a in agents:
+        hit = any(re.fullmatch(m, a) for m in matchers)
+        if a.startswith("fullstack-engineer") != hit:
+            bad(f"the SubagentStop checks hook {'misses' if not hit else 'also runs for'} .claude/agents/{a}.md: it is for the Full-stack agents only")
+    if "Bash(bash scripts/checks.sh:*)" not in settings.get("permissions", {}).get("allow", []):
+        bad(".claude/settings.json doesn't allow bash scripts/checks.sh: QA's status call would stop at a permission prompt")
+    if not re.search(r"^  on_stop: \[[a-z, -]+\]", read(os.path.join(t, "harness.config.yml")), re.M):
+        bad("harness.config.yml → checks has no on_stop list")
+    ck = os.path.join(tempfile.mkdtemp(prefix="checks-"), "p")
+    shutil.copytree(t, ck, symlinks=True)
+    integ = run(["bash", "-c", ". scripts/lib/config.sh; config_get branches.integration"], ck).stdout.strip() or "dev"
+    cfg = os.path.join(ck, "harness.config.yml")
+    write(cfg, re.sub(r"^  on_stop: .*$", "  on_stop: [typecheck, lint, unit, secrets]", read(cfg), flags=re.M))
+    controls = os.path.join(ck, "project/CONTROLS.md")
+    table = ("| Check | Command | Required |\n|-------|---------|----------|\n"
+             "| `typecheck` | `echo t >> .ran` | yes |\n| `lint` | `test ! -e BADLINT \\|\\| exit 1` | yes |\n"
+             "| `unit` | `echo u >> .ran; echo unit-tail-line; test ! -e BADUNIT` | yes |\n"
+             "| `secrets` | `echo s >> .ran; printf 'SECRET_%s_xyz' VALUE; test ! -e LEAK` | yes |\n")
+    text = re.sub(r"(## Named checks\n\n)(?:\|.*\n)+", lambda m: m.group(1) + table, read(controls), count=1)
+    if table not in text:
+        bad("project/CONTROLS.md § Named checks has no table the checks.sh test can replace")
+    if "**Run through:** none" not in text:
+        bad("project/CONTROLS.md § End-of-task checks has no `**Run through:** none` line")
+    write(controls, text)
+    write(os.path.join(ck, ".gitignore"), read(os.path.join(ck, ".gitignore")) + "\n.ran\n" if os.path.exists(os.path.join(ck, ".gitignore")) else ".ran\n")
+    g = ["git", "-c", "user.name=selftest", "-c", "user.email=selftest@example.com", "-c", "commit.gpgsign=false"]
+    for cmd in (["add", "-A"], ["commit", "-q", "--allow-empty", "-m", "state"], ["branch", "-f", integ], ["checkout", "-q", "-b", "feature/x"]):
+        run(g + cmd, ck)
+    ran = os.path.join(ck, ".ran")
+    def hook(event="Stop", active=False, **extra):
+        payload = dict(hook_event_name=event, session_id="selftest", stop_hook_active=active, cwd=ck, **extra)
+        # from another folder: the hook must work where the agent worked (the payload's cwd)
+        r = run(["bash", os.path.join(ck, "scripts/checks.sh"), "hook"], os.path.dirname(ck), input=json.dumps(payload))
+        return r.returncode, r.stdout, r.stderr
+    def runs(what="u"):
+        return read(ran).split().count(what) if os.path.exists(ran) else 0
+    code, out, err = hook()
+    if code or out or err or runs():
+        bad(f"checks.sh hook with no code change ran the checks or spoke (exit {code}, {out!r}, {err[:200]!r})")
+    write(os.path.join(ck, "src-change.ts"), "export const x = 1;\n")
+    code, out, err = hook()
+    if code or out or err or runs() != 1:
+        bad(f"checks.sh hook on a passing change must exit 0 silently after one run (exit {code}, runs {runs()}, {out!r}, {err[:200]!r})")
+    hook()
+    os.makedirs(os.path.join(ck, "_harness/features/x"), exist_ok=True)
+    write(os.path.join(ck, "_harness/features/x/progress.md"), "# progress\n")
+    write(os.path.join(ck, "project/NOTES.md"), "note\n")
+    code, out, err = hook(event="SubagentStop", agent_type="fullstack-engineer", agent_id="a1")
+    if code or runs() != 1:
+        bad(f"checks.sh hook reran the checks for the same code or a documentation-only change (runs {runs()}, exit {code})")
+    if runs("s") != 2:
+        bad(f"checks.sh hook did not rerun the secret scan on a documentation change (runs {runs('s')}): a key pasted into a document is a leak")
+    rec = json.loads(read(glob.glob(os.path.join(ck, ".git/morphness/checks/*/unit.json"))[0]))
+    if rec.get("command", "").startswith(("scripts/local-env.sh", "flock")):
+        bad(f"checks.sh ran the check through the example in a comment, with **Run through:** none: {rec.get('command')!r}")
+    write(os.path.join(ck, "src-change.ts"), "export const x = 2;\n")
+    code, out, err = hook(background_tasks=[{"id": "b1"}])
+    if code or runs() != 1:
+        bad(f"checks.sh hook ran on a main chat Stop while background tasks were running (runs {runs()}, exit {code})")
+    write(os.path.join(ck, "BADUNIT"), "")
+    write(os.path.join(ck, "LEAK"), "")
+    code, out, err = hook()
+    if code != 2 or "unit (exit 1)" not in err or "secrets (exit 1)" not in err or "unit-tail-line" not in err:
+        bad(f"checks.sh hook on a failing unit check must exit 2 with the check and its log tail (exit {code}, {err[:300]!r})")
+    if "SECRET_VALUE_xyz" in err + out:
+        bad("checks.sh hook printed the secret scan's log: a secret is never shown")
+    if "lint" in err.split("\n", 1)[0]:
+        bad(f"checks.sh hook named a passing check as failed: {err.splitlines()[0]!r}")
+    code2, out2, _ = hook(active=True)
+    if code2 or "fail" not in out2:
+        bad(f"checks.sh hook sent the agent back again with no code change since the failure (exit {code2}): it only repeats the message")
+    code2, _, _ = hook(event="SubagentStop", agent_id="other")
+    if code2:
+        bad("checks.sh hook sent a second agent back for a failure another agent already got, on the same code")
+    seen = []
+    for i in range(3):
+        write(os.path.join(ck, "src-change.ts"), f"export const x = {10 + i};\n")
+        seen.append(hook(active=True)[0])
+    if seen != [2, 2, 0]:
+        bad(f"checks.sh hook must send the agent back after each fix that still fails, checks.stop_retries (2) times in a row, then let the turn end (exits {[code] + seen})")
+    write(controls, read(controls).replace("`echo t >> .ran`", "`touch PWNED`"))
+    write(os.path.join(ck, "src-change.ts"), "export const x = 3;\n")
+    os.remove(os.path.join(ck, "BADUNIT")); os.remove(os.path.join(ck, "LEAK"))
+    code, out, err = hook()
+    if os.path.exists(os.path.join(ck, "PWNED")):
+        bad("checks.sh ran a command from the working copy of project/CONTROLS.md: it must read the integration branch's")
+    before = runs()
+    t2 = read(controls).replace("`touch PWNED`", "`echo t >> .ran`").replace("**Run through:** none", "**Run through:** `env CHECKS_VIA=wrapper`")
+    t2 = t2.replace("`test ! -e BADLINT \\|\\| exit 1`", "`test ! -e BADLINT; echo x > lint-made.txt`")
+    write(controls, t2)
+    for cmd in (["add", "project/CONTROLS.md"], ["commit", "-q", "-m", "merged command change"], ["branch", "-f", integ]):
+        run(g + cmd, ck)
+    write(os.path.join(ck, "src-change.ts"), "export const x = 3;\n")
+    hook()
+    if runs() != before + 1:
+        bad(f"checks.sh hook kept a record after its command changed on the integration branch (runs {before} -> {runs()})")
+    st = run(["bash", "scripts/checks.sh", "status"], ck)
+    if "lint-made.txt" not in st.stdout:
+        bad(f"checks.sh status didn't name the file a check wrote (it moves the key): {st.stdout[:400]!r}")
+    if st.returncode or not re.search(r"^  unit +pass \(exit 0", st.stdout, re.M):
+        bad(f"checks.sh status after a passing run must list unit as pass and exit 0 (exit {st.returncode}): {st.stdout[:400]!r}")
+    log = re.search(r"unit +pass \(.*?log (\S+)\)", st.stdout)
+    rec = os.path.join(ck, log.group(1)) if log else ""
+    if not rec or "CHECKS_VIA=wrapper" not in read(rec.replace(".log", ".json")):
+        bad("checks.sh did not run the check inside project/CONTROLS.md § End-of-task checks → Run through")
+    r = run(["bash", "scripts/checks.sh", "run", "lint", "nosuch"], ck)
+    if r.returncode != 1 or "nosuch: not run: no row" not in r.stdout or "lint: pass" not in r.stdout:
+        bad(f"checks.sh run with an unknown check must record it as not run and exit 1: {r.stdout!r}")
+    shutil.rmtree(os.path.dirname(ck))
+
 def check(name, fx, t):
     bad = lambda msg: failures.append(f"{name}: {msg}")
     # 1. placeholders
@@ -1781,6 +1905,7 @@ def check(name, fx, t):
     if code != 2 or not out.startswith("Mode: full (risk check: "):
         bad(f"risk-check.sh with no `{integ}` branch printed {out!r} (exit {code}): it must fail toward full")
     shutil.rmtree(os.path.dirname(rk))
+    check_end_of_task(bad, t, settings)
     # prune states: proposed and approved are open (named, no DUE); declined, applied and README are not
     pdir, ldir = os.path.join(t, "_harness/prunes"), os.path.join(t, "_harness/learnings")
     os.makedirs(pdir, exist_ok=True)

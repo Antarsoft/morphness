@@ -66,7 +66,7 @@ Agents can't do these; they go in `project/RELEASE.md` § Manual steps, and morp
 
 ## On install
 
-- Fill the `secrets` and `audit` rows in [project/CONTROLS.md](../../../project/CONTROLS.md) § Named checks from the stack (check each tool is installed with its version command; a missing tool is an owner step above, and the row still gets its command). Add both names to `harness.config.yml` → `checks.before_qa` and `checks.before_signoff`, and a § Check scope row `| audit | paths | <the dependency manifests and lockfile> |`.
+- Fill the `secrets` and `audit` rows in [project/CONTROLS.md](../../../project/CONTROLS.md) § Named checks from the stack (check each tool is installed with its version command; a missing tool is an owner step above, and the row still gets its command). Add both names to `harness.config.yml` → `checks.before_qa` and `checks.before_signoff`, and `secrets` to `checks.on_stop`, and a § Check scope row `| audit | paths | <the dependency manifests and lockfile> |`.
 - Fill § Security paths (the auth, payment and user-data code and the database tables that hold personal data) and leave § Security exceptions at "None.".
 - Suggest behaviours, not layers, for `risk_areas` when the scan finds them and they aren't listed: "who can read or change people's data", "payments", "secrets" (the same wording as morph-init's Q12a).
 - With the `ci-cd` module, add the two steps to CI (the module's rule: one step per `before_qa` check, word for word).
@@ -81,7 +81,7 @@ When the project doesn't choose this module, morph-init deletes this folder and 
 
 **Delete or reword these lines** (unmarked: always-loaded, config or code-block text):
 
-- `harness.config.yml` → `checks`: remove `secrets` and `audit` from `before_qa` and `before_signoff`, if listed.
+- `harness.config.yml` → `checks`: remove `secrets` and `audit` from `before_qa`, `before_signoff` and `on_stop`, if listed.
 - `project/CONTROLS.md` § Check scope: the `audit` row, if any.
 
 **Unlink:** every Markdown link left pointing into `harness/modules/security/` becomes plain text, or goes with its line (`/morph-doctor` fails on a broken link). Find them with `grep -rn 'modules/security' --include='*.md' . | grep -v '^./harness/modules/'`.

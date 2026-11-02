@@ -92,7 +92,7 @@ With the roadmap module on, the steps file lives next to the version checklist i
 - Implement everything the plan requires in the **application codebase** (outside `_harness/`, except `progress.md`).
 - Keep `progress.md` current: steps, status, notes, validation run per step, **Started** and **Ended** (the agent's note from `date`; update Ended on QA rework, keep Started; the TL records real duration).
 - Validate work with the automated checks the plan and [CONTROLS.md](./CONTROLS.md) name (commands in `project/CONTROLS.md`).
-- Before handoff: run every `before_qa` check ([CONTROLS.md](./CONTROLS.md) § Before Full-stack → QA handoff; exit 0 required); log each check and its exit code in `progress.md` § **Validation (required before handoff)**.
+- Before handoff: run every `before_qa` check ([CONTROLS.md](./CONTROLS.md) § Before Full-stack → QA handoff; exit 0 required); log each check and its exit code in `progress.md` § **Validation (required before handoff)** (`end-of-task hook` for the `checks.on_stop` checks, which run when the turn ends: [CONTROLS.md](./CONTROLS.md) § End-of-task checks).
 - Follow project skills, rules and guidelines.
 - Hand back to the Technical Lead when implementation is complete.
 
