@@ -52,7 +52,7 @@ try:
     print(d.get("cwd", "") if isinstance(d, dict) else "")
 except Exception:
     pass' 2>/dev/null)"
-  [ -n "$hook_cwd" ] && [ -d "$hook_cwd" ] && cd "$hook_cwd" 2>/dev/null
+  if [ -n "$hook_cwd" ] && [ -d "$hook_cwd" ]; then cd "$hook_cwd" 2>/dev/null || true; fi
 fi
 export GIT_OPTIONAL_LOCKS=0   # never take the index lock another agent's commit may need
 root="$(git rev-parse --show-toplevel 2>/dev/null)" || quiet_exit "not inside a git repository"
