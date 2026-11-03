@@ -1,0 +1,1 @@
+- **A bug fix off the risk paths writes no plan file.** It keeps the failing test first, the root cause before the fix, the edge inputs and the checks, and records them in its commits and PR, as light mode does. It writes a learnings file only when something went wrong. The small plan template loses its bug section, and the kit's self-test checks both.
