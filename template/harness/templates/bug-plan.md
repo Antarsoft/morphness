@@ -42,6 +42,7 @@ Written by **QA** before any fix (`harness/MODES.md` § Bug mode, step 2). QA ad
 - **File:** the test file path (new or existing).
 - **Asserts:** what the test checks, as the expected behaviour above.
 - **Fails today because:** the failure QA should see (the error, the wrong value), so a red test for another reason doesn't count.
+- **Edge inputs:** the inputs next to the symptom that the fix must also get right, those that apply, each one in the test (one `n/a: <reason>` line when none apply): equal values (two items with the same sort key or timestamp), none, one, exactly at a limit or page edge, a last page that is not full. When the bug is in an order (a sort, paging, "the latest"), the order ends with a unique key such as the id, so items with equal values keep one order every time. Only the reported case must fail before the fix; the edge cases may pass.
 - When no automated test can reach the bug (a third-party console, a device), say why; QA records a manual reproduction instead and AC 1 and 2 use it.
 
 ## Fix limit
