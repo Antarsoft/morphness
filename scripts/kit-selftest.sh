@@ -2015,9 +2015,102 @@ def check(name, fx, t):
     if code or not out.startswith("Mode: full\n") or "scripts/risk-check.sh: the risk check itself" not in out:
         bad(f"risk-check.sh after an edit to itself printed {out!r} (exit {code})")
     write(script, saved)
+    # I2: a new SQL migration that only adds runs plain, with the database tests and one review; anything more is full
+    git_id = ["-c", "user.name=selftest", "-c", "user.email=selftest@example.com"]
+    mig = os.path.join(rk, "supabase/migrations")
+    os.makedirs(mig, exist_ok=True)
+    os.makedirs(os.path.join(rk, "supabase/tests"), exist_ok=True)
+    write(os.path.join(mig, "0000_base.sql"), "create table notes (id int);\ncreate function title_ok(t bigint) returns boolean language sql as $$ select true $$;\ncreate policy v on notes for select to authenticated using (\"can_view\"(id));\n")
+    for cmd in (["add", "supabase"], [*git_id, "commit", "-q", "-m", "base"], ["branch", "-f", integ]):
+        run(["git", *cmd], rk)
+    labels = ("-- labels a user puts on notes; only the owner sees them\n"
+              "create table public.labels (id uuid primary key, user_id uuid not null references auth.users, name text);\n"
+              "alter table public.labels enable row level security;\n"
+              "create policy \"own labels\" on public.labels for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());\n"
+              "grant select, insert on public.labels to authenticated;\n"
+              "create index labels_user_idx on public.labels (user_id);\n"
+              "create function public.label_ok(t text) returns boolean language sql immutable as $$ select length(t) < 31; $$;\n")
+    column = "alter table public.notes add column color text, add constraint notes_color check (color <> '');\ncomment on column public.notes.color is 'a;b';\n"
+    for mname, body in (("0003_labels.sql", labels), ("0003_color.sql", column)):
+        write(os.path.join(mig, mname), body)
+        code, out = risk()
+        if (code or not out.startswith("Mode: plain (1 file, database changes that only add)\n")
+                or f"+ supabase/migrations/{mname}: additive migration" not in out or "\nNeeds: the database tests and one code review" not in out):
+            bad(f"risk-check.sh on a new migration that only adds ({mname}) printed {out!r} (exit {code})")
+        os.remove(os.path.join(mig, mname))
+    write(os.path.join(rk, "supabase/tests/labels.test.sql"), "select 1;\n")
+    code, out = risk()
+    if code or not out.startswith("Mode: plain") or "+ supabase/tests/labels.test.sql: database test" not in out:
+        bad(f"risk-check.sh on a new database test printed {out!r} (exit {code})")
+    os.remove(os.path.join(rk, "supabase/tests/labels.test.sql"))
+    for body, why in (("create table labels (id int);", "no row-level security"),
+                      ("create policy p on public.notes for select using (user_id = auth.uid());", "a policy on an existing table"),
+                      ("create table t (id int); alter table t enable row level security; create policy p on t for select using (true);", "an open policy"),
+                      ("create table t (id int); alter table t enable row level security; grant select on t to anon;", "a grant to anon"),
+                      ("alter table notes drop column body;", "a dropped column"),
+                      ("alter table notes rename column body to text;", "a rename"),
+                      ("alter table notes disable row level security;", "row-level security off"),
+                      ("alter table public.users add column bio text;", "a sign-in table"),
+                      ("alter table notes add column api_key text;", "a secret column"),
+                      ("create table public.invoices (id int); alter table public.invoices enable row level security;", "a money table"),
+                      ("create function f() returns int language sql stable security definer as $$ select 1 $$;", "a security definer function"),
+                      ("create or replace function f() returns int language sql stable as $$ select 1 $$;", "a replaced function"),
+                      ("create function g() returns void language plpgsql as $$ begin update notes set id = 1; end $$;", "a function that can write"),
+                      ("update notes set id = 1;", "a data change"),
+                      ("insert into notes values (1);", "new rows"),
+                      # shapes that look additive but aren't (I2 review)
+                      ("create table if not exists notes (id int); alter table notes enable row level security; create policy p on notes for select to authenticated using (1=1);", "if not exists on an existing table"),
+                      ("create table extensions.notes (id int); alter table extensions.notes enable row level security; grant select, update on public.notes to authenticated;", "another schema"),
+                      ('create table "Notes" (id int); alter table "Notes" enable row level security; grant update on notes to authenticated;', "a quoted name"),
+                      ('create table t (id int); alter table t enable row level security; create policy "x on t" on notes for select to authenticated using (1=1);', "a policy name with on"),
+                      ("comment on table notes is E'\\''; update notes set id = 1; comment on table notes is 'z';", "an E string"),
+                      ("create index i$a$ on notes (id); update notes set id = 1; create index j$a$ on notes (id);", "a $ in a name"),
+                      ("create table t (a) as (select id from notes); alter table t enable row level security;", "a copy of a table"),
+                      ("create table t (id int) inherits (notes); alter table t enable row level security;", "inherits"),
+                      ("create function f(stable int) returns int language plpgsql as $$ begin update notes set id = 1; return 1; end $$;", "a plpgsql function"),
+                      ("create function f() returns int language c immutable as 'x', 'y';", "a C function"),
+                      ("alter table notes add column c int default f();", "a default that calls a function"),
+                      ("alter table notes add column c text generated always as (g(id)) stored;", "a generated column"),
+                      ("alter table notes add constraint fk foreign key (id) references other(id) on delete cascade;", "a cascade on an existing table"),
+                      ("create table t (id int); alter table t enable row level security; create policy p on t for select to authenticated using ((true));", "a policy that is always true"),
+                      ("create table t (id int); alter table t enable row level security; create policy p on t for select using (id > 0);", "a policy with no role"),
+                      ("create table t (id int); alter table t enable row level security; grant all on t to authenticated with grant option;", "a grant option"),
+                      ("create trigger x after insert on notes for each row execute function f();", "a trigger"),
+                      ("do $$ begin null; end $$;", "a do block"),
+                      ('create table "no""tes" (id int); alter table notes enable row level security; grant select, update on notes to authenticated;', "a doubled quote in a name"),
+                      ("create function public.g(x int) returns int language sql immutable as $$ select x $$; alter table notes add constraint c check (other.g(id) > 0);", "another schema's function"),
+                      ("create function public.title_ok(x int) returns boolean language sql stable as $$ select true $$;", "an overload of a function the project has"),
+                      ("create function public.can_view(x int) returns boolean language sql stable as $$ select true $$;", "an overload of a function a policy calls quoted"),
+                      ("alter table notes enable row level security;", "row-level security on an existing table"),
+                      ("alter table notes add constraint c check (title ~ 'a\\b');", "a backslash in a string")):
+        write(os.path.join(mig, "0004_more.sql"), body + "\n")
+        code, out = risk()
+        if code or not out.startswith("Mode: full\n") or "- supabase/migrations/0004_more.sql:" not in out or "does more than add" not in out:
+            bad(f"risk-check.sh on a migration with {why} printed {out!r} (exit {code}): it must stay full")
+    os.remove(os.path.join(mig, "0004_more.sql"))
+    write(os.path.join(mig, "0000_base.sql"), "create table notes (id int);\nalter table notes add column x int;\n")
+    code, out = risk()
+    if code or not out.startswith("Mode: full\n") or "changes a migration the integration branch already has" not in out:
+        bad(f"risk-check.sh on an edited migration that is already merged printed {out!r} (exit {code})")
+    run(["git", "checkout", "-q", "--", "supabase"], rk)
+    code, out = risk("supabase/migrations/0005_planned.sql")
+    if code or not out.startswith("Mode: full\n") or "\nNote: supabase/migrations/0005_planned.sql isn't written yet." not in out:
+        bad(f"risk-check.sh on a planned migration not written yet printed {out!r} (exit {code})")
+    write(os.path.join(mig, "0003_labels.sql"), labels)
+    code, out = risk("src/auth/session.ts")
+    if code or not out.startswith("Mode: full\n") or "- supabase/migrations/0003_labels.sql:" not in out or "\n+ " in out or "Needs:" in out:
+        bad(f"risk-check.sh on an additive migration with a sign-in file printed {out!r} (exit {code}): the migration is a risk path again")
+    code, out = risk("--force", "full")
+    if code or not out.startswith("Mode: full (the owner chose full") or "- supabase/migrations/0003_labels.sql:" not in out or "Needs:" in out:
+        bad(f"risk-check.sh --force full on an additive migration printed {out!r} (exit {code}): the review must still see it as a risk path")
+    os.remove(os.path.join(mig, "0003_labels.sql"))
+    write(os.path.join(mig, "0006_x.test.sql"), "update notes set id = 1;\n")
+    code, out = risk()
+    if code or not out.startswith("Mode: full\n") or "+ supabase/migrations/0006_x.test.sql" in out:
+        bad(f"risk-check.sh on a test-named file among the migrations printed {out!r} (exit {code}): it is applied as a migration")
+    os.remove(os.path.join(mig, "0006_x.test.sql"))
     os.makedirs(os.path.join(rk, "supabase/migrations"), exist_ok=True)
     write(os.path.join(rk, "supabase/migrations/0002_tags.sql"), "create table tags (id int);\n")
-    git_id = ["-c", "user.name=selftest", "-c", "user.email=selftest@example.com"]
     for cmd in (["checkout", "-q", "-b", "selftest-risk"], ["add", "supabase"], [*git_id, "commit", "-q", "-m", "tags"]):
         run(["git", *cmd], rk)
     code, out = risk()

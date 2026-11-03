@@ -27,7 +27,7 @@ The paths to change and the function in each, read before planning (`file:line`)
 
 ## Limit
 
-Stop before the change, and write a full plan with this one linked, when it needs: a file not listed, a risk path (`project/CONTROLS.md` § Risk paths), a change to who can read or change data, to what a customer is charged or where money moves, to how secrets are handled, to deleting or sharing people's data, a schema change, a new dependency, a new page or flow, or behaviour § Acceptance criteria doesn't name.
+Stop before the change, and write a full plan with this one linked, when it needs: a file not listed, a risk path (`project/CONTROLS.md` § Risk paths), a change to who can read or change data, to what a customer is charged or where money moves, to how secrets are handled, to deleting or sharing people's data, a schema change beyond the additive migration the risk check named (`harness/MODES.md` § Additive migration), a new dependency, a new page or flow, or behaviour § Acceptance criteria doesn't name.
 
 ## QA scope
 
