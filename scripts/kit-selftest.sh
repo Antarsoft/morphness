@@ -991,11 +991,41 @@ SETTLED = [
     ("harness/SETUP.md", "**QA is `high`** whenever the plan touches a risk path", "QA is medium unless Full-stack is xhigh (G5, harness/agents/qa-engineer.md § Lean QA)"),
     ("harness/modules/data-access/README.md", "QA effort is `high`", "a data-access feature's QA effort follows harness/SETUP.md § Effort per feature (G5)"),
     (".claude/agents/qa-engineer.md", "Default (effort high)", "the medium QA agent is the default (G5)"),
+    ("harness/MODES.md", "A bug is bug mode.", "a bug fix off the risk paths is small mode (MODES.md § Fixing a bug)"),
+    ("AGENTS.md", "something that worked is broken → bug mode;", "the risk check decides a bug fix's mode too (MODES.md § Choosing mode)"),
 ]
 # Text that must be gone from every rendered file: the browser suites no longer depend on what a change touches.
 SETTLED_ANYWHERE = [
     (r"(screens?|pages), auth or (a |the )?public API", "the browser suites run for every change (harness/CONTROLS.md)"),
 ]
+
+def check_small_bugs(bad, t):
+    """H1: a bug fix off the risk paths runs as small mode with bug mode's order (failing test first, root cause
+    before the fix); bug mode is for fixes the risk check sends to full, and hotfixes."""
+    modes = read(os.path.join(t, "harness/MODES.md"))
+    fix = modes.split("\n### Fixing a bug\n", 1)[1].split("\n## ", 1)[0] if "\n### Fixing a bug\n" in modes else ""
+    for want in ("`Mode: plain`", "WIP(<slug>): failing test", "Root cause", "**Escaped**", "hotfix",
+                 "**No test can reach it**", "git diff <hash> HEAD -- <test file>", "§ Files"):
+        if want not in fix:
+            bad(f"harness/MODES.md § Fixing a bug doesn't say {want!r}")
+    choose = modes.split("\n## Choosing mode", 1)[-1]
+    step2 = next((l for l in choose.splitlines() if l.startswith("2. **Something that worked is broken")), "")
+    for want in ("bash scripts/risk-check.sh", "`Mode: full` → bug mode", "`Mode: plain` → small mode"):
+        if want not in step2:
+            bad(f"harness/MODES.md § Choosing mode step 2 doesn't route a bug fix by the risk check ({want!r})")
+    alone = modes.split("\n## Working alone", 1)[-1].split("\n## ", 1)[0]
+    if "reusing the failing-test commit" not in choose or "failing-test commit already made" not in alone:
+        bad("harness/MODES.md doesn't send a bug fix the hand-off risk check raises to bug mode with its failing-test commit")
+    plan = read(os.path.join(t, "harness/templates/small-plan.md"))
+    if "\n## Bug\n" not in plan or "Failing-test commit" not in plan:
+        bad("harness/templates/small-plan.md has no § Bug with the failing-test commit")
+    if "- **Bug fix:** the regression test failed at the failing-test commit" not in plan.split("\n## Check\n", 1)[-1]:
+        bad("harness/templates/small-plan.md § Check doesn't ask for the bug fix's proof")
+    agents = read(os.path.join(t, "AGENTS.md"))
+    mode_line = next((l for l in agents.splitlines() if l.startswith("- **Pick the mode first**")), "")
+    if "bug mode for a fix" not in mode_line or "hotfix is bug mode" not in mode_line:
+        bad("AGENTS.md § Golden rules' mode line doesn't send a risky fix or a hotfix to bug mode")
+
 
 def check_lean_qa(bad, t):
     """G5: QA gets the plan, the diff and the check results, reviews the diff, makes one pass, and runs at medium
@@ -1571,6 +1601,7 @@ def check(name, fx, t):
     check_one_model_source(bad, t)
     check_settled(bad, t)
     check_lean_qa(bad, t)
+    check_small_bugs(bad, t)
     # 6. named checks have commands, and no row names an unknown check
     cfg = lambda key: run(["bash", "-c", f'. scripts/lib/config.sh; config_get {key}'], t).stdout.strip()
     names = set()

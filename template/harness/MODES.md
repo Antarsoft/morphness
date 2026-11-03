@@ -2,7 +2,7 @@
 
 ## Working alone (plain changes)
 
-When `bash scripts/risk-check.sh` prints `Mode: plain`, the main chat makes the change itself: no Full-stack or QA subagent. That is light mode and small mode below. Full-stack and QA run only in full and bug mode (learned: on everyday changes the hand-offs between agents cost more than the work, and the risk check already sends risky ones to full mode).
+When `bash scripts/risk-check.sh` prints `Mode: plain`, the main chat makes the change itself: no Full-stack or QA subagent. That is light mode and small mode below. Full-stack and QA run only in full and bug mode (learned: on everyday changes the hand-offs between agents cost more than the work, and the risk check already sends risky ones to full mode). A bug fix off the risk paths is small mode too (§ Small mode, § Fixing a bug).
 
 Working alone, the main chat follows the builder's rules as well as its own:
 
@@ -10,7 +10,7 @@ Working alone, the main chat follows the builder's rules as well as its own:
 - With **UI change: yes**, also follow `harness/agents/qa-engineer.md` on screenshots and the layout pass (open each after-shot; check every page at the narrowest width when styles or a shared component change). With **Needs live app/services**, its rules for the local stack and `deferred: local` apply, and `project/CONTROLS.md` § Manual smoke when it has rows.
 - Same branch, commit and PR rules as any feature (`AGENTS.md` § Golden rules, `harness/TECHNICAL_LEAD.md` § Commits and branches), and the same guard hook: a deny is final.
 - The `before_qa` checks after the change, scoped by what changed (`end-of-task hook` for the `checks.on_stop` checks, which run when the turn ends: [CONTROLS.md](./CONTROLS.md) § End-of-task checks); then, for small mode, the `before_signoff` checks once in full on the final commit ([CONTROLS.md](./CONTROLS.md)). A check the environment refused is **not run**, never a pass.
-- Before the hand-off, run `bash scripts/risk-check.sh` again with no files (§ Choosing mode, step 4). When it prints `Mode: full`, stop: write a full plan with this change linked, and the agents take it from there.
+- Before the hand-off, run `bash scripts/risk-check.sh` again with no files (§ Choosing mode, step 4). When it prints `Mode: full`, stop: write a full plan with this change linked, and the agents take it from there. For a bug fix that is a bug plan (§ Bug mode): the failing-test commit already made is the reproduction, so QA's reproduction run checks that the test fails at that commit for the reported reason instead of writing another.
 
 ## Full harness
 
@@ -37,7 +37,7 @@ Working alone, the main chat follows the builder's rules as well as its own:
 
 ## Small mode
 
-**Use it when** the risk check prints `Mode: plain` for the files the change will touch and the change alters behaviour (a flag, a field, a format, a message, a sort order, a limit, pagination). The script, not a reading of the request, decides: a change to a risk path is full mode however small, and a change off them is small mode however it is worded. A bug is bug mode.
+**Use it when** the risk check prints `Mode: plain` for the files the change will touch and the change alters behaviour (a flag, a field, a format, a message, a sort order, a limit, pagination). The script, not a reading of the request, decides: a change to a risk path is full mode however small, and a change off them is small mode however it is worded. A bug fix off the risk paths is small mode with the steps in § Fixing a bug; on a risk path it is bug mode.
 
 **Process**
 
@@ -48,14 +48,26 @@ The main chat plans, builds and checks the change itself (§ Working alone); the
 3. **Check.** On the final commit, run the `before_signoff` checks in full and fill the plan's § Check: each check with its exit code (`end-of-task hook` for the `checks.on_stop` checks, which run when the turn ends: [CONTROLS.md](./CONTROLS.md) § End-of-task checks), and each criterion with the test or output that shows it holds. A criterion nothing shows is not met: fix it or stop and tell the human. No `progress.md` or `qa-result.md`.
 4. **Close.** § After QA pass as in full mode, with § Check in place of the QA verdict. No `retro.md`: the learnings file has the verdict and cost lines and **Retro:** `none (small mode)`, with an action item only when something went wrong. It counts toward the prune counter, so the prune sees whether small mode lets problems through.
 
+### Fixing a bug
+
+A bug fix whose files the risk check prints `Mode: plain` for runs as small mode, alone, with bug mode's order kept (learned: a small fix off every risk path cost several times a plain session once Full-stack and QA runs took it):
+
+- **Plan:** the small plan's § Bug: the symptom, what should happen and the source that says so, the reproduction, and the regression test. The human approves it as any plan.
+- **Failing test first.** Write the regression test, run it, and commit it alone (`WIP(<slug>): failing test`) with its failure's tail in § Bug, before any fix. When it doesn't fail for the reported reason, stop and tell the human: nothing gets fixed blind.
+- **No test can reach it** (a third-party console, a device, a live service only): bug mode, where QA records a manual reproduction ([templates/bug-plan.md](./templates/bug-plan.md) § Regression test).
+- **Root cause, then the smallest fix.** Write § Bug → Root cause (the `file:line`, why, why no test caught it, the same pattern elsewhere with the grep and its hit count) before changing code; then the smallest fix that turns the test green without editing it. A same-pattern hit is fixed in this branch only when the human approves adding its file to § Files; otherwise § Bug lists it as out of scope with the reason. A fix that needs a risk path, new behaviour or a file not listed stops: bug mode, with this plan linked.
+- **Check** as § Small mode step 3, plus the proof for the bug: the regression test failed at the failing-test commit, passes now and is unchanged since (`git diff <hash> HEAD -- <test file>` prints nothing), and the reproduction no longer shows the symptom.
+- **Close** as § Small mode step 4, plus bug mode's **Escaped** line and its one action item for the escape (§ Bug mode step 6).
+- **Not for a hotfix:** a production hotfix is bug mode whatever the risk check prints ([RELEASE.md](./RELEASE.md) § Hotfix).
+
 ## Bug mode
 
 **Use when**
 
-- Something that worked, or that an AC, the docs or the product promise, is broken: a bug report, an error in production, "this used to work", and the human wants it fixed
-- A production bug that can't wait for the next release: bug mode on a hotfix branch ([RELEASE.md](./RELEASE.md) § Hotfix)
+- Something that worked, or that an AC, the docs or the product promise, is broken: a bug report, an error in production, "this used to work", and the human wants it fixed, and `bash scripts/risk-check.sh` prints `Mode: full` for the files the fix will touch (off the risk paths it is small mode, § Fixing a bug)
+- A production bug that can't wait for the next release: bug mode on a hotfix branch ([RELEASE.md](./RELEASE.md) § Hotfix), whatever the risk check prints
 
-Not for wrong copy or a typo that nobody reported as broken (small or light mode, § Choosing mode), for new behaviour that fixes nothing (full), or for "why does this happen?" with no fix asked yet (research, then bug mode if it is one).
+Not for wrong copy or a typo that nobody reported as broken (small or light mode, § Choosing mode), for new behaviour that fixes nothing (full), or for "why does this happen?" with no fix asked yet (research, then § Choosing mode step 2 if it is one).
 
 **Process**
 
@@ -92,6 +104,6 @@ No application code changes, no QA, no retro, and research files don't count tow
 The first match wins. The human's wording ("quick fix", "ship it fast", "no time for QA") never changes the mode; only the owner choosing one does ("use full mode", "run it plain"), passed to the script as `--force full` or `--force plain`, or set for every change in `harness.config.yml` → `mode.force`.
 
 1. **A question, no change asked** ("how does", "why does", "which should we use", "compare") → research mode. A question one or two files the Technical Lead reads anyway can answer gets a direct answer, with no research file.
-2. **Something that worked is broken and a fix is asked** ("bug", "broken", "error in production", "this used to work") → bug mode, on a hotfix branch when it can't wait for the next release. A bug fix that touches a risk path never runs Full-stack at `medium`.
+2. **Something that worked is broken and a fix is asked** ("bug", "broken", "error in production", "this used to work"): read the code path, name the files the fix will touch and run `bash scripts/risk-check.sh <files>`. `Mode: full` → bug mode, and its Full-stack never runs at `medium`. `Mode: plain` → small mode with the bug steps (§ Fixing a bug). A fix that can't wait for the next release is bug mode on a hotfix branch either way.
 3. **Any other change:** name the files it will touch and run `bash scripts/risk-check.sh <files>`. `Mode: full` → full mode. `Mode: plain` → light mode when the change alters no behaviour (§ Light mode), small mode otherwise. When the owner forced plain and the script still names a risk path, the change runs alone too, with no QA agent (§ Working alone): forcing plain is the owner's choice to go without the agents, so say so in the plan or the PR record. The Technical Lead may raise plain to full when the request leaves a real product choice open, naming the choice; it never lowers full to plain. The script's output goes in the small plan's § Why small, or in a light change's PR or commit record.
-4. **Before the hand-off** of a small or light change, run `bash scripts/risk-check.sh` again with no files: it reads what the branch really changed. When it now prints `Mode: full`, stop and switch to full mode (a plan, with the first one linked, and QA) before anything is handed off.
+4. **Before the hand-off** of a small or light change, run `bash scripts/risk-check.sh` again with no files: it reads what the branch really changed. When it now prints `Mode: full`, stop and switch to full mode (a plan, with the first one linked, and QA) before anything is handed off; for a bug fix, bug mode, reusing the failing-test commit (§ Working alone).
