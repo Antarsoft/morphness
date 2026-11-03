@@ -13,7 +13,7 @@ added: 2026-10-12
 
 ## Rule
 
-When a plan's Full-stack effort is the highest level (money, tenancy, auth, code on customers' sites), a read-only code review and a security review run after dev and before QA. The security review lists the files it read in full and its tool-call count; a pass of a handful of calls doesn't count. The lead checks every finding against the source before acting on it.
+When a plan touches a risk path (money, tenancy, auth, migrations, code on customers' sites) or its Full-stack effort is the highest level, a read-only code review runs after dev and before QA, and a security review too when the change touches sign-in, access rules, money or a public API. The security review lists the files it read in full and its tool-call count; a pass of a handful of calls doesn't count. The lead checks every finding against the source before acting on it.
 
 ## Why
 

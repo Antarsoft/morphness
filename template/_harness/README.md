@@ -11,7 +11,7 @@ features/
       Plan/
         feature.md
         plan.md
-        review.md      # TL: code review findings (Full-stack xhigh only)
+        review.md      # TL: code review findings (risk path or Full-stack xhigh)
         retro.md       # TL: retrospective (after QA pass or escalation)
       Research/
         <topic>.md     # researcher: optional research before the plan

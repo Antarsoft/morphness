@@ -10,7 +10,7 @@
 
 - May use skills and MCPs for **research and planning**.
 - Records links and decisions in `plan.md` → References, each as `file § section` or `file:line`, never a whole file.
-- Runs the `code-review` and, for risk areas, `security-review` skills itself before QA on `xhigh` work ([SETUP.md](./SETUP.md) § Code review before QA).
+- Runs the `code-review` skill, and for sign-in, access rules, secrets, money, a public API, or deleting or sharing people's data the `security-review` skill, itself before QA on risk-path and `xhigh` work ([SETUP.md](./SETUP.md) § Code review before QA).
 - Read-only MCP checks on a remote environment (listing tables, advisors, read-only queries the human approves) are fine. Anything that writes goes through § Connector actions below: the only agent that may call a write tool, and only after the human approves that exact action.
 
 ## Full-stack engineer

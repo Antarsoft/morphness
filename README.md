@@ -189,7 +189,7 @@ flowchart TB
 | Role | What it does | Model · effort |
 |------|--------------|----------------|
 | 🧭 **Technical Lead** | Your session. Plans and delegates risky work; makes small changes itself | sonnet · high (opus with the opus preset) |
-| 🛠️ **Full-stack** | Builds the approved plan and its tests | sonnet · high (xhigh for risky cores; opus with the opus preset) |
+| 🛠️ **Full-stack** | Builds the approved plan and its tests | sonnet · high (xhigh for sign-in, secrets and money; opus with the opus preset) |
 | ✅ **QA** | Reviews the diff, runs the checks, validates every criterion | sonnet · medium (high when Full-stack is xhigh) |
 | 🔎 **Researcher** | Answers a question about your code or the web with cited sources, read-only. For when you want an answer, not a change | sonnet · medium (high for architecture; opus at high with the opus preset) |
 | ⚖️ **Legal writer** | Writes wording that makes a legal promise | fable or opus · high |

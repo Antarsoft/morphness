@@ -79,10 +79,10 @@ Each framework or library behaviour the plan depends on, with the source that co
 
 Pick per feature; the human approves it with the plan. Levels and criteria: `harness/SETUP.md` § Effort per feature; subagent names: `project/HARNESS_AGENTS.md`.
 
-- **Full-stack:** medium | high | xhigh (or a trial variant from `_harness/trials/`): one-line reason. A `medium` plan names the file it copies.
+- **Full-stack:** medium | high | xhigh (or a trial variant from `_harness/trials/`): one-line reason. A `medium` plan names the file it copies; `xhigh` is for sign-in, secrets and money only.
 - **QA:** medium | high (high only when Full-stack is xhigh): one-line reason.
-- **Code review before QA:** yes (Full-stack xhigh) | no. See `harness/SETUP.md` § Code review before QA.
-- **Security review before QA:** yes (Security feature: yes, or Full-stack xhigh on a risk area) | no. <!-- module:security -->
+- **Code review before QA:** yes (the risk check named a risk path, or Full-stack xhigh) | yes, with the security review (it also touches sign-in, access rules, secrets, money, a public API, or deleting or sharing people's data) | no. See `harness/SETUP.md` § Code review before QA.
+- **Security review before QA:** yes (Security feature: yes, whatever the line above says) | no. <!-- module:security -->
 
 ## Acceptance criteria
 
