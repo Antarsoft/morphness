@@ -1,0 +1,1 @@
+- **The main chat prints the mode sections it needs instead of reading `harness/MODES.md` whole.** The mode line in `AGENTS.md` § Golden rules prints § Choosing mode and then the chosen mode's section with `scripts/doc-section.sh`, and no longer links the whole file. The kit's self-test checks it.

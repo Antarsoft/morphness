@@ -10,7 +10,7 @@ The sections each step needs, besides the ones the § Must do bullets link for i
 
 | Step | Read |
 |------|------|
-| Pick the mode | `bash scripts/risk-check.sh <files>`; `bash scripts/doc-section.sh harness/MODES.md "Choosing mode" "Full harness"` |
+| Pick the mode | `bash scripts/risk-check.sh <files>`; `bash scripts/doc-section.sh harness/MODES.md "Full harness"` (§ Choosing mode is printed already: `AGENTS.md`) |
 | Write the plan | The code the change touches; `.claude/rules/testing.md`; the plan templates; `bash scripts/doc-section.sh harness/SETUP.md "Effort per feature" "Where QA can run"`; for a step on an external service, `bash scripts/doc-section.sh harness/SKILLS_AND_MCPS.md "Connector actions"` |
 | Run the checklist | § Before asking for approval below |
 | Build | `bash scripts/doc-section.sh harness/HANDOFFS.md "Full-stack engineer"` (the prompt block) |
