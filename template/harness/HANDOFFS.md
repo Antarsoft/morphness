@@ -146,10 +146,10 @@ Before any fix ([MODES.md](./MODES.md) § Bug mode, step 2).
 ```text
 You are the QA engineer for a bug-mode plan. This is the reproduction run: no fix exists yet.
 Read: <abs-path>/Plan/plan.md (must be approved), § Symptom, § Reproduction and § Regression test.
-Write the regression test § Regression test assigns, in the file and at the level it names. Add no other tests and change no product code.
+Write the regression test § Regression test assigns, in the file and at the level it names. Add only its § Regression test → Edge inputs cases, no other tests, and change no product code.
 Path rules: <each .claude/rules/*.md file whose paths: match the plan's files, or none>. Read them first.
 Run it and fill <abs-path>/QA/qa-result.md § Reproduction: commit, command, exit code, the failure's tail, and whether it fails for the reason the plan gives. A failure for another reason (setup, fixtures) means fix the test.
-If you can't make it fail, record not reproduced with what you tried. Never leave a test that passes today.
+If you can't make it fail, record not reproduced with what you tried. The reported case must fail today; the edge input cases may pass.
 Update only: the regression test file and qa-result.md. Do not commit; the Technical Lead commits the test.
 Write logs and scratch files under the session scratchpad directory, never / or the repo root.
 No verdict. Hand back to the Technical Lead with the test path, reproduced or not, and the failure in one line.
@@ -161,7 +161,7 @@ After the failing test is committed; add it to the Full-stack block above.
 
 ```text
 This is a bug-mode plan (harness/agents/fullstack-engineer.md § Bug mode). The failing regression test is committed as WIP(<slug>): failing test; its run is in <abs-path>/QA/qa-result.md § Reproduction.
-Fill progress.md § Root cause before changing code. Then make the smallest fix that turns the test green, within plan.md § Fix limit.
+Fill progress.md § Root cause before changing code. Then make the smallest fix that turns the test green and holds for § Regression test → Edge inputs (an order the bug touches ends with a unique key), within plan.md § Fix limit.
 Do not edit the regression test. If the fix needs anything § Fix limit names as a stop, record what you found in § Root cause and hand back without changing code.
 ```
 

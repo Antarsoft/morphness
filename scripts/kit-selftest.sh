@@ -1027,6 +1027,12 @@ def check_small_bugs(bad, t):
         bad("harness/templates/small-plan.md has no § Bug with the failing-test commit")
     if "- **Bug fix:** the regression test failed at the failing-test commit" not in plan.split("\n## Check\n", 1)[-1]:
         bad("harness/templates/small-plan.md § Check doesn't ask for the bug fix's proof")
+    for f, sect in (("harness/templates/small-plan.md", "\n## Bug\n"), ("harness/templates/bug-plan.md", "\n## Regression test\n")):
+        doc = read(os.path.join(t, f))
+        part = doc.split(sect, 1)[1].split("\n## ", 1)[0] if sect in doc else ""
+        if "- **Edge inputs:**" not in part or "equal values" not in part or "unique key" not in part:
+            bad(f"{f} § {sect.strip().lstrip('# ')} doesn't name the edge inputs (equal values, a unique key to break ties): "
+                "a fix that passes its one test can still fail on ties")
     agents = read(os.path.join(t, "AGENTS.md"))
     mode_line = next((l for l in agents.splitlines() if l.startswith("- **Pick the mode first**")), "")
     if "bug mode for a fix" not in mode_line or "hotfix is bug mode" not in mode_line:

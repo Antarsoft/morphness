@@ -25,6 +25,7 @@ What to build, in the requester's words and then in exact terms: flags, fields, 
 - **Should:** what should happen, and the source that says so (an AC, the docs, the product promise).
 - **Reproduction:** the steps, or the command that shows it.
 - **Regression test:** file and test name; it fails for the reported reason before the fix. **Failing-test commit:** the `WIP(<slug>): failing test` hash and the failure's tail.
+- **Edge inputs:** the inputs next to the symptom that the fix must also get right, those that apply, each one in the test (one `n/a: <reason>` line when none apply): equal values (two items with the same sort key or timestamp), none, one, exactly at a limit or page edge, a last page that is not full. When the bug is in an order (a sort, paging, "the latest"), the order ends with a unique key such as the id, so items with equal values keep one order every time. Only the reported case must fail before the fix; the edge cases may pass.
 - **Root cause:** written before the fix: the `file:line`, why it happens, why no test caught it, and the same pattern elsewhere (the grep and its hit count; each hit fixed only once the human adds its file to § Files, or out of scope with the reason).
 
 ## Files
@@ -59,7 +60,7 @@ Filled on the final commit, in place of `progress.md` and `qa-result.md`.
 - **Checks:** each `before_qa` check (with its scope) and each `before_signoff` check, with its exit code; `end-of-task hook` for the `checks.on_stop` checks, which run when the turn ends (`harness/CONTROLS.md` § End-of-task checks; the merge gate reads `bash scripts/checks.sh status`); **not run** with the reason for any the environment refused.
 - **Criteria:** one line per acceptance criterion: met, with the test name or the output that shows it, or `deferred: local` (needs a live service, `harness/agents/qa-engineer.md`).
 - **Screenshots:** the files, when **UI change** is yes.
-- **Bug fix:** the regression test failed at the failing-test commit, passes now and is unchanged since (`git diff <hash> HEAD -- <test file>` prints nothing), and the reproduction no longer shows the symptom (`harness/MODES.md` § Fixing a bug). Delete this line otherwise.
+- **Bug fix:** the regression test failed at the failing-test commit, passes now with its edge inputs and is unchanged since (`git diff <hash> HEAD -- <test file>` prints nothing), and the reproduction no longer shows the symptom (`harness/MODES.md` § Fixing a bug). Delete this line otherwise.
 - **Risk check at hand-off:** the first line of `bash scripts/risk-check.sh` with no files (it must still print `Mode: plain`).
 
 ## Decisions

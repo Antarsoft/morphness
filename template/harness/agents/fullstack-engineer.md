@@ -42,7 +42,7 @@ Build to the plan's acceptance criteria and write tests from them. Never fetch t
 When the plan says **Mode:** bug ([harness/MODES.md](../MODES.md) § Bug mode), QA has already committed a failing regression test (`WIP(<slug>): failing test`; `qa-result.md` § Reproduction).
 
 1. **Cause before code.** Find why the test fails and fill `progress.md` § Root cause (the `file:line`, since when, why no test caught it, the same pattern elsewhere with the grep and its hit count) before changing any code.
-2. **Smallest fix.** Change only what makes the regression test pass, plus the same-pattern places the plan's **Fix limit** covers. No refactors or cleanups nearby; list them in Notes for Technical Lead instead.
+2. **Smallest fix.** Change only what makes the regression test pass and holds for the plan's **Edge inputs** (an order the bug touches ends with a unique key), plus the same-pattern places the plan's **Fix limit** covers. No refactors or cleanups nearby; list them in Notes for Technical Lead instead.
 3. **Don't edit the regression test.** If you think it is wrong (it tests the wrong thing, or fails for another reason), stop and hand back with why.
 4. **Stop at the fix limit.** If the fix needs anything the plan's **Fix limit** names as a stop (new behaviour, a migration, a public API change, a risk area it doesn't name, other files), record what you found in § Root cause and hand back without changing code.
 
