@@ -73,7 +73,7 @@ See [MODES.md](./MODES.md). Summary:
 |------|------------------------------|--------------|
 | **Full** | Yes | Yes |
 | **Light** | No | None: the main chat makes the change and runs the named checks |
-| **Small** | Yes, with the short small plan | None: the main chat builds, runs the checks and fills the plan's § Check; a learnings line instead of `retro.md`. A bug fix off the risk paths too, failing test first |
+| **Small** | Yes, with the short small plan | None: the main chat builds, runs the checks and fills the plan's § Check; a learnings line instead of `retro.md`. A bug fix off the risk paths writes no plan: failing test first, the record in its commits and PR |
 | **Bug** (fix on a risk path, or a hotfix) | Yes, with the short bug plan | Yes: QA writes the failing test first, then Full-stack fixes, then QA re-runs; a learnings line instead of `retro.md` |
 | **Research** | `_harness/research/` only | Researcher only; no code, no QA, no retro |
 
@@ -207,7 +207,7 @@ Technical Lead:
 
 ## Retrospective
 
-Every full-harness feature ends with a short Technical Lead retro. No retro in light mode; in small and bug mode the learnings file alone is the look-back ([MODES.md](./MODES.md) § Small mode step 4, § Bug mode step 6).
+Every full-harness feature ends with a short Technical Lead retro. No retro in light mode; in small and bug mode the learnings file alone is the look-back, and a small-mode bug fix writes one only when something went wrong ([MODES.md](./MODES.md) § Small mode step 4, § Bug mode step 6).
 
 - **When:** after the QA pass hand-off, or on `failed-escalated`, before the next plan. Failed features need it most.
 - **Inputs:** `feature.md`, `plan.md` (with its open questions and answers), `progress.md`, `review.md` if any, `qa-result.md`, the steps file if any, the agents' completion notices and any human corrections in the conversation.

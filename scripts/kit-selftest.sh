@@ -1011,7 +1011,9 @@ def check_small_bugs(bad, t):
     modes = read(os.path.join(t, "harness/MODES.md"))
     fix = modes.split("\n### Fixing a bug\n", 1)[1].split("\n## ", 1)[0] if "\n### Fixing a bug\n" in modes else ""
     for want in ("`Mode: plain`", "WIP(<slug>): failing test", "Root cause", "**Escaped**", "hotfix",
-                 "**No test can reach it**", "git diff <hash> HEAD -- <test file>", "§ Files"):
+                 "**No test can reach it**", "git diff <hash> HEAD -- <test file>", "**No plan file.**",
+                 "**edge inputs**", "equal values", "unique key", "**No learnings file** unless something went wrong",
+                 "**Should**", "**Proof**", "**Commit**", "only for restoring behaviour"):
         if want not in fix:
             bad(f"harness/MODES.md § Fixing a bug doesn't say {want!r}")
     choose = modes.split("\n## Choosing mode", 1)[-1]
@@ -1022,12 +1024,11 @@ def check_small_bugs(bad, t):
     alone = modes.split("\n## Working alone", 1)[-1].split("\n## ", 1)[0]
     if "reusing the failing-test commit" not in choose or "failing-test commit already made" not in alone:
         bad("harness/MODES.md doesn't send a bug fix the hand-off risk check raises to bug mode with its failing-test commit")
+    # I1: a small-mode bug fix writes no plan file, so the small plan has no bug section left to fill
     plan = read(os.path.join(t, "harness/templates/small-plan.md"))
-    if "\n## Bug\n" not in plan or "Failing-test commit" not in plan:
-        bad("harness/templates/small-plan.md has no § Bug with the failing-test commit")
-    if "- **Bug fix:** the regression test failed at the failing-test commit" not in plan.split("\n## Check\n", 1)[-1]:
-        bad("harness/templates/small-plan.md § Check doesn't ask for the bug fix's proof")
-    for f, sect in (("harness/templates/small-plan.md", "\n## Bug\n"), ("harness/templates/bug-plan.md", "\n## Regression test\n")):
+    if "\n## Bug\n" in plan or "- **Bug fix:**" in plan:
+        bad("harness/templates/small-plan.md still has a bug section: a small-mode bug fix writes no plan (MODES.md § Fixing a bug)")
+    for f, sect in (("harness/templates/bug-plan.md", "\n## Regression test\n"),):
         doc = read(os.path.join(t, f))
         part = doc.split(sect, 1)[1].split("\n## ", 1)[0] if sect in doc else ""
         if "- **Edge inputs:**" not in part or "equal values" not in part or "unique key" not in part:
