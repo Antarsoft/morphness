@@ -59,7 +59,7 @@ need() {  # need <tool> <what breaks without it>
   command -v "$1" >/dev/null 2>&1 || missing+=("$1: $2")
 }
 need git "the branch, PR and release process (the installed scripts call git throughout)"
-need python3 "scripts/guard.sh blocks every tool call (unless harness.config.yml sets guard.fail_open: true), and the cost, evidence and learned-rules scripts do not run (the prune counter runs without its trial and rule-tag counts)"
+need python3 "scripts/guard.sh blocks every tool call (unless harness.config.yml sets guard.fail_open: true), and the cost, evidence, learned-rules and doc-section scripts do not run (the prune counter runs without its trial and rule-tag counts)"
 # A python3 that is a stub (macOS before the Command Line Tools, the Microsoft Store alias) or older than 3.7
 # passes command -v but can't run the guard.
 if command -v python3 >/dev/null 2>&1 && [ "$(python3 -I -c 'import sys; print(sys.version_info >= (3, 7))' 2>/dev/null)" != True ]; then

@@ -120,7 +120,7 @@ Where threads and a coordinator exist depends on the environment (`environment` 
 
 ## Subagent prompt blocks (customize paths)
 
-**Full-stack engineer**
+### Full-stack engineer
 
 ```text
 You are the Full-stack engineer for this harness feature.
@@ -139,7 +139,9 @@ For any UI change (altered or new UI): save screenshots per harness/agents/fulls
 Hand back to the Technical Lead when done.
 ```
 
-**QA engineer, bug reproduction** ([MODES.md](./MODES.md) § Bug mode, step 2; before any fix)
+### QA engineer, bug reproduction
+
+Before any fix ([MODES.md](./MODES.md) § Bug mode, step 2).
 
 ```text
 You are the QA engineer for a bug-mode plan. This is the reproduction run: no fix exists yet.
@@ -153,7 +155,9 @@ Write logs and scratch files under the session scratchpad directory, never / or 
 No verdict. Hand back to the Technical Lead with the test path, reproduced or not, and the failure in one line.
 ```
 
-**Full-stack engineer, bug mode** (after the failing test is committed; add to the Full-stack block above)
+### Full-stack engineer, bug mode
+
+After the failing test is committed; add it to the Full-stack block above.
 
 ```text
 This is a bug-mode plan (harness/agents/fullstack-engineer.md § Bug mode). The failing regression test is committed as WIP(<slug>): failing test; its run is in <abs-path>/QA/qa-result.md § Reproduction.
@@ -161,7 +165,7 @@ Fill progress.md § Root cause before changing code. Then make the smallest fix 
 Do not edit the regression test. If the fix needs anything § Fix limit names as a stop, record what you found in § Root cause and hand back without changing code.
 ```
 
-**QA engineer**
+### QA engineer
 
 ```text
 You are the QA engineer for this harness feature. Follow harness/agents/qa-engineer.md § Lean QA.
@@ -183,7 +187,7 @@ Write logs and scratch files under the session scratchpad directory, never / or 
 Verdict: pass or fail. Hand back to the Technical Lead.
 ```
 
-**Researcher**
+### Researcher
 
 ```text
 You are the researcher for this question.

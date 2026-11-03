@@ -14,7 +14,7 @@ These are the seed principles: each one comes from a failure that reached a buil
 
 ## Group index
 
-Read this table first. A group whose "skip" condition holds takes one `n/a` line in `plan.md` (§ How to use it) and its items are not read; read the other groups in full.
+Read this table first. A group whose "skip" condition holds takes one `n/a` line in `plan.md` (§ How to use it) and its items are not read; print the other groups in full, in one call: `bash scripts/doc-section.sh harness/PLAN_CHECKLIST.md "<group>" …`.
 
 | Group | Items | Skip the group when |
 |-------|-------|---------------------|

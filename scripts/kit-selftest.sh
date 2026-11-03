@@ -1033,6 +1033,40 @@ def check_small_bugs(bad, t):
         bad("AGENTS.md § Golden rules' mode line doesn't send a risky fix or a hotfix to bug mode")
 
 
+def check_doc_sections(bad, t):
+    """H3: scripts/doc-section.sh prints one section of a harness doc, and every call the docs spell out names a
+    section that exists, so the Technical Lead reads the part a step needs, not the whole file."""
+    ds = ["bash", "scripts/doc-section.sh"]
+    r = run(ds + ["harness/MODES.md", "Choosing mode"], t)
+    if r.returncode or not r.stdout.startswith("## Choosing mode") or "\n## Research mode" in r.stdout:
+        bad(f"scripts/doc-section.sh didn't print only § Choosing mode (exit {r.returncode}, {r.stdout[:80]!r})")
+    r = run(ds + ["harness/MODES.md", "Small mode"], t)
+    if r.returncode or "\n### Fixing a bug\n" not in r.stdout or "\n## Bug mode" in r.stdout:
+        bad("scripts/doc-section.sh doesn't keep a section's subsections and stop at the next section")
+    r = run(ds + ["harness/MODES.md", "No such section"], t)
+    if r.returncode != 1 or "Choosing mode" not in r.stderr:
+        bad(f"scripts/doc-section.sh on a missing heading exited {r.returncode} without listing the headings")
+    r = run(ds + ["harness/HANDOFFS.md", "QA engineer"], t)
+    if r.returncode or not r.stdout.startswith("### QA engineer\n") or "bug reproduction" in r.stdout.split("\n", 1)[0]:
+        bad("scripts/doc-section.sh doesn't prefer the exact heading (HANDOFFS.md § QA engineer)")
+    call = re.compile(r"doc-section\.sh ((?:harness|project)/[\w./-]+\.md)((?: \\?\"[^\"<>…]+\\?\")+)")
+    seen = 0
+    for path in files_under(t, exts=(".md",)):
+        rel = os.path.relpath(path, t)
+        if rel.startswith(("_harness/features", "node_modules")):
+            continue
+        for m in call.finditer(read(path)):
+            heads = re.findall(r'\\?"([^"<>…]+?)\\?"', m.group(2))
+            r = run(ds + [m.group(1)] + heads, t)
+            seen += 1
+            if r.returncode:
+                bad(f"{rel}: `doc-section.sh {m.group(1)} {' '.join(repr(h) for h in heads)}` finds no single section ({r.stderr.splitlines()[0] if r.stderr else 'exit ' + str(r.returncode)})")
+    if "Bash(bash scripts/doc-section.sh:*)" not in read(os.path.join(t, ".claude/settings.json")):
+        bad(".claude/settings.json doesn't allow `bash scripts/doc-section.sh`, so every section read prompts")
+    if seen < 8:
+        bad(f"only {seen} doc-section.sh calls found in the rendered docs: harness/TECHNICAL_LEAD.md § Full mode, step by step names the sections to read")
+
+
 def check_risk_review(bad, t):
     """H2: the code review before QA runs for every full or bug plan on a risk path, not only at xhigh; xhigh is
     for sign-in, secrets and money (harness/SETUP.md § Code review before QA, § Choosing a level)."""
@@ -1065,7 +1099,7 @@ def check_lean_qa(bad, t):
         if want not in lean:
             bad(f"harness/agents/qa-engineer.md § Lean QA doesn't say {want!r}")
     handoffs = read(os.path.join(t, "harness/HANDOFFS.md"))
-    parts = handoffs.split("**QA engineer**\n", 1)[-1].split("```", 2) if "**QA engineer**\n" in handoffs else []
+    parts = handoffs.split("\n### QA engineer\n", 1)[-1].split("```", 2) if "\n### QA engineer\n" in handoffs else []
     block = parts[1] if len(parts) > 2 else ""
     for want in ("§ Lean QA", "base <git merge-base", "git diff --stat", "untracked: <", "Check results: <bash scripts/checks.sh status", "one pass"):
         if want not in block:
@@ -1131,12 +1165,12 @@ def check_path_rules(bad, t):
             bad(f"a task on {path} loads .claude/rules/{got or 'nothing'}, want {want or 'nothing'}")
     # every Full-stack and QA prompt block names the path rules (a bug-mode add-on to the Full-stack block excepted)
     blocks = read(os.path.join(t, "harness/HANDOFFS.md")).split("## Subagent prompt blocks", 1)[-1]
-    found = re.findall(r"^\*\*((?:Full-stack|QA) engineer[^*]*)\*\*[^\n]*\n+```text\n(.*?)```", blocks, re.S | re.M)
+    found = re.findall(r"^### ((?:Full-stack|QA) engineer[^\n]*)\n+(?:[^`\n][^\n]*\n+)?```text\n(.*?)```", blocks, re.S | re.M)
     if len(found) < 3:
         bad(f"harness/HANDOFFS.md: found {len(found)} Full-stack and QA prompt blocks, want at least 3")
     for role, block in found:
-        if "Path rules:" not in block and "add to the Full-stack block above" not in blocks.split(f"**{role}**", 1)[1].split("\n", 1)[0]:
-            bad(f"harness/HANDOFFS.md **{role}** prompt block has no Path rules: line naming the .claude/rules/ files it needs")
+        if "Path rules:" not in block and "to the Full-stack block above" not in blocks.split(f"### {role}\n", 1)[1].split("```", 1)[0]:
+            bad(f"harness/HANDOFFS.md § {role} prompt block has no Path rules: line naming the .claude/rules/ files it needs")
 
 def check_owner_allowance(bad, t):
     """C3: an install over the owner's own 3 KB CLAUDE.md (render.md § 2 keeps it above `## Morphness`) still passes the
@@ -1632,6 +1666,7 @@ def check(name, fx, t):
     check_lean_qa(bad, t)
     check_small_bugs(bad, t)
     check_risk_review(bad, t)
+    check_doc_sections(bad, t)
     # 6. named checks have commands, and no row names an unknown check
     cfg = lambda key: run(["bash", "-c", f'. scripts/lib/config.sh; config_get {key}'], t).stdout.strip()
     names = set()
