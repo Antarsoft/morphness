@@ -2,7 +2,25 @@
 
 **Full and bug mode, non-negotiable:** no user message ("execute", "run", "implement", "fix", "start coding") overrides it: those mean **delegate to the Full-stack subagent**. In light and small mode you build and check the change yourself ([harness/MODES.md](./MODES.md) § Working alone); the delegate, QA and "never" bullets below are full and bug mode only.
 
-Config keys named here live in `harness.config.yml`: the integration branch (`branches.integration`), the production branch (`branches.production`), the owner (`humans`, role `owner`), `ci_gate`, `merge_by_agent`, `modules`, `risk_areas` and `loop`. This file holds the hard rules; each bullet links the file that owns the detail. Read the linked section when you reach that step.
+Config keys named here live in `harness.config.yml`: the integration branch (`branches.integration`), the production branch (`branches.production`), the owner (`humans`, role `owner`), `ci_gate`, `merge_by_agent`, `modules`, `risk_areas` and `loop`. This file holds the hard rules; each bullet links the file that owns the detail. Read the linked section when you reach that step, not the whole file: `bash scripts/doc-section.sh <file> "<heading>"` prints one section (with its subsections), and with no heading it lists them. Read in full only this file, the plan templates (`harness/templates/feature.md` and `plan.md`, or `bug-plan.md`) once when you write the plan, `.claude/rules/testing.md`, the plan checklists' groups that apply (§ Before asking for approval) and the `project/` docs the change needs (learned: the main chat read the long harness docs whole, some more than once, and carried them through every later step of the feature).
+
+## Full mode, step by step
+
+The sections each step needs, besides the ones the § Must do bullets link for it.
+
+| Step | Read |
+|------|------|
+| Pick the mode | `bash scripts/risk-check.sh <files>`; `bash scripts/doc-section.sh harness/MODES.md "Choosing mode" "Full harness"` |
+| Write the plan | The code the change touches; `.claude/rules/testing.md`; the plan templates; `bash scripts/doc-section.sh harness/SETUP.md "Effort per feature" "Where QA can run"`; for a step on an external service, `bash scripts/doc-section.sh harness/SKILLS_AND_MCPS.md "Connector actions"` |
+| Run the checklist | § Before asking for approval below |
+| Build | `bash scripts/doc-section.sh harness/HANDOFFS.md "Full-stack engineer"` (the prompt block) |
+| Review before QA, when the plan says yes | `bash scripts/doc-section.sh harness/SETUP.md "Code review before QA"` |
+| QA | `bash scripts/doc-section.sh harness/HANDOFFS.md "QA engineer"` (the prompt block) |
+| QA fail | `bash scripts/doc-section.sh harness/SETUP.md "QA iteration"` |
+| After QA pass | `bash scripts/doc-section.sh harness/SETUP.md "After QA pass" "Retrospective"` |
+| Prune due | `bash scripts/doc-section.sh harness/SETUP.md "Prune"` |
+
+**Bug mode** reads `bash scripts/doc-section.sh harness/MODES.md "Bug mode"`, writes `harness/templates/bug-plan.md` in place of the two plan templates, and adds two prompt blocks: `bash scripts/doc-section.sh harness/HANDOFFS.md "QA engineer, bug reproduction" "Full-stack engineer, bug mode"`. **Research mode** reads `bash scripts/doc-section.sh harness/MODES.md "Research mode"` and the researcher's block, `bash scripts/doc-section.sh harness/HANDOFFS.md "Researcher"`.
 
 ## Must do
 
@@ -46,7 +64,7 @@ Every message re-reads the whole thread, so long threads cost more per step. One
 
 ## Before asking for approval
 
-Full mode only (small and light modes run no checklist, bug mode only § Planning and scope: [harness/MODES.md](./MODES.md)). Read [harness/PLAN_CHECKLIST.md](./PLAN_CHECKLIST.md) and [project/PLAN_CHECKLIST.md](../project/PLAN_CHECKLIST.md) and run them. Record the greps and their hit counts in `plan.md` § References → **Greps**, one line per kit item (`K<n>`) and project item (`P<n>`), or one "n/a" line for an item or a whole group that doesn't apply. A plan with no Greps record is not ready for approval.
+Full mode only (small and light modes run no checklist, bug mode only § Planning and scope: [harness/MODES.md](./MODES.md)). Run [harness/PLAN_CHECKLIST.md](./PLAN_CHECKLIST.md) and [project/PLAN_CHECKLIST.md](../project/PLAN_CHECKLIST.md). Print the kit checklist's rules and index first (`bash scripts/doc-section.sh harness/PLAN_CHECKLIST.md "How to use it" "Group index"`), then each group the index doesn't skip, all in one call (for example `bash scripts/doc-section.sh harness/PLAN_CHECKLIST.md "Planning and scope" "Testing" "Process" "Data"`); read the project checklist in full. Record the greps and their hit counts in `plan.md` § References → **Greps**, one line per kit item (`K<n>`) and project item (`P<n>`), or one "n/a" line for an item or a whole group that doesn't apply. A plan with no Greps record is not ready for approval.
 
 ## Must not do (full and bug mode)
 
