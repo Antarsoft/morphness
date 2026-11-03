@@ -50,7 +50,7 @@ A change to any of these gets the full e2e suite from Full-stack and a full QA r
 
 ## Risk areas
 
-These never run at `medium` effort and get the pre-QA code review when the plan picks `xhigh`:
+These never run at `medium` effort and get the pre-QA code review in full and bug mode; Full-stack runs at `xhigh` only for auth (sign-in and sessions) and billing:
 
 - **Auth:** sessions, OAuth callbacks, admin checks, anything that trusts an email (Confirm email must be on).
 - **Billing:** webhooks (signature verification), charges to stored payment details, customer matching.

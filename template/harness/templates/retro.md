@@ -57,7 +57,7 @@ Routing:
 | Code change | Tighten a shared schema | A new harness feature (`feature.md`) or a task suggestion |
 | Doc change | Note a project fact in `project/PROJECT.md` | Light-mode docs change, own commit on this feature's PR |
 | Harness change | Split large features by risk | The owner file per MORPHING.md, own commit on this feature's PR (a large one gets its own plan); the rule ends with `(from <feature-slug>, <date>)` |
-| Process change | Run a code review before QA for xhigh work | Same as a harness change; a trial (`_harness/trials/`) first whenever it changes how a role works |
+| Process change | Run the browser suite before the code review | Same as a harness change; a trial (`_harness/trials/`) first whenever it changes how a role works |
 
 ---
 

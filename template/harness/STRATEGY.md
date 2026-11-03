@@ -28,7 +28,7 @@ _harness/
         Plan/
           feature.md      # human intent (none in bug mode)
           plan.md         # Tech Lead; requires human approval before dev (bug mode: the short bug plan)
-          review.md       # Tech Lead; pre-QA code review findings (xhigh Full-stack only)
+          review.md       # Tech Lead; pre-QA code review findings (risk path or xhigh Full-stack)
           retro.md        # Tech Lead; retrospective after pass or escalation
         Research/
           <topic>.md      # Researcher; optional research before the plan
@@ -71,7 +71,7 @@ With the roadmap module on, the steps file lives next to the version checklist i
 - Include in `plan.md`: title, dates, version, summary, implementation steps (phased if needed), references, **acceptance criteria**, QA scope, agent effort, open questions (with suggested defaults), approval state.
 - Set lifecycle **status** ([SETUP.md](./SETUP.md) § Lifecycle status).
 - Run [PLAN_CHECKLIST.md](./PLAN_CHECKLIST.md) and seek **human approval** on `plan.md` before delegating to the Full-stack engineer.
-- After dev completes, delegate to the QA engineer (for `xhigh` Full-stack work, after the read-only review in [SETUP.md](./SETUP.md) § Code review before QA).
+- After dev completes, delegate to the QA engineer (on a risk path or for `xhigh` Full-stack work, after the read-only review in [SETUP.md](./SETUP.md) § Code review before QA).
 - After the QA verdict: if **pass**, hand to the human; if **fail**, re-delegate to the same Full-stack variant with `qa-result.md` (at most `loop.qa_max_rounds` QA rounds per version; the Tech Lead enforces this, QA does not track the count).
 - On the last allowed QA **fail**, set `failed-escalated` and hand to the human; further work uses a **new version** folder.
 - After QA **pass**, write the steps file (or none) and set the plan to `passed` ([SETUP.md](./SETUP.md) § After QA pass) before handing to the human.

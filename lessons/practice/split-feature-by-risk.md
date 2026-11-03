@@ -13,7 +13,7 @@ added: 2026-10-12
 
 ## Rule
 
-A large feature with a risky core and a sizeable ordinary part is split into two plans: the core at the highest effort, the rest at the default, each with its own QA pass.
+A large feature with a risky core and a sizeable ordinary part is split into two plans: the core (sign-in or money) at the highest effort, the rest at the default, each with its own QA pass.
 
 ## Why
 

@@ -242,7 +242,7 @@ preset costs roughly 1.5x to 2x per feature: only the Technical Lead, Full-stack
 change, and Opus is about twice Sonnet per token at the list prices in `harness/MODEL_PRICES.md`
 (read the ratio from that table, don't quote it from memory). A rough comparison, not a quote: real
 cost depends on the feature, the codebase and how many QA rounds it takes. `xhigh` effort costs
-noticeably more than `high`, which is why it is only for risky cores." Then add: "After every feature
+noticeably more than `high`, which is why it is only for sign-in, secrets and money." Then add: "After every feature
 the hand-off shows what it actually cost on your project (`scripts/feature-cost.sh`); after about three
 features the prune shows your own average, and you can switch presets then." Leave this paragraph out
 when `cost.track` is off.
@@ -250,7 +250,7 @@ when `cost.track` is off.
 | Role | Model (All Sonnet / Opus preset) | Effort |
 |------|-------|--------|
 | Technical Lead (main chat) | sonnet / opus | high |
-| Full-stack | sonnet / opus (sonnet for the medium variant) | high by default; xhigh for risky cores |
+| Full-stack | sonnet / opus (sonnet for the medium variant) | high by default; xhigh for sign-in, secrets and money |
 | QA | sonnet / sonnet | medium by default; high when Full-stack is xhigh |
 | Researcher (read-only, research mode) | sonnet / sonnet (opus for the high variant) | medium by default; high for architecture or risk areas |
 | Legal writer | fable (opus if fable isn't available) | high |

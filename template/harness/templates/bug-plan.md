@@ -72,7 +72,7 @@ The fix is the smallest change that makes the regression test pass.
 
 - **Full-stack:** medium | high | xhigh: one-line reason (a fix that touches a risk path, `bash scripts/risk-check.sh` printing full, is never `medium`).
 - **QA:** medium | high (high only when Full-stack is xhigh): one-line reason. The same variant writes the regression test and runs the re-run.
-- **Code review before QA:** yes (Full-stack xhigh) | no.
+- **Code review before QA:** yes (the risk check named a risk path, or Full-stack xhigh) | yes, with the security review (it also touches sign-in, access rules, secrets, money, a public API, or deleting or sharing people's data) | no.
 - **Security review before QA:** yes when the fix changes who can sign in or read or change data, moves money, handles secrets, or deletes or shares people's data (`harness/modules/security/README.md`) | no. <!-- module:security -->
 
 ## Acceptance criteria

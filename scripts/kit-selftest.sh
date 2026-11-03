@@ -991,6 +991,12 @@ SETTLED = [
     ("harness/SETUP.md", "**QA is `high`** whenever the plan touches a risk path", "QA is medium unless Full-stack is xhigh (G5, harness/agents/qa-engineer.md § Lean QA)"),
     ("harness/modules/data-access/README.md", "QA effort is `high`", "a data-access feature's QA effort follows harness/SETUP.md § Effort per feature (G5)"),
     (".claude/agents/qa-engineer.md", "Default (effort high)", "the medium QA agent is the default (G5)"),
+    ("harness/SETUP.md", "Only when the plan's **Agent effort → Full-stack** is `xhigh`", "the code review before QA runs on every risk path, not only at xhigh (H2)"),
+    ("harness/SETUP.md", "security, money, tenancy or access control, concurrency, public APIs, new architecture", "xhigh is for sign-in, secrets and money; the rest run at high with the review (H2)"),
+    ("harness/templates/plan.md", "**Code review before QA:** yes (Full-stack xhigh) | no", "the review runs on a risk path too (H2)"),
+    ("harness/HANDOFFS.md", "`xhigh` Full-stack only", "the code review before QA runs on a risk path too (H2)"),
+    ("harness/STRATEGY.md", "(xhigh Full-stack only)", "the code review before QA runs on a risk path too (H2)"),
+    ("_harness/README.md", "(Full-stack xhigh only)", "the code review before QA runs on a risk path too (H2)"),
     ("harness/MODES.md", "A bug is bug mode.", "a bug fix off the risk paths is small mode (MODES.md § Fixing a bug)"),
     ("AGENTS.md", "something that worked is broken → bug mode;", "the risk check decides a bug fix's mode too (MODES.md § Choosing mode)"),
 ]
@@ -1025,6 +1031,29 @@ def check_small_bugs(bad, t):
     mode_line = next((l for l in agents.splitlines() if l.startswith("- **Pick the mode first**")), "")
     if "bug mode for a fix" not in mode_line or "hotfix is bug mode" not in mode_line:
         bad("AGENTS.md § Golden rules' mode line doesn't send a risky fix or a hotfix to bug mode")
+
+
+def check_risk_review(bad, t):
+    """H2: the code review before QA runs for every full or bug plan on a risk path, not only at xhigh; xhigh is
+    for sign-in, secrets and money (harness/SETUP.md § Code review before QA, § Choosing a level)."""
+    setup = read(os.path.join(t, "harness/SETUP.md"))
+    review = setup.split("\n## Code review before QA\n", 1)[1].split("\n## ", 1)[0] if "\n## Code review before QA\n" in setup else ""
+    for want in ("full-mode or bug-mode plan on a risk path", "`/code-review medium`", "gets the code review alone"):
+        if want not in review:
+            bad(f"harness/SETUP.md § Code review before QA doesn't say {want!r}")
+    level = setup.split("\n### Choosing a level\n", 1)[-1].split("\n### ", 1)[0]
+    xhigh = next((l for l in level.splitlines() if l.startswith("- **`xhigh`**")), "")
+    if "sign-in and sessions, secrets, and money" not in xhigh or "run at `high`" not in xhigh \
+            or re.search(r"tenancy|public API|concurrency", xhigh.split("run at `high`", 1)[0].split(". ", 1)[0], re.I):
+        bad("harness/SETUP.md § Choosing a level doesn't keep xhigh to sign-in, secrets and money")
+    if "risk-check.sh` with no files" not in review or "`deletes stored data`" not in review:
+        bad("harness/SETUP.md § Code review before QA doesn't say which risk-check lines start it, or re-check after dev")
+    for rel in ("harness/templates/plan.md", "harness/templates/bug-plan.md"):
+        if "**Code review before QA:** yes (the risk check named a risk path, or Full-stack xhigh)" not in read(os.path.join(t, rel)):
+            bad(f"{rel} § Agent effort doesn't ask for the code review on a risk path")
+    tl = read(os.path.join(t, "harness/TECHNICAL_LEAD.md"))
+    if "a full or bug plan on a risk path, or Full-stack `xhigh`" not in tl:
+        bad("harness/TECHNICAL_LEAD.md doesn't run the code review before QA on a risk path")
 
 
 def check_lean_qa(bad, t):
@@ -1602,6 +1631,7 @@ def check(name, fx, t):
     check_settled(bad, t)
     check_lean_qa(bad, t)
     check_small_bugs(bad, t)
+    check_risk_review(bad, t)
     # 6. named checks have commands, and no row names an unknown check
     cfg = lambda key: run(["bash", "-c", f'. scripts/lib/config.sh; config_get {key}'], t).stdout.strip()
     names = set()
