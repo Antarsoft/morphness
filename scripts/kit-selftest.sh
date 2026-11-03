@@ -1061,6 +1061,11 @@ def check_doc_sections(bad, t):
             seen += 1
             if r.returncode:
                 bad(f"{rel}: `doc-section.sh {m.group(1)} {' '.join(repr(h) for h in heads)}` finds no single section ({r.stderr.splitlines()[0] if r.stderr else 'exit ' + str(r.returncode)})")
+    agents = read(os.path.join(t, "AGENTS.md"))
+    mode_line = next((l for l in agents.splitlines() if l.startswith("- **Pick the mode first**")), "")
+    if 'doc-section.sh harness/MODES.md "Choosing mode"' not in mode_line or '"Working alone"' not in mode_line or "](harness/MODES.md)" in agents.split("\n## Where things are", 1)[0]:
+        bad("AGENTS.md § Golden rules sends the main chat to harness/MODES.md by link, so it reads the file whole "
+            "before it picks the mode: print § Choosing mode, then the chosen mode's sections, with doc-section.sh")
     if "Bash(bash scripts/doc-section.sh:*)" not in read(os.path.join(t, ".claude/settings.json")):
         bad(".claude/settings.json doesn't allow `bash scripts/doc-section.sh`, so every section read prompts")
     if seen < 8:
