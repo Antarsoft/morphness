@@ -2,7 +2,7 @@
 id: 2026-11-01-no-domain-webfetch
 title: Settings no longer allow WebFetch on all of api.github.com and raw.githubusercontent.com
 kind: fix
-release: unreleased
+release: v0.16.0
 applies_to: { modules: [] }
 files:
   - .claude/settings.json

@@ -2,7 +2,7 @@
 id: 2026-11-02-checks-as-code
 title: The fast checks run as code when a task ends
 kind: rule
-release: unreleased
+release: v0.16.0
 applies_to: { modules: [] }
 files:
   - .claude/settings.json

@@ -2,7 +2,7 @@
 id: 2026-11-03-risk-path-review
 title: The code review before QA runs on every risk path, and xhigh is for sign-in, secrets and money
 kind: rule
-release: unreleased
+release: v0.16.0
 applies_to: { modules: [] }
 files:
   - _harness/README.md

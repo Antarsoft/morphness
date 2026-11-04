@@ -2,7 +2,7 @@
 id: 2026-11-02-small-bug-fixes
 title: A bug fix off the risk paths runs in small mode, failing test first
 kind: rule
-release: unreleased
+release: v0.16.0
 applies_to: { modules: [] }
 files:
   - .claude/rules/testing.md

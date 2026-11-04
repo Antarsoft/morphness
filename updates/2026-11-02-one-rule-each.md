@@ -2,7 +2,7 @@
 id: 2026-11-02-one-rule-each
 title: Rules that said two things now say one
 kind: rule
-release: unreleased
+release: v0.16.0
 applies_to: { modules: [] }
 files:
   - .claude/rules/testing.md
