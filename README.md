@@ -38,6 +38,7 @@ agents. If you have been writing those by hand (what people now call *harness en
 *context engineering*), Morphness is that work packaged, with a loop that keeps it current.
 
 Every release is tested, and the results are public, including the known limits: [see the latest run](https://morphness.dev/trust.html).
+The page and the Tests badge are made again at every release tag and name the release, commit and date they tested.
 
 **One agent by default.** You talk to a **Technical Lead** in your main Claude Code session, and for
 most changes that session does the work alone, with the guard watching. Before each change a script,

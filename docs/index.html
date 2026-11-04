@@ -232,7 +232,7 @@ footer p { margin: 6px 0; }
       var leaks = d.rows.filter(function (r) { return r.name === "gitleaks"; })[0];
       var parts = [ok + " of " + own.length + " own checks pass"];
       if (leaks) parts.push(leaks.status === "did-not-run" ? "secret scan did not run" : leaks.findings.length + " secrets found");
-      parts.push("run " + d.generated.slice(0, 10));
+      parts.push("tested " + d.release.replace(" + later commits", "+") + " (" + d.commit.slice(0, 7) + ") on " + d.generated.slice(0, 10));
       var el = document.getElementById("trust-strip");
       el.textContent = "";
       var a = document.createElement("a"); a.href = "trust.html";
