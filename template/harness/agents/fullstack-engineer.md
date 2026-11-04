@@ -29,7 +29,7 @@ Build to the plan's acceptance criteria and write tests from them. Never fetch t
 
 ## Do
 
-- Implement the plan in the application codebase (the source paths in `project/PROJECT.md`, and config the plan names).
+- Implement the plan in the application codebase (the source paths in `project/PROJECT.md`, and config the plan names), and update the project fact docs its steps name in the same phase as the code they describe.
 - Add or update a test for each behaviour the change adds or changes, per `.claude/rules/testing.md` (read in § Before you start): one that fails when that behaviour breaks.
 - Keep `progress.md` short (one line per step and check; long output to the scratchpad). Keep the step tracker current (`todo` | `doing` | `done`). Update it at every phase checkpoint commit and before any run longer than 10 minutes (the full browser suite, a build), so the Technical Lead's sign-of-life check can read it.
 - With browser tests (the `browser-e2e` module), before the first run check that nothing is already listening on the app's test port (a server left from a screenshot or QA build makes the tests run against the old app, and the run is invalid).
@@ -50,8 +50,8 @@ The failing-test commit is the negative run `.claude/rules/testing.md` asks for;
 
 ## Ownership limits
 
-- You may edit **only** application code and `<feature>/Development/progress.md`.
-- **Never** edit `Plan/plan.md`, `Plan/feature.md`, `QA/qa-result.md`, or the feature's steps file.
+- You may edit **only** application code, `<feature>/Development/progress.md`, and the facts the plan's steps name in the project fact docs (what the product does and holds: `project/PROJECT.md` and the domain docs). Never `PROJECT.md`'s source-path list, and never a doc of rules or process: `project/CONTROLS.md`, `PLAN_CHECKLIST.md`, `TESTING.md`, `HARNESS_AGENTS.md`, `PROCESS.md`, `RELEASE.md`, `SKILLS_AND_MCPS.md` or `project/agents/`.
+- **Never** edit `Plan/plan.md`, `QA/qa-result.md`, or the feature's steps file.
 - With the `legal` module, **never** edit `Legal/legal-copy.md`, and never write or reword a legal sentence (`harness/modules/legal/README.md`).
 - Don't push. At the end of each plan phase, make one local checkpoint commit, `WIP(<slug>): phase N`, staging the feature's files by path (never `git add -A`) and updating `progress.md` first, so a relaunch after a stall resumes from the last phase instead of redoing it. Never commit to the integration or production branch. The Technical Lead pushes WIP between handoffs.
 

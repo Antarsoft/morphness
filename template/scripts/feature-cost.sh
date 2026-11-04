@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Prints what a feature's Claude Code work would cost at public API prices: the Technical Lead's
 # session and every subagent it ran, split by role and model, then the `Cost ≈ $…` line the
-# Technical Lead pastes into the retro, the learnings file and the hand-off (harness/SETUP.md
+# Technical Lead pastes into the learnings file and the hand-off (harness/SETUP.md
 # § Retrospective → Feature cost). Read-only.
 #
 # Source: Claude Code's own session transcripts (~/.claude/projects/<repo>/*.jsonl and each

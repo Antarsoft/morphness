@@ -7,7 +7,7 @@
 **Version:** `1`  
 **Created:** YYYY-MM-DD
 
-This short plan replaces `feature.md` and the full plan. The main chat builds and checks it itself, with no subagent (`harness/MODES.md` § Working alone). A change that turns out to need more than § Limit allows gets a full plan, with this file linked.
+This short plan replaces the full plan. The main chat builds and checks it itself, with no subagent (`harness/MODES.md` § Working alone). A change that turns out to need more than § Limit allows gets a full plan, with this file linked.
 
 ## Why small
 

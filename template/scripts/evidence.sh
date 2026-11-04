@@ -71,7 +71,10 @@ for path in sorted(glob.glob("_harness/learnings/*-v*.md")):
     rounds = re.search(r"QA rounds:\s*(\d+)", text)
     cost = re.search(r"\*\*Cost:\*\*\s*≈\s*\$\s*([0-9][0-9,]*(?:\.[0-9]+)?)", text)
     verdict = re.search(r"\*\*Verdict:\*\*\s*([a-z-]+)", text)
-    mode = "small" if "none (small mode)" in text else "bug" if "none (bug mode)" in text else "full"
+    # small mode says so on its Verdict line; a bug-mode fix has an Escaped line (older files: "none (bug mode)")
+    escaped_line = re.search(r"^- \*\*Escaped:\*\*(.*)$", text, re.M)
+    fixed_bug = bool(escaped_line) and not none_like(escaped_line.group(1))
+    mode = "small" if "none (small mode)" in text else "bug" if "none (bug mode)" in text or fixed_bug else "full"
     causes = {}
     m = re.search(r"\*\*Failure causes:\*\*\s*(.*)", text)
     for label, n in re.findall(r"(plan gap|implementation|environment|process)\s*×\s*(\d+)", m.group(1) if m else ""):

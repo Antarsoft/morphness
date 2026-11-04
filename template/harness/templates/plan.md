@@ -8,6 +8,16 @@
 **Created:** YYYY-MM-DD  
 **Updated:** YYYY-MM-DD
 
+## Request
+
+The owner's ask, in their words where they gave them (they may draft this section). A few lines each, and only the ones the ask gives; the plan's own sections turn them into steps and criteria.
+
+- **What we want:**
+- **Why:**
+- **Success looks like:**
+- **Constraints:** deadlines, platforms, out-of-scope hints
+- **Links:** tickets, screenshots, prior art
+
 ## Summary
 
 One paragraph, human-readable.
@@ -54,6 +64,8 @@ Each framework or library behaviour the plan depends on, with the source that co
 ### Phase 1 (optional)
 
 1. Step: technical detail for the Full-stack engineer (exact files and functions, contracts, limits, error messages and UI wording).
+
+The project fact docs the change makes untrue (what the product does and holds: `project/PROJECT.md` and the domain docs) are steps too, written with the code, each with an acceptance criterion naming the fact the doc must state, so QA checks it. Rule and process docs (`project/CONTROLS.md` risk paths, `project/TESTING.md`, `project/PLAN_CHECKLIST.md`) stay with the Technical Lead.
 
 ## References
 

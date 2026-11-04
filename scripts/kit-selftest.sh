@@ -1079,6 +1079,70 @@ def check_doc_sections(bad, t):
         bad(f"only {seen} doc-section.sh calls found in the rendered docs: harness/TECHNICAL_LEAD.md § Full mode, step by step names the sections to read")
 
 
+def check_lean_records(bad, t):
+    """I3: a full-mode feature keeps one plan file (the request is its § Request) and one closing record (the
+    learnings file, with the retro inside it and § What went wrong only when something did); the main chat prints
+    only the checklist groups the plan needs, in one call, from the index in TECHNICAL_LEAD.md."""
+    for gone in ("harness/templates/feature.md", "harness/templates/retro.md"):
+        if os.path.exists(os.path.join(t, gone)):
+            bad(f"{gone} is still installed: the request is plan.md § Request and the retro is in the learnings file")
+    for path in files_under(t, exts=(".md",)):
+        rel = os.path.relpath(path, t)
+        # _harness/LEARNINGS.md is a run record an update never rewrites, so its intro keeps the old wording
+        if rel.startswith(("_harness/features", "node_modules", "updates/", "CHANGELOG")) or rel == "_harness/LEARNINGS.md":
+            continue
+        m = re.search(r"[\w/]*(?:feature|retro)\.md", read(path))
+        if m:
+            bad(f"{rel} still names {m.group(0)}: full mode has no feature.md or retro.md")
+    plan = read(os.path.join(t, "harness/templates/plan.md"))
+    req = plan.split("\n## Request\n", 1)[1].split("\n## ", 1)[0] if "\n## Request\n" in plan else ""
+    for want in ("**What we want:**", "**Why:**", "**Success looks like:**"):
+        if want not in req:
+            bad(f"harness/templates/plan.md § Request doesn't ask for {want!r}")
+    if "project fact docs" not in plan.split("\n## Implementation steps\n", 1)[-1].split("\n## ", 1)[0]:
+        bad("harness/templates/plan.md § Implementation steps doesn't make the project fact docs Full-stack steps")
+    entry = read(os.path.join(t, "harness/templates/learnings-entry.md"))
+    went = entry.split("\n## What went wrong\n", 1)[1].split("\n## ", 1)[0] if "\n## What went wrong\n" in entry else ""
+    if not went or "`None.`" not in went or "**Retro:**" in entry or "Agent runs" in entry:
+        bad("harness/templates/learnings-entry.md isn't the one closing record: § What went wrong, `None.` when nothing did, no retro link")
+    setup = read(os.path.join(t, "harness/SETUP.md"))
+    after = setup.split("\n## After QA pass\n", 1)[-1].split("\n## ", 1)[0]
+    if "don't run the checks again" not in after:
+        bad("harness/SETUP.md § After QA pass doesn't stop the main chat re-running the checks QA recorded")
+    retro = setup.split("\n## Retrospective\n", 1)[-1].split("\n## ", 1)[0]
+    if "**Close in few calls:**" not in retro or "writes `None.`" not in retro:
+        bad("harness/SETUP.md § Retrospective doesn't close in one call, or still asks for a retro when nothing went wrong")
+    # the group index in TECHNICAL_LEAD.md names every group of PLAN_CHECKLIST.md with its item range
+    tl = read(os.path.join(t, "harness/TECHNICAL_LEAD.md"))
+    rows = dict(re.findall(r"^\| ([A-Z][^|]+?) \| (\d+-\d+) \|", tl.split("\n## Before asking for approval\n", 1)[-1], re.M))
+    pc = read(os.path.join(t, "harness/PLAN_CHECKLIST.md")).split("\n## Before asking for approval\n", 1)[-1]
+    groups = re.split(r"^### ", pc, flags=re.M)[1:]
+    if not groups:
+        bad("harness/PLAN_CHECKLIST.md § Before asking for approval has no groups")
+    for g in groups:
+        name = g.split("\n", 1)[0].strip()
+        nums = [int(n) for n in re.findall(r"^(\d+)\. ", g, re.M)]
+        want = f"{min(nums)}-{max(nums)}" if nums else "?"
+        if rows.get(name) != want:
+            bad(f"harness/TECHNICAL_LEAD.md § Before asking for approval's group index has {rows.get(name)!r} for {name!r}, "
+                f"PLAN_CHECKLIST.md has items {want}: keep the index in step")
+    skip = dict(re.findall(r"^\| ([A-Z][^|]+?) \| \d+-\d+ \| ([^|]+?) \|", tl, re.M))
+    for name in ("Planning and scope", "Testing", "Process"):
+        if "always run it" not in skip.get(name, ""):
+            bad(f"harness/TECHNICAL_LEAD.md's group index lets a plan skip {name!r}: it always runs")
+    for name, want in (("Security", ("adds or changes", "permission", "route", "access gap")), ("Data", ("migrates",)),
+                       ("Release and operations", ("adds or changes", "ships separately"))):
+        if not all(w in skip.get(name, "") for w in want):
+            bad(f"harness/TECHNICAL_LEAD.md's group index skips {name!r} on a narrower condition than before ({want!r})")
+    steps = re.findall(r"^(\d+)\. (.*)$", after, re.M)
+    if dict(steps).get("4", "").split("**")[1:2] != ["Human-only steps."]:
+        bad("harness/SETUP.md § After QA pass step 4 isn't the human-only steps: other docs cite it as step 4")
+    if len(rows) != len(groups):
+        bad(f"harness/TECHNICAL_LEAD.md's group index has {len(rows)} rows for {len(groups)} checklist groups")
+    if '"Group index"' in tl:
+        bad("harness/TECHNICAL_LEAD.md still prints PLAN_CHECKLIST.md § Group index: the index is in TECHNICAL_LEAD.md")
+
+
 def check_risk_review(bad, t):
     """H2: the code review before QA runs for every full or bug plan on a risk path, not only at xhigh; xhigh is
     for sign-in, secrets and money (harness/SETUP.md § Code review before QA, § Choosing a level)."""
@@ -1679,6 +1743,7 @@ def check(name, fx, t):
     check_small_bugs(bad, t)
     check_risk_review(bad, t)
     check_doc_sections(bad, t)
+    check_lean_records(bad, t)
     # 6. named checks have commands, and no row names an unknown check
     cfg = lambda key: run(["bash", "-c", f'. scripts/lib/config.sh; config_get {key}'], t).stdout.strip()
     names = set()
@@ -2270,6 +2335,18 @@ def check(name, fx, t):
         bad(f"evidence.sh printed a summary that left most entries out (exit {r.returncode}): {r.stdout!r}")
     open(lf, "w").write(keep)
     os.remove(pf)
+    # I3: a bug-mode learnings file has no retro line; its Escaped line marks the mode
+    bf = os.path.join(t, "_harness/learnings/selftest-bug-v1.md")
+    open(bf, "w").write("# selftest-bug v1 learnings\n\n### selftest-bug v1, 2026-01-03\n- **Verdict:** pass; QA rounds: 1; review round: no\n"
+                        "- **Escaped:** notes-list v1, AC 3 missed the tie\n\n## What went wrong\n\n1. (cause: plan gap) the tie; AC 3\n")
+    r = run(["bash", "scripts/evidence.sh", "--json"], t)
+    try:
+        modes = json.loads(r.stdout).get("modes_unfolded", {})
+    except ValueError:
+        modes = {}
+    if modes.get("bug") != 1:
+        bad(f"evidence.sh doesn't count a bug-mode learnings file (one with an Escaped line) as bug mode: {modes!r}")
+    os.remove(bf)
     # evidence.sh options are stable (STABILITY.md § Stable item 7): the field names of --json (none renamed
     # or removed; new ones may be added), --out files, a bad option fails
     r = run(["bash", "scripts/evidence.sh", "--json"], t)

@@ -4,16 +4,15 @@
 
 | File | Created by | May edit | Notes |
 |------|------------|----------|--------|
-| `Plan/feature.md` | Human (draft OK with Tech Lead) | Human; Tech Lead before plan approved | Plain-language intent |
 | `Plan/plan.md` | Technical Lead | Tech Lead until approved; then frozen except Status, Steps file, Approval, Open questions, Decisions, and a small plan's § Check | Includes acceptance criteria |
 | Steps file | Technical Lead | Technical Lead; the human ticks items | The human's steps after QA pass, or none (§ Steps file below; [SETUP.md](./SETUP.md) § After QA pass, step 4) |
 | `Plan/review.md` | Technical Lead | Technical Lead only | Pre-QA code review findings: plans on a risk path or at Full-stack `xhigh` ([SETUP.md](./SETUP.md) § Code review before QA) |
-| `Plan/retro.md` | Technical Lead | Technical Lead only | Retrospective after pass or escalation ([templates/retro.md](./templates/retro.md), [SETUP.md](./SETUP.md) § Retrospective) |
 | `Legal/legal-copy.md` | Legal writer | Legal writer only | Exact legal sentences and their checks; only when the plan says **Legal wording: yes** ([modules/legal/](./modules/legal/README.md)) | <!-- module:legal -->
 | `_harness/research/<date>-<slug>.md`, `Research/<topic>.md` | Technical Lead | TL, all of it: above the first line and below the second (§ Check, § Decision, § How it went) in its own words, and between the two lines the sections of the researcher's reply, word for word (the researcher has no edit tools; [templates/research.md](./templates/research.md)) | One question with cited findings ([MODES.md](./MODES.md) § Research mode) |
 | `Development/progress.md` | Full-stack engineer | Full-stack engineer only | Tracker and validation |
+| Project fact docs (`project/PROJECT.md` facts, domain docs) | Install, then plans | Full-stack for the facts a plan's steps name; the Technical Lead otherwise | Rule and process docs in `project/` stay the Technical Lead's ([agents/fullstack-engineer.md](./agents/fullstack-engineer.md) § Ownership limits) |
 | `QA/qa-result.md` | QA engineer | QA engineer only | Verdict and evidence |
-| `_harness/learnings/<slug>-v<version>.md` | Technical Lead | Technical Lead; the prune folds it | Retro entry and action items ([templates/learnings-entry.md](./templates/learnings-entry.md)) |
+| `_harness/learnings/<slug>-v<version>.md` | Technical Lead | Technical Lead; the prune folds it | The feature's closing record: verdict, cost, what went wrong and action items ([templates/learnings-entry.md](./templates/learnings-entry.md)) |
 
 **Application code:** Full-stack engineer, or the main chat itself in light and small mode, where no subagent runs ([MODES.md](./MODES.md) § Working alone). **No product code edits:** QA engineer, the Technical Lead in full and bug mode, researcher. One exception: in bug mode QA writes the regression test the plan assigns, before the fix ([MODES.md](./MODES.md) § Bug mode).
 
@@ -128,9 +127,9 @@ Read: <abs-path>/Plan/plan.md (must be approved).
 Implement the plan in the application codebase.
 Add or update a test for each behaviour the change adds or changes (.claude/rules/testing.md): one that fails when that behaviour breaks.
 Path rules: <each .claude/rules/*.md file whose paths: match the plan's files, such as data.md for a migration, or none>. Read them before the first edit.
-Update only: <abs-path>/Development/progress.md
+Update only: <abs-path>/Development/progress.md, and the project fact docs the plan's steps name (never their source-path list, never a doc of rules or process)
 Include Started and Ended in progress.md when handing off.
-Do not edit plan.md, feature.md, qa-result.md, the steps file or Legal/legal-copy.md.
+Do not edit plan.md, qa-result.md, the steps file or Legal/legal-copy.md.
 Run every before_qa check in harness/CONTROLS.md § Before Full-stack → QA handoff (commands: project/CONTROLS.md), scoped by § Scoping by what changed; record each check, its scope and exit code in progress.md § Validation (required before handoff). The checks.on_stop checks are recorded as end-of-task hook: they run when you finish (harness/CONTROLS.md § End-of-task checks).
 Do not mark Ready for QA until validation is recorded.
 Run long checks to completion before handing back. A check longer than the shell's foreground limit runs as a background command with a long enough time limit, and you wait for it to finish in the same turn. A job that outlives your turn is not allowed.

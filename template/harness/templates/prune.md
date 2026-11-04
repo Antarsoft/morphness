@@ -8,7 +8,7 @@ Process: `harness/SETUP.md` § Prune; why: `harness/MORPHING.md` § Pruning.
 
 ## 1. Window vs previous
 
-| Feature | QA rounds | Review round | Failure causes | Full-stack / QA model and effort | Est. cost | Retro run table |
+| Feature | QA rounds | Review round | Failure causes | Full-stack / QA model and effort | Est. cost | Learnings file |
 |---------|-----------|--------------|----------------|----------------------------------|-----------|-----------------|
 | | | | | | $… or not measured | link |
 
