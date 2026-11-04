@@ -1,0 +1,72 @@
+name: release
+# Regenerates the public test results page (docs/trust.html) and the README badge at every release, so they
+# show the release they tested. Runs when a GitHub release is published (or by hand for a tag), checks out the
+# tag, runs scripts/trust-report.sh there, and fails unless the page it wrote is the run at that tag: the
+# tag's own commit, the release named as the tag, a clean tree (`--check-release`). Then it opens a PR with
+# the page for the owner to merge. The job is red when that check fails (no PR then), and also when the report
+# found a problem: a check failed, a tool did not run or a finding has no verdict in tests/triage.jsonl. In
+# that case the PR still opens, so the page shows the problem; a tool that failed to download can be run
+# again with "Run workflow" for the tag. Tags made before this workflow can't be checked (their script has no
+# --check-release). Needs the repo setting "Allow GitHub Actions to create and approve pull requests"
+# (Settings > Actions > General), like trust.yml.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to test, e.g. v0.16.0"
+        required: true
+permissions:
+  contents: write
+  pull-requests: write
+concurrency:
+  group: release-page-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+jobs:
+  report:
+    runs-on: ubuntu-24.04   # pinned: bump it in its own PR
+    timeout-minutes: 45
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
+        with:
+          ref: refs/tags/${{ env.TAG }}
+          fetch-depth: 0
+      - run: python3 -m pip install --quiet pyyaml uv
+      - name: Run the report at the tag
+        id: run
+        run: |
+          set +e
+          TRUST_TAG="$TAG" scripts/trust-report.sh
+          echo "rc=$?" >> "$GITHUB_OUTPUT"
+      - name: The page must be the run at the tag
+        run: scripts/trust-report.sh --check-release "$TAG"
+      - name: Open a PR with the page
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          branch="trust-$TAG"
+          # the page's files only, on top of main (main may have moved on since the tag)
+          keep="$RUNNER_TEMP/page"; mkdir -p "$keep"; cp -R docs/trust.html docs/trust "$keep/"
+          git reset --quiet --hard && git clean -fdq docs/trust   # the copy above is the page now
+          git fetch --quiet origin main
+          git checkout -B "$branch" origin/main
+          rm -rf docs/trust.html docs/trust && cp -R "$keep/trust.html" "$keep/trust" docs/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A docs/trust.html docs/trust
+          git commit -m "Test results page for $TAG"
+          git push --force origin "$branch"   # a rerun for the same tag replaces its own branch
+          body="$(printf '## What this adds\n\nThe results page and badge from `scripts/trust-report.sh`, run at the `%s` tag. Nothing is edited by hand.\n' "$TAG")"
+          if [ "$(gh pr list --head "$branch" --state open --json number --jq length)" != 0 ]; then
+            echo "a PR for $branch is already open; the push above updated it"
+          else
+            gh pr create --base main --head "$branch" --title "Test results page for $TAG" --body "$body"
+          fi
+      - name: Fail when the report found a problem
+        if: steps.run.outputs.rc != '0'
+        run: |
+          echo "scripts/trust-report.sh exited ${{ steps.run.outputs.rc }}: a check failed, a tool did not run, or a finding has no verdict" >&2
+          exit 1

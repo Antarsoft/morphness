@@ -174,6 +174,15 @@ dotted date, `2026.10.13`; the new form sorts above it.)
    to the plugin build number. `scripts/check-updates.sh` checks that the three agree.
 2. After it merges, a maintainer creates the GitHub release with tag `<vX.Y.Z>` on the merge commit,
    using the changelog section as the release notes.
+3. Publishing the release runs `.github/workflows/release.yml`. It runs `scripts/trust-report.sh` at the
+   tag, fails unless the page it wrote is the run at that tag (`scripts/trust-report.sh --check-release
+   <vX.Y.Z>`: the tag's own commit, the release named as the tag, a clean tree), and opens a PR named
+   "Test results page for `<vX.Y.Z>`". Merge it, so the results page and the README badge show the
+   release, its commit and the date. When the report itself found a problem the job is red and the PR
+   still opens, so the page shows it: a tool that failed to download can be retried with "Run
+   workflow" for the same tag; a check that fails in the kit needs a fix and a patch release. It needs
+   the repo setting "Allow GitHub Actions to create and approve pull requests" (Settings > Actions >
+   General). The weekly run (`trust.yml`) later refreshes the page as "`<vX.Y.Z>` + later commits".
 
 By taking part you agree to the [Code of Conduct](CODE_OF_CONDUCT.md). Security issues go through
 [SECURITY.md](SECURITY.md), not public issues.
