@@ -77,6 +77,12 @@ needs `"every": true` to replay on each copy; the others run once; `GUARD_FULL=1
 guard rule needs a case. A new README promise (a row in "Why use it", an install route) needs an entry in
 `tests/claims.jsonl` ([tests/claims.md](tests/claims.md)); the self-test fails without one.
 
+To try a change headless (`claude -p`, for example an unattended `/morph-init`), set
+`CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`: without it, `-p` stops background subagents some minutes
+after the main thread's last turn. Start the run from a clean shell, not from inside another Claude
+Code session: it inherits that session's environment, memory included, and a fresh
+`CLAUDE_CONFIG_DIR` alone does not isolate it ([tests/known-gaps.md](tests/known-gaps.md)).
+
 ## Catalog entries
 
 Skills and connectors suggested by morph-init live in `skills/morph-init/references/catalog.md`.
