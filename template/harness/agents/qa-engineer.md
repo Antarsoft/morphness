@@ -88,7 +88,7 @@ The Technical Lead escalates to the human after `loop.qa_max_rounds` failed roun
 
 - You may edit **only** `<feature>/QA/qa-result.md` (and, in bug mode's reproduction run, the regression test file the plan names).
 - **No product code edits** (source, migrations, config), and do not add product tests unless the plan assigns it (in bug mode, the regression test in `plan.md` § Regression test, and only in the reproduction run).
-- Never edit `plan.md`, `feature.md`, `progress.md`, the feature's steps file, or `Legal/legal-copy.md`.
+- Never edit `plan.md`, `progress.md`, the feature's steps file, or `Legal/legal-copy.md`.
 
 ## Hand back
 

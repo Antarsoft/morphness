@@ -26,10 +26,8 @@ _harness/
     <feature-slug>/       # kebab-case; Tech Lead proposes, human confirms
       <version>/          # integer 1, 2, 3 …
         Plan/
-          feature.md      # human intent (none in bug mode)
-          plan.md         # Tech Lead; requires human approval before dev (bug mode: the short bug plan)
+          plan.md         # Tech Lead; the human's request in § Request, approved by the human before dev (bug mode: the short bug plan)
           review.md       # Tech Lead; pre-QA code review findings (risk path or xhigh Full-stack)
-          retro.md        # Tech Lead; retrospective after pass or escalation
         Research/
           <topic>.md      # Researcher; optional research before the plan
         Legal/
@@ -66,7 +64,7 @@ With the roadmap module on, the steps file lives next to the version checklist i
 ### Should
 
 - Answer general questions from the human.
-- Ensure the human's request is captured in `Plan/feature.md` (the human may draft; the Tech Lead may help before planning).
+- Capture the human's request in `Plan/plan.md` § Request (the human may draft it).
 - Research implementation (skills, docs, web when needed) and write `Plan/plan.md`. A question that needs a wide search goes to the researcher ([MODES.md](./MODES.md) § Research mode); the TL frames it, checks the findings the answer rests on, and decides.
 - Include in `plan.md`: title, dates, version, summary, implementation steps (phased if needed), references, **acceptance criteria**, QA scope, agent effort, open questions (with suggested defaults), approval state.
 - Set lifecycle **status** ([SETUP.md](./SETUP.md) § Lifecycle status).
@@ -75,7 +73,7 @@ With the roadmap module on, the steps file lives next to the version checklist i
 - After the QA verdict: if **pass**, hand to the human; if **fail**, re-delegate to the same Full-stack variant with `qa-result.md` (at most `loop.qa_max_rounds` QA rounds per version; the Tech Lead enforces this, QA does not track the count).
 - On the last allowed QA **fail**, set `failed-escalated` and hand to the human; further work uses a **new version** folder.
 - After QA **pass**, write the steps file (or none) and set the plan to `passed` ([SETUP.md](./SETUP.md) § After QA pass) before handing to the human.
-- After the QA pass hand-off (or on `failed-escalated`), write `Plan/retro.md` from [templates/retro.md](./templates/retro.md) and the feature's own learnings file in `_harness/learnings/` ([SETUP.md](./SETUP.md) § Retrospective).
+- After the QA pass hand-off (or on `failed-escalated`), write the feature's own learnings file in `_harness/learnings/`, with the retro inside it ([SETUP.md](./SETUP.md) § Retrospective).
 
 ### Should not (full and bug mode)
 
@@ -89,7 +87,7 @@ With the roadmap module on, the steps file lives next to the version checklist i
 ### Should
 
 - Read the approved `plan.md`, then create and update `Development/progress.md`.
-- Implement everything the plan requires in the **application codebase** (outside `_harness/`, except `progress.md`).
+- Implement everything the plan requires in the **application codebase** (outside `_harness/`, except `progress.md`), and the project fact docs its steps name.
 - Keep `progress.md` current: steps, status, notes, validation run per step, **Started** and **Ended** (the agent's note from `date`; update Ended on QA rework, keep Started; the TL records real duration).
 - Validate work with the automated checks the plan and [CONTROLS.md](./CONTROLS.md) name (commands in `project/CONTROLS.md`).
 - Before handoff: run every `before_qa` check ([CONTROLS.md](./CONTROLS.md) § Before Full-stack → QA handoff; exit 0 required); log each check and its exit code in `progress.md` § **Validation (required before handoff)** (`end-of-task hook` for the `checks.on_stop` checks, which run when the turn ends: [CONTROLS.md](./CONTROLS.md) § End-of-task checks).
@@ -98,7 +96,7 @@ With the roadmap module on, the steps file lives next to the version checklist i
 
 ### Should not
 
-- Edit `feature.md`, `plan.md`, `qa-result.md`, the steps file or `Legal/legal-copy.md`.
+- Edit `plan.md`, `qa-result.md`, the steps file or `Legal/legal-copy.md`.
 - Perform QA sign-off (run dev checks only).
 - Rely on open-ended web search when references are missing from `plan.md`: ask the Tech Lead to extend the plan first.
 - Change the words of a legal sentence from `Legal/legal-copy.md` (legal module; markup around it is fine).

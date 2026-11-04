@@ -6,7 +6,7 @@ These are the seed principles: each one comes from a failure that reached a buil
 
 ## How to use it
 
-- Work through every item of each group the index below doesn't skip. For each, record in `plan.md` § References → **Greps** the grep or check you ran and its hit count, or "n/a" with a few words on why the item doesn't apply: one line per kit item (`K1`, `K2`, …, applying the project's specifics for that item from `project/PLAN_CHECKLIST.md`) and one per project item (`P1`, `P2`, …). A plan with no Greps record is not ready for approval.
+- Work through every item of each group the index doesn't skip. For each, record in `plan.md` § References → **Greps** the grep or check you ran and its hit count, or "n/a" with a few words on why the item doesn't apply: one line per kit item (`K1`, `K2`, …, applying the project's specifics for that item from `project/PLAN_CHECKLIST.md`) and one per project item (`P1`, `P2`, …). A plan with no Greps record is not ready for approval.
 - **A whole group can be n/a in one line.** When a group doesn't fit the project or the plan (a CLI tool, a library or a data pipeline has no UI; a plan that stores nothing has no Data items), write one line for the group with its range and the reason, for example `K14–K20 n/a: no user interface (CLI tool)`. The line under each group heading says when that happens. A group that applies in part gets one line per item as usual.
 - Item numbers are stable once the project cites them in retros and prunes ("checklist item 12"). A new item takes the next free number inside its group's range or at the end; a removed item leaves its number unused.
 - Each item ends with the reason it exists in brackets. When a retro sharpens an item, add the sentence and the feature slug that taught it.
@@ -14,19 +14,7 @@ These are the seed principles: each one comes from a failure that reached a buil
 
 ## Group index
 
-Read this table first. A group whose "skip" condition holds takes one `n/a` line in `plan.md` (§ How to use it) and its items are not read; print the other groups in full, in one call: `bash scripts/doc-section.sh harness/PLAN_CHECKLIST.md "<group>" …`.
-
-| Group | Items | Skip the group when |
-|-------|-------|---------------------|
-| Planning and scope | 1-8 | always run it |
-| Contracts and sources | 9-13 | the plan assumes nothing about a framework, library or service |
-| UI and interaction | 14-20 | the plan has no UI |
-| Testing | 21-24 | always run it |
-| Data | 25-28 | the plan stores or migrates nothing |
-| Security | 29-32 | the plan adds no input, route, credential or permission |
-| Copy, privacy and legal | 33-36 | the plan adds no user-facing copy, personal data or terms |
-| Release and operations | 37-38 | the plan changes nothing that ships separately or runs on a schedule |
-| Process | 39-40 | always run it |
+The index is in [TECHNICAL_LEAD.md](./TECHNICAL_LEAD.md) § Before asking for approval, so the Technical Lead, which reads that file in full, prints only the groups a plan needs in one call. The line under each group heading below says the same; keep the two in step when a group changes.
 
 ## Before asking for approval
 
@@ -63,7 +51,7 @@ Read this table first. A group whose "skip" condition holds takes one `n/a` line
 
 ### Testing
 
-*Items 21–24 are about tests that already exist; n/a as a group when the plan changes no behavior an existing test covers.*
+*Always run the group. Items 21–24 are about tests that already exist, so each is n/a when the plan changes no behavior an existing test covers.*
 
 21. **Tests that assert changed text.** For each user-facing message the plan changes or says must not change, grep unit and end-to-end tests for the current text, for changed attributes (title, accessible label) and for empty-state text. When a default label or name is renamed, classify each hit as created data (update it) or seeded legacy data that still stores the old text (leave it). Check: the grep per string and the classified hit list are in Greps. [Renamed defaults left tests stale, while a seeded legacy row correctly kept the old name.]
 22. **Removed, moved or reordered controls.** The test-update sweep greps every test file for each control the plan removes or moves; no file is excluded by name. When it removes, adds or reorders an option of a group, it also greps every other label of the group, the test-helper parameters that select options, constants that list the options, and assertions that count them. When a validation rule is relaxed, it greps for the field's error element, its invalid-state attribute and submits that leave the field empty. Check: one grep per label, helper, list and count. [Specs used other labels of the same group; a test counted the options; a test submitted a blank field to get the old error.]
@@ -72,7 +60,7 @@ Read this table first. A group whose "skip" condition holds takes one `n/a` line
 
 ### Data
 
-*n/a as a group when the plan writes no stored data, seeds, fixtures or scheduled jobs.*
+*n/a as a group when the plan stores, migrates or seeds nothing: no stored data, schema change, fixture or scheduled job.*
 
 25. **Seeds, fixtures and raw resets.** When a plan adds a column an action sets, locks or restricts a field, validates a format, or changes a time window or threshold, it greps seeds, fixtures, test helpers and raw SQL in tests for writes to the same rows and for every spelling of the affected value (for an age: every unit and arithmetic form, on either side of the old and new values), in every test folder. Check: one grep per value and folder, every hit in the steps. [Raw resets left a new timestamp set; seeded keys contained a character the new format refused; an age seed written in hours was missed.]
 26. **Relaxed constraints and per-entity values.** A plan that drops or loosens a uniqueness, ownership or tenancy constraint states who can trigger the newly allowed state and how the vendor or system matches the record, with a source. A rule that keeps a stored per-entity value (a timestamp, counter, status) says "only for the same entity id". Check: the trigger and match are named; every fallback is scoped to the entity. [A dropped unique id opened a cross-account path; a literal fallback copied one record's timestamp onto another.]
@@ -81,7 +69,7 @@ Read this table first. A group whose "skip" condition holds takes one `n/a` line
 
 ### Security
 
-*n/a as a group when the plan adds or changes no limit, permission, identity check, wrapped input or cross-origin code, and closes no access gap.*
+*n/a as a group when the plan adds or changes no input, route, credential, permission, limit, identity check or cross-origin code, and closes no access gap.*
 
 29. **Enforcement on every write path.** For each new limit or permission, the plan's **Enforcement** line names every write path (server actions, route handlers, direct database or API access, editors and import paths found by grep) and what blocks it, the status codes, and how the caller's identity is verified where access depends on it. A rule on stored data lists every writer of that data and every stored field the rule reads. A header or field condition is stated as non-empty, not present, when the checking helper treats empty as missing. Check: grep every writer of the affected data; each is on the Enforcement line. [A direct API path bypassed a limit; a code review found an editor save path the rule had missed.]
     - **Read paths too, when closing an access gap.** A plan that closes who can see some data lists every route that returns that data (single reads, lists, search, counts and stats, exports and downloads, sibling routers) and closes each one in the same plan. Keeping an output's format (a CSV contract, a report layout) is not a reason to keep who can see its rows. When closing a path might break someone who relies on it and the human can't be asked, close it and name it in the hand-off; never leave a known leak open waiting for a decision. Check: grep every reader of the data; each is on the Enforcement line as closed. [A privacy fix left the CSV export showing every user's notes because the README said to keep its format.]
@@ -100,7 +88,7 @@ Read this table first. A group whose "skip" condition holds takes one `n/a` line
 
 ### Release and operations
 
-*n/a as a group when the plan adds no schedule, platform limit, CI workflow or third-party setting.*
+*n/a as a group when the plan adds or changes no schedule, platform limit, CI workflow or third-party setting, and nothing that ships separately.*
 
 37. **Platform tier for schedules, limits and CI cost.** A plan that sets a platform schedule, limit or quota (a cron frequency, a function duration, a rate limit) reads the vendor page for the account's current tier and names it with the source; "Full-stack to confirm" is not enough. A plan that adds a CI workflow or a long CI step times the main command locally and states the billed-minute estimate from that timing. Check: the tier cite and the measured timing. [An hourly schedule was rejected at deployment by the account's tier; a CI estimate was off by 2x.]
 38. **Prerequisites only a human can set.** Each third-party console screen the plan needs is listed with its precondition (domain verification, public pages reachable through a gate), and each production setting the feature depends on (an auth setting, a role, a secret, a host) is a human step in § QA scope, ordered before the release that needs it, unless a connected official MCP can do it: then it is a **By connector** line, asked in chat before it runs ([SKILLS_AND_MCPS.md](./SKILLS_AND_MCPS.md) § Connector actions). Check: one human step or **By connector** line per console screen and production setting, and each service it names has a current row in `project/SKILLS_AND_MCPS.md` § Service tools. [A first production release failed five times on setup that no plan had listed.]

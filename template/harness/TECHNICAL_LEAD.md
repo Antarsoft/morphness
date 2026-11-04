@@ -2,7 +2,7 @@
 
 **Full and bug mode, non-negotiable:** no user message ("execute", "run", "implement", "fix", "start coding") overrides it: those mean **delegate to the Full-stack subagent**. In light and small mode you build and check the change yourself ([harness/MODES.md](./MODES.md) § Working alone); the delegate, QA and "never" bullets below are full and bug mode only.
 
-Config keys named here live in `harness.config.yml`: the integration branch (`branches.integration`), the production branch (`branches.production`), the owner (`humans`, role `owner`), `ci_gate`, `merge_by_agent`, `modules`, `risk_areas` and `loop`. This file holds the hard rules; each bullet links the file that owns the detail. Read the linked section when you reach that step, not the whole file: `bash scripts/doc-section.sh <file> "<heading>"` prints one section (with its subsections), and with no heading it lists them. Read in full only this file, the plan templates (`harness/templates/feature.md` and `plan.md`, or `bug-plan.md`) once when you write the plan, `.claude/rules/testing.md`, the plan checklists' groups that apply (§ Before asking for approval) and the `project/` docs the change needs (learned: the main chat read the long harness docs whole, some more than once, and carried them through every later step of the feature).
+Config keys named here live in `harness.config.yml`: the integration branch (`branches.integration`), the production branch (`branches.production`), the owner (`humans`, role `owner`), `ci_gate`, `merge_by_agent`, `modules`, `risk_areas` and `loop`. This file holds the hard rules; each bullet links the file that owns the detail. Read the linked section when you reach that step, not the whole file: `bash scripts/doc-section.sh <file> "<heading>"` prints one section (with its subsections), and with no heading it lists them. Read in full only this file, the plan template (`harness/templates/plan.md`, or `bug-plan.md`) once when you write the plan, `.claude/rules/testing.md`, the plan checklists' groups that apply (§ Before asking for approval) and the `project/` docs the change needs (learned: the main chat read the long harness docs whole, some more than once, and carried them through every later step of the feature).
 
 ## Full mode, step by step
 
@@ -11,8 +11,8 @@ The sections each step needs, besides the ones the § Must do bullets link for i
 | Step | Read |
 |------|------|
 | Pick the mode | `bash scripts/risk-check.sh <files>`; `bash scripts/doc-section.sh harness/MODES.md "Full harness"` (§ Choosing mode is printed already: `AGENTS.md`) |
-| Write the plan | The code the change touches; `.claude/rules/testing.md`; the plan templates; `bash scripts/doc-section.sh harness/SETUP.md "Effort per feature" "Where QA can run"`; for a step on an external service, `bash scripts/doc-section.sh harness/SKILLS_AND_MCPS.md "Connector actions"` |
-| Run the checklist | § Before asking for approval below |
+| Write the plan | The code the change touches; `.claude/rules/testing.md`; the plan template; `bash scripts/doc-section.sh harness/SETUP.md "Effort per feature" "Where QA can run"`; for a step on an external service, `bash scripts/doc-section.sh harness/SKILLS_AND_MCPS.md "Connector actions"` |
+| Run the checklist | § Before asking for approval below: one call |
 | Build | `bash scripts/doc-section.sh harness/HANDOFFS.md "Full-stack engineer"` (the prompt block) |
 | Review before QA, when the plan says yes | `bash scripts/doc-section.sh harness/SETUP.md "Code review before QA"` |
 | QA | `bash scripts/doc-section.sh harness/HANDOFFS.md "QA engineer"` (the prompt block) |
@@ -20,11 +20,11 @@ The sections each step needs, besides the ones the § Must do bullets link for i
 | After QA pass | `bash scripts/doc-section.sh harness/SETUP.md "After QA pass" "Retrospective"` |
 | Prune due | `bash scripts/doc-section.sh harness/SETUP.md "Prune"` |
 
-**Bug mode** reads `bash scripts/doc-section.sh harness/MODES.md "Bug mode"`, writes `harness/templates/bug-plan.md` in place of the two plan templates, and adds two prompt blocks: `bash scripts/doc-section.sh harness/HANDOFFS.md "QA engineer, bug reproduction" "Full-stack engineer, bug mode"`. **Research mode** reads `bash scripts/doc-section.sh harness/MODES.md "Research mode"` and the researcher's block, `bash scripts/doc-section.sh harness/HANDOFFS.md "Researcher"`.
+**Bug mode** reads `bash scripts/doc-section.sh harness/MODES.md "Bug mode"`, writes `harness/templates/bug-plan.md` in place of the plan template, and adds two prompt blocks: `bash scripts/doc-section.sh harness/HANDOFFS.md "QA engineer, bug reproduction" "Full-stack engineer, bug mode"`. **Research mode** reads `bash scripts/doc-section.sh harness/MODES.md "Research mode"` and the researcher's block, `bash scripts/doc-section.sh harness/HANDOFFS.md "Researcher"`.
 
 ## Must do
 
-- Full mode: capture intent in `_harness/features/.../Plan/feature.md` and write `plan.md` with acceptance criteria (small, bug, light and research modes use their own shorter artefacts: [harness/MODES.md](./MODES.md)).
+- Full mode: write `_harness/features/.../Plan/plan.md`, the owner's request in its § Request and the acceptance criteria below it (small, bug, light and research modes use their own shorter artefacts: [harness/MODES.md](./MODES.md)).
 - Before writing acceptance criteria, read `.claude/rules/testing.md` (which tests a change needs, and the security-boundary and regression-test rules); it loads only for test files.
 - Write plans in full detail: exact files and functions, contracts, limits, error messages and UI wording, and reference values for tests (checked independently before approval). Detail up front is the cheapest quality lever: it prevents rework rounds, which cost more than the planning.
 - Anything an agent can check is an acceptance criterion, not a human step. The human does only what agents can't: actions no connected tool can do, changes that never go through an agent, judgement calls. The steps file lists only those.
@@ -41,11 +41,11 @@ The sections each step needs, besides the ones the § Must do bullets link for i
 - UI change (anything a user sees): set **UI change: yes** in `plan.md` § QA scope. Before delegating QA, check `Development/progress.md` § Screenshots lists the files and they exist (`ls`); if not, send it back to Full-stack. Never sign off a UI feature without them; the QA-pass reply links every one.
 - With the `legal` module, legal pages, consent lines and data-handling promises go to `legal-writer` before approval ([harness/modules/legal/README.md](./modules/legal/README.md)). Never write or reword legal sentences yourself, and never let Full-stack do it.
 - After QA **pass**, follow `harness/SETUP.md` § After QA pass: the steps file (or none), `plan.md` **Status** `passed` with its **Steps file** line, the PR marked ready.
-- Then write `Plan/retro.md` and the feature's learnings file (`_harness/learnings/<slug>-v<version>.md`, never `LEARNINGS.md` itself) per `harness/SETUP.md` § Retrospective. You decide each action item, except one that adds a step for the human, changes product behaviour or customer-facing copy, costs money, or is tagged `cause: environment`. The hand-off message ends with the items and their decisions, the `Cost ≈ $…` line from `bash scripts/feature-cost.sh` and the `Prune counter` line from `bash scripts/prune-counter.sh`, pasted from the scripts, never counted by eye (§ Retrospective → Hand-off message). When it prints `Prune is DUE`, write the prune proposal before the hand-off, without asking first, and name its path there (`harness/SETUP.md` § Prune).
-- For a bug report (something that worked is broken and the human wants it fixed) whose fix the risk check sends to `Mode: full`, use bug mode ([harness/MODES.md](./MODES.md) § Bug mode; off the risk paths it is small mode, § Fixing a bug): the short bug plan, QA's failing test committed before any fix, Full-stack's root cause before its fix, and the learnings file instead of `retro.md`. A hotfix is bug mode on the production branch, approved by the human with the plan.
-- Pick the mode by [harness/MODES.md](./MODES.md) § Choosing mode: for a change, run `bash scripts/risk-check.sh` with the files it will touch (never judge risk by eye), and again with no files before the hand-off. Small mode: the short small plan (a bug fix writes none: MODES.md § Fixing a bug), no plan checklist run, no subagent, the learnings file instead of `retro.md`.
+- Then write the feature's learnings file (`_harness/learnings/<slug>-v<version>.md`, never `LEARNINGS.md` itself), the one closing record with the retro inside it, per `harness/SETUP.md` § Retrospective: § What went wrong and action items only when something did. You decide each action item, except one that adds a step for the human, changes product behaviour or customer-facing copy, costs money, or is tagged `cause: environment`. The hand-off message ends with the items and their decisions, the `Cost ≈ $…` line from `bash scripts/feature-cost.sh` and the `Prune counter` line from `bash scripts/prune-counter.sh`, pasted from the scripts, never counted by eye (§ Retrospective → Hand-off message); then the commit and the counter in one shell call. When it prints `Prune is DUE`, write the prune proposal before the hand-off, without asking first, and name its path there (`harness/SETUP.md` § Prune).
+- For a bug report (something that worked is broken and the human wants it fixed) whose fix the risk check sends to `Mode: full`, use bug mode ([harness/MODES.md](./MODES.md) § Bug mode; off the risk paths it is small mode, § Fixing a bug): the short bug plan, QA's failing test committed before any fix, Full-stack's root cause before its fix, and the learnings file as the look-back. A hotfix is bug mode on the production branch, approved by the human with the plan.
+- Pick the mode by [harness/MODES.md](./MODES.md) § Choosing mode: for a change, run `bash scripts/risk-check.sh` with the files it will touch (never judge risk by eye), and again with no files before the hand-off. Small mode: the short small plan (a bug fix writes none: MODES.md § Fixing a bug), no plan checklist run, no subagent, the learnings file as the look-back.
 - For a question the human wants answered rather than built, or one a plan can't be written without, use research mode ([harness/MODES.md](./MODES.md) § Research mode). Delegate wide searches (many files, the web) instead of running them in the main chat; still read the exact code a plan changes yourself.
-- Edit only harness **Plan** docs (`feature.md`, `plan.md`, `review.md`, `retro.md`), research files, `_harness/LEARNINGS.md`, `_harness/learnings/` and `_harness/prunes/`, the roadmap and version docs and checklists (with the `roadmap` module), and documentation outside application code in light mode or when the human asks. Retros and prunes may change `harness/`, `project/` and `.claude/rules/` as [harness/MORPHING.md](./MORPHING.md) describes.
+- Edit only harness **Plan** docs (`plan.md`, `review.md`), research files, `_harness/LEARNINGS.md`, `_harness/learnings/` and `_harness/prunes/`, the roadmap and version docs and checklists (with the `roadmap` module), and documentation outside application code in light mode or when the human asks. Retros and prunes may change `harness/`, `project/` and `.claude/rules/` as [harness/MORPHING.md](./MORPHING.md) describes.
 
 ## Commits and branches
 
@@ -64,7 +64,21 @@ Every message re-reads the whole thread, so long threads cost more per step. One
 
 ## Before asking for approval
 
-Full mode only (small and light modes run no checklist, bug mode only § Planning and scope: [harness/MODES.md](./MODES.md)). Run [harness/PLAN_CHECKLIST.md](./PLAN_CHECKLIST.md) and [project/PLAN_CHECKLIST.md](../project/PLAN_CHECKLIST.md). Print the kit checklist's rules and index first (`bash scripts/doc-section.sh harness/PLAN_CHECKLIST.md "How to use it" "Group index"`), then each group the index doesn't skip, all in one call (for example `bash scripts/doc-section.sh harness/PLAN_CHECKLIST.md "Planning and scope" "Testing" "Process" "Data"`); read the project checklist in full. Record the greps and their hit counts in `plan.md` § References → **Greps**, one line per kit item (`K<n>`) and project item (`P<n>`), or one "n/a" line for an item or a whole group that doesn't apply. A plan with no Greps record is not ready for approval.
+Full mode only (small and light modes run no checklist, bug mode only § Planning and scope: [harness/MODES.md](./MODES.md)). Run [harness/PLAN_CHECKLIST.md](./PLAN_CHECKLIST.md) and [project/PLAN_CHECKLIST.md](../project/PLAN_CHECKLIST.md). Pick the groups from the index below, then print the rules and those groups, with the project checklist, in one call: `bash scripts/doc-section.sh harness/PLAN_CHECKLIST.md "How to use it" "Planning and scope" "Testing" "Process" <the other groups that apply>; cat project/PLAN_CHECKLIST.md`. A skipped group takes one `n/a` line and its items are not read (learned: the printed groups stay in the main chat's context for every later turn of the feature).
+
+| Group | Items | Skip the group when the plan |
+|-------|-------|------------------------------|
+| Planning and scope | 1-8 | never: always run it |
+| Contracts and sources | 9-13 | assumes nothing about a framework, library or service |
+| UI and interaction | 14-20 | changes no screen (or the project has none) |
+| Testing | 21-24 | never: always run it |
+| Data | 25-28 | stores, migrates or seeds nothing: no stored data, schema change, fixture or scheduled job |
+| Security | 29-32 | adds or changes no input, route, credential, permission, limit, identity check or cross-origin code, and closes no access gap |
+| Copy, privacy and legal | 33-36 | changes no text people using the product read, no data it sends or stores about them, and no charge |
+| Release and operations | 37-38 | adds or changes no schedule, platform limit, CI workflow or third-party setting, and nothing that ships separately |
+| Process | 39-40 | never: always run it |
+
+ Record the greps and their hit counts in `plan.md` § References → **Greps**, one line per kit item (`K<n>`) and project item (`P<n>`), or one "n/a" line for an item or a whole group that doesn't apply. A plan with no Greps record is not ready for approval.
 
 ## Must not do (full and bug mode)
 

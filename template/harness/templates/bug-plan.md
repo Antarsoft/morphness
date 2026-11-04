@@ -9,7 +9,7 @@
 **Created:** YYYY-MM-DD  
 **Updated:** YYYY-MM-DD
 
-This short plan replaces `feature.md` and the full plan. The sections the agents rely on keep their names, so Full-stack and QA read it like any plan. A fix that turns out to need more than § Fix limit allows gets a full plan, with this file linked.
+This short plan replaces the full plan. The sections the agents rely on keep their names, so Full-stack and QA read it like any plan. A fix that turns out to need more than § Fix limit allows gets a full plan, with this file linked.
 
 ## Symptom
 
