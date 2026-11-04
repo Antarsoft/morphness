@@ -14,10 +14,12 @@ From 1.0, within one major version:
 - New things may be added in a minor release: a config key with a default, a field in a record, a
   module, a skill. A copy that never uses them keeps working.
 - `/morph-update` takes an install from any supported release to the current one without losing its
-  records or its own edits. The kit's self-test replays that update from the oldest supported release,
-  with owner edits next to upstream changes, changed config values and an update put off for later.
-  The replay merges with git the way the skill describes; in a real update the model does the merge,
-  and that part is checked by update runs made by hand.
+  records or its own edits. The kit's self-test replays that update on its sample projects from the
+  previous release and from the oldest supported one, with run records already in `_harness/`, owner
+  edits next to upstream changes, changed config values and an update put off for later, and checks
+  that the records come through byte for byte. A checkout without the release tags it needs fails the strict
+  self-test rather than skipping the replay. The replay merges with git the way the skill describes; in
+  a real update the model does the merge, and that part is checked by update runs made by hand.
 - Something we plan to remove is marked deprecated in the changelog and keeps working for at least
   one minor release first.
 
