@@ -8,7 +8,12 @@
 #          and doesn't see an ORM's delete calls); or the branch drops a risk path from that list or
 #          changes this script; or more files change than mode.plain_max_files (documentation and
 #          _harness/ records not counted)
-#   plain  none of these
+#   plain  none of these. A file on a risk path in a database area (its name says database, schema, migration
+#          or sql, and nothing a risk path guards) counts as plain when it is a new .sql migration whose every
+#          statement fits the strict allow-list in add_statement() below, or a .sql database test in a test
+#          folder outside the migrations: printed as `+ <file>: …` lines and a `Needs:` line
+#          (harness/MODES.md § Additive migration). When anything else makes the change full, or the owner
+#          forces full, they are risk paths again.
 # The files: the ones named on the command line (what a plan will change), plus what the branch has
 # changed so far (its commits since it left the integration branch, uncommitted changes, new files).
 # The owner's word wins over the paths: --force full|plain, or mode.force in harness.config.yml.
@@ -189,12 +194,353 @@ def to_regex(g):
     return re.compile(r"^" + out + r"(?:/.*)?$", re.I)
 
 compiled = [(area, g, to_regex(g)) for area, g in rules]
-reasons = []
+
+# A database file can count as plain when it only adds (harness/MODES.md § Small mode → Additive migration):
+# a new .sql migration whose every statement is on the list below, or a database test in a test folder. Only when
+# every risk area the file matches is about the database; anything the script can't read stays full.
+# A strict allow-list: each statement must match one of the shapes below in full, or the file is not additive.
+# Anything the reader is unsure of (prefixed strings, $ outside a $$ body, schemas other than public, a function
+# call it doesn't know) makes the migration full. False "full" answers are fine; false "plain" ones are not.
+
+class NotAdditive(Exception):
+    pass
+
+
+def sql_skeleton(text):
+    """The statements of an SQL file, each as (skeleton, bodies): string literals become 'S', quoted names become
+    plain names ("notes" is notes, "Notes" becomes q_<hex>), $$ bodies become $$Bn$$ with the body kept, and
+    comments go. Raises NotAdditive on anything it can't read safely."""
+    out, cur, bodies, i, n = [], [], [], 0, len(text)
+    def ident_char(c):
+        return c.isalnum() or c in "_$"
+    while i < n:
+        c = text[i]
+        if text.startswith("--", i):
+            j = text.find("\n", i)
+            i = n if j < 0 else j
+            continue
+        if text.startswith("/*", i):
+            j = text.find("*/", i + 2)
+            if j < 0 or "/*" in text[i + 2:j]:
+                raise NotAdditive("a block comment it can't read")
+            cur.append(" ")
+            i = j + 2
+            continue
+        if c == "'":
+            if i and (ident_char(text[i - 1]) or text[i - 1] == "&"):
+                raise NotAdditive("a prefixed string (E'', U&'' or similar)")
+            j = i + 1
+            while True:
+                if j >= n:
+                    raise NotAdditive("a string that doesn't end")
+                if text[j] == "\\":
+                    raise NotAdditive("a backslash in a string")  # read as an escape when standard_conforming_strings is off
+                if text[j] == "'":
+                    if j + 1 < n and text[j + 1] == "'":
+                        j += 2
+                        continue
+                    break
+                j += 1
+            cur.append("'S'")
+            i = j + 1
+            continue
+        if c == '"':
+            j = text.find('"', i + 1)
+            if j < 0 or text.startswith('""', j):
+                raise NotAdditive("a quoted name it can't read")
+            name = text[i + 1:j]
+            cur.append(name if re.fullmatch(r"[a-z_][a-z0-9_]*", name) else "q_" + name.encode().hex())
+            i = j + 1
+            continue
+        if c == "$":
+            if text.startswith("$$", i) and not (i and ident_char(text[i - 1])):
+                j = text.find("$$", i + 2)
+                if j < 0:
+                    raise NotAdditive("a $$ body that doesn't end")
+                cur.append(f"$$B{len(bodies)}$$")
+                bodies.append(text[i + 2:j])
+                i = j + 2
+                continue
+            raise NotAdditive("a $ outside a $$ body")
+        if c == ";":
+            s = " ".join("".join(cur).lower().split())
+            if s:
+                out.append((s, list(bodies)))
+            cur, bodies = [], []
+            i += 1
+            continue
+        cur.append(c)
+        i += 1
+    s = " ".join("".join(cur).lower().split())
+    if s:
+        out.append((s, list(bodies)))
+    return out
+
+
+IDENT = r"[a-z_][a-z0-9_]*"
+QNAME = rf"(?:{IDENT}\.)?{IDENT}"
+# Functions an expression may call: plain value functions that read nothing but their arguments (and the
+# session's user id), so a default, a check or a policy built from them can't change or copy other data.
+SAFE_CALLS = {"length", "char_length", "character_length", "octet_length", "cardinality", "array_length", "lower",
+              "upper", "btrim", "trim", "ltrim", "rtrim", "coalesce", "nullif", "greatest", "least", "now",
+              "gen_random_uuid", "uuid_generate_v4", "auth.uid", "auth.jwt", "auth.role", "unnest", "abs",
+              "round", "floor", "ceil", "date_trunc", "position", "substring", "starts_with", "jsonb_typeof",
+              "array_position", "to_tsvector", "regexp_like", "string_to_array", "array_to_string",
+              "regexp_replace", "split_part", "concat"}
+KEYWORDS = {"in", "any", "all", "some", "exists", "array", "and", "or", "not", "check", "values", "row", "using",
+            "with", "key", "unique", "references", "primary", "on", "where", "select", "from", "as", "is", "then",
+            "else", "when", "case", "filter", "over", "distinct", "between", "like", "ilike", "similar", "default",
+            "null", "foreign", "include", "constraint"}
+TYPE_CALLS = {"varchar", "character varying", "char", "character", "numeric", "decimal", "time", "timestamp",
+              "timestamptz", "interval", "bit", "varbit", "float"}
+SENSITIVE = re.compile(r"(user|account|auth|session|token|password|secret|credential|billing|payment|invoice|"
+                       r"subscription|charge|price|plan|role|permission|member|admin|key|grant|policy|owner)")
+LITERAL = r"(?:'s'|-?\d+(?:\.\d+)?|true|false|null|current_timestamp|current_date)(?:\s*::\s*[a-z_ ]+(?:\[\])?)?"
+
+
+def full_name(name):
+    """public.notes and notes are the same table; another schema is never additive."""
+    schema, _, table = name.rpartition(".")
+    if schema and schema != "public":
+        raise NotAdditive(f"a table outside the public schema ({name})")
+    return table
+
+
+def balanced(s):
+    depth = 0
+    for c in s:
+        depth += (c == "(") - (c == ")")
+        if depth < 0:
+            return False
+    return depth == 0
+
+
+def calls_ok(expr, funcs, extra=()):
+    for m in re.finditer(r"([a-z_][a-z0-9_.]*)\s*\(", expr):
+        f = m.group(1)
+        if f in KEYWORDS or f in SAFE_CALLS or f in funcs or f in extra:
+            continue
+        raise NotAdditive(f"a call to {f}()")
+
+
+def split_top(s):
+    out, depth, cur = [], 0, []
+    for c in s:
+        depth += (c == "(") - (c == ")")
+        if c == "," and depth == 0:
+            out.append("".join(cur).strip())
+            cur = []
+            continue
+        cur.append(c)
+    out.append("".join(cur).strip())
+    return [a for a in out if a]
+
+
+def additive(text, others=""):
+    """None when the migration only adds; otherwise why not, in a few words. others: the project's other SQL,
+    where a function the migration creates must not be named yet (a new overload can take over an existing call)."""
+    try:
+        stmts = sql_skeleton(text)
+        if not stmts:
+            return "no SQL statement"
+        new, rls, funcs = set(), set(), set()
+        for s, bodies in stmts:
+            add_statement(s, bodies, new, rls, funcs)
+        for f in sorted(funcs):
+            if "." not in f and others is None:
+                return "can't read the project's other SQL to check the function names"
+            if "." not in f and re.search(rf"(?<![\w$]){re.escape(f)}\"?\s*\(", others, re.I):
+                return f"a function named like one the project already has or calls ({f})"
+        open_tables = sorted(new - rls)
+        if open_tables:
+            return f"new table {open_tables[0]} has no row-level security"
+        return None
+    except NotAdditive as e:
+        return str(e)
+
+
+def short(s):
+    return s[:70] + ("…" if len(s) > 70 else "")
+
+
+def add_statement(s, bodies, new, rls, funcs):
+    if s in ("begin", "commit", "begin transaction", "start transaction", "commit transaction"):
+        return
+    m = re.fullmatch(rf"create table ({QNAME}) \((.*)\)", s)
+    if m:
+        table, body = full_name(m.group(1)), m.group(2)
+        if not balanced(body) or re.search(r"\b(select|like|inherits|partition|including|generated)\b", body):
+            raise NotAdditive(short(s))
+        if SENSITIVE.search(table):
+            raise NotAdditive(f"a table named for sign-in, secrets, money or permissions ({table})")
+        calls_ok(body, funcs, TYPE_CALLS)
+        new.add(table)
+        return
+    m = re.fullmatch(rf"alter table (?:only )?({QNAME}) (?:enable|force) row level security", s)
+    if m:
+        table = full_name(m.group(1))
+        if table not in new:
+            raise NotAdditive(f"row-level security turned on for a table it doesn't create ({table})")
+        rls.add(table)
+        return
+    m = re.fullmatch(rf"alter table (?:only )?({QNAME}) (add .*)", s)
+    if m:
+        table = full_name(m.group(1))
+        if SENSITIVE.search(table):
+            raise NotAdditive(f"a table named for sign-in, secrets, money or permissions ({table})")
+        for action in split_top(m.group(2)):
+            add_action(action, table in new, funcs)
+        return
+    m = re.fullmatch(rf"create (?:unique )?index (?:concurrently )?(?:if not exists )?{IDENT} on (?:only )?({QNAME})"
+                     rf"(?: using {IDENT})? \((.*)\)(?: where (.*))?", s)
+    if m:
+        full_name(m.group(1))
+        expr = m.group(2) + " " + (m.group(3) or "")
+        if not balanced(m.group(2)) or re.search(r"\bselect\b", expr):
+            raise NotAdditive(short(s))
+        calls_ok(expr, funcs)
+        return
+    m = re.fullmatch(rf"create policy {IDENT} on ({QNAME})(?: as (?:permissive|restrictive))?"
+                     rf"(?: for (?:all|select|insert|update|delete))? to ({IDENT}(?:, ?{IDENT})*)(.*)", s)
+    if m:
+        table, roles, rest = full_name(m.group(1)), {r.strip() for r in m.group(2).split(",")}, m.group(3)
+        if table not in new:
+            raise NotAdditive(f"a policy on a table it doesn't create ({table})")
+        if roles & {"public", "anon"}:
+            raise NotAdditive("a policy for public or anon")
+        parts = re.fullmatch(r"(?: using \((.*?)\))?(?: with check \((.*)\))?", rest)
+        if not parts or not (parts.group(1) or parts.group(2)):
+            raise NotAdditive(short(s))
+        for expr in (parts.group(1), parts.group(2)):
+            if expr is None:
+                continue
+            if not balanced(expr) or re.sub(r"[()\s]", "", expr) in ("true", "1=1", "'s'='s'", "notfalse"):
+                raise NotAdditive("a policy that lets every row through")
+            calls_ok(expr, funcs)
+        return
+    m = re.fullmatch(rf"grant ((?:select|insert|update|delete|all(?: privileges)?)(?:, ?(?:select|insert|update|delete))*)"
+                     rf" on (?:table )?({QNAME}) to ({IDENT}(?:, ?{IDENT})*)", s)
+    if m:
+        if full_name(m.group(2)) not in new:
+            raise NotAdditive(f"a grant on a table it doesn't create ({m.group(2)})")
+        if {r.strip() for r in m.group(3).split(",")} & {"public", "anon"}:
+            raise NotAdditive("a grant to public or anon")
+        return
+    m = re.fullmatch(rf"create function ({QNAME}) ?\(([^()]*)\) returns ([a-z_ \[\]]+?) (.*?)as \$\$b(\d+)\$\$(.*)", s)
+    if m:
+        name = m.group(1)
+        if SENSITIVE.search(full_name(name)):
+            raise NotAdditive(f"a function named for sign-in, secrets, money or permissions ({name})")
+        header = (m.group(4) + " " + m.group(6)).split()
+        allowed = {"language", "sql", "immutable", "stable", "strict", "parallel", "safe", "set", "search_path",
+                   "=", "to", "'s'", "public", "returns", "null", "on", "input", "called"}
+        words = set(header)
+        if not words <= allowed or "sql" not in words or not words & {"immutable", "stable"}:
+            raise NotAdditive("a function that isn't a stable or immutable SQL function")
+        body = bodies[int(m.group(5))]
+        clean = " ".join(re.sub(r"'(?:[^']|'')*'", "'s'", body.lower()).split())
+        if not clean.startswith("select ") or ";" in clean.rstrip("; ") or re.search(
+                r"\b(insert|update|delete|merge|copy|call|truncate|drop|alter|grant|revoke|create|set|perform|execute|do)\b", clean):
+            raise NotAdditive("a function body that does more than select")
+        calls_ok(clean, funcs)
+        funcs.add(full_name(name))  # called as f() or public.f(), never another schema's f()
+        funcs.add("public." + full_name(name))
+        return
+    if re.fullmatch(rf"comment on (?:table|column) {QNAME}(?:\.{IDENT})? is 's'", s):
+        return
+    raise NotAdditive(short(s))
+
+
+def add_action(a, on_new, funcs):
+    m = re.fullmatch(rf"add (?:column )?(?:if not exists )?({IDENT}) (.*)", a)
+    if m and m.group(1) not in ("constraint", "primary", "unique", "foreign", "check"):
+        col, rest = m.group(1), m.group(2)
+        if SENSITIVE.search(col):
+            raise NotAdditive(f"a column named for sign-in, secrets, money or permissions ({col})")
+        if re.search(r"\b(generated|select|collate)\b", rest) or re.search(r"\bon (delete|update)\b", rest):
+            raise NotAdditive(short(a))
+        for d in re.finditer(r"\bdefault\s+", rest):
+            if not re.match(LITERAL, rest[d.end():]):
+                raise NotAdditive("a default that isn't a plain value")
+        calls_ok(re.sub(r"\bdefault\s+" + LITERAL, "", rest), funcs, TYPE_CALLS)
+        return
+    m = re.fullmatch(rf"add constraint {IDENT} check \((.*)\)", a)
+    if m:
+        if not balanced(m.group(1)) or re.search(r"\bselect\b", m.group(1)):
+            raise NotAdditive(short(a))
+        calls_ok(m.group(1), funcs)
+        return
+    if re.fullmatch(rf"add constraint {IDENT} unique \({IDENT}(?:, ?{IDENT})*\)", a):
+        return
+    m = re.fullmatch(rf"add constraint {IDENT} foreign key \({IDENT}(?:, ?{IDENT})*\) references ({QNAME})"
+                     rf"(?: ?\({IDENT}(?:, ?{IDENT})*\))?(.*)", a)
+    if m:
+        if m.group(2).strip() and (not on_new or not re.fullmatch(r"( on delete (cascade|restrict|no action|set null))?", m.group(2))):
+            raise NotAdditive(short(a))
+        return
+    raise NotAdditive(short(a))
+
+# An area counts as the database's when its name says so and names nothing else a risk path guards.
+DB_AREA = re.compile(r"database|schema|migration|\bsql\b", re.I)
+NOT_DB_AREA = re.compile(r"auth|sign|session|access|billing|money|payment|secret|permission|policy|polic|tenan", re.I)
+# A database test lives in a test folder, never next to the migrations (a .sql file there is applied).
+SQL_TEST = re.compile(r"(^|/)(tests?|spec)/[^ ]*\.sql$", re.I)
+
+def other_sql(p):
+    """The project's SQL as the integration branch has it, as one text: what existed before this change."""
+    if base is None or base == EMPTY_TREE:
+        return ""
+    listing = git("ls-tree", "-r", "-z", "--name-only", base)
+    if listing is None:
+        return None
+    out = []
+    for q in listing.split("\0"):
+        if q.lower().endswith(".sql") and q != p:
+            text = git("show", f"{base}:{q}")
+            if text is None:
+                return None
+            out.append(text)
+    return "\n".join(out)
+
+def is_new(p):
+    """Not in the integration branch yet: the branch adds it, or it is still untracked."""
+    if base == EMPTY_TREE:
+        return True
+    if base is None:
+        return False  # no git history to compare with: never counted as new
+    return git("cat-file", "-e", f"{base}:{p}") is None
+
+reasons, additions, unwritten = [], [], []
 for p in files:
-    for area, g, rx in compiled:
-        if rx.match(p):
-            reasons.append(f"- {p}: {area} (`{g}`)")
-            break
+    hits = [(area, g) for area, g, rx in compiled if rx.match(p)]
+    if not hits:
+        continue
+    reason = f"- {p}: {hits[0][0]} (`{hits[0][1]}`)"
+    if not p.lower().endswith(".sql") or not all(DB_AREA.search(area) and not NOT_DB_AREA.search(area) for area, _ in hits):
+        reasons.append(reason)
+        continue
+    if SQL_TEST.search(p) and "migration" not in p.lower():
+        additions.append((reason, f"+ {p}: database test"))
+        continue
+    if not os.path.isfile(p):
+        if p in changed:
+            reasons.append(reason + ": the branch deletes it")
+        else:
+            unwritten.append(p)
+            reasons.append(reason)
+        continue
+    if not is_new(p):
+        reasons.append(reason + ": changes a migration the integration branch already has")
+        continue
+    try:
+        with open(p, encoding="utf-8-sig", errors="replace") as fh:
+            more = additive(fh.read(), other_sql(p))
+    except OSError:
+        more = "can't read it"
+    if more:
+        reasons.append(reason + f": does more than add ({more})")
+    else:
+        additions.append((reason, f"+ {p}: additive migration (new tables with row-level security, new columns)"))
 
 DELETES = re.compile(r"\b(drop\s+(table|column|schema|database)\b|truncate\s+(table\s+)?[\w\"`.]+|delete\s+from\b"
                      r"|alter\s+table\b.*\bdrop\b)", re.I)
@@ -221,16 +567,29 @@ if len(counted) > max_files:
     reasons.append(f"- {len(counted)} files change, more than mode.plain_max_files ({max_files}), documentation not counted")
 
 auto = "full" if reasons else "plain"
+if auto == "full" or force == "full":
+    # anything else already needs full mode, or the owner chose it: the database files are risk paths again
+    reasons = [r for r, _ in additions] + reasons
+    additions = []
 if force and force != auto:
     print(f"Mode: {force} (the owner chose {force}; without that: {auto})")
 elif force:
     print(f"Mode: {force} (the owner chose {force})")
 elif auto == "plain" and not counted:
     print("Mode: plain (documentation only)")
+elif auto == "plain" and additions:
+    print(f"Mode: plain ({len(counted)} file{'s' if len(counted) != 1 else ''}, database changes that only add)")
 elif auto == "plain":
     print(f"Mode: plain ({len(counted)} file{'s' if len(counted) != 1 else ''}, none on a risk path)")
 else:
     print("Mode: full")
 for r in reasons:
     print(r)
+for _, line in additions:
+    print(line)
+if additions:
+    print("Needs: the database tests and one code review before the hand-off (harness/MODES.md § Small mode)")
+if unwritten and auto == "full":
+    print("Note: " + ", ".join(unwritten) + " isn't written yet. A new migration that only adds tables or columns with "
+          "row-level security can run in small mode: write it first, then run this again (harness/MODES.md § Choosing mode)")
 PY
