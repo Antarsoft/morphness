@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Morphness: a self-improving agent harness, the process and safety layer for Claude Code</title>
-<meta name="description" content="Open-source multi-agent harness for Claude Code. A Technical Lead plans, Full-stack builds, QA verifies, and a retro and prune loop turns mistakes into rules that fit your project. Any stack, MIT.">
+<title>Morphness: a fail-closed guard and a self-improving process for Claude Code</title>
+<meta name="description" content="Open-source harness for Claude Code: a fail-closed guard hook on risky tool calls, and a process on top. Plain changes run in your session; risky ones get a plan, a build agent and QA. Retros and prunes keep the rules short. Any stack, MIT.">
 <link rel="canonical" href="https://morphness.dev/">
 <meta name="google-site-verification" content="il7LUO5HUMTiF2wTk68tD4htxgkjmsoDHu8no0WtyFw">
 <link rel="icon" href="logo.svg" type="image/svg+xml">
@@ -13,16 +13,16 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Morphness">
 <meta property="og:locale" content="en_US">
-<meta property="og:title" content="Morphness: a self-improving agent harness, the process and safety layer for Claude Code">
-<meta property="og:description" content="A Technical Lead plans, Full-stack builds, QA verifies, and retros turn mistakes into rules that fit your project. Open source, any stack.">
+<meta property="og:title" content="Morphness: a fail-closed guard and a self-improving process for Claude Code">
+<meta property="og:description" content="A fail-closed guard on risky Claude Code tool calls, and a process that plans and verifies risky changes and turns misses into rules. Open source, any stack.">
 <meta property="og:url" content="https://morphness.dev/">
 <meta property="og:image" content="https://morphness.dev/og.png">
 <meta property="og:image:width" content="1280">
 <meta property="og:image:height" content="640">
 <meta property="og:image:alt" content="Morphness logo with the tagline: the process and safety layer around Claude Code. Plan, Build, QA, Retro, Prune, Share.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Morphness: a self-improving agent harness, the process and safety layer for Claude Code">
-<meta name="twitter:description" content="A Technical Lead plans, Full-stack builds, QA verifies, and retros turn mistakes into rules that fit your project. Open source, any stack.">
+<meta name="twitter:title" content="Morphness: a fail-closed guard and a self-improving process for Claude Code">
+<meta name="twitter:description" content="A fail-closed guard on risky Claude Code tool calls, and a process that plans and verifies risky changes and turns misses into rules. Open source, any stack.">
 <meta name="twitter:image" content="https://morphness.dev/og.png">
 <script type="application/ld+json">
 {
@@ -30,7 +30,7 @@
   "@type": "SoftwareSourceCode",
   "name": "Morphness",
   "url": "https://morphness.dev/",
-  "description": "Self-improving multi-agent harness for Claude Code: plan, build, QA, retro, prune, share.",
+  "description": "Open-source harness for Claude Code: a fail-closed guard hook, with plan, build, check, retro and prune on top.",
   "codeRepository": "https://github.com/antarsoft/morphness",
   "license": "https://opensource.org/licenses/MIT",
   "programmingLanguage": "Markdown",
@@ -165,6 +165,14 @@ dl.files dt { font-weight: 600; font-size: 15px; }
 dl.files dt code { font-size: 14px; }
 dl.files dd { margin: 2px 0 0; color: var(--muted); font-size: 15px; }
 
+/* Modes table */
+.table-wrap { overflow-x: auto; margin: 0 0 8px; }
+table.modes { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 15px; }
+table.modes th, table.modes td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+table.modes th { color: var(--text); font-weight: 600; }
+table.modes td { color: var(--muted); }
+table.modes td:first-child { color: var(--text); font-weight: 600; }
+
 /* Community */
 .stats { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 24px; }
 .stat { border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; background: var(--surface); }
@@ -196,6 +204,7 @@ footer p { margin: 6px 0; }
 <header class="top wrap">
     <a class="brand" href="#"><img src="logo.svg" alt="" width="32" height="32">Morphness</a>
     <nav aria-label="Page">
+      <a href="#guard">Guard</a>
       <a href="#why">Why</a>
       <a href="#how">How it works</a>
       <a href="#install">Install</a>
@@ -207,14 +216,14 @@ footer p { margin: 6px 0; }
 <div class="wrap">
   <div class="hero">
     <img src="logo.svg" alt="Morphness logo" width="88" height="88">
-    <h1>Claude&nbsp;Code, with <span class="grad">a plan you approve and a record of what was checked</span></h1>
-    <p class="lead">A Technical Lead plans each feature and waits for your approval. A Full-stack agent builds it, a QA agent verifies it with evidence, a guard stops risky commands, and a short retro turns every miss into a rule that fits your project. Every ten features, a prune deletes the rules that never fired.</p>
+    <h1>Claude&nbsp;Code, with <span class="grad">a guard that fails closed and a process that learns</span></h1>
+    <p class="lead">A guard hook checks tool calls before they run: it blocks pushes to your environment branches, secret files and changes that would switch it off, asks before deploys, publishes and merges, and blocks the call when it can't run its check. Your session does everyday changes alone; a change to a risk path gets a plan you approve, a build agent and QA. Retros turn misses into rules, and prunes propose cutting the ones that never fire.</p>
     <div class="cta">
       <a class="btn primary" href="#install">Install in one line</a>
       <a class="btn star" href="https://github.com/antarsoft/morphness" aria-label="Star Morphness on GitHub"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>Star on GitHub<span class="count" data-stars hidden></span></a>
       <a class="btn" href="trust.html">See the test results</a>
     </div>
-    <p class="facts"><span>Open source, MIT</span><span>Any language or framework</span><span>Built and run for about 150 features on Twinpage</span></p>
+    <p class="facts"><span>Open source, MIT</span><span>Any language or framework</span><span>Grew out of about 150 features on a real product</span></p>
     <p class="facts" id="trust-strip"><span><a href="trust.html">Test results are public, with the known limits listed.</a></span></p>
     <script>
     fetch("trust/results.json").then(function (r) { return r.json(); }).then(function (d) {
@@ -231,22 +240,36 @@ footer p { margin: 6px 0; }
       var sp = document.createElement("span"); sp.appendChild(a); el.appendChild(sp);
     }).catch(function () {});
     </script>
-    <ol class="loop" aria-label="The Morphness loop">
-      <li><span>Plan</span></li><li><span>Build</span></li><li><span>QA</span></li><li><span>Retro</span></li><li><span>Prune</span></li><li><span>Share</span></li>
+    <ol class="loop" aria-label="The Morphness loop: a guard, then plan, build, check, retro and prune">
+      <li><span>Guard</span></li><li><span>Plan</span></li><li><span>Build</span></li><li><span>Check</span></li><li><span>Retro</span></li><li><span>Prune</span></li>
     </ol>
   </div>
 </div>
 
+<section id="guard">
+  <div class="wrap">
+    <h2>The guard comes first</h2>
+    <p class="sub"><code>scripts/guard.sh</code> runs as a Claude Code <code>PreToolUse</code> hook. It reads a Bash command the way the shell does (each command in a chain, inside <code>$(&hellip;)</code>, <code>bash -c</code>, <code>eval</code>, after <code>sudo</code> and other wrappers), then lets the call through, asks you, or blocks it and tells the agent why. A block has no switch.</p>
+    <div class="grid">
+      <div class="card"><h3>Blocks</h3><p>Pushes to your environment branches and force-pushes. Reading or writing secret and credential files (<code>.env*</code>, keys, cloud and SSH credentials), also through a symlink. Printing the whole environment. Changes that would switch the guard off. <code>gh secret</code> writes. Remote database writes from the migrate and push commands it knows.</p></div>
+      <div class="card"><h3>Asks you</h3><p>Deploys and cloud CLIs that do more than read, publishes, merges and other code-host writes, edits to its settings and CI files, database clients aimed at a remote host unless they only read, code fetched and run (<code>curl &hellip; | sh</code>), package runners on packages you don't have, and any MCP tool whose name isn't a read (by default the GitHub pull request tools may work on your own repository's PRs).</p></div>
+      <div class="card"><h3>Fails closed</h3><p>It blocks the call when it can't run its check: the script missing, no <code>python3</code> or <code>awk</code>, input it can't parse, a crash, or a check that runs past 15 seconds. An owner can opt out with <code>guard.fail_open</code> for a missing <code>python3</code>.</p></div>
+      <div class="card"><h3>Sees, and doesn't</h3><p>It checks Bash, file tools, Grep, WebFetch and MCP calls; other tools get Claude Code's own prompts. It is not a sandbox: shell expansions it doesn't perform, commands inside an existing script, secrets in unusually named files and plain downloads get past it, and a hook that hangs past its 60 second timeout lets the call run. Branch protection on the host stays the real guard. <a href="https://github.com/antarsoft/morphness/blob/main/template/harness/GUARD.md">Full list</a>.</p></div>
+    </div>
+  </div>
+</section>
+
 <section id="why">
   <div class="wrap">
-    <h2>Same model, with a paper trail</h2>
-    <p class="sub">Morphness doesn't change the model. It adds the process around it: an approved plan, a QA record, a guard on risky commands and a loop that keeps your <code>CLAUDE.md</code> rules short and true, packaged so you don't write it by hand.</p>
+    <h2>Same model, with a guard and a paper trail</h2>
+    <p class="sub">Morphness doesn't change the model. It adds a guard and a process around it: a plan you approve, a record of every check, and a loop that keeps your <code>CLAUDE.md</code> rules short and true, packaged so you don't write it by hand. It spends the process where the risk is.</p>
     <div class="grid">
-      <div class="card"><h3>Plan first, then build</h3><p>The Technical Lead writes a plan with testable acceptance criteria and waits for your approval before any code is written.</p></div>
-      <div class="card"><h3>QA is never skipped</h3><p>A separate QA agent runs your checks and records evidence for every criterion, so "done" means verified, not claimed.</p></div>
-      <div class="card"><h3>Learns from its mistakes</h3><p>After every feature, a short retro turns what went wrong into rules. Every ten features, a prune audits them: the ones that caught problems stay, the ones that never fired go.</p></div>
+      <div class="card"><h3>One agent by default</h3><p>A script, <code>risk-check.sh</code>, reads the files a change touches. Off the risk paths your own session plans, builds and checks it alone. Sign-in, money, the database schema, deleted data or a change to many files brings in a Full-stack agent and a QA agent; a new migration that only adds stays in your session, with database tests and a code review.</p></div>
+      <div class="card"><h3>Plan first, then build</h3><p>A change that alters behaviour gets a plan with testable acceptance criteria that you approve before code is written: short off the risk paths, full on them. A bug fix starts from a failing test; a docs change needs no plan.</p></div>
+      <div class="card"><h3>Done means verified</h3><p>Every change records the checks it ran with their exit codes, and a planned change the evidence for each criterion. A separate QA agent checks full and bug mode work; light, small and research mode have none.</p></div>
+      <div class="card"><h3>Learns from its mistakes</h3><p>Retros turn real misses into rules. Every ten learnings files (8 to 30, your choice), a prune audits them and proposes cutting the ones that never fired; you decide each one, and nothing is cut on its own.</p></div>
       <div class="card"><h3>Works on any codebase</h3><p>New or existing repos, monorepos with several apps, and folders that aren't a git repo or online yet. Any language or framework. It keeps your <code>CLAUDE.md</code>, shows a diff for settings and lands everything on a branch you review.</p></div>
-      <div class="card"><h3>Safe by default</h3><p>A guard hook blocks pushes to protected branches, force-pushes, reads of common secret files and a bare <code>env</code>, and asks you first before deploys, publishes, merges, cloud or database commands that aren&rsquo;t plainly reading, and other edits to its settings. It blocks any change that would switch it off, and if it can&rsquo;t run, it blocks the call. It stops accidents, not a determined script, so host-side branch protection stays the real guard. Anything a connector would change runs only after your yes in chat, and every agent reads the rule: never write to a shared remote environment.</p></div>
+      <div class="card"><h3>Honest about cost</h3><p>Process costs tokens. Small mode costs more than the same change in a plain session, and a full-mode feature costs several times as much, which is why only risky changes get the agents. Every hand-off shows its estimated dollar cost.</p></div>
       <div class="card"><h3>Yours to configure</h3><p>Branches, environments, checks, modules, risk areas, models and effort live in one <code>harness.config.yml</code>. Every rule and checklist is a Markdown file in your repo.</p></div>
     </div>
   </div>
@@ -254,27 +277,41 @@ footer p { margin: 6px 0; }
 
 <section id="how">
   <div class="wrap">
-    <h2>What happens on each feature</h2>
-    <p class="sub">You talk to the Technical Lead in the main chat. It plans, delegates and never writes code itself.</p>
+    <h2>What happens on each change</h2>
+    <p class="sub">You talk to the Technical Lead in the main chat. It names the files a change will touch and runs <code>risk-check.sh</code>, which picks the mode. Your wording never changes it; you can force a mode yourself.</p>
+    <div class="table-wrap">
+    <table class="modes">
+      <thead><tr><th>Mode</th><th>When</th><th>Who works</th><th>Plan</th><th>QA agent</th></tr></thead>
+      <tbody>
+        <tr><td>Light</td><td>Off the risk paths, nothing changes at run time</td><td>Your session</td><td>None</td><td>No</td></tr>
+        <tr><td>Small</td><td>Off the risk paths, behaviour changes (or a migration that only adds)</td><td>Your session</td><td>Short, you approve</td><td>No</td></tr>
+        <tr><td>Small bug fix</td><td>Off the risk paths, something broke</td><td>Your session</td><td>Failing test first</td><td>No</td></tr>
+        <tr><td>Full</td><td>A risk path, deleted data, or many files</td><td>Full-stack and QA</td><td>Full, you approve</td><td>Yes</td></tr>
+        <tr><td>Bug</td><td>Something broke on a risk path, or a hotfix</td><td>QA writes the test, Full-stack fixes</td><td>Bug plan, you approve</td><td>Yes</td></tr>
+        <tr><td>Research</td><td>A question, no change</td><td>A read-only researcher</td><td>None</td><td>No</td></tr>
+      </tbody>
+    </table>
+    </div>
     <ol class="steps-strip">
-      <li><b>Plan</b>The Technical Lead writes acceptance criteria. You approve.</li>
-      <li><b>Build</b>Full-stack builds the approved plan and its tests on a draft PR.</li>
-      <li><b>QA</b>QA runs your checks. A pass marks the PR ready; a fail goes back to Full-stack.</li>
-      <li><b>Retro</b>Only the action items its findings call for, plus the feature's cost.</li>
-      <li><b>Prune</b>Every ten features: rules that never fired get cut.</li>
+      <li><b>Plan</b>Acceptance criteria you approve, short or full.</li>
+      <li><b>Build</b>Your session, or Full-stack on a risk path, on a draft PR.</li>
+      <li><b>Check</b>Every check with its exit code; QA verifies each criterion on a risk path.</li>
+      <li><b>Retro</b>Only the action items its misses call for, plus the cost.</li>
+      <li><b>Prune</b>Every ten learnings files: proposed cuts you decide.</li>
       <li><b>Share</b>Rules that fired can become community lessons.</li>
     </ol>
     <div class="grid roles">
-      <div class="card"><h3>Technical Lead</h3><p>Your session. Plans each feature, gets your approval, delegates and keeps the rules current.</p><div class="meta">Default: opus, high effort</div></div>
-      <div class="card"><h3>Full-stack</h3><p>Builds the approved plan and its tests. Sonnet at medium effort for pattern-copy work.</p><div class="meta">Default: opus, high effort</div></div>
-      <div class="card"><h3>QA</h3><p>Runs the checks and validates every acceptance criterion, with the evidence recorded.</p><div class="meta">Default: sonnet, high effort</div></div>
-      <div class="card"><h3>Researcher</h3><p>Answers a question about your code or the web with cited sources, read-only, when you want an answer and not a change.</p><div class="meta">Default: sonnet, medium effort</div></div>
-      <div class="card"><h3>Legal writer</h3><p>Writes wording that makes a legal promise, when a feature needs it.</p><div class="meta">Default: fable or opus, high effort</div></div>
+      <div class="card"><h3>Technical Lead</h3><p>Your session. Makes plain changes itself; plans risk-path work, gets your approval and delegates it.</p><div class="meta">Default: sonnet, high effort</div></div>
+      <div class="card"><h3>Full-stack</h3><p>In full and bug mode, builds the approved plan and its tests. Extra-high effort for sign-in, secrets and money.</p><div class="meta">Default: sonnet, high effort</div></div>
+      <div class="card"><h3>QA</h3><p>In full and bug mode, reviews the diff, runs the checks and validates every acceptance criterion, with the evidence recorded.</p><div class="meta">Default: sonnet, medium effort</div></div>
+      <div class="card"><h3>Researcher</h3><p>Answers a question about your code or the web with cited sources, when you want an answer and not a change.</p><div class="meta">Default: sonnet, medium effort</div></div>
+      <div class="card"><h3>Legal writer</h3><p>Writes wording that makes a legal promise, when a feature needs it.</p><div class="meta">Default: fable (or opus), high effort</div></div>
     </div>
     <div class="skills">
       <div><code>/morph-init</code> installs and sets up the harness.</div>
       <div><code>/morph-update</code> reviews what changed upstream and brings in what you accept, merged with your edits.</div>
       <div><code>/morph-doctor</code> checks the wiring, flags a due prune and counts upstream updates waiting.</div>
+      <div><code>/morph-module</code> adds or removes an optional module on an installed project.</div>
       <div><code>/morph-share</code> turns rules that fired into a PR to the lessons catalog.</div>
     </div>
   </div>
@@ -305,26 +342,26 @@ If Morphness is already installed here, follow its UPDATE.md instead and show me
 /morph-init</pre>
       </div>
     </div>
-    <p class="note">Prefer to copy files yourself? <a href="https://github.com/antarsoft/morphness#-install">scripts/install.sh</a> copies and never overwrites. <b>Needs:</b> Claude Code with plugins, subagents and effort levels; the opus and sonnet models; bash, git, python3, awk and perl (<code>gh</code> helps, with a fallback). Each feature costs about three agent runs (plan, build, QA) plus a short retro, and every hand-off shows its estimated dollar cost.</p>
+    <p class="note">Prefer to copy files yourself? <a href="https://github.com/antarsoft/morphness#-install">scripts/install.sh</a> copies and never overwrites. <b>Needs:</b> Claude Code with plugins, subagents and effort levels; sonnet (opus optional, fable for the legal writer); bash, git, python3 3.7 or later, awk and perl (<code>gh</code> helps, with a fallback). Without python3 the guard blocks every call it checks. Every hand-off shows its estimated dollar cost.</p>
 
     <h3 class="sect">Your first feature</h3>
     <ol class="steps">
-      <li>Ask the Technical Lead: <code>plan &lt;feature&gt;</code>.</li>
-      <li>Read the plan and its acceptance criteria, then approve it.</li>
-      <li>Full-stack builds it on a draft PR, then QA checks every criterion and the PR is marked ready.</li>
-      <li>You merge, and get a short retro, the feature's cost, and a steps file for anything only you can do. When a connected service can do a step, the Technical Lead offers to, and acts only after your yes.</li>
+      <li>Ask for the change. The Technical Lead runs the risk check on the files it will touch.</li>
+      <li>Off the risk paths, your session works alone: a short plan you approve when behaviour changes, then the change, its tests and every check.</li>
+      <li>On a risk path, you approve a full plan; Full-stack builds it on a draft PR, the Technical Lead reviews the code, QA checks every criterion and the PR is marked ready.</li>
+      <li>You merge, and get the cost, a retro on risky work, and a steps file for anything only you can do. When a connected service can do a step, the Technical Lead offers to, and acts only after your yes.</li>
     </ol>
-    <p>For a small change, ask for light mode. For something broken, bug mode has QA write a failing test before anyone touches the fix. When you want an answer rather than a change, ask a question and the Technical Lead uses research mode.</p>
+    <p>For something broken, a failing test comes before anyone touches the fix. When you want an answer rather than a change, ask a question and the Technical Lead uses research mode.</p>
 
     <h3 class="sect">What lands in your repo</h3>
     <dl class="files">
-      <div><dt><code>AGENTS.md</code>, <code>CLAUDE.md</code>, <code>.claude/rules/</code></dt><dd>The rules every session loads.</dd></div>
+      <div><dt><code>AGENTS.md</code>, <code>CLAUDE.md</code>, <code>.claude/rules/</code></dt><dd>A short core every session loads, and rules that load only when a task touches their files.</dd></div>
       <div><dt><code>.claude/agents/</code></dt><dd>Full-stack, QA, researcher and legal-writer subagents at several effort levels.</dd></div>
-      <div><dt><code>.claude/settings.json</code></dt><dd>Deny rules for secrets and protected-branch pushes, ask rules on every merge command.</dd></div>
-      <div><dt><code>harness/</code></dt><dd>The process: lifecycle, handoffs, checks, modes (full, light, research), release and environments, the plan checklist, model prices, and how it morphs. Optional modules for Claude Projects, data access, browser e2e, legal wording, a roadmap and CI/CD pipelines.</dd></div>
+      <div><dt><code>.claude/settings.json</code></dt><dd>The guard hook and the end-of-task checks, plus deny rules for secrets and protected-branch pushes and ask rules on merge commands.</dd></div>
+      <div><dt><code>harness/</code></dt><dd>The process: lifecycle, handoffs, checks, modes (full, small, light, bug, research), the guard's full list, release and environments, the plan checklist, model prices, and how it morphs. Optional modules for Claude Projects, data access, browser e2e, legal wording, a roadmap, CI/CD pipelines and security.</dd></div>
       <div><dt><code>project/</code></dt><dd>Your project's facts: stack, the commands behind each check and their scope, risk areas, effort per area, and the official connector for each service you use.</dd></div>
-      <div><dt><code>harness.config.yml</code></dt><dd>Branches, environments, apps, branch protection, who merges, release tags, modules, named checks, CI gate, risk areas, models and effort, cost tracking, loop limits.</dd></div>
-      <div><dt><code>scripts/</code> and <code>.github/</code></dt><dd>The prune counter and feature cost scripts, a PR template, and the branch-protection ruleset.</dd></div>
+      <div><dt><code>harness.config.yml</code></dt><dd>Branches, environments, apps, branch protection, who merges, release tags, modules, named checks, CI gate, risk areas, mode, models and effort, cost tracking, the guard's switches, loop limits.</dd></div>
+      <div><dt><code>scripts/</code> and <code>.github/</code></dt><dd>The guard, the risk check, the end-of-task checks, the prune counter and the feature cost estimate; a PR template and the branch-protection ruleset.</dd></div>
       <div><dt><code>_harness/</code></dt><dd>Runtime: feature folders, learnings, research, prunes, releases.</dd></div>
     </dl>
   </div>
@@ -336,12 +373,12 @@ If Morphness is already installed here, follow its UPDATE.md instead and show me
     <h2>Rules that prove themselves can help the next team</h2>
     <p class="sub">When a prune shows a rule caught a real problem, <code>/morph-share</code> strips anything project-specific and drafts a PR to the shared catalog. A maintainer checks it is new, portable and backed by evidence. <code>/morph-update</code> then offers it to every project it matches.</p>
     <div class="stats">
-      <div class="stat"><b>116</b><span>lessons in the catalog, each with evidence from a real project</span></div>
+      <div class="stat"><b>116</b><span>lessons in the catalog, from rules that ran in a real project</span></div>
       <div class="stat"><b>82</b><span>ship inside the kit as its default rules</span></div>
       <div class="stat"><b>34</b><span>offered when they match your project</span></div>
-      <div class="stat"><b>2</b><span>projects in the catalog so far. Yours could be the third.</span></div>
+      <div class="stat"><b>52</b><span>have no <code>fired</code> count yet: from the first project's records, which didn't count fires</span></div>
     </div>
-    <p>The catalog starts with lessons from <a href="https://twinpage.app">Twinpage</a>, the product Morphness was built and run on for about 150 features. Lessons are amended, never replaced: your report strengthens an existing lesson when one matches.</p>
+    <p>The catalog starts with lessons from the product Morphness was built and run on for about 150 features, and yours could be the next project in it. Lessons are amended, never replaced: your report strengthens an existing lesson when one matches.</p>
     <div class="cta" style="justify-content:flex-start;margin-top:20px">
       <a class="btn primary" href="https://github.com/antarsoft/morphness/blob/main/CONTRIBUTING.md">Contribute a lesson</a>
       <a class="btn" href="https://github.com/antarsoft/morphness/tree/main/lessons">Browse the catalog</a>
