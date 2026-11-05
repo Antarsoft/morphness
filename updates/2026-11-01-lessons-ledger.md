@@ -2,7 +2,7 @@
 id: 2026-11-01-lessons-ledger
 title: The config records lessons you declined or put off, and the release a copy taken from the default branch came from
 kind: fix
-release: unreleased
+release: v0.16.0
 applies_to: { modules: [] }
 files:
   - harness.config.yml

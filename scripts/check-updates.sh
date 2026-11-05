@@ -207,7 +207,13 @@ if since:
         if rel in changed_notes and fm["_risky"]:
             old = subprocess.run(["git", "-C", root, "show", f"{since}:{rel}"], capture_output=True, text=True)
             was = re.search(r"^reviewed:\s*(.*?)\s*$", old.stdout, re.M) if old.returncode == 0 else None
-            if not rv:
+            # a release PR only sets `release:` (scripts/release-changelog.sh): the text a maintainer read is the same
+            no_release = lambda t: re.sub(r"^release:.*$", "", t, count=1, flags=re.M)
+            with open(os.path.join(root, rel), encoding="utf-8") as fh:
+                now = fh.read()
+            if old.returncode == 0 and no_release(old.stdout) == no_release(now):
+                pass
+            elif not rv:
                 for what, hit in fm["_risky"]:
                     errors.append(f"{rel}: has {what} (`{hit}`). The agent applying the note follows its text, so a "
                                   "maintainer reads it before merging: rewrite it without that, or add `reviewed: <why it is safe>` to the frontmatter")

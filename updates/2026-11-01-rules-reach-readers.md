@@ -2,7 +2,7 @@
 id: 2026-11-01-rules-reach-readers
 title: Rules reach the agent they are for, and the researcher can't edit files
 kind: fix
-release: unreleased
+release: v0.16.0
 applies_to: { modules: [] }
 files:
   - .claude/agents/fullstack-engineer-medium.md

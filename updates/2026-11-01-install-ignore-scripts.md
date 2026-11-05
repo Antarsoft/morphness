@@ -2,7 +2,7 @@
 id: 2026-11-01-install-ignore-scripts
 title: Session start puts --ignore-scripts on the install itself, also inside a chain
 kind: fix
-release: unreleased
+release: v0.16.0
 applies_to: { modules: [] }
 files:
   - scripts/session-start.sh

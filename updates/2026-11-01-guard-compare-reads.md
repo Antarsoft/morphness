@@ -2,7 +2,7 @@
 id: 2026-11-01-guard-compare-reads
 title: The guard lets /morph-update's curl compare read through, and checks Morphness URLs segment by segment
 kind: fix
-release: unreleased
+release: v0.16.0
 applies_to: { modules: [] }
 files:
   - scripts/guard.sh

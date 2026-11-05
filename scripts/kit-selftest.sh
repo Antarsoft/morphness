@@ -458,6 +458,12 @@ write(os.path.join(kit, "changelog.d/network-check.md"), "A quieter check, again
 r = run(["bash", "scripts/check-updates.sh", "--since", "HEAD"], kit)
 if r.returncode != 1 or "same `reviewed:` reason" not in r.stdout:
     failures.append(f"kit: check-updates.sh --since kept an old `reviewed:` reason for changed text: {r.stdout[-300:]!r}")
+# a release PR sets only `release:` in a note already read, and that is not a change to re-read
+write(os.path.join(kit, "updates/2026-10-30-network-check.md"), reviewed_note.replace("release: unreleased", "release: v0.99.0"))
+r = run(["bash", "scripts/check-updates.sh", "--since", "HEAD"], kit)
+if "2026-10-30-network-check.md: changed since" in r.stdout or "2026-10-30-network-check.md: has" in r.stdout:
+    failures.append(f"kit: check-updates.sh --since asked to re-read a note whose only change is its release: {r.stdout[-300:]!r}")
+write(os.path.join(kit, "updates/2026-10-30-network-check.md"), reviewed_note)
 # a lesson moved to another folder and edited in the same change is checked as a new one
 ldir = os.path.join(kit, "lessons/practice")
 os.makedirs(ldir, exist_ok=True)

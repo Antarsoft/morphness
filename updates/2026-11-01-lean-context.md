@@ -2,7 +2,7 @@
 id: 2026-11-01-lean-context
 title: Every session loads an 8 KB core; other rules load by path
 kind: rule
-release: unreleased
+release: v0.16.0
 applies_to: { modules: [] }
 files:
   - .claude/rules/auth.md

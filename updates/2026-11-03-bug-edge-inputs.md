@@ -2,7 +2,7 @@
 id: 2026-11-03-bug-edge-inputs
 title: A bug fix names and tests the edge inputs next to the symptom, ties included
 kind: template
-release: unreleased
+release: v0.16.0
 applies_to: { modules: [] }
 files:
   - .claude/rules/testing.md
