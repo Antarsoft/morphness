@@ -1,8 +1,8 @@
 {
  "schema": 1,
- "generated": "2026-10-20 17:14 UTC",
- "commit": "98324c826a5c1215c083fffd9a49b37a0f202f48",
- "release": "2026-10-20.4 + later commits",
+ "generated": "2026-11-05 04:34 UTC",
+ "commit": "aa9ae11c14b1fc13f4d55cdd05d3ed507b449c43",
+ "release": "v0.16.0 + later commits",
  "dirty": false,
  "rows": [
   {
@@ -13,12 +13,12 @@
    "what": "Renders the template as /morph-init would for sample projects, runs its own consistency checks, replays every guard case and runs the template scripts.",
    "command": "STRICT=1 GUARD_FULL=1 scripts/kit-selftest.sh",
    "status": "pass",
-   "summary": "4 of 4 sample projects pass; 616 guard cases replayed on each (2464 replays; per project 203 allowed, 272 asked, 141 denied, all as expected)",
+   "summary": "4 of 4 sample projects pass; 1025 guard cases replayed on each (4100 replays; per project 327 allowed, 354 asked, 344 denied, all as expected)",
    "findings": [],
    "logs": [
     "kit-selftest.txt"
    ],
-   "finished": "2026-10-20 17:14 UTC",
+   "finished": "2026-11-05 04:33 UTC",
    "notes": "Sample projects: go-service, monorepo-apps, nextjs-supabase, python-cli."
   },
   {
@@ -29,12 +29,12 @@
    "what": "Every kit change has an update note, and every note is well formed.",
    "command": "scripts/check-updates.sh",
    "status": "pass",
-   "summary": "85 update note(s) checked, 0 problem(s)",
+   "summary": "125 update note(s) checked, 0 problem(s)",
    "findings": [],
    "logs": [
     "check-updates.txt"
    ],
-   "finished": "2026-10-20 17:14 UTC"
+   "finished": "2026-11-05 04:33 UTC"
   },
   {
    "group": "own",
@@ -44,12 +44,12 @@
    "what": "Every lesson file follows the catalog format.",
    "command": "scripts/check-lessons.sh",
    "status": "pass",
-   "summary": "112 lesson file(s) checked, 0 problem(s)",
+   "summary": "116 lesson file(s) checked, 0 problem(s)",
    "findings": [],
    "logs": [
     "check-lessons.txt"
    ],
-   "finished": "2026-10-20 17:14 UTC"
+   "finished": "2026-11-05 04:33 UTC"
   },
   {
    "group": "public",
@@ -59,28 +59,105 @@
    "what": "Config correctness of CLAUDE.md, AGENTS.md, rules, agents, settings, hooks and skills, on a rendered sample install and on the kit's skills.",
    "command": "npx agnix@0.59.0 --format json <path>",
    "status": "triaged",
-   "summary": "3 finding(s), all judged (8 informational)",
+   "summary": "12 finding(s), all judged (9 informational)",
    "findings": [
     {
-     "rule": "CDX-AG-005",
-     "path": "install/AGENTS.md",
-     "line": 33,
-     "level": "warning",
-     "message": "AGENTS.md references missing file `QA/qa-result.md`",
+     "rule": "CC-AG-010",
+     "path": "install/.claude/agents/researcher-high.md",
+     "line": 1,
+     "level": "error",
+     "message": "Unknown tool 'MultiEdit' in disallowedTools list. Known tools: Agent, Artifact, AskUserQuestion, Bash, CronCreate, CronDelete, CronList, Edit, EndConversation, EnterPlanMode, EnterWorktree, ExitPlanMode, ExitWorktree, Glob, Grep, LSP, ListAgents, ListMcpResourcesTool, Monitor, MultiTool, NotebookEdit, PowerShell, PushNotification, Read, ReadMcpResourceTool, RemoteTrigger, ReportFindings, ScheduleWakeup, SendFeedback, SendMessage, SendUserFile, ShareOnboardingGuide, Skill, StatusBarMessageTool, SubagentHandback, Task, TaskCreate, TaskGet, TaskList, TaskOutput, TaskStop, TaskUpdate, TodoRead, TodoWrite, ToolSearch, WaitForMcpServers, WebFetch, WebSearch, Workflow, Write",
      "triage": {
-      "status": "false-positive",
-      "reason": "QA/qa-result.md is created by the first QA run, so it does not exist in a fresh install."
+      "status": "accepted",
+      "reason": "agnix's list of current tools has no MultiEdit, but older Claude Code versions have it; listing it keeps the researcher read-only there too, and a name Claude Code doesn't know in disallowedTools does nothing."
      }
     },
     {
-     "rule": "PE-004",
-     "path": "install/AGENTS.md",
-     "line": 35,
-     "level": "warning",
-     "message": "Ambiguous term 'usually' creates unclear instruction",
+     "rule": "CC-AG-010",
+     "path": "install/.claude/agents/researcher.md",
+     "line": 1,
+     "level": "error",
+     "message": "Unknown tool 'MultiEdit' in disallowedTools list. Known tools: Agent, Artifact, AskUserQuestion, Bash, CronCreate, CronDelete, CronList, Edit, EndConversation, EnterPlanMode, EnterWorktree, ExitPlanMode, ExitWorktree, Glob, Grep, LSP, ListAgents, ListMcpResourcesTool, Monitor, MultiTool, NotebookEdit, PowerShell, PushNotification, Read, ReadMcpResourceTool, RemoteTrigger, ReportFindings, ScheduleWakeup, SendFeedback, SendMessage, SendUserFile, ShareOnboardingGuide, Skill, StatusBarMessageTool, SubagentHandback, Task, TaskCreate, TaskGet, TaskList, TaskOutput, TaskStop, TaskUpdate, TodoRead, TodoWrite, ToolSearch, WaitForMcpServers, WebFetch, WebSearch, Workflow, Write",
      "triage": {
       "status": "accepted",
-      "reason": "'usually' is a deliberate hedge in a role description; the rule is a style check."
+      "reason": "agnix's list of current tools has no MultiEdit, but older Claude Code versions have it; listing it keeps the researcher read-only there too, and a name Claude Code doesn't know in disallowedTools does nothing."
+     }
+    },
+    {
+     "rule": "CC-SET-036",
+     "path": "install/.claude/settings.json",
+     "line": 27,
+     "level": "warning",
+     "message": "Allow rule 'Bash(bash scripts/feature-cost.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+     "triage": {
+      "status": "accepted",
+      "reason": "These allow the kit's own scripts so routine steps don't prompt. The guard still checks each call but not what a script does inside (tests/known-gaps.md), and in auto mode Claude Code drops the rules, which only adds prompts."
+     }
+    },
+    {
+     "rule": "CC-SET-036",
+     "path": "install/.claude/settings.json",
+     "line": 28,
+     "level": "warning",
+     "message": "Allow rule 'Bash(bash scripts/prune-counter.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+     "triage": {
+      "status": "accepted",
+      "reason": "These allow the kit's own scripts so routine steps don't prompt. The guard still checks each call but not what a script does inside (tests/known-gaps.md), and in auto mode Claude Code drops the rules, which only adds prompts."
+     }
+    },
+    {
+     "rule": "CC-SET-036",
+     "path": "install/.claude/settings.json",
+     "line": 29,
+     "level": "warning",
+     "message": "Allow rule 'Bash(bash scripts/evidence.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+     "triage": {
+      "status": "accepted",
+      "reason": "These allow the kit's own scripts so routine steps don't prompt. The guard still checks each call but not what a script does inside (tests/known-gaps.md), and in auto mode Claude Code drops the rules, which only adds prompts."
+     }
+    },
+    {
+     "rule": "CC-SET-036",
+     "path": "install/.claude/settings.json",
+     "line": 30,
+     "level": "warning",
+     "message": "Allow rule 'Bash(bash scripts/learned-rules.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+     "triage": {
+      "status": "accepted",
+      "reason": "These allow the kit's own scripts so routine steps don't prompt. The guard still checks each call but not what a script does inside (tests/known-gaps.md), and in auto mode Claude Code drops the rules, which only adds prompts."
+     }
+    },
+    {
+     "rule": "CC-SET-036",
+     "path": "install/.claude/settings.json",
+     "line": 32,
+     "level": "warning",
+     "message": "Allow rule 'Bash(bash scripts/risk-check.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+     "triage": {
+      "status": "accepted",
+      "reason": "These allow the kit's own scripts so routine steps don't prompt. The guard still checks each call but not what a script does inside (tests/known-gaps.md), and in auto mode Claude Code drops the rules, which only adds prompts."
+     }
+    },
+    {
+     "rule": "CC-SET-036",
+     "path": "install/.claude/settings.json",
+     "line": 33,
+     "level": "warning",
+     "message": "Allow rule 'Bash(bash scripts/doc-section.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+     "triage": {
+      "status": "accepted",
+      "reason": "These allow the kit's own scripts so routine steps don't prompt. The guard still checks each call but not what a script does inside (tests/known-gaps.md), and in auto mode Claude Code drops the rules, which only adds prompts."
+     }
+    },
+    {
+     "rule": "CC-SET-036",
+     "path": "install/.claude/settings.json",
+     "line": 34,
+     "level": "warning",
+     "message": "Allow rule 'Bash(bash scripts/checks.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+     "triage": {
+      "status": "accepted",
+      "reason": "These allow the kit's own scripts so routine steps don't prompt. The guard still checks each call but not what a script does inside (tests/known-gaps.md), and in auto mode Claude Code drops the rules, which only adds prompts."
      }
     },
     {
@@ -93,14 +170,36 @@
       "status": "false-positive",
       "reason": "<Service> and <tool> are placeholders in an example sentence, not XML."
      }
+    },
+    {
+     "rule": "AS-021",
+     "path": "skills/skills/morph-doctor/SKILL.md",
+     "line": 4,
+     "level": "warning",
+     "message": "SKILL.md body is about 5015 tokens; the Agent Skills spec recommends instructions under 5000 tokens",
+     "triage": {
+      "status": "accepted",
+      "reason": "The body is just over the spec's 5000-token guide; the long reference parts already live in references/ and load only when needed."
+     }
+    },
+    {
+     "rule": "AS-021",
+     "path": "skills/skills/morph-update/SKILL.md",
+     "line": 4,
+     "level": "warning",
+     "message": "SKILL.md body is about 5653 tokens; the Agent Skills spec recommends instructions under 5000 tokens",
+     "triage": {
+      "status": "accepted",
+      "reason": "The body is just over the spec's 5000-token guide; the long reference parts already live in references/ and load only when needed."
+     }
     }
    ],
    "logs": [
     "agnix-install.json",
     "agnix-skills.json"
    ],
-   "finished": "2026-10-20 17:14 UTC",
-   "notes": "66 files checked. Errors and warnings need a verdict; info notes are only counted."
+   "finished": "2026-11-05 04:33 UTC",
+   "notes": "68 files checked. Errors and warnings need a verdict; info notes are only counted."
   },
   {
    "group": "public",
@@ -109,103 +208,14 @@
    "version": "0.11.0",
    "what": "The kit's bash scripts and the scripts installed into projects, including the guard hook.",
    "command": "shellcheck -x -f json $(git ls-files '*.sh')",
-   "status": "triaged",
-   "summary": "8 finding(s), all judged (9 informational)",
-   "findings": [
-    {
-     "rule": "SC2010",
-     "path": "template/scripts/prune-counter.sh",
-     "line": 85,
-     "level": "warning",
-     "message": "Don't use ls | grep. Use a glob or a for loop with a condition to allow non-alphanumeric filenames.",
-     "triage": {
-      "status": "accepted",
-      "reason": "Lists the kit's own prune files, whose names are dated slugs; style warning."
-     }
-    },
-    {
-     "rule": "SC1112",
-     "path": "template/scripts/guard.sh",
-     "line": 619,
-     "level": "warning",
-     "message": "This is a unicode quote. Delete and retype it (or ignore/doublequote for literal).",
-     "triage": {
-      "status": "false-positive",
-      "reason": "A typographic apostrophe inside the text of a user-facing message, on purpose."
-     }
-    },
-    {
-     "rule": "SC1112",
-     "path": "template/scripts/guard.sh",
-     "line": 639,
-     "level": "warning",
-     "message": "This is a unicode quote. Delete and retype it (or ignore/doublequote for literal).",
-     "triage": {
-      "status": "false-positive",
-      "reason": "A typographic apostrophe inside the text of a user-facing message, on purpose."
-     }
-    },
-    {
-     "rule": "SC1112",
-     "path": "template/scripts/guard.sh",
-     "line": 1183,
-     "level": "warning",
-     "message": "This is a unicode quote. Delete and retype it (or ignore/doublequote for literal).",
-     "triage": {
-      "status": "false-positive",
-      "reason": "A typographic apostrophe inside the text of a user-facing message, on purpose."
-     }
-    },
-    {
-     "rule": "SC1112",
-     "path": "template/scripts/guard.sh",
-     "line": 1236,
-     "level": "warning",
-     "message": "This is a unicode quote. Delete and retype it (or ignore/doublequote for literal).",
-     "triage": {
-      "status": "false-positive",
-      "reason": "A typographic apostrophe inside the text of a user-facing message, on purpose."
-     }
-    },
-    {
-     "rule": "SC2155",
-     "path": "template/scripts/evidence.sh",
-     "line": 22,
-     "level": "warning",
-     "message": "Declare and assign separately to avoid masking return values.",
-     "triage": {
-      "status": "accepted",
-      "reason": "Declare-and-assign of config values that cannot fail in a way the script needs to see; style warning."
-     }
-    },
-    {
-     "rule": "SC2155",
-     "path": "template/scripts/evidence.sh",
-     "line": 23,
-     "level": "warning",
-     "message": "Declare and assign separately to avoid masking return values.",
-     "triage": {
-      "status": "accepted",
-      "reason": "Declare-and-assign of config values that cannot fail in a way the script needs to see; style warning."
-     }
-    },
-    {
-     "rule": "SC2155",
-     "path": "template/scripts/evidence.sh",
-     "line": 24,
-     "level": "warning",
-     "message": "Declare and assign separately to avoid masking return values.",
-     "triage": {
-      "status": "accepted",
-      "reason": "Declare-and-assign of config values that cannot fail in a way the script needs to see; style warning."
-     }
-    }
-   ],
+   "status": "clean",
+   "summary": "0 findings (16 informational)",
+   "findings": [],
    "logs": [
     "shellcheck.json"
    ],
-   "finished": "2026-10-20 17:14 UTC",
-   "notes": "13 scripts. Errors and warnings need a verdict; style notes and info are only counted."
+   "finished": "2026-11-05 04:33 UTC",
+   "notes": "18 scripts. Errors and warnings need a verdict; style notes and info are only counted."
   },
   {
    "group": "public",
@@ -220,8 +230,8 @@
    "logs": [
     "gitleaks.json"
    ],
-   "finished": "2026-10-20 17:14 UTC",
-   "notes": "95 commits scanned."
+   "finished": "2026-11-05 04:33 UTC",
+   "notes": "194 commits scanned."
   },
   {
    "group": "public",
@@ -230,9 +240,65 @@
    "version": "2.12.0",
    "what": "Prompt injection, exfiltration and tool poisoning patterns in the five /morph-* skills. Static mode only, no model is called.",
    "command": "skillspector scan skills/<name> --no-llm",
-   "status": "clean",
-   "summary": "0 findings",
-   "findings": [],
+   "status": "triaged",
+   "summary": "5 finding(s), all judged",
+   "findings": [
+    {
+     "rule": "AS1",
+     "path": "skills/morph-init/SKILL.md",
+     "line": null,
+     "level": "HIGH",
+     "message": "",
+     "triage": {
+      "status": "false-positive",
+      "reason": "morph-init's job is to write the project's own .claude/settings.json (the guard hook and permissions). It never reads the user's Claude Code config or credentials."
+     }
+    },
+    {
+     "rule": "AS1",
+     "path": "skills/morph-init/SKILL.md",
+     "line": null,
+     "level": "HIGH",
+     "message": "",
+     "triage": {
+      "status": "false-positive",
+      "reason": "morph-init's job is to write the project's own .claude/settings.json (the guard hook and permissions). It never reads the user's Claude Code config or credentials."
+     }
+    },
+    {
+     "rule": "EA2",
+     "path": "skills/morph-init/SKILL.md",
+     "line": null,
+     "level": "MEDIUM",
+     "message": "",
+     "triage": {
+      "status": "false-positive",
+      "reason": "The flagged text is a question asking the owner whether to auto-approve edits and checks; the owner decides, and the guard's prompts and deny rules stay either way."
+     }
+    },
+    {
+     "rule": "RP1",
+     "path": "skills/morph-init/SKILL.md",
+     "line": null,
+     "level": "MEDIUM",
+     "message": "",
+     "triage": {
+      "status": "false-positive",
+      "reason": "`npx vitest` is an example of a project's own test command in an allow rule, not an MCP server."
+     }
+    },
+    {
+     "rule": "AR2",
+     "path": "skills/morph-update/SKILL.md",
+     "line": null,
+     "level": "HIGH",
+     "message": "",
+     "triage": {
+      "status": "false-positive",
+      "reason": "\"with no warning\" describes the output when there is no newer release; it is not an instruction to ignore safety checks."
+     }
+    }
+   ],
    "logs": [
     "skillspector-morph-doctor.json",
     "skillspector-morph-init.json",
@@ -240,19 +306,38 @@
     "skillspector-morph-share.json",
     "skillspector-morph-update.json"
    ],
-   "finished": "2026-10-20 17:14 UTC",
-   "notes": "Risk scores (0 is best): morph-doctor 0/100, morph-init 0/100, morph-module 0/100, morph-share 0/100, morph-update 0/100."
+   "finished": "2026-11-05 04:34 UTC",
+   "notes": "Risk scores (0 is best): morph-doctor 0/100, morph-init 49/100, morph-module 0/100, morph-share 0/100, morph-update 20/100."
   }
  ],
  "limits": [
   "The guard hook is a safety net for an agent that makes mistakes. It is not a sandbox, and it does not stop an agent or script that is determined to get around it.",
   "The guard reads Bash commands as the shell does, but it does not see inside a script file or Makefile target that an earlier call wrote, code that an interpreter decodes or builds at run time, or a command-line tool it has no rule for.",
+  "A command written so that the shell builds it while it runs, for example from variables or with unusual quoting, can hide a command or file name from the guard. The guard's rules are written for commands as they are usually typed.",
+  "Shell expansions the guard does not perform itself, such as word breaks from `${IFS}`, brace lists, `$'\u2026'` quoting and short globs, can hide a command or a file name from it.",
+  "Commands that git runs on your behalf from hooks, aliases or helpers already set in a repository are not checked. Setting a new one with `git config` or `git -c` asks first.",
   "Secrets are recognised by file name and by common commands. A secret stored in a file with an unusual name is not seen.",
-  "Only Bash, file tools, Grep and MCP tool calls are checked. Other tools are left to Claude Code's own permission prompts.",
+  "A search over the whole project (grep, or Claude Code's Grep tool) is stopped or asks only when the folder holds a file with a known secret name. A secret inside a file with another name can still be printed.",
+  "Reading files outside the project is not blocked, except known credential files such as SSH and cloud keys.",
+  "When the hook does not answer within Claude Code's hook time limit, Claude Code runs the call. The guard ends its own check sooner and blocks the call, so this needs a hang its own timer can't end, such as one before the check starts.",
+  "Only Bash, file tools, Grep, WebFetch and MCP tool calls are checked. Other tools are left to Claude Code's own permission prompts.",
   "The test suite is the kit's own: it shows the guard does what the kit says it does on the cases listed. No tool on this page tests the guard against hostile input beyond those cases.",
   "No tool on this page measures quality or cost compared with plain Claude Code. Morphness adds process, and process costs tokens.",
   "The real protection for shared environments is the host: branch protection, and environment secrets that only the owner holds.",
-  "Static scanners read the kit's text and scripts. They do not run an agent, so they say nothing about how a model behaves with these rules."
+  "Static scanners read the kit's text and scripts. They do not run an agent, so they say nothing about how a model behaves with these rules.",
+  "Process rules, such as planning before code, which mode a change runs in and which files each agent may edit, are instructions to the model, and the model can skip them. Only the guard, the tool limits set on an agent and the checks run at the end of a task are code. In the lighter modes (light, small and research) no separate agent tests the work.",
+  "Before a task counts as done, the kit runs the project's checks (tests, lint and the like) as committed on the branch the work merges into. An agent that moves that branch in its own clone (with `git update-ref` or a fetch refspec) changes which commands run, and the guard does not ask.",
+  "The checks at the end of a task skip files that count as documentation: the kit's documentation folders, Markdown files, the README and LICENSE. A project can add paths to that list or remove them, but the check script keeps the kit's own list, so a path the project added is still checked as code and code under a path it removed is still skipped.",
+  "When a bug fix finds the same mistake in other places, those are left for separate changes unless the owner says otherwise. The fix's record lists each one, and they stay unfixed until someone plans them.",
+  "A change that touches sign-in, secrets, money or people's data gets a security review, and the review always runs again on the final code after its findings are fixed, so such a change pays for two reviews. The security module widens which changes get one.",
+  "`/morph-update` does not scan upstream update notes and lessons when it applies them. The kit's own checks scan them for commands, links and changes to the guard, settings or secrets when they are proposed and merged, and the owner reads each item before it is applied. A copy installed from a fork gets that fork's notes, which the kit's checks never saw.",
+  "Installs and updates are pinned to the commit a release tag named when the copy first read it. A tag moved before a copy reads it cannot be told apart from the original.",
+  "With no option, the cost estimate (`feature-cost.sh`) counts the whole current Claude Code session. When the session did other work before the feature, the figure includes it unless `--since` is given.",
+  "The kit does not isolate a headless run (`claude -p`). One started from inside another Claude Code session inherits that session's environment, including its memory and settings, and a fresh config folder alone does not isolate it."
  ],
- "stale_triage": []
+ "stale_triage": [
+  "agnix CDX-AG-005 install/AGENTS.md",
+  "agnix PE-004 install/AGENTS.md",
+  "shellcheck SC1112 template/scripts/guard.sh"
+ ]
 }
