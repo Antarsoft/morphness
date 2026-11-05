@@ -267,6 +267,23 @@ if skipped:
 undated -= calls.keys()
 if undated:
     notes.append(f"{len(undated)} call{'s' if len(undated) != 1 else ''} with no readable time left out by --since")
+# With no option the whole session counts. When it began long before the branch's first commit, the
+# figure probably holds other work: say so on the Cost line, so nobody reads it as this feature's cost.
+if not (opts["since"] or opts["branch"] or opts["session"]) and calls:
+    firsts = [c[4] for c in calls.values() if c[4]]
+    try:
+        import subprocess
+        base = next((b for b in ("origin/HEAD", "origin/main", "origin/master")
+                     if subprocess.run(["git", "rev-parse", "--verify", "-q", b], capture_output=True).returncode == 0), None)
+        log = subprocess.run(["git", "log", "--reverse", "--format=%cI", f"{base}..HEAD"], capture_output=True,
+                             text=True, timeout=20).stdout.split() if base else []
+        branch_start = parse_time(log[0]) if log else None
+    except (OSError, ValueError, subprocess.SubprocessError):
+        branch_start = None
+    if firsts and branch_start and (branch_start - min(firsts)).total_seconds() > 3 * 3600:
+        hours = (branch_start - min(firsts)).total_seconds() / 3600
+        notes.append(f"counts the whole session, which began {hours:.0f} h before this branch's first commit; "
+                     "pass --since <time the feature started> to count only the feature")
 if not calls:
     note = f" ({'; '.join(notes)})" if notes else ""
     print(f"Cost: not measured (no API calls found in scope){note}")

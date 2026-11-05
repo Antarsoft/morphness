@@ -1,0 +1,1 @@
+`scripts/feature-cost.sh` with no option still counts the whole session, but when that session began more than three hours before the branch's first commit, the `Cost ≈` line now says so and asks for `--since`, so a figure that holds other work isn't read as the feature's cost. `tests/known-gaps.md` words the remaining limit.
