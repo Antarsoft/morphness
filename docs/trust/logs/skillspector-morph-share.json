@@ -2,7 +2,7 @@
  "skill": {
   "name": "morph-share",
   "source": "<repo>/skills/morph-share",
-  "scanned_at": "2026-10-20T17:14:35.589737+00:00"
+  "scanned_at": "2026-11-05T04:33:54.795265+00:00"
  },
  "risk_assessment": {
   "score": 0,
@@ -14,9 +14,9 @@
   {
    "path": "SKILL.md",
    "type": "markdown",
-   "lines": 123,
+   "lines": 132,
    "executable": false,
-   "size_bytes": 7154,
+   "size_bytes": 8196,
    "source_url": null,
    "source_identity": null,
    "source_digest": null
@@ -205,8 +205,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 57,
-    "end_line": 57,
+    "start_line": 59,
+    "end_line": 59,
     "fatal": false
    },
    {
@@ -215,8 +215,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 88,
-    "end_line": 88,
+    "start_line": 60,
+    "end_line": 60,
     "fatal": false
    },
    {
@@ -225,8 +225,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 90,
-    "end_line": 90,
+    "start_line": 61,
+    "end_line": 61,
     "fatal": false
    },
    {
@@ -235,8 +235,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 91,
-    "end_line": 91,
+    "start_line": 63,
+    "end_line": 63,
     "fatal": false
    },
    {
@@ -245,8 +245,28 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 95,
-    "end_line": 95,
+    "start_line": 64,
+    "end_line": 64,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 97,
+    "end_line": 97,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 99,
+    "end_line": 99,
     "fatal": false
    },
    {
@@ -265,8 +285,18 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 108,
-    "end_line": 108,
+    "start_line": 104,
+    "end_line": 104,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 109,
+    "end_line": 109,
     "fatal": false
    },
    {
@@ -277,6 +307,16 @@
     "path": "SKILL.md",
     "start_line": 117,
     "end_line": 117,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 126,
+    "end_line": 126,
     "fatal": false
    }
   ],
@@ -612,9 +652,9 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 57,
-    "column": 25,
-    "evidence": "domain and any id from `project/STACK.md`; there must be none.",
+    "line": 59,
+    "column": 55,
+    "evidence": "repo name, every branch, environment and app name in `harness.config.yml` that isn't a generic word",
     "target_path": null,
     "status": "missing",
     "disposition": "partial",
@@ -622,7 +662,47 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 88,
+    "line": 60,
+    "column": 85,
+    "evidence": "(`main`, `dev`, `staging`, `production`, `web`, `api`), and every variable name in `.env.example` or",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 61,
+    "column": 2,
+    "evidence": "`project/STACK.md`. Then search the drafts for hostnames and email addresses:",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 63,
+    "column": 58,
+    "evidence": "Every hit must go, apart from a generic example such as `example.com` and code or file names it",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 64,
+    "column": 11,
+    "evidence": "catches (`config.test.ts`). When the check flags a Rule that really needs a command or a",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 97,
     "column": 14,
     "evidence": "| Project | `harness.config.yml` \u2192 `project.name` | Confirm |",
     "target_path": null,
@@ -632,7 +712,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 88,
+    "line": 97,
     "column": 37,
     "evidence": "| Project | `harness.config.yml` \u2192 `project.name` | Confirm |",
     "target_path": null,
@@ -642,7 +722,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 90,
+    "line": 99,
     "column": 17,
     "evidence": "| What it is | `project.description`, cut to one line | Confirm or edit |",
     "target_path": null,
@@ -652,7 +732,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 91,
+    "line": 100,
     "column": 12,
     "evidence": "| Stack | `project/STACK.md`, the main two or three | Confirm or edit |",
     "target_path": null,
@@ -662,7 +742,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 95,
+    "line": 104,
     "column": 52,
     "evidence": "traced back to the project. Row format and rules: `CONTRIBUTING.md` \u00a7 Showcase.",
     "target_path": null,
@@ -672,7 +752,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 100,
+    "line": 109,
     "column": 8,
     "evidence": "Needs `scripts/evidence.sh` in the project (`/morph-update` adds it); without it say so and stop.",
     "target_path": null,
@@ -682,7 +762,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 108,
+    "line": 117,
     "column": 14,
     "evidence": "2. Run `bash scripts/evidence.sh --out`. It reads only the project's run records and prints counts",
     "target_path": null,
@@ -692,7 +772,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 117,
+    "line": 126,
     "column": 5,
     "evidence": "`project/STACK.md`; for an anonymous share there must be none.",
     "target_path": null,
