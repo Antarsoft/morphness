@@ -26,7 +26,7 @@ concurrency:
 jobs:
   report:
     runs-on: ubuntu-24.04   # pinned: bump it in its own PR
-    timeout-minutes: 45
+    timeout-minutes: 90   # the report took 31 to 41 minutes in Nov 2026
     env:
       TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
