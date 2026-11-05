@@ -1053,6 +1053,12 @@ def check_doc_sections(bad, t):
     r = run(ds + ["harness/MODES.md", "Choosing mode"], t)
     if r.returncode or not r.stdout.startswith("## Choosing mode") or "\n## Research mode" in r.stdout:
         bad(f"scripts/doc-section.sh didn't print only § Choosing mode (exit {r.returncode}, {r.stdout[:80]!r})")
+    r = run(ds + ["harness/SETUP.md", "After QA pass", "Retrospective", "Prune"], t)
+    if r.returncode or not r.stdout.startswith("doc-section: this print is ") or "fewer sections per call" not in r.stdout.splitlines()[0]:
+        bad(f"scripts/doc-section.sh didn't warn on its first line that a print over 12000 characters can be cut: {r.stdout[:120]!r}")
+    r = run(ds + ["harness/SETUP.md", "Effort per feature", "Where QA can run"], t)
+    if r.returncode or r.stdout.startswith("doc-section:"):
+        bad(f"scripts/doc-section.sh warned on a print under 12000 characters: {r.stdout[:120]!r}")
     r = run(ds + ["harness/MODES.md", "Small mode"], t)
     if r.returncode or "\n### Fixing a bug\n" not in r.stdout or "\n## Bug mode" in r.stdout:
         bad("scripts/doc-section.sh doesn't keep a section's subsections and stop at the next section")

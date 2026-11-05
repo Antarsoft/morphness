@@ -22,6 +22,8 @@ The sections each step needs, besides the ones the § Must do bullets link for i
 
 **Bug mode** reads `bash scripts/doc-section.sh harness/MODES.md "Bug mode"`, writes `harness/templates/bug-plan.md` in place of the plan template, and adds two prompt blocks: `bash scripts/doc-section.sh harness/HANDOFFS.md "QA engineer, bug reproduction" "Full-stack engineer, bug mode"`. **Research mode** reads `bash scripts/doc-section.sh harness/MODES.md "Research mode"` and the researcher's block, `bash scripts/doc-section.sh harness/HANDOFFS.md "Researcher"`.
 
+**Keep each print under about 12,000 characters** (the plan template and `testing.md` together are 15K): print the files and sections in separate calls, or the output is cut and you read it again (learned: a batched print of two files was cut and cost two more calls). `doc-section.sh` warns on its first line when one call prints more.
+
 ## Must do
 
 - Full mode: write `_harness/features/.../Plan/plan.md`, the owner's request in its § Request and the acceptance criteria below it (small, bug, light and research modes use their own shorter artefacts: [harness/MODES.md](./MODES.md)).
