@@ -1019,7 +1019,7 @@ def check_small_bugs(bad, t):
     for want in ("`Mode: plain`", "WIP(<slug>): failing test", "Root cause", "**Escaped**", "hotfix",
                  "**No test can reach it**", "git diff <hash> HEAD -- <test file>", "**No plan file.**",
                  "**edge inputs**", "equal values", "unique key", "**No learnings file** unless something went wrong",
-                 "**Should**", "**Proof**", "**Commit**", "only for restoring behaviour"):
+                 "**Should**", "**Proof**", "**Commit**", "only for restoring behaviour", "an adjacent defect"):
         if want not in fix:
             bad(f"harness/MODES.md § Fixing a bug doesn't say {want!r}")
     choose = modes.split("\n## Choosing mode", 1)[-1]
