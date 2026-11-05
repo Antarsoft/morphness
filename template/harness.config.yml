@@ -89,6 +89,12 @@ checks:
   # a pass costs no model turn, a failure sends the agent back. Keep it to fast checks; [] turns the hook off.
   on_stop: [typecheck, lint, unit]
   stop_retries: 2   # times in a row one failure sends the agent back before the turn ends with it on record
+  # doc_paths_add / doc_paths_remove: this project's changes to the documentation-only list (harness/CONTROLS.md
+  # § Documentation paths): folders ending in `/`, or single files, from the repository root. A removed path is
+  # always checked as code (a docs site whose markdown is compiled into pages); an added one is skipped like
+  # documentation. Here and not in a document, so an agent can't switch a check off by editing one.
+  doc_paths_add: []
+  doc_paths_remove: []
 
 # true: CI on the PR is a required gate. false: QA/qa-result.md on the final commit is the gate.
 ci_gate: false

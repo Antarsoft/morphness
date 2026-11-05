@@ -1585,6 +1585,23 @@ def check_end_of_task(bad, t, settings):
     code2, _, _ = hook(event="SubagentStop", agent_id="other")
     if code2:
         bad("checks.sh hook sent a second agent back for a failure another agent already got, on the same code")
+    # is_doc reads checks.doc_paths_add / checks.doc_paths_remove: a removed path is code, an added one is
+    # documentation, and neither can pull in scripts, hooks, settings or a `..` path
+    src = read(os.path.join(ck, "scripts/checks.sh"))
+    ns = {"os": os}
+    exec(re.search(r"def names\(value\):.*?\n\n", src, re.S).group(0), ns)
+    code_part = src[src.index("DOC_DIRS ="):src.index("def tree_key")]
+    for add, remove, path, want in (
+            ("", "", "docs/a.md", True), ("", "docs/", "docs/a.md", False), ("", "docs/site/", "docs/site/p.md", False),
+            ("", "docs/site/", "docs/other.md", True), ("", "", "content/p.txt", False), ("content/", "", "content/p.txt", True),
+            ("./content/", "", "content/p.txt", True), ("content/", "", "content/../src/a.ts", False),
+            ("scripts/", "", "scripts/checks.sh", False), (".claude/hooks/", "", ".claude/hooks/x.sh", False),
+            ("README.md", "", "README.md", True), ("", "README.md", "README.md", False)):
+        env = dict(CHECKS_DOC_ADD=add, CHECKS_DOC_REMOVE=remove)
+        local = dict(ns, os=type("O", (), {"environ": env})())
+        exec(code_part, local)
+        if local["is_doc"](path) != want:
+            bad(f"checks.sh is_doc({path!r}) with doc_paths_add={add!r} and doc_paths_remove={remove!r} should be {want}")
     seen = []
     for i in range(3):
         write(os.path.join(ck, "src-change.ts"), f"export const x = {10 + i};\n")
