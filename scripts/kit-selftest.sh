@@ -2295,6 +2295,39 @@ def check(name, fx, t):
         r, last = cost_run("--sinse", "2026-10-21")
         if r.returncode != 2 or "bad option: --sinse" not in r.stdout:
             bad(f"feature-cost.sh with an unknown option exited {r.returncode}: {r.stdout!r}")
+        # no option: a session that began long before the branch's first commit gets a note on the Cost line
+        gt = tempfile.mkdtemp(prefix="fc-since-")
+        try:
+            os.makedirs(os.path.join(gt, "scripts")); os.makedirs(os.path.join(gt, "harness"))
+            shutil.copytree(os.path.join(t, "scripts/lib"), os.path.join(gt, "scripts/lib"))
+            for rel in ("scripts/feature-cost.sh", "harness/MODEL_PRICES.md"):
+                shutil.copy(os.path.join(t, rel), os.path.join(gt, rel))
+            gid = ["git", "-c", "user.name=x", "-c", "user.email=x@x", "-c", "commit.gpgsign=false"]
+            def gcommit(msg, when):
+                run(gid + ["add", "-A"], gt)
+                run(gid + ["commit", "-q", "-m", msg], gt, env=dict(os.environ, GIT_AUTHOR_DATE=when, GIT_COMMITTER_DATE=when))
+            run(["git", "init", "-q", "-b", "main"], gt)
+            gcommit("base", "2026-10-21T08:00:00Z")
+            run(["git", "update-ref", "refs/remotes/origin/main", "HEAD"], gt)
+            run(["git", "checkout", "-q", "-b", "feat"], gt)
+            open(os.path.join(gt, "a"), "w").write("a")
+            gcommit("feature", "2026-10-22T12:00:00Z")
+            ghome = os.path.join(t, "cost-home-since")
+            gproj = os.path.join(ghome, ".claude/projects", re.sub(r"[^A-Za-z0-9]", "-", os.path.realpath(gt)))
+            os.makedirs(gproj)
+            open(os.path.join(gproj, "g1.jsonl"), "w").write(
+                cost_entry("g1", mtok, ts="2026-10-21T09:00:00Z", branch="feat") + "\n"
+                + cost_entry("g2", mtok, ts="2026-10-22T12:30:00Z", branch="feat") + "\n")
+            genv = {k: v for k, v in os.environ.items() if k != "CLAUDE_CODE_SESSION_ID"}
+            r = run(["bash", os.path.join(gt, "scripts/feature-cost.sh")], gt, env=dict(genv, HOME=ghome))
+            last = (r.stdout.strip().splitlines() or [""])[-1]
+            if r.returncode or "began 27 h before this branch's first commit" not in last or "--since" not in last:
+                bad(f"feature-cost.sh with no option didn't note a session that began before the branch: {r.stdout!r} {r.stderr.strip()[-200:]!r}")
+            r = run(["bash", os.path.join(gt, "scripts/feature-cost.sh"), "--since", "2026-10-22T12:00"], gt, env=dict(genv, HOME=ghome))
+            if "began" in r.stdout:
+                bad(f"feature-cost.sh --since still printed the whole-session note: {r.stdout!r}")
+        finally:
+            shutil.rmtree(gt, ignore_errors=True)
         # a project path with an emoji: Claude Code names its folder with "--" for it (JavaScript string length)
         emo = os.path.join(t, "cost-emoji", "app \U0001F600")
         os.makedirs(os.path.join(emo, "harness"))
