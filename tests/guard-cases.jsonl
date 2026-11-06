@@ -1023,3 +1023,14 @@
 {"expect": "ask", "tool": "Write", "input": {"file_path": ".git/morphness/checks/0123456789abcdef0123/unit.json", "content": "{\"result\": \"pass\"}"}}
 {"expect": "ask", "tool": "Bash", "input": {"command": "echo '{\"result\": \"pass\"}' > .git/morphness/checks/0123456789abcdef0123/unit.json"}}
 {"expect": "pass", "tool": "Read", "input": {"file_path": ".git/morphness/checks/0123456789abcdef0123/unit.log"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git update-ref refs/remotes/origin/{I} HEAD"}, "every": true}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git update-ref origin/{I} HEAD"}, "every": true}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git update-ref refs/heads/{I} feature/x"}, "every": true}
+{"expect": "ask", "tool": "Bash", "input": {"command": "printf 'update refs/heads/x HEAD\\n' | git update-ref --stdin"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git update-ref refs/heads/feature/x HEAD"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git fetch origin feature/x:refs/remotes/origin/{I}"}, "every": true}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git fetch . +HEAD:{I}"}, "every": true}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git fetch origin {I}"}, "every": true}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git fetch origin feature/x:feature/x"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git checkout -B {I} origin/feature/x"}, "every": true}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git checkout -B feature/x origin/{I}"}}
