@@ -30,6 +30,7 @@
       "Bash(bash scripts/learned-rules.sh:*)",
       "Bash(cat > /tmp/*)",
       "Bash(bash scripts/risk-check.sh:*)",
+      "Bash(bash scripts/plan-brief.sh:*)",
       "Bash(bash scripts/doc-section.sh:*)",
       "Bash(bash scripts/checks.sh:*)"
     ],

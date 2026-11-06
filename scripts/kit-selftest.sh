@@ -1061,6 +1061,74 @@ def check_small_bugs(bad, t):
         bad("AGENTS.md § Golden rules' mode line doesn't send a risky fix or a hotfix to bug mode")
 
 
+def check_plan_brief(bad, t, settings):
+    """Cost: scripts/plan-brief.sh gathers the plan step's docs into one file the Technical Lead reads once, writes
+    nothing for a plain change, and keeps the brief out of commits."""
+    pb = os.path.join(tempfile.mkdtemp(prefix="brief-"), "p")
+    shutil.copytree(t, pb, symlinks=True)
+    integ = run(["bash", "-c", ". scripts/lib/config.sh; config_get branches.integration"], pb).stdout.strip() or "dev"
+    for cmd in (["add", "-A"], ["-c", "user.name=selftest", "-c", "user.email=selftest@example.com", "commit", "-q", "--allow-empty", "-m", "state"],
+                ["branch", "-f", integ]):
+        run(["git", *cmd], pb)
+    run(["git", "checkout", "-q", "-B", "sel-feature"], pb)   # off the integration branch, so it can be deleted below
+    if "Bash(bash scripts/plan-brief.sh:*)" not in settings.get("permissions", {}).get("allow", []):
+        bad(".claude/settings.json doesn't allow bash scripts/plan-brief.sh: every plan would start at a permission prompt")
+    risky = next((g for g in re.findall(r"`([^`\s]+)`", read(os.path.join(pb, "project/CONTROLS.md")).split("## Risk paths", 1)[-1].split("\n## ", 1)[0])
+                  if g.endswith("/")), "auth/")
+    sample = risky.lstrip("/").replace("**/", "a/").replace("**", "a").replace("*", "x") + "f.ts"
+    brief = os.path.join(pb, "_harness/features/sel-test/1/Plan/brief.md")
+    r = run(["bash", "scripts/plan-brief.sh", "sel-test", sample], pb)
+    if r.returncode or not r.stdout.startswith("Mode: full\n") or not os.path.isfile(brief):
+        bad(f"plan-brief.sh on a risk path didn't print the risk check and write the brief (exit {r.returncode}, {r.stdout[:160]!r})")
+    else:
+        text = read(brief)
+        plan_tpl = read(os.path.join(pb, "harness/templates/plan.md")).strip()
+        for want, why in (("## Risk check", "the risk check"), ("## Full harness", "MODES.md § Full harness"),
+                          ("## Effort per feature", "SETUP.md § Effort per feature"), ("## Where QA can run", "SETUP.md § Where QA can run"),
+                          ("## .claude/rules/testing.md", "testing.md")):
+            if want not in text:
+                bad(f"plan-brief.sh's brief has no {why} ({want!r})")
+        if plan_tpl not in text or "doc-section: this print is" in text:
+            bad("plan-brief.sh's brief doesn't hold the plan template whole, or carries doc-section's size warning")
+        if "Read it with the Read tool" not in r.stdout or len(r.stdout) > 2000:
+            bad(f"plan-brief.sh printed the brief instead of naming the file to Read ({len(r.stdout)} characters)")
+        st = run(["git", "status", "--porcelain", "--untracked-files=all"], pb).stdout
+        if "brief.md" in st:
+            bad(f"plan-brief.sh's brief would be committed: {st!r}")
+    r = run(["bash", "scripts/plan-brief.sh", "--bug", "sel-bug", sample], pb)
+    btext = read(os.path.join(pb, "_harness/features/sel-bug/1/Plan/brief.md")) if r.returncode == 0 else ""
+    if ("## Bug mode" not in btext or "## Full harness" not in btext or read(os.path.join(pb, "harness/templates/bug-plan.md")).strip() not in btext
+            or read(os.path.join(pb, "harness/templates/plan.md")).strip() in btext):
+        bad(f"plan-brief.sh --bug didn't write a brief with § Full harness, § Bug mode and the bug plan template only (exit {r.returncode})")
+    if "\npaths:\n" in read(brief):
+        bad("plan-brief.sh's brief kept testing.md's `paths:` header")
+    r = run(["bash", "scripts/plan-brief.sh", "sel-test", sample], pb)
+    if "already has a plan" in r.stdout:
+        bad("plan-brief.sh warned about an existing plan where there is none")
+    open(os.path.join(os.path.dirname(brief), "plan.md"), "w").write("# Plan\n")
+    r = run(["bash", "scripts/plan-brief.sh", "sel-test", sample], pb)
+    if "already has a plan" not in r.stdout or "--version 2" not in r.stdout:
+        bad(f"plan-brief.sh on a version that has a plan.md didn't point to --version 2: {r.stdout[:200]!r}")
+    r = run(["bash", "scripts/plan-brief.sh", "--bug", "sel-bugplain", "src/plain-file.ts"], pb)
+    if r.returncode or os.path.exists(os.path.join(pb, "_harness/features/sel-bugplain")):
+        bad("plan-brief.sh --bug on a plain fix wrote a brief: a plain bug fix is small mode")
+    r = run(["bash", "scripts/plan-brief.sh", "sel-plain", "src/plain-file.ts"], pb)
+    if r.returncode or not r.stdout.startswith("Mode: plain") or os.path.exists(os.path.join(pb, "_harness/features/sel-plain")):
+        bad(f"plan-brief.sh on a plain change wrote a brief or didn't print the risk check (exit {r.returncode}, {r.stdout[:160]!r})")
+    for args in (["Bad_Slug", sample], ["../up", sample], [], ["--version", "x", "ok", sample], ["--version", "0", "ok", sample],
+                 ["--force", "bogus", "sel-force", sample]):
+        r = run(["bash", "scripts/plan-brief.sh", *args], pb)
+        if r.returncode != 2:
+            bad(f"plan-brief.sh {' '.join(args) or '(no slug)'} exited {r.returncode}: a bad slug or version must be a usage error")
+    if os.path.exists(os.path.join(pb, "_harness/features/sel-force")):
+        bad("plan-brief.sh with a bad --force wrote a brief: a usage error writes nothing")
+    run(["git", "branch", "-D", integ], pb)
+    r = run(["bash", "scripts/plan-brief.sh", "sel-undecided", "README.md"], pb)
+    if r.returncode != 2 or not r.stdout.startswith("Mode: full") or not os.path.isfile(os.path.join(pb, "_harness/features/sel-undecided/1/Plan/brief.md")):
+        bad(f"plan-brief.sh when the risk check can't decide exited {r.returncode} without a brief: it must read as full and exit 2")
+    shutil.rmtree(os.path.dirname(pb))
+
+
 def check_doc_sections(bad, t):
     """H3: scripts/doc-section.sh prints one section of a harness doc, and every call the docs spell out names a
     section that exists, so the Technical Lead reads the part a step needs, not the whole file."""
@@ -2241,6 +2309,7 @@ def check(name, fx, t):
         bad(f"risk-check.sh with no `{integ}` branch printed {out!r} (exit {code}): it must fail toward full")
     shutil.rmtree(os.path.dirname(rk))
     check_end_of_task(bad, t, settings)
+    check_plan_brief(bad, t, settings)
     # prune states: proposed and approved are open (named, no DUE); declined, applied and README are not
     pdir, ldir = os.path.join(t, "_harness/prunes"), os.path.join(t, "_harness/learnings")
     os.makedirs(pdir, exist_ok=True)
