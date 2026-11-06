@@ -1,0 +1,1 @@
+`harness/GUARD.md` § Asks lists the commands that move an environment branch in the local clone, which the guard asks about since the previous change; the README and site list them too, and the site's "Asks you" card now matches the README's (git hooks, `git config` keys that run commands, `git reset --hard`, wide deletes).
