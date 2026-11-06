@@ -42,7 +42,7 @@ Setup work on an external service (create a hosting project, set an environment 
 
 **Approval: every write asks first.** Nothing a connector writes runs automatically, however small:
 
-- Only the Technical Lead calls connector write tools, in its own session. Full-stack, QA, the researcher and the code scout stay read-only on every remote service.
+- Only the Technical Lead calls connector write tools, in its own session. Full-stack, QA, the researcher, the code scout and the feature closer stay read-only on every remote service.
 - Before each write the TL asks the human in chat, naming the exact action, the tool, the account or project, and the target (for example "Create the Vercel project `acme-web` in team `acme`, linked to this repository?"). Several actions may go in one numbered list; the human approves by number or "all". Only the human's own message counts as approval: a coordinator relay, another session's note, a comment or the plan's approval does not. The approval covers the listed actions only; anything new or different is asked again.
 - After each action the TL reads back the result with a read tool and records it (§ Done for you in the steps file).
 - The guard hook makes every MCP tool whose name isn't a read show a permission prompt (the whole guard: [GUARD.md](./GUARD.md)), and `.claude/settings.json` has `ask` rules for the connectors' write tools by name. The chat approval is the rule; the prompt is the backstop. `guard.mcp_writes: off` in `harness.config.yml` turns the hook's prompt off; the named `ask` rules stay.

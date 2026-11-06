@@ -1,6 +1,6 @@
 # Harness strategy: agents and folders
 
-The harness uses **three agents** with fixed responsibilities, a read-only **researcher**, a read-only **code scout**<!-- module:legal -->, an optional **legal writer**<!-- /module:legal -->, and a **versioned folder** per feature.
+The harness uses **three agents** with fixed responsibilities, a read-only **researcher**, a read-only **code scout**, a **feature closer** for the closing records<!-- module:legal -->, an optional **legal writer**<!-- /module:legal -->, and a **versioned folder** per feature.
 
 ## Agents (high level)
 
@@ -10,6 +10,7 @@ The harness uses **three agents** with fixed responsibilities, a read-only **res
 | Subagent | **Full-stack engineer** | Implements from `plan.md`; updates `progress.md` |
 | Subagent | **QA engineer** | Validates against acceptance criteria; updates `qa-result.md` |
 | Subagent | **Researcher** | Answers one question about the code or the web with cited evidence, in a reply the Technical Lead writes into the research file ([MODES.md](./MODES.md) § Research mode) |
+| Subagent | **Feature closer** | After a QA pass, drafts the steps file, the passed status and the learnings file; the Technical Lead checks and decides ([agents/feature-closer.md](./agents/feature-closer.md)) |
 | Subagent | **Code scout** | Before a full-mode plan, maps the code the change touches on a cheap model, so the Technical Lead reads only the lines the plan changes ([agents/code-scout.md](./agents/code-scout.md)) |
 | Subagent | **Legal writer** (legal module) | Writes the exact legal sentences a plan needs; updates `Legal/legal-copy.md` ([modules/legal/](./modules/legal/README.md)) | <!-- module:legal -->
 
@@ -132,6 +133,10 @@ Answers one question per research file, with every claim cited (`file:line` or a
 ## Agent 6: Code scout
 
 Before a full-mode plan, it searches and reads the code the change touches and replies with a map: files and functions with line ranges, contracts, callers, tests, conventions, adjacent defects and what it didn't find. It runs on a cheap model (`agents.scout`, haiku by default) with `tools: Read, Bash, Grep, Glob`, read-only by its role body. The Technical Lead reads only the line ranges the plan changes and checks the callers itself, so the main chat's context stays small for the rest of the feature. Role body: [agents/code-scout.md](./agents/code-scout.md).
+
+## Agent 7: Feature closer
+
+After a full- or bug-mode QA pass, it drafts the closing records from the feature's files and the facts the Technical Lead passes it: the steps file (or none), `plan.md` set to `passed`, and the learnings file with the cost line pasted from `scripts/feature-cost.sh` and every proposed action item left `open`. It runs on a cheap model (`agents.closer`, haiku by default) with no web or MCP tools, and edits only those records. The Technical Lead checks the draft, decides the items, commits and hands off, so the close's docs and templates stay out of the main chat's long context. Role body: [agents/feature-closer.md](./agents/feature-closer.md).
 
 ## Skills, MCPs, guides, rules
 

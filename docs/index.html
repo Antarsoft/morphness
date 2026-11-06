@@ -306,6 +306,7 @@ footer p { margin: 6px 0; }
       <div class="card"><h3>QA</h3><p>In full and bug mode, reviews the diff, runs the checks and validates every acceptance criterion, with the evidence recorded.</p><div class="meta">Default: sonnet, medium effort</div></div>
       <div class="card"><h3>Researcher</h3><p>Answers a question about your code or the web with cited sources, when you want an answer and not a change.</p><div class="meta">Default: sonnet, medium effort</div></div>
       <div class="card"><h3>Code scout</h3><p>In full mode, maps the code a change touches before the plan, so your session reads only the lines it changes.</p><div class="meta">Default: haiku, medium effort</div></div>
+      <div class="card"><h3>Feature closer</h3><p>After a QA pass, drafts the closing records and the cost line; your session checks them and decides the retro items.</p><div class="meta">Default: haiku, medium effort</div></div>
       <div class="card"><h3>Legal writer</h3><p>Writes wording that makes a legal promise, when a feature needs it.</p><div class="meta">Default: fable (or opus), high effort</div></div>
     </div>
     <div class="skills">
@@ -357,7 +358,7 @@ If Morphness is already installed here, follow its UPDATE.md instead and show me
     <h3 class="sect">What lands in your repo</h3>
     <dl class="files">
       <div><dt><code>AGENTS.md</code>, <code>CLAUDE.md</code>, <code>.claude/rules/</code></dt><dd>A short core every session loads, and rules that load only when a task touches their files.</dd></div>
-      <div><dt><code>.claude/agents/</code></dt><dd>Full-stack, QA, researcher, code-scout and legal-writer subagents at several effort levels.</dd></div>
+      <div><dt><code>.claude/agents/</code></dt><dd>Full-stack, QA, researcher, code-scout, feature-closer and legal-writer subagents at several effort levels.</dd></div>
       <div><dt><code>.claude/settings.json</code></dt><dd>The guard hook and the end-of-task checks, plus deny rules for secrets and protected-branch pushes and ask rules on merge commands.</dd></div>
       <div><dt><code>harness/</code></dt><dd>The process: lifecycle, handoffs, checks, modes (full, small, light, bug, research), the guard's full list, release and environments, the plan checklist, model prices, and how it morphs. Optional modules for Claude Projects, data access, browser e2e, legal wording, a roadmap, CI/CD pipelines and security.</dd></div>
       <div><dt><code>project/</code></dt><dd>Your project's facts: stack, the commands behind each check and their scope, risk areas, effort per area, and the official connector for each service you use.</dd></div>
