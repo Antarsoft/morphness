@@ -431,6 +431,21 @@ if r.returncode:
     failures.append(f"kit: check-lessons.sh flagged a plain lesson: {r.stdout[-300:]!r}")
 # a note: a copy of the repo's checked files in a scratch git repository, with the note added after its first commit
 kit = os.path.join(scratch, "kit")
+# scripts/headless.sh: a headless try gets a fresh HOME and config folder and none of the calling session's
+# CLAUDE_*, GIT_CONFIG_* or token variables, but keeps sign-in (ANTHROPIC_*) and what --keep / --set name
+hl_env = dict(os.environ, CLAUDE_CODE_SESSION_ID="leak", CLAUDE_MEMORY_STORES="leak", GIT_CONFIG_COUNT="1",
+              GH_TOKEN="tok", ANTHROPIC_BASE_URL="https://api.example", HTTPS_PROXY="http://proxy.example:1")
+r = subprocess.run(["bash", os.path.join(root, "scripts/headless.sh"), "--keep", "GH_TOKEN", "--set", "GIT_AUTHOR_NAME=x", "--", "env"],
+                   capture_output=True, text=True, env=hl_env)
+got = dict(l.split("=", 1) for l in r.stdout.splitlines() if "=" in l)
+if (r.returncode or any(k in got for k in ("CLAUDE_CODE_SESSION_ID", "CLAUDE_MEMORY_STORES", "GIT_CONFIG_COUNT"))
+        or got.get("GH_TOKEN") != "tok" or got.get("GIT_AUTHOR_NAME") != "x" or got.get("ANTHROPIC_BASE_URL") != "https://api.example"
+        or got.get("HTTPS_PROXY") != "http://proxy.example:1" or got.get("CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS") != "0"
+        or got.get("HOME") == os.environ.get("HOME") or got.get("CLAUDE_CONFIG_DIR") != got.get("HOME", "") + "/.claude"):
+    failures.append(f"kit: scripts/headless.sh passed the wrong environment: {sorted(got)} (exit {r.returncode}, {r.stderr[-200:]!r})")
+r = subprocess.run(["bash", os.path.join(root, "scripts/headless.sh"), "env"], capture_output=True, text=True)
+if r.returncode != 2:
+    failures.append(f"kit: scripts/headless.sh ran a command given without -- (exit {r.returncode})")
 for d in ("scripts", "updates", "template", "changelog.d", ".claude-plugin", "lessons"):
     shutil.copytree(os.path.join(root, d), os.path.join(kit, d), symlinks=True)
 shutil.copy(os.path.join(root, "CHANGELOG.md"), kit)
