@@ -96,6 +96,7 @@ text = "\n\n---\n\n".join(parts) + "\n"
 open(out, "w", encoding="utf-8").write(text)
 print(f"Brief: _harness/features/{slug}/{version}/Plan/brief.md ({len(text)} characters). "
       "Read it with the Read tool in one call; it holds the mode section, testing.md, the effort and QA-run sections "
-      "and the plan template, so don't print those again.")
+      "and the plan template, so don't print those again. Next, in full mode: map the code with the code-scout agent "
+      "(bash scripts/doc-section.sh harness/HANDOFFS.md \"Code scout\").")
 PY
 exit "$rc"

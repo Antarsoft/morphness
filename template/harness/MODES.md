@@ -111,7 +111,7 @@ The three agents and the merge gate stay as in full mode; what changes is the or
 
 No application code changes, no QA, no retro, and research files don't count toward the prune counter: a full retro would have little to look back on, and research doesn't change how features are built. § How it went is the look-back instead; the prune reads it across research files and proposes tweaks ([SETUP.md](./SETUP.md) § Prune).
 
-**Research before a plan.** In full mode the Technical Lead may launch the researcher before planning, for a large codebase sweep or an unfamiliar API; the file then lives at `<feature>/<version>/Research/<topic>.md` and `plan.md` § References links it. It is optional: small features don't wait on it. The Technical Lead still reads the exact files and functions the plan changes itself, because the plan's detail is what prevents rework.
+**Research before a plan.** In full mode the code scout maps the code before every plan (harness/TECHNICAL_LEAD.md § Full mode, step by step); the Technical Lead may also launch the researcher before planning, for a question the map can't answer, such as an unfamiliar API or a choice between designs; the file then lives at `<feature>/<version>/Research/<topic>.md` and `plan.md` § References links it. It is optional: small features don't wait on it. The Technical Lead still reads the exact files and functions the plan changes itself, because the plan's detail is what prevents rework.
 
 ## Choosing mode (Technical Lead)
 

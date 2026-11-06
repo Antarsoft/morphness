@@ -129,6 +129,7 @@ agents:
   fullstack: { model: sonnet, medium_model: sonnet, default: high, variants: [medium, high, xhigh] }
   qa: { model: sonnet, medium_model: sonnet, default: medium, variants: [medium, high] }   # high when Full-stack is xhigh
   researcher: { model: sonnet, high_model: sonnet, default: medium, variants: [medium, high] }   # read-only; research mode and research before a plan
+  scout: { model: haiku, effort: medium }   # code scout: maps the code before a full-mode plan; read-only by rule
   legal_writer: { model: fable, effort: high }   # use opus if fable isn't available to you
 
 # Advisory only: Claude Projects settings can't be set from a repo.

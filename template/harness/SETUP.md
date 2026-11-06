@@ -87,6 +87,7 @@ See [MODES.md](./MODES.md). Summary:
 | Full-stack engineer | Agent tool subagent with the path to `plan.md`; implements in the codebase; edits only `Development/progress.md` under that feature |
 | QA engineer | Agent tool subagent; reads `plan.md` and `progress.md`; runs the checks in [CONTROLS.md](./CONTROLS.md); edits only `QA/qa-result.md` |
 | Legal writer | Agent tool subagent (legal module); edits only `Legal/legal-copy.md` | <!-- module:legal -->
+| Code scout | Agent tool subagent before a full-mode plan; tools Read, Bash, Grep and Glob, read-only by its role body; replies with a map of the code, and the Technical Lead reads only the lines the plan changes |
 | Researcher | Agent tool subagent with the absolute path of its research file; no shell or edit tools: it replies with the sections between the file's two lines, and the Technical Lead writes them in ([MODES.md](./MODES.md) § Research mode) |
 | Model and effort | Set in `.claude/agents/*.md`; the plan's **Agent effort** picks the variant (`project/HARNESS_AGENTS.md`) |
 
@@ -122,7 +123,7 @@ When a feature has both an `xhigh` core (sign-in, secrets, money) and a sizeable
 
 The Technical Lead runs rarely (plans, reviews, retro decisions) but a miss there costs a rework round, so it runs at `high` effort on the model the project chose (`agents.technical_lead` in `harness.config.yml`; the default is Sonnet, and the Opus preset suits projects where a missed edge case is costly). It is the session's model, not a file in `.claude/agents/`; where it is set is in `project/HARNESS_AGENTS.md`. On Sonnet, the plan, QA and the checks carry the quality; consider the Opus preset for risk-area work.
 
-Delegating research to the researcher doesn't lower the Technical Lead's level: it still frames the question, checks the findings and decides, and it still reads the code its plans change. It saves tokens (the search stays in the researcher's context), not judgement.
+Delegating research to the researcher doesn't lower the Technical Lead's level: it still frames the question, checks the findings and decides, and it still reads the code its plans change. The same holds for the code scout (`medium`, one level: it maps, the Technical Lead checks). It saves tokens (the search stays in the researcher's context), not judgement.
 
 Model or effort changes are tried as **trials** before they become the rule ([MORPHING.md](./MORPHING.md) § Trials).
 
