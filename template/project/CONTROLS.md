@@ -93,7 +93,7 @@ Steps QA runs by hand when the UI changed, picking the ones that apply.
 
 ## Documentation paths
 
-The list is [harness/CONTROLS.md](../harness/CONTROLS.md) § Documentation paths. This project's changes to it:
+The list is [harness/CONTROLS.md](../harness/CONTROLS.md) § Documentation paths. This project's changes to it are set in `harness.config.yml` (`checks.doc_paths_add`, `checks.doc_paths_remove`), where `scripts/checks.sh` reads them; list them here too, with why:
 
 - None.
 

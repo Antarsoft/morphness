@@ -61,6 +61,7 @@ cd "$root" || quiet_exit "cannot enter the project folder"
 CHECKS_MODE="$mode" CHECKS_HOOK_INPUT="$hook_input" \
 CHECKS_ON_STOP="$(config_get checks.on_stop)" CHECKS_RETRIES="$(config_get checks.stop_retries)" \
 CHECKS_INTEGRATION="$(config_get branches.integration)" \
+CHECKS_DOC_ADD="$(config_get checks.doc_paths_add)" CHECKS_DOC_REMOVE="$(config_get checks.doc_paths_remove)" \
   python3 -I - "$@" <<'PY'
 import fcntl, hashlib, json, os, re, shutil, signal, subprocess, sys, tempfile, time
 
@@ -118,11 +119,25 @@ SECRET_CHECKS = {"secrets"}
 # Documentation, as harness/CONTROLS.md § Documentation paths lists it. Files that run or set permissions never count.
 DOC_DIRS = ("_harness/", "docs/", "harness/", "project/", ".claude/agents/", ".claude/rules/")
 CI_PREFIXES = (".github/workflows/", ".github/actions/", ".gitlab-ci", ".circleci/", ".buildkite/")
+# The project's own changes to that list, set in harness.config.yml (checks.doc_paths_add, checks.doc_paths_remove:
+# folders ending in `/`, or single files, from the repository root). They live in the config, which agents can't
+# write, and not in project/CONTROLS.md, so an edit to a document can't switch a check off for the next change.
+def path_list(value):
+    return tuple((n[2:] if n.startswith("./") else n).lstrip("/") for n in names(value) if ".." not in n.split("/"))
+DOC_ADD = path_list(os.environ.get("CHECKS_DOC_ADD"))
+DOC_REMOVE = path_list(os.environ.get("CHECKS_DOC_REMOVE"))
+def under(p, listed):
+    return any(p == l or (l.endswith("/") and p.startswith(l)) for l in listed)
+
 def is_doc(p):
     if "/../" in "/" + p + "/" or p == "..":
         return False
     if p == ".claude/settings.json" or p.startswith(("scripts/", ".claude/skills/", ".agents/", ".claude/hooks/")):
         return False
+    if under(p, DOC_REMOVE):
+        return False
+    if under(p, DOC_ADD):
+        return True
     if p.startswith(DOC_DIRS):
         return True
     if p.split("/")[0].upper().split(".")[0] in ("README", "LICENSE") and "/" not in p:
