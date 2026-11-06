@@ -42,7 +42,7 @@ DEFAULTS = {
     # the shipped default preset (harness.config.yml → agents): every role on sonnet, the legal writer on fable
     "models.tl": "sonnet", "models.fullstack": "sonnet", "models.fullstack_medium": "sonnet",
     "models.qa": "sonnet", "models.qa_medium": "sonnet", "models.researcher": "sonnet",
-    "models.researcher_high": "sonnet", "models.legal": "fable",
+    "models.researcher_high": "sonnet", "models.scout": "haiku", "models.legal": "fable",
     "morphness.repo": "https://github.com/antarsoft/morphness", "morphness.commit": "0000000",
     "morphness.release": "unreleased", "ci.on_drafts": "false",
     "ci.docs_regex": r"^(_harness|docs|harness|project)/|\.md$",
@@ -1059,6 +1059,42 @@ def check_small_bugs(bad, t):
     mode_line = next((l for l in agents.splitlines() if l.startswith("- **Pick the mode first**")), "")
     if "bug mode for a fix" not in mode_line or "hotfix is bug mode" not in mode_line:
         bad("AGENTS.md § Golden rules' mode line doesn't send a risky fix or a hotfix to bug mode")
+
+
+def check_code_scout(bad, t):
+    """Cost: the code scout maps the code before a full or bug plan on a cheap model, can search (headless Claude Code
+    has no Grep or Glob tool) and has no edit or web tools; the Technical Lead's plan step launches it."""
+    p = os.path.join(t, ".claude/agents/code-scout.md")
+    if not os.path.exists(p):
+        bad(".claude/agents/code-scout.md is missing")
+        return
+    fm = read(p).split("\n---", 1)[0]
+    tools = re.search(r"^tools: *(.+)$", fm, re.M)
+    allowed = {x.strip() for x in tools.group(1).split(",")} if tools else None
+    if allowed is None or "Bash" not in allowed or "Read" not in allowed or allowed - {"Read", "Bash", "Grep", "Glob"}:
+        bad(f".claude/agents/code-scout.md tools are {allowed}: the scout needs Read and Bash to search, and nothing that edits, browses or reaches MCP")
+    body = read(os.path.join(t, "harness/agents/code-scout.md"))
+    for want in ("git grep", "Never edit", "Adjacent defects", "Not found", "path:line"):
+        if want not in body:
+            bad(f"harness/agents/code-scout.md lost {want!r}")
+    tl = read(os.path.join(t, "harness/TECHNICAL_LEAD.md"))
+    row = next((l for l in tl.splitlines() if l.startswith("| Map the code |")), "")
+    if "code-scout" not in row or "| Write the plan | The line ranges the map names" not in tl:
+        bad("harness/TECHNICAL_LEAD.md § Full mode, step by step doesn't launch the code scout before the plan and read only the ranges it names")
+    handoffs = read(os.path.join(t, "harness/HANDOFFS.md"))
+    block = handoffs.split("\n### Code scout\n", 1)[-1].split("\n### ", 1)[0] if "\n### Code scout\n" in handoffs else ""
+    heads = re.findall(r"^- \*\*(.+?):\*\*", body.split("\n## The map\n", 1)[-1].split("\n## ", 1)[0], re.M)
+    if not block or not heads or any(h not in block for h in heads) or ".env" not in block:
+        bad(f"harness/HANDOFFS.md § Code scout doesn't name every heading of the role body's map ({heads}) or the secrets rule")
+    flow = handoffs.split("\n## Mandatory flow", 1)[-1].split("\n## ", 1)[0]
+    if not re.search(r"^0\. Full mode, before the plan → Agent \*\*code scout\*\*", flow, re.M) or "Bug mode skips it" not in flow:
+        bad("harness/HANDOFFS.md § Mandatory flow doesn't start full mode with the code scout, or doesn't say bug mode skips it")
+    if "`git grep -n` each function" not in tl or "comes from your own read" not in tl:
+        bad("harness/TECHNICAL_LEAD.md's plan step takes callers from the scout's map without checking them")
+    cfg = read_agents_config(read(os.path.join(t, "harness.config.yml"))).get("scout", {})
+    model = re.search(r'^model: *"?([^"\n]+?)"? *$', fm, re.M)
+    if not cfg.get("model") or not model or model.group(1) != cfg["model"]:
+        bad(f".claude/agents/code-scout.md runs {model and model.group(1)!r}, but agents.scout.model is {cfg.get('model')!r}")
 
 
 def check_plan_brief(bad, t, settings):
@@ -2310,6 +2346,7 @@ def check(name, fx, t):
     shutil.rmtree(os.path.dirname(rk))
     check_end_of_task(bad, t, settings)
     check_plan_brief(bad, t, settings)
+    check_code_scout(bad, t)
     # prune states: proposed and approved are open (named, no DUE); declined, applied and README are not
     pdir, ldir = os.path.join(t, "_harness/prunes"), os.path.join(t, "_harness/learnings")
     os.makedirs(pdir, exist_ok=True)

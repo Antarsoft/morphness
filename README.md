@@ -240,12 +240,13 @@ flowchart TB
 | 🛠️ **Full-stack** | In full and bug mode, builds the approved plan and its tests | sonnet · high (xhigh for sign-in, secrets and money; opus with the opus preset) |
 | ✅ **QA** | In full and bug mode, reviews the diff, runs the checks and validates every criterion | sonnet · medium (high when Full-stack is xhigh) |
 | 🔎 **Researcher** | Answers a question about your code or the web with cited sources. For when you want an answer, not a change | sonnet · medium (high for architecture; opus at high with the opus preset) |
+| 🗺️ **Code scout** | In full mode, maps the code a change touches before the plan, so the main chat reads only the lines it changes. Read-only by rule | haiku · medium |
 | ⚖️ **Legal writer** | Writes wording that makes a legal promise | fable (or opus) · high |
 
 These are defaults; change any of them (see [Make it yours](#-make-it-yours)). Most limits on what each
 agent may edit are instructions in its prompt. What Claude Code enforces is the guard, the deny and
 ask rules in `.claude/settings.json`, the end-of-task check hooks, and the tool lists of the
-researcher and the legal writer.
+researcher, the code scout (read and shell only) and the legal writer.
 
 | Skill | Use |
 |-------|-----|
@@ -264,7 +265,7 @@ and advised settings (coordinator sonnet · medium, feature threads sonnet · hi
 | Piece | What it does |
 |-------|--------------|
 | 📄 `AGENTS.md`, `CLAUDE.md`, `.claude/rules/` | A short core every session loads (pick the mode, who merges, no remote writes), and rules for tests, schema, sign-in and deploy files that load only when a task touches them. |
-| 🤖 `.claude/agents/` | Full-stack (medium, high, xhigh effort), QA (medium, high), researcher (medium, high) and legal-writer subagents. |
+| 🤖 `.claude/agents/` | Full-stack (medium, high, xhigh effort), QA (medium, high), researcher (medium, high), code-scout and legal-writer subagents. |
 | 🛡️ `.claude/settings.json` | The guard hook and the end-of-task checks, plus deny rules for secrets and protected-branch pushes and ask rules on merge commands, as a second layer. |
 | 🗺️ `harness/` | The process: lifecycle, handoffs, checks, modes (full, small, light, bug, research), the guard's full list, release and environments, the plan checklist, model prices, and how it morphs. |
 | 🧩 `harness/modules/` | Optional: Claude Projects, data access (local-first, remote read-only), browser e2e, legal wording, roadmap, CI/CD pipelines, security (threat model, secret scanning, dependency audit). |
