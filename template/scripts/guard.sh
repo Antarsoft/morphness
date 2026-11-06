@@ -831,6 +831,21 @@ def split_flags(rest):
         (flags if w.startswith("-") else positional).append(w)
     return positional, flags
 
+def env_ref(ref):
+    """The environment branch a ref name points at, or "": `dev`, `refs/heads/dev`, `refs/remotes/origin/dev`,
+    `origin/dev` and any other `.../dev` all count, since git resolves a bare `origin/dev` from .git/origin/dev
+    before refs/remotes/origin/dev."""
+    ref = ref.lstrip("+").strip()
+    for name in PROTECTED_LOW:
+        low = ref.lower()
+        if low == name or low.endswith("/" + name):
+            return name
+    return ""
+
+ENV_REF_ASK = ("the end-of-task checks and the merge gate read the project's checks from the integration branch as "
+               "this clone has it, so moving that branch here changes which commands they run; the owner approves it. "
+               "Fetch it as it is (`git fetch origin`) and work on a feature branch.")
+
 def follow_git(sub, rest, git_dir_args):
     """Update SIM for the git commands that move HEAD or change where a plain push goes, and deny
     deleting or force-moving an environment branch."""
@@ -842,6 +857,8 @@ def follow_git(sub, rest, git_dir_args):
             return
         for k, w in enumerate(rest):
             if w in ("-b", "-B", "-c", "-C", "--orphan") and k + 1 < len(rest):
+                if w in ("-B", "-C") and env_ref(rest[k + 1]):
+                    ask(f"`git {sub} {w} {rest[k + 1]}` resets an environment branch in this clone: " + ENV_REF_ASK)
                 SIM["head"] = rest[k + 1]
                 return
         if "--" in rest or not positional or positional[0] == "-":
@@ -880,6 +897,22 @@ def follow_git(sub, rest, git_dir_args):
                 check_config_key(key, value, f"git {sub} --config sets it")
             elif w == "--template" or w.startswith("--template="):
                 config_ask("--template", f"git {sub} copies hooks from a template folder")
+    elif sub == "update-ref":
+        if "--stdin" in flags:
+            ask("`git update-ref --stdin` moves refs the guard can’t see; " + ENV_REF_ASK)
+        ref = positional[0] if positional else ""
+        if "$" in ref or "`" in ref:
+            ask(f"`git update-ref` target `{ref}` is built at run time, so the guard cannot see which ref it is. Name it in the command.")
+        if env_ref(ref):
+            ask(f"`git update-ref {ref}` moves an environment branch in this clone: " + ENV_REF_ASK)
+    elif sub == "fetch":
+        # `git fetch <remote> <src>:<dst>` writes <dst> here; a plain `git fetch origin dev` only updates origin/dev from the remote.
+        for spec in positional[1:]:
+            dst = spec.split(":", 1)[1] if ":" in spec else ""
+            if dst and ("$" in dst or "`" in dst):
+                ask(f"`git fetch` target `{dst}` is built at run time, so the guard cannot see which ref it writes. Name it in the command.")
+            if dst and env_ref(dst):
+                ask(f"`git fetch ... {spec}` writes an environment branch in this clone: " + ENV_REF_ASK)
     elif sub == "tag":
         if positional and not any(f in ("-d", "--delete", "-l", "--list") for f in flags):
             SIM["tags"].add(positional[0])
