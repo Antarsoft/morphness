@@ -144,8 +144,8 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
 - With the autonomous module: `roadmap` is in `modules` (the run writes owner items to the version
   checklist); `auto.branch` is none of the integration, production or environment branches;
   `harness/templates/auto/` holds the files the module's § On remove lists; `.gitignore` has
-  `_harness/auto/logs/`; and the `module:autonomous` line is in `harness/TECHNICAL_LEAD.md`
-  § Must do. With `auto.enabled: true`, `auto.budget_usd` and `loop.feature_budget_usd` are above 0
+  `_harness/auto/logs/`; and the `module:autonomous` approver line is in each plan template's
+  § Approval. With `auto.enabled: true`, `auto.budget_usd` and `loop.feature_budget_usd` are above 0
   (a run refuses to start otherwise; say so, it isn't a fault).
 - `release_tags: per-package`: the versioning tool named in `project/RELEASE.md` § Versions has its
   config in the repo (`.changeset/config.json`, `nx.json` → `release`, `release-please-config.json`,

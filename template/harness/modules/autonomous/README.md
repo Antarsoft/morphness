@@ -113,7 +113,7 @@ What the driver and guard release will do. The driver is a script, not an agent.
 ## On install
 
 - Needs `roadmap` in `modules`; if it is missing, add it first with `/morph-module add roadmap`.
-- Put back the marked text (`module:autonomous`): the run-rules line in `harness/TECHNICAL_LEAD.md` § Must do and the autonomous approver line in § Approval of `harness/templates/plan.md`, `small-plan.md` and `bug-plan.md`.
+- Put back the marked text (`module:autonomous`): the autonomous approver line in § Approval of `harness/templates/plan.md`, `small-plan.md` and `bug-plan.md`. `harness/TECHNICAL_LEAD.md` gets no line (it sits at its size cap): the driver's feature and resume prompts tell the Technical Lead to read § Run rules first.
 - Copy `harness/templates/auto/`.
 - Add the `auto:` block above to `harness.config.yml` with `enabled: false`, and `autonomous` to `modules`.
 - Add `_harness/auto/logs/` to `.gitignore` (create the file if there is none).
