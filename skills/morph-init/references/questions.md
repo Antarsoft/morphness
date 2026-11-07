@@ -253,7 +253,7 @@ when `cost.track` is off.
 | Full-stack | sonnet / opus (sonnet for the medium variant) | high by default; xhigh for sign-in, secrets and money |
 | QA | sonnet / sonnet | medium by default; high when Full-stack is xhigh |
 | Researcher (read-only, research mode) | sonnet / sonnet (opus for the high variant) | medium by default; high for architecture or risk areas |
-| Code scout (read-only map of the code before a full-mode plan) | haiku / haiku | medium |
+| Code scout (maps the code to `Plan/code-map.md` before a full-mode plan) | haiku / haiku | medium |
 | Feature closer (drafts the closing records after a QA pass) | haiku / haiku | medium |
 | Legal writer | fable (opus if fable isn't available) | high |
 

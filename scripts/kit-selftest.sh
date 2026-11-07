@@ -1099,7 +1099,8 @@ def check_feature_closer(bad, t):
 
 def check_code_scout(bad, t):
     """Cost: the code scout maps the code before a full or bug plan on a cheap model, can search (headless Claude Code
-    has no Grep or Glob tool) and has no edit or web tools; the Technical Lead's plan step launches it."""
+    has no Grep or Glob tool), writes the map file and nothing else (Write, no Edit, web or MCP tools); the Technical
+    Lead's plan step launches it and the Full-stack prompt hands the map on."""
     p = os.path.join(t, ".claude/agents/code-scout.md")
     if not os.path.exists(p):
         bad(".claude/agents/code-scout.md is missing")
@@ -1107,10 +1108,10 @@ def check_code_scout(bad, t):
     fm = read(p).split("\n---", 1)[0]
     tools = re.search(r"^tools: *(.+)$", fm, re.M)
     allowed = {x.strip() for x in tools.group(1).split(",")} if tools else None
-    if allowed is None or "Bash" not in allowed or "Read" not in allowed or allowed - {"Read", "Bash", "Grep", "Glob"}:
-        bad(f".claude/agents/code-scout.md tools are {allowed}: the scout needs Read and Bash to search, and nothing that edits, browses or reaches MCP")
+    if allowed is None or not {"Bash", "Read", "Write"} <= allowed or allowed - {"Read", "Write", "Bash", "Grep", "Glob"}:
+        bad(f".claude/agents/code-scout.md tools are {allowed}: the scout needs Read and Bash to search and Write for its one map file, and nothing that edits, browses or reaches MCP")
     body = read(os.path.join(t, "harness/agents/code-scout.md"))
-    for want in ("git grep", "Never edit", "Adjacent defects", "Not found", "path:line"):
+    for want in ("git grep", "never edit", "Adjacent defects", "Not found", "path:line", "Plan/code-map.md", "One file"):
         if want not in body:
             bad(f"harness/agents/code-scout.md lost {want!r}")
     tl = read(os.path.join(t, "harness/TECHNICAL_LEAD.md"))
@@ -1122,6 +1123,9 @@ def check_code_scout(bad, t):
     heads = re.findall(r"^- \*\*(.+?):\*\*", body.split("\n## The map\n", 1)[-1].split("\n## ", 1)[0], re.M)
     if not block or not heads or any(h not in block for h in heads) or ".env" not in block:
         bad(f"harness/HANDOFFS.md § Code scout doesn't name every heading of the role body's map ({heads}) or the secrets rule")
+    fs_block = handoffs.split("\n### Full-stack engineer\n", 1)[-1].split("\n### ", 1)[0] if "\n### Full-stack engineer\n" in handoffs else ""
+    if "Plan/code-map.md" not in block or "Code map" not in fs_block or "Plan/code-map.md" not in read(os.path.join(t, "harness/agents/fullstack-engineer.md")):
+        bad("the code scout's map doesn't reach the builder: § Code scout must write Plan/code-map.md and the Full-stack prompt block and role body must read it")
     flow = handoffs.split("\n## Mandatory flow", 1)[-1].split("\n## ", 1)[0]
     if not re.search(r"^0\. Full mode, before the plan → Agent \*\*code scout\*\*", flow, re.M) or "Bug mode skips it" not in flow:
         bad("harness/HANDOFFS.md § Mandatory flow doesn't start full mode with the code scout, or doesn't say bug mode skips it")

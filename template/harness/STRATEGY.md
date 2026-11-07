@@ -1,6 +1,6 @@
 # Harness strategy: agents and folders
 
-The harness uses **three agents** with fixed responsibilities, a read-only **researcher**, a read-only **code scout**, a **feature closer** for the closing records<!-- module:legal -->, an optional **legal writer**<!-- /module:legal -->, and a **versioned folder** per feature.
+The harness uses **three agents** with fixed responsibilities, a read-only **researcher**, a **code scout** that writes one map file, a **feature closer** for the closing records<!-- module:legal -->, an optional **legal writer**<!-- /module:legal -->, and a **versioned folder** per feature.
 
 ## Agents (high level)
 
@@ -11,7 +11,7 @@ The harness uses **three agents** with fixed responsibilities, a read-only **res
 | Subagent | **QA engineer** | Validates against acceptance criteria; updates `qa-result.md` |
 | Subagent | **Researcher** | Answers one question about the code or the web with cited evidence, in a reply the Technical Lead writes into the research file ([MODES.md](./MODES.md) § Research mode) |
 | Subagent | **Feature closer** | After a QA pass, drafts the steps file, the passed status and the learnings file; the Technical Lead checks and decides ([agents/feature-closer.md](./agents/feature-closer.md)) |
-| Subagent | **Code scout** | Before a full-mode plan, maps the code the change touches on a cheap model, so the Technical Lead reads only the lines the plan changes ([agents/code-scout.md](./agents/code-scout.md)) |
+| Subagent | **Code scout** | Before a full-mode plan, maps the code the change touches on a cheap model into `Plan/code-map.md`, so the Technical Lead, the Full-stack engineer, the review and QA read only the lines the change touches ([agents/code-scout.md](./agents/code-scout.md)) |
 | Subagent | **Legal writer** (legal module) | Writes the exact legal sentences a plan needs; updates `Legal/legal-copy.md` ([modules/legal/](./modules/legal/README.md)) | <!-- module:legal -->
 
 Role bodies: [agents/](./agents/) (generic) plus `project/agents/` (this project's addenda). Subagent names, models and effort: `project/HARNESS_AGENTS.md`.
@@ -132,7 +132,7 @@ Answers one question per research file, with every claim cited (`file:line` or a
 
 ## Agent 6: Code scout
 
-Before a full-mode plan, it searches and reads the code the change touches and replies with a map: files and functions with line ranges, contracts, callers, tests, conventions, adjacent defects and what it didn't find. It runs on a cheap model (`agents.scout`, haiku by default) with `tools: Read, Bash, Grep, Glob`, read-only by its role body. The Technical Lead reads only the line ranges the plan changes and checks the callers itself, so the main chat's context stays small for the rest of the feature. Role body: [agents/code-scout.md](./agents/code-scout.md).
+Before a full-mode plan, it searches and reads the code the change touches and writes a map to `<feature>/Plan/code-map.md`: files and functions with line ranges, contracts, callers, tests, conventions, adjacent defects and what it didn't find. It runs on a cheap model (`agents.scout`, haiku by default) with `tools: Read, Write, Bash, Grep, Glob`, read-only by its role body apart from that one file. The Technical Lead reads only the line ranges the plan changes and checks the callers itself, and the Full-stack engineer, the code review and QA get the map's path in their prompts, so the code is searched once per feature and no context carries whole files. Role body: [agents/code-scout.md](./agents/code-scout.md).
 
 ## Agent 7: Feature closer
 
