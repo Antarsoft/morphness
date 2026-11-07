@@ -1137,6 +1137,62 @@ def check_code_scout(bad, t):
         bad(f".claude/agents/code-scout.md runs {model and model.group(1)!r}, but agents.scout.model is {cfg.get('model')!r}")
 
 
+def check_handoff(bad, pb, settings, sample, integ):
+    """Cost: scripts/handoff.sh prints each subagent's HANDOFFS.md prompt block with the fields a script can fill
+    filled (feature folder, code map commit, path rules, merge base, diff stat, untracked files, checks status, mode,
+    tested commit, cost flag), so a hand-off is one call, and it changes nothing in the work tree."""
+    if "Bash(bash scripts/handoff.sh:*)" not in settings.get("permissions", {}).get("allow", []):
+        bad(".claude/settings.json doesn't allow bash scripts/handoff.sh: every hand-off would start at a permission prompt")
+    sh = lambda *a: run(["bash", "scripts/handoff.sh", *a], pb)
+    def put(path, text):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        write(path, text)
+    feat = os.path.join(pb, "_harness/features/sel-test/1")
+    os.makedirs(os.path.join(pb, "db/migrations"), exist_ok=True)
+    put(os.path.join(feat, "Plan/plan.md"), "# Plan\n\nStatus: approved\n\nAdds `db/migrations/002_tags.sql:1-20`.\n")
+    r = sh("fullstack", "sel-test")
+    if "run the code scout first" not in r.stdout:
+        bad("handoff.sh fullstack in a full-mode feature with no code map doesn't say to run the scout first")
+    put(os.path.join(feat, "Plan/code-map.md"), "# Code map\n\n- **Commit:** `abc1234`\n")
+    os.makedirs(os.path.join(pb, os.path.dirname(sample) or "."), exist_ok=True)
+    put(os.path.join(pb, sample), "x\n")
+    run(["git", "add", "--", sample], pb)
+    run(["git", "-c", "user.name=selftest", "-c", "user.email=selftest@example.com", "commit", "-q", "-m", "sample"], pb)
+    put(os.path.join(pb, "db/migrations/002_tags.sql"), "select 1;\n")
+    base = run(["git", "rev-parse", "--short", integ], pb).stdout.strip()
+    bugf = os.path.join(pb, "_harness/features/sel-bugfill/1")
+    put(os.path.join(bugf, "Plan/plan.md"), "# Bug plan: paging\n\n## Fix limit\n\nOne file.\n")
+    before = run(["git", "status", "--porcelain", "--untracked-files=all"], pb).stdout
+    out = {}
+    for role in ("scout", "fullstack", "qa", "closer"):
+        r = sh(role, "sel-test")
+        out[role] = r.stdout
+        if r.returncode or "<abs-path>" in r.stdout or feat not in r.stdout or "\nhandoff: " not in r.stdout:
+            bad(f"handoff.sh {role} didn't print its block with the feature folder filled (exit {r.returncode}, {r.stderr[:160]!r})")
+    if "written at commit abc1234" not in out["fullstack"] or "Path rules: .claude/rules/data.md" not in out["fullstack"]:
+        bad("handoff.sh fullstack doesn't fill the code map's commit, or misses data.md for a migration the plan names by line range")
+    if f"base {base}" not in out["qa"] or "1 file changed" not in out["qa"] or "db/migrations/002_tags.sql" not in out["qa"] \
+            or f"git diff {base}" not in out["qa"] or "<bash scripts/checks.sh status output>" in out["qa"]:
+        bad("handoff.sh qa doesn't fill the merge base, the diff stat, the untracked files and the check results")
+    if "--branch sel-feature" not in out["closer"] or "mode: full;" not in out["closer"] or "Verdict" not in out["closer"].rsplit("handoff:", 1)[-1]:
+        bad("handoff.sh closer doesn't fill the mode and the cost flag, or doesn't list the verdict as left to fill")
+    if "still to fill from the conversation: <the owner's ask" not in out["scout"] and "Request" not in out["scout"].rsplit("handoff:", 1)[-1]:
+        bad("handoff.sh scout doesn't list the request as left to fill")
+    r = sh("qa", "sel-test", "--base", integ)
+    if r.returncode or f"base {base}" not in r.stdout:
+        bad(f"handoff.sh qa --base {integ} didn't resolve the ref to its commit (exit {r.returncode})")
+    fb, cl = sh("fullstack-bug", "sel-bugfill").stdout, sh("closer", "sel-bugfill").stdout
+    if "WIP(sel-bugfill)" not in fb or "Code map" in fb or "mode: bug;" not in cl or "code scout first" in fb:
+        bad("handoff.sh in bug mode doesn't fill the slug, keeps the Code map line, or reads the bug plan as full mode")
+    if run(["git", "status", "--porcelain", "--untracked-files=all"], pb).stdout != before:
+        bad("handoff.sh changed the working tree: it must only read")
+    for args in (["nope", "sel-test"], ["qa"], ["qa", "Bad_Slug"], ["qa", "sel-test", "--version", "0"], ["qa", "sel-test", "--base", "x;y"],
+                 ["qa", "sel-test", "--base", "-R"], ["qa", "sel-test", "--base", "deadbeef0000"]):
+        r = sh(*args)
+        if r.returncode != 2:
+            bad(f"handoff.sh {' '.join(args)} exited {r.returncode}: a bad role, slug, version or base must be a usage error")
+
+
 def check_plan_brief(bad, t, settings):
     """Cost: scripts/plan-brief.sh gathers the plan step's docs into one file the Technical Lead reads once, writes
     nothing for a plain change, and keeps the brief out of commits."""
@@ -1161,8 +1217,10 @@ def check_plan_brief(bad, t, settings):
         plan_tpl = read(os.path.join(pb, "harness/templates/plan.md")).strip()
         for want, why in (("## Risk check", "the risk check"), ("## Full harness", "MODES.md § Full harness"),
                           ("## Effort per feature", "SETUP.md § Effort per feature"), ("## Where QA can run", "SETUP.md § Where QA can run"),
-                          ("## .claude/rules/testing.md", "testing.md")):
-            if want not in text:
+                          ("## .claude/rules/testing.md", "testing.md"), ("## Planning and scope", "the checklist's always-run groups"),
+                          ("## Process", "PLAN_CHECKLIST.md § Process"), ("## project/PLAN_CHECKLIST.md", "the project checklist"),
+                          ("handoff.sh scout", "the next step's handoff.sh call"), ("Files: " + sample, "the files it was made for")):
+            if want not in (r.stdout if want.startswith("handoff") else text):
                 bad(f"plan-brief.sh's brief has no {why} ({want!r})")
         if plan_tpl not in text or "doc-section: this print is" in text:
             bad("plan-brief.sh's brief doesn't hold the plan template whole, or carries doc-section's size warning")
@@ -1174,7 +1232,8 @@ def check_plan_brief(bad, t, settings):
     r = run(["bash", "scripts/plan-brief.sh", "--bug", "sel-bug", sample], pb)
     btext = read(os.path.join(pb, "_harness/features/sel-bug/1/Plan/brief.md")) if r.returncode == 0 else ""
     if ("## Bug mode" not in btext or "## Full harness" not in btext or read(os.path.join(pb, "harness/templates/bug-plan.md")).strip() not in btext
-            or read(os.path.join(pb, "harness/templates/plan.md")).strip() in btext):
+            or read(os.path.join(pb, "harness/templates/plan.md")).strip() in btext
+            or "## Planning and scope" not in btext or "## Process" in btext or "## project/PLAN_CHECKLIST.md" in btext):
         bad(f"plan-brief.sh --bug didn't write a brief with § Full harness, § Bug mode and the bug plan template only (exit {r.returncode})")
     if "\npaths:\n" in read(brief):
         bad("plan-brief.sh's brief kept testing.md's `paths:` header")
@@ -1198,6 +1257,7 @@ def check_plan_brief(bad, t, settings):
             bad(f"plan-brief.sh {' '.join(args) or '(no slug)'} exited {r.returncode}: a bad slug or version must be a usage error")
     if os.path.exists(os.path.join(pb, "_harness/features/sel-force")):
         bad("plan-brief.sh with a bad --force wrote a brief: a usage error writes nothing")
+    check_handoff(bad, pb, settings, sample, integ)
     run(["git", "branch", "-D", integ], pb)
     r = run(["bash", "scripts/plan-brief.sh", "sel-undecided", "README.md"], pb)
     if r.returncode != 2 or not r.stdout.startswith("Mode: full") or not os.path.isfile(os.path.join(pb, "_harness/features/sel-undecided/1/Plan/brief.md")):
