@@ -18,7 +18,7 @@ files:
   - project/HARNESS_AGENTS.md
   - scripts/plan-brief.sh
 removed: []
-reviewed: "It adds a subagent file limited to `tools: Read, Bash, Grep, Glob` (no edit, web or MCP tools; Bash to search, read-only by its role body, and the guard checks its calls as it checks every agent's), one agents.scout line to harness.config.yml and the docs that launch it; no guard rule, permission or settings value changes."
+reviewed: "It adds a subagent file limited to `tools: Read, Bash, Grep, Glob` (no edit, web or MCP tools; `2026-11-07-shared-code-map` adds Write for one file under `_harness/`; Bash to search, read-only by its role body, and the guard checks its calls as it checks every agent's), one agents.scout line to harness.config.yml and the docs that launch it; no guard rule, permission or settings value changes."
 ---
 
 ## What changed
@@ -26,8 +26,8 @@ reviewed: "It adds a subagent file limited to `tools: Read, Bash, Grep, Glob` (n
 - **`code-scout`** (new subagent, `.claude/agents/code-scout.md` with its role body in `harness/agents/code-scout.md`):
   - It runs on `agents.scout.model` (haiku by default) at medium effort.
   - Before a full-mode plan, it searches with the shell (`git grep`, `rg`, `find`) and reads the code the change touches.
-  - It replies with a map: the files and functions with line ranges, contracts, callers, tests, conventions, adjacent defects, what it didn't find, and open questions.
-  - Its tools are Read, Bash, Grep and Glob: no edit, web or MCP tools. Its role body allows only commands that read.
+  - It replies with a map: the files and functions with line ranges, contracts, callers, tests, conventions, adjacent defects, what it didn't find, and open questions. (Superseded in the same release by `2026-11-07-shared-code-map`: the scout now writes the map to `Plan/code-map.md`, and the Full-stack engineer, the review and QA read it too.)
+  - Its tools are Read, Bash, Grep and Glob: no edit, web or MCP tools. Its role body allows only commands that read. (`2026-11-07-shared-code-map` adds Write for the one map file.)
   - Bug mode doesn't use it: there the Technical Lead reads the failing code path itself before the risk check.
 - **`harness/TECHNICAL_LEAD.md`** § Full mode, step by step:
   - A new **Map the code** row launches the scout.

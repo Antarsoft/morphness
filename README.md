@@ -240,14 +240,14 @@ flowchart TB
 | 🛠️ **Full-stack** | In full and bug mode, builds the approved plan and its tests | sonnet · high (xhigh for sign-in, secrets and money; opus with the opus preset) |
 | ✅ **QA** | In full and bug mode, reviews the diff, runs the checks and validates every criterion | sonnet · medium (high when Full-stack is xhigh) |
 | 🔎 **Researcher** | Answers a question about your code or the web with cited sources. For when you want an answer, not a change | sonnet · medium (high for architecture; opus at high with the opus preset) |
-| 🗺️ **Code scout** | In full mode, maps the code a change touches before the plan, so the main chat reads only the lines it changes. Read-only by rule | haiku · medium |
+| 🗺️ **Code scout** | In full mode, maps the code a change touches before the plan into one file, so the main chat and the later agents read only the lines it changes. Writes nothing else | haiku · medium |
 | 📝 **Feature closer** | After a full- or bug-mode QA pass, drafts the steps file, the passed status and the learnings file with the cost line; the main chat checks it and decides the retro items | haiku · medium |
 | ⚖️ **Legal writer** | Writes wording that makes a legal promise | fable (or opus) · high |
 
 These are defaults; change any of them (see [Make it yours](#-make-it-yours)). Most limits on what each
 agent may edit are instructions in its prompt. What Claude Code enforces is the guard, the deny and
 ask rules in `.claude/settings.json`, the end-of-task check hooks, and the tool lists of the
-researcher, the code scout (read and shell only) and the legal writer.
+researcher, the code scout (read, shell and its one map file) and the legal writer.
 
 | Skill | Use |
 |-------|-----|
