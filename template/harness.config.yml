@@ -171,11 +171,14 @@ cost: { track: true, prices: harness/MODEL_PRICES.md }
 #                  ssh, scp, sftp, rsync to or from another machine, nc, socat, telnet, ftp
 #   installs       a package runner (npx, bunx, pnpm dlx, uvx) downloading a package that isn't installed in the
 #                  project, unless it is a common dev tool, and `skills add`
+#   plan_reads     a cost rule, on unless off: while a full-mode plan is written, the main chat reads source
+#                  files over 80 lines by the code scout's line ranges (Read with offset and limit, sed -n),
+#                  not whole (a Read without a range, cat, nl, less ...); a deny, not an ask
 #   fail_open      true lets calls through when python3 is missing; by default a guard that can't run
 #                  (no python3, no config reader, unreadable input, a crash) blocks the call
 # A command with --dry-run or --help passes in every group. What the guard denies, asks and does not see:
 # harness/GUARD.md.
-guard: { mcp_writes: ask, pr_writes: allow, deploys: ask, publishes: ask, schema_pushes: ask, network: ask, installs: ask }
+guard: { mcp_writes: ask, pr_writes: allow, deploys: ask, publishes: ask, schema_pushes: ask, network: ask, installs: ask, plan_reads: on }
 
 loop:
   retro_max_items: 3      # usual action items per retro (soft: more with one line why, none is fine)
