@@ -1306,6 +1306,50 @@ def check_bug_repro(bad, pb, integ, sample):
         git_("checkout", "-q", "sel-feature")
 
 
+def check_retro_batch(bad, t):
+    """Cost: with loop.retro_every above 1 the Technical Lead decides action items for several features in one pass;
+    prune-counter.sh counts the learnings files with an open or deferred item (not one the owner decides) and says
+    when the batch is due. At 1 (the default) it prints nothing new."""
+    if "Retro decisions" in run(["bash", "scripts/prune-counter.sh"], t).stdout:
+        bad("prune-counter.sh prints a Retro decisions line with loop.retro_every: 1")
+    tmp = tempfile.mkdtemp(prefix="retro-")
+    try:
+        rb = os.path.join(tmp, "p")
+        shutil.copytree(t, rb, symlinks=True, ignore=shutil.ignore_patterns("node_modules", ".venv"))
+        cfg = os.path.join(rb, "harness.config.yml")
+        text = read(cfg)
+        if not re.search(r"^  retro_every: 1\b", text, re.M):
+            bad("harness.config.yml has no loop.retro_every: 1 default")
+            return
+        setto = lambda v: write(cfg, re.sub(r"^  retro_every: 1\b", f"  retro_every: {v}", text, flags=re.M))
+        setto(3)
+        if run(["bash", "-c", ". scripts/lib/config.sh; config_get loop.retro_every"], rb).stdout.strip() != "3":
+            bad("config_get loop.retro_every doesn't read the value")
+        d = os.path.join(rb, "_harness/learnings")
+        os.makedirs(d, exist_ok=True)
+        row = lambda slug, status, note="lands in: z": (
+            f"# {slug} v1 learnings\n\n## Action items\n\n| From retro | # | Type | Action | Why raised | Status | Note |\n"
+            f"|---|---|---|---|---|---|---|\n| {slug} v1 | 1 | Doc | x | What went wrong #1: y | {status} | {note} |\n")
+        write(os.path.join(d, "sel a-v1.md"), row("sel a", "open (batched)", "lands in: a \\| b"))
+        write(os.path.join(d, "sel-b-v1.md"), row("sel-b", "approved"))
+        write(os.path.join(d, "sel-c-v1.md"), row("sel-c", "open", "human decides: costs money"))
+        r = run(["bash", "scripts/prune-counter.sh"], rb)
+        if (r.returncode or not r.stdout.startswith("Prune counter: ") or "Retro decisions: 1/3 features with open items" not in r.stdout
+                or "Retro decisions are DUE" in r.stdout):
+            bad(f"prune-counter.sh with loop.retro_every: 3 should count only the open (batched) item, not an approved or owner's one: {r.stdout!r}")
+        write(os.path.join(d, "sel-b-v1.md"), row("sel-b", "deferred", "from sel a"))
+        write(os.path.join(d, "sel-d-v1.md"), row("sel-d", "`open`"))
+        out = run(["bash", "scripts/prune-counter.sh"], rb).stdout
+        if not re.search(r"^Retro decisions are DUE: _harness/learnings/sel a-v1\.md, .*sel-b-v1\.md, .*sel-d-v1\.md ", out, re.M):
+            bad(f"prune-counter.sh with three features' open or deferred items doesn't print the DUE line naming all three: {out!r}")
+        setto(9)
+        r = run(["bash", "scripts/prune-counter.sh"], rb)
+        if "the allowed range is 1 to 5, so 5 is used" not in r.stderr or "/5 features" not in r.stdout:
+            bad("prune-counter.sh doesn't clamp loop.retro_every above 5 to 5 and say so")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def check_plan_brief(bad, t, settings):
     """Cost: scripts/plan-brief.sh gathers the plan step's docs into one file the Technical Lead reads once, writes
     nothing for a plain change, and keeps the brief out of commits."""
@@ -2329,6 +2373,7 @@ def check(name, fx, t):
         repin()
     if cfg("branches.integration") != fx["branches"]["integration"]:
         bad("config_get branches.integration doesn't print the integration branch")
+    check_retro_batch(bad, t)
     r = run(["bash", "scripts/prune-counter.sh"], t)
     lines = r.stdout.splitlines()
     if r.returncode or not lines or lines[0] != "Prune counter: 0/10":
