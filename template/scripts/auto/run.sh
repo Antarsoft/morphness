@@ -14,4 +14,4 @@ set -u
 command -v python3 >/dev/null 2>&1 || { echo "auto: python3 is needed" >&2; exit 2; }
 root=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "auto: run this inside the repository" >&2; exit 2; }
 cd "$root" || exit 2
-exec python3 -I scripts/auto/driver.py "$@"
+exec python3 -I -B scripts/auto/driver.py "$@"

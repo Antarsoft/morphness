@@ -5,4 +5,4 @@
 set -u
 [ $# -eq 1 ] || { echo "usage: bash scripts/auto/card.sh <card file>" >&2; exit 2; }
 here=$(cd "$(dirname "$0")" && pwd) || exit 2
-exec python3 -I "$here/driver.py" card "$1"
+exec python3 -I -B "$here/driver.py" card "$1"
