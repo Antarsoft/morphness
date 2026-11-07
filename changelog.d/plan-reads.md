@@ -1,0 +1,1 @@
+While a full-mode plan is written, the guard denies the main chat a whole-file print of a source file over 80 lines (a Read without a range, `cat` and the like) and says how to read the code scout's line ranges instead. `guard.plan_reads: off` turns it off.

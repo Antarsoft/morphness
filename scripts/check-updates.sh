@@ -58,7 +58,7 @@ RISKY = [
     ("the guard, settings, harness config or permissions", re.compile(
         r"\bguard(\.sh|\.[a-z_]+)?\b|settings(\.local)?\.json|\.claude/|harness\.config\.yml|\binstalled_from\b|\bpermissions?\b|\bdefaultMode\b"
         r"|\bbypassPermissions\b|--dangerously|\ballow(ed)?Tools\b|\bdeny\b|\bdisable\w*\s+(the\s+)?(hook|guard|check)"
-        r"|\b(network|installs|deploys|publishes|mcp_writes|pr_writes|schema_pushes|source)\s*:\s*(off|allow|local)\b", re.I)),
+        r"|\b(network|installs|deploys|publishes|mcp_writes|pr_writes|plan_reads|schema_pushes|source)\s*:\s*(off|allow|local)\b", re.I)),
     ("secrets or tokens", re.compile(r"(?<![\w-])\.env\b|\bsecrets?\b|\b(access|auth|api|bearer|refresh|github|gh|npm|deploy)[_ -]?tokens?\b"
                                      r"|\bapi[_ -]?keys?\b|\bcredentials?\b|\bpasswords?\b", re.I)),
 ]
