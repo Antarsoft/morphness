@@ -4,7 +4,8 @@
 # step). It runs scripts/risk-check.sh on the files the change will touch and prints its answer. On
 # `Mode: full` it writes the brief to _harness/features/<slug>/<version>/Plan/brief.md:
 #   the risk check's output; harness/MODES.md § Full harness (--bug: and § Bug mode); .claude/rules/testing.md;
-#   harness/SETUP.md § Effort per feature and § Where QA can run; the plan template (--bug: bug-plan.md).
+#   harness/SETUP.md § Effort per feature and § Where QA can run; the plan checklist's rules and the groups that always
+#   run, with project/PLAN_CHECKLIST.md (--bug: § Planning and scope only); the plan template (--bug: bug-plan.md).
 # The brief is a copy, made again on each run: it is never edited, and a one-line .gitignore next to it keeps it
 # out of commits. Read it with the Read tool, which isn't cut at this size (a print this big would be).
 # On `Mode: plain` it writes nothing, with or without --bug: the change runs alone, in light or small mode
@@ -49,7 +50,7 @@ if [ -f "$dir/plan.md" ]; then
 fi
 mkdir -p "$dir" || { echo "plan-brief: can't create $dir" >&2; exit 2; }
 [ -f "$dir/.gitignore" ] || printf 'brief.md\n' > "$dir/.gitignore"
-RISK="$risk" BUG="$bug" python3 -I - "$root" "$dir/brief.md" "$slug" "$version" <<'PY' || exit 2
+FILES="${files[*]}" RISK="$risk" BUG="$bug" python3 -I - "$root" "$dir/brief.md" "$slug" "$version" <<'PY' || exit 2
 import os, re, subprocess, sys, datetime
 root, out, slug, version = sys.argv[1:5]
 bug = os.environ["BUG"] == "1"
@@ -86,17 +87,26 @@ parts = [
     f"Made by `scripts/plan-brief.sh` on {datetime.date.today().isoformat()} at commit `{commit or 'none'}`. "
     "A copy of the docs below, made again on each run and never committed: don't edit it. "
     f"Write the plan to `_harness/features/{slug}/{version}/Plan/plan.md` from the template at the end.",
-    "## Risk check\n\n```\n" + os.environ["RISK"].strip() + "\n```",
+    "## Risk check\n\nFiles: " + (", ".join(os.environ["FILES"].split()) or "none") + "\n\n```\n" + os.environ["RISK"].strip() + "\n```",
     sections("harness/MODES.md", *(["Full harness", "Bug mode"] if bug else ["Full harness"])),
     "## .claude/rules/testing.md\n\n" + body(".claude/rules/testing.md"),
     sections("harness/SETUP.md", "Effort per feature", "Where QA can run"),
+    "# Plan checklist: the groups that always run\n\n"
+    + ("Bug mode runs § Planning and scope only (harness/TECHNICAL_LEAD.md § Before asking for approval)."
+       if bug else
+       "Print only the other groups that apply, in one call, or none (harness/TECHNICAL_LEAD.md § Before asking for "
+       "approval, its group index); these are here already.") + "\n\n"
+    + sections("harness/PLAN_CHECKLIST.md", *(["How to use it", "Planning and scope"] if bug
+                                               else ["How to use it", "Planning and scope", "Testing", "Process"]))
+    + ("" if bug else "\n\n## project/PLAN_CHECKLIST.md\n\n" + re.sub(r"^(#+) ", r"##\1 ", (doc("project/PLAN_CHECKLIST.md") or "(plan-brief: project/PLAN_CHECKLIST.md is missing)").strip(), flags=re.M)),
     f"## Template: {template}\n\n" + (doc(template) or f"(plan-brief: {template} is missing)").strip(),
 ]
 text = "\n\n---\n\n".join(parts) + "\n"
 open(out, "w", encoding="utf-8").write(text)
 print(f"Brief: _harness/features/{slug}/{version}/Plan/brief.md ({len(text)} characters). "
-      "Read it with the Read tool in one call; it holds the mode section, testing.md, the effort and QA-run sections "
-      "and the plan template, so don't print those again. Next, in full mode: map the code with the code-scout agent "
-      "(bash scripts/doc-section.sh harness/HANDOFFS.md \"Code scout\").")
+      "Read it with the Read tool in one call; it holds the mode section, testing.md, the effort and QA-run sections, "
+      "the plan checklist groups that always run and the plan template, so don't print those again. "
+      + (f"Next: bash scripts/handoff.sh qa-repro {slug}{'' if version == '1' else ' --version ' + version} once the plan is approved." if bug else
+         f"Next: bash scripts/handoff.sh scout {slug}{'' if version == '1' else ' --version ' + version} prints the code scout's prompt, filled; launch the code-scout agent with it."))
 PY
 exit "$rc"

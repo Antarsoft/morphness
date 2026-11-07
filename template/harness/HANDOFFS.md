@@ -121,6 +121,8 @@ Where threads and a coordinator exist depends on the environment (`environment` 
 
 ## Subagent prompt blocks (customize paths)
 
+`bash scripts/handoff.sh <scout|fullstack|fullstack-bug|qa|qa-repro|closer> <slug> [--version N] [--base <commit>]` prints a block with every field a script can fill already filled (paths, the code map's commit, path rules, the merge base, the diff stat, the untracked files, the check results, the cost flag) and lists the placeholders left for the conversation. Edit a block here and the script prints the edited one.
+
 ### Full-stack engineer
 
 ```text
