@@ -2,7 +2,7 @@
 id: 2026-11-06-feature-closer
 title: A cheap feature closer drafts the closing records after a QA pass, and the Technical Lead checks them and decides
 kind: template
-release: unreleased
+release: v0.17.0
 applies_to: { modules: [] }
 files:
   - .claude/agents/feature-closer.md

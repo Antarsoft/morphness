@@ -2,7 +2,7 @@
 id: 2026-11-06-plan-brief
 title: One script gathers the plan step's docs into a brief the Technical Lead reads in one call
 kind: template
-release: unreleased
+release: v0.17.0
 applies_to: { modules: [] }
 files:
   - .claude/settings.json

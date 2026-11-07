@@ -2,7 +2,7 @@
 id: 2026-11-05-bug-fix-adjacent-risk-path
 title: A small bug fix whose edge input needs a risk path goes to bug mode, not out of scope
 kind: template
-release: unreleased
+release: v0.17.0
 applies_to: { modules: [] }
 files:
   - harness/MODES.md

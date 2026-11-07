@@ -1,1 +1,0 @@
-`scripts/plan-brief.sh` gathers what a full-mode or bug-mode plan is written from (the risk check, the mode section, `testing.md`, the effort and QA-run sections and the plan template) into one ignored brief file, and the Technical Lead reads it in one call instead of printing each doc. It writes nothing for a plain change.

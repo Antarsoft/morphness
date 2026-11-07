@@ -2,7 +2,7 @@
 id: 2026-11-07-handoff-script
 title: One call per hand-off, and the plan brief holds the always-run checklist groups
 kind: rule
-release: unreleased
+release: v0.17.0
 applies_to: { modules: [] }
 files:
   - scripts/handoff.sh

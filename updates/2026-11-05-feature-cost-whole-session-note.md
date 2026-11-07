@@ -2,7 +2,7 @@
 id: 2026-11-05-feature-cost-whole-session-note
 title: The feature cost line says when it counts a session that began long before the branch
 kind: template
-release: unreleased
+release: v0.17.0
 applies_to: { modules: [] }
 files:
   - scripts/feature-cost.sh

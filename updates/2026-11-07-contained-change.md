@@ -2,7 +2,7 @@
 id: 2026-11-07-contained-change
 title: "A trial switch for a finer risk check: an ordering or paging edit to a risk-path file runs in small mode"
 kind: rule
-release: unreleased
+release: v0.17.0
 applies_to: { modules: [] }
 files:
   - harness.config.yml

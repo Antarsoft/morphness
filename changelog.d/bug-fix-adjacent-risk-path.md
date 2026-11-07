@@ -1,1 +1,0 @@
-A small-mode bug fix that finds an adjacent defect it can only fix on a risk path, such as the `id` tie-breaker of an order or an edge input its own failing test names, now goes to bug mode for the whole fix instead of listing the defect as out of scope and finishing. `harness/MODES.md` § Fixing a bug says so; same-pattern hits in other places still stay out of scope.

@@ -2,7 +2,7 @@
 id: 2026-11-05-doc-paths-config
 title: A project's documentation-path changes are read by the end-of-task checks
 kind: template
-release: unreleased
+release: v0.17.0
 applies_to: { modules: [] }
 files:
   - harness.config.yml
