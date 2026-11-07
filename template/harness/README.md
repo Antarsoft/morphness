@@ -48,6 +48,7 @@ Switched on in `harness.config.yml` → `modules`. A module that is off is ignor
 | `ci-cd` | Pipelines the harness sets up and checks: CI running the named checks on PRs, owner-run deploy and migrations workflows, and release tags from the PR title ([modules/ci-cd/](./modules/ci-cd/README.md)) | <!-- module:ci-cd -->
 | `security` | A threat model in the plan of features that change access, money, secrets or deleting people's data, secret scanning and dependency audit as named checks, and a security review before QA for those features ([modules/security/](./modules/security/README.md)) | <!-- module:security -->
 | `claude-projects` | Running the harness in Claude projects: coordinator, one feature per thread, thread effort ([modules/claude-projects/](./modules/claude-projects/)) | <!-- module:claude-projects -->
+| `autonomous` | An unattended run from a product brief to the first version: the owner approves the product docs once, a driver builds the features one at a time through the normal harness, and owner items go to the version checklist ([modules/autonomous/](./modules/autonomous/README.md)) | <!-- module:autonomous -->
 
 **Module markers.** Text in the kit that exists only for one module is marked, so adding or removing a module is mechanical: a block between `<!-- module:<name> -->` and `<!-- /module:<name> -->` lines, the same pair inside a line for part of a sentence, or a line (a table row, a list item) ending in `<!-- module:<name> -->`. To remove a module, delete every marked span and line for it:
 

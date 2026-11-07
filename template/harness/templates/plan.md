@@ -127,6 +127,7 @@ The **Status** line at the top records whether the plan is approved; this sectio
 
 - **Approver:**
 - **Date:**
+- In a driver-started autonomous run (`MORPH_AUTO=1`), the Technical Lead approves: **Approver:** `Technical Lead (autonomous mode); product doc approved by <owner> on <date>` (`harness/modules/autonomous/README.md` § Run rules). <!-- module:autonomous -->
 
 ## Decisions
 

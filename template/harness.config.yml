@@ -77,7 +77,7 @@ roadmap:
   file: docs/ROADMAP.md
   versions_dir: docs/versions
 
-# Optional modules under harness/modules/: claude-projects, data-access, browser-e2e, legal, roadmap, ci-cd, security
+# Optional modules under harness/modules/: claude-projects, data-access, browser-e2e, legal, roadmap, ci-cd, security, autonomous
 # Add or remove one on a live project with /morph-module add|remove <name>.
 modules: [roadmap]
 
@@ -198,6 +198,28 @@ loop:
   project_docs_budget_kb: 48 # project/*.md fact docs; over it, a prune is due
   qa_max_rounds: 2        # QA rework rounds before escalating to the owner
   feature_budget_usd: 0   # soft cap per feature in dollars at API list prices (feature-cost.sh); 0 = off. Over it, the Technical Lead stops and asks you
+
+# Autonomous module (harness/modules/autonomous/README.md): an unattended run from docs/brief.md to the first
+# version on its own branch. Read only by scripts/auto/run.sh and /morph-auto; nothing here applies outside a run.
+#   enabled          true lets /morph-auto start a run; false (the default) refuses
+#   budget_usd       hard cap for the whole run at API list prices; 0 refuses to start. loop.feature_budget_usd must be
+#                    above 0 too, and each session gets --max-budget-usd at 1.5 times it
+#   max_features     features a run may start; max_hours: wall-clock hours before it exits
+#   crash_retries    restarts of a crashed feature session before the run exits
+#   director_model   the session that writes docs/product/ and the order; last_try_model: Full-stack after a QA fail or a crash
+#   ledger_kb        size of _harness/auto/ledger.md before the director compacts it
+#   usage_wait_minutes  wait after a usage limit, doubling up to 4 hours; the try doesn't count
+auto:
+  enabled: false
+  branch: auto/v1
+  budget_usd: 0
+  max_features: 30
+  max_hours: 24
+  crash_retries: 1
+  director_model: opus
+  last_try_model: opus
+  ledger_kb: 8
+  usage_wait_minutes: 30
 
 # Where /morph-update, /morph-doctor and the prune's upstream check read Morphness from.
 # github: release notes and template text straight from installed_from.repo on GitHub (read-only,

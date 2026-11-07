@@ -791,6 +791,8 @@ def render_config(t, fx, modules, ci_paths):
         out = drop_block(out, r"^ci_cd:")
     if "claude-projects" not in modules:
         out = drop_block(out, r"^claude_projects:")
+    if "autonomous" not in modules:
+        out = drop_block(out, r"^auto:")
     write(p, "\n".join(out))
 
 def fill_workflow(path, fx):
