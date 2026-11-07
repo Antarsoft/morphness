@@ -20,6 +20,15 @@ Status values: `todo` | `doing` | `done`
 
 Include a final plan step **Validation** (or track below); it must be `done` before handoff.
 
+## Reproduction (bug mode with `mode.bug_repro: fullstack` only)
+
+*Delete this section otherwise. Filled before any fix, then the test is committed alone as `WIP(<slug>): failing test`.*
+
+- **Commit:** `git rev-parse --short HEAD` before the test was added.
+- **Test:** the file and test name from `plan.md` § Regression test.
+- **Command and exit code:** the command run, and its non-zero exit code.
+- **Failure:** the last lines of the failure, and whether it matches § Regression test → **Fails today because**.
+
 ## Root cause (bug mode only)
 
 *Delete this section outside bug mode. Written before the fix (`harness/MODES.md` § Bug mode, step 3); the TL checks it against the code before QA.*

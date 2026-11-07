@@ -41,7 +41,7 @@
 
 ## Reproduction (bug mode only)
 
-*Delete this section outside bug mode. Filled in the reproduction run, before any fix (`harness/MODES.md` § Bug mode, step 2). This run is not a QA round and has no verdict.*
+*Delete this section outside bug mode. Filled in the reproduction run, before any fix (`harness/MODES.md` § Bug mode, step 2). This run is not a QA round and has no verdict. With `mode.bug_repro: fullstack` it is filled in the QA run instead: the test run against the product files as they were at the failing-test commit, and the bug order line from the prompt.*
 
 - **Commit:** `git rev-parse --short HEAD` before the test was added.
 - **Test:** the file and test name from `plan.md` § Regression test (or the manual reproduction, when the plan says no automated test can reach the bug).

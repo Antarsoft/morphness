@@ -121,6 +121,8 @@ risk_areas: []
 mode:
   plain_max_files: 6      # a change to more files than this (documentation not counted) gets full mode
   force: auto             # auto lets the script decide; full or plain makes every change run that way
+  bug_repro: qa           # bug mode's failing test: qa (a QA reproduction run before the fix) | fullstack (a trial:
+                          # Full-stack writes and commits it first, QA runs once; harness/MODES.md § Bug mode)
 
 agents:
   # Default: Sonnet in every role, at about half the cost of Opus; the plan, QA and checks carry the quality.

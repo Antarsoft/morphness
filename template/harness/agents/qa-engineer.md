@@ -67,11 +67,13 @@ The working tree may hold the feature's **uncommitted** work (the TL commits WIP
 
 ## Bug mode
 
-When the plan says **Mode:** bug ([harness/MODES.md](../MODES.md) § Bug mode), you run twice.
+When the plan says **Mode:** bug ([harness/MODES.md](../MODES.md) § Bug mode), you run twice; with `mode.bug_repro: fullstack` (a trial), once, as the last paragraph says.
 
 **Reproduction run (before any fix).** Write the regression test `plan.md` § Regression test assigns, at the level and in the file it names, asserting the expected behaviour. Run it and fill `qa-result.md` § Reproduction: the commit, the command, its exit code, the failure's tail, and whether it fails for the reason the plan gives. A test that fails for another reason (a setup error, a missing fixture) doesn't count: fix the test, not the product. Change no product code, and add no other tests. When you can't make it fail, record **not reproduced** with what you tried and hand back; don't guess a test that passes. No verdict: this run is not a QA round.
 
 **Re-run (after the fix).** The normal QA pass on the plan's ACs, plus: the regression test passes on the final commit, and `git diff <failing-test commit> -- <test file>` is empty or each change is explained in `progress.md`. An unexplained change to the test is a fail.
+
+**With `mode.bug_repro: fullstack`** there is no reproduction run: Full-stack wrote and committed the failing test. The prompt's **Bug order** line is the script's check of that commit and lists the product files the branch changed; a PROBLEM there is a fail. The order of commits doesn't show that the fix wasn't already in the work tree, so show the test fails without the fix: as a scratch change (§ Scratch changes, with its backups), write each listed file's version from the failing-test commit (`git show <commit>:path/to/file > path/to/file`; move a file the fix added aside), run the regression test, record the run in `qa-result.md` § Reproduction, and restore every backup before anything else. A test that passes there is a fail. Then the re-run above.
 
 ## Round 2 (after a QA fail)
 
