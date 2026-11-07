@@ -123,6 +123,11 @@ mode:
   force: auto             # auto lets the script decide; full or plain makes every change run that way
   bug_repro: qa           # bug mode's failing test: qa (a QA reproduction run before the fix) | fullstack (a trial:
                           # Full-stack writes and commits it first, QA runs once; harness/MODES.md § Bug mode)
+  risk_by: file           # file: a change to a risk path is full mode | change (a trial): an ordering or paging edit
+                          # (order, sort, limit, range calls only) runs in small mode with one code review
+                          # (harness/MODES.md § Contained change)
+  contained_max_lines: 10 # with risk_by: change, the most lines (added and removed) a contained change makes in a file
+  risk_terms: []          # with risk_by: change, the project's own words that make a change not contained, one line (e.g. [org_id])
 
 agents:
   # Default: Sonnet in every role, at about half the cost of Opus; the plan, QA and checks carry the quality.

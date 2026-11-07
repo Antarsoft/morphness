@@ -1306,6 +1306,126 @@ def check_bug_repro(bad, pb, integ, sample):
         git_("checkout", "-q", "sel-feature")
 
 
+def check_contained_change(bad, t):
+    """Cost: with mode.risk_by: change (a trial) a small change to a risk-path file that keeps clear of users, access,
+    sign-in, secrets, money and deleting runs in small mode with one review; anything unsure stays full."""
+    for want in ("### Contained change (a trial)", "mode.risk_by: change", "`~ <file>: ordering or paging only`",
+                 "mode.contained_max_lines", "mode.risk_terms", "/code-review medium", "`git diff -W`", "ordering or paging"):
+        if want not in read(os.path.join(t, "harness/MODES.md")):
+            bad(f"harness/MODES.md § Contained change doesn't say {want}")
+    cfg_text = read(os.path.join(t, "harness.config.yml"))
+    for want in ("  risk_by: file ", "  contained_max_lines: 10 ", "  risk_terms: [] "):
+        if want not in cfg_text:
+            bad(f"harness.config.yml has no `{want.strip()}` default under mode:")
+            return
+    rk = os.path.join(tempfile.mkdtemp(prefix="contained-"), "p")
+    shutil.copytree(t, rk, symlinks=True)
+    integ = run(["bash", "-c", ". scripts/lib/config.sh; config_get branches.integration"], rk).stdout.strip() or "dev"
+    git_ = lambda *a: run(["git", "-c", "user.name=selftest", "-c", "user.email=selftest@example.com", *a], rk)
+    def risk(*args):
+        r = run(["bash", "scripts/risk-check.sh", *args], rk)
+        return r.returncode, r.stdout
+    controls = os.path.join(rk, "project/CONTROLS.md")
+    write(controls, re.sub(r"(^## Risk paths[^\n]*\n(?:.*\n)*?)(?=^- )",
+                           lambda m: m.group(1) + "- **Who can see a note:** `src/notes/`\n- **Billing:** `src/billing/`\n",
+                           read(controls), count=1, flags=re.M))
+    os.makedirs(os.path.join(rk, "src/notes"), exist_ok=True)
+    os.makedirs(os.path.join(rk, "src/billing"), exist_ok=True)
+    notes = ("export function sortNotes(list) {\n  return list\n    .slice()\n    .sort((a, b) => b.pinned - a.pinned)\n"
+             "    .sort((a, b) => b.createdAt - a.createdAt);\n}\n\n"
+             "export function noteTitle(n) {\n  const t = n.title;\n  return t.trim();\n}\n\n"
+             "export async function listMine(db, x) {\n  const size = 20;\n  const rows = await db.notes.where({ x }).limit(size);\n  return rows;\n}\n\n"
+             "export function deleteNote(db, id) {\n  const tag = 'x';\n  return db.notes.drop(id, tag);\n}\n\n"
+             "export function layout() {\n" + "".join(f"  const p{k} = {k};\n" for k in range(1, 7)) + "  return p1;\n}\n")
+    lst = os.path.join(rk, "src/notes/list.ts")
+    write(lst, notes)
+    write(os.path.join(rk, "src/notes/q.sql"), "select 1;\n")
+    write(os.path.join(rk, "src/billing/total.ts"), "export const total = (a) => a.length;\n")
+    with open(os.path.join(rk, "src/notes/logo.png"), "wb") as fh:
+        fh.write(b"\x89PNG\x00\x01")
+    cfg = os.path.join(rk, "harness.config.yml")
+    base_cfg = read(cfg)
+    for cmd in (["add", "-A"], ["commit", "-q", "--allow-empty", "-m", "state"], ["branch", "-f", integ],
+                ["checkout", "-q", "-B", "selftest-contained"]):
+        git_(*cmd)
+    tie = notes.replace("    .sort((a, b) => b.createdAt - a.createdAt);", "    .sort((a, b) => b.createdAt - a.createdAt || b.id - a.id);")
+    def case(why, body, want_plain, needle, path=lst, args=()):
+        if body is None:
+            os.remove(path)
+        elif isinstance(body, bytes):
+            with open(path, "wb") as fh:
+                fh.write(body)
+        else:
+            write(path, body)
+        code, out = risk(*args)
+        is_plain = out.startswith("Mode: plain") and "\n~ " in out and "Needs: one code review" in out
+        if code or is_plain != want_plain or needle not in out:
+            bad(f"risk-check.sh with mode.risk_by: change on {why} printed {out!r} (exit {code})")
+        git_("checkout", "-q", "--", ".")
+    try:
+        write(lst, tie)
+        code, out = risk()
+        if code or not out.startswith("Mode: full\n") or "- src/notes/list.ts: Who can see a note" not in out or "~ " in out:
+            bad(f"risk-check.sh with the default mode.risk_by: file on a one-line risk-path change printed {out!r} (exit {code})")
+        git_("checkout", "-q", "--", ".")
+        write(cfg, base_cfg.replace("  risk_by: file ", "  risk_by: change ").replace("  risk_terms: [] ", "  risk_terms: [colour_code] "))
+        for cmd in (["add", "-A"], ["commit", "-q", "-m", "trial"], ["branch", "-f", integ]):
+            git_(*cmd)
+        case("a one-line tie-breaker", tie, True, "~ src/notes/list.ts: ordering or paging only (2 lines;")
+        case("a new comment line", notes.replace("  return list\n", "  // newest first\n  return list\n"), True, "ordering or paging only (1 line;")
+        case("exactly mode.contained_max_lines lines", notes.replace("  return list\n", "  // x\n" * 10 + "  return list\n"), True, "(10 lines;")
+        case("one line over mode.contained_max_lines", notes.replace("  return list\n", "  // x\n" * 11 + "  return list\n"), False, "11 lines change, more than mode.contained_max_lines (10)")
+        case("a title change", notes.replace("return t.trim();", "return t.trim().slice(0, 80);"), False, "a changed line that isn't ordering or paging")
+        case("a deleted chain line", notes.replace("    .slice()\n", "", 1), False, "a changed line that isn't ordering or paging (`.slice()`)")
+        case("a changed query", notes.replace("  return list\n", "  return list.filter((n) => n.title)\n"), False, "isn't ordering or paging")
+        case("a new import", "import { z } from './z';\n" + notes, False, "isn't ordering or paging")
+        case("an ordering call that calls something", notes.replace("    .slice()\n", "    .slice()\n    .sort(pick())\n"), False, "an ordering call that calls something")
+        case("an ordering call with a template", notes.replace("    .slice()\n", "    .slice()\n    .order(`${col}`)\n"), False, "an ordering call with an argument it can't read")
+        case("a comment in a function about deleting", notes.replace("  const tag = 'x';\n", "  // keep the tag\n  const tag = 'x';\n"), False, "a line in the same function is about `delete")
+        case("a project term from mode.risk_terms", notes.replace("    .slice()\n", "    .slice()\n    .sort((a, b) => a.colourCode - b.colourCode)\n"), False, "a changed line is about `colour_code`")
+        case("a deleted file", None, False, "the branch deletes it")
+        case("a binary file", b"\x89PNG\x00\x02", False, "a binary file", path=os.path.join(rk, "src/notes/logo.png"))
+        case("a .sql file", "select 2;\n", False, "- src/notes/q.sql:", path=os.path.join(rk, "src/notes/q.sql"))
+        case("a money area", "export const total = (a) => a.length + 0;\n", False, "a sign-in, secrets or money area (Billing)",
+             path=os.path.join(rk, "src/billing/total.ts"))
+        write(controls, read(controls).replace("- **Billing:**", "- **Reports:**", 1))
+        case("a branch that renames a risk area", tie, False, "project/CONTROLS.md changes § Risk paths")
+        write(lst, tie)
+        code, out = risk("--force", "full")
+        if code or not out.startswith("Mode: full (the owner chose full") or "- src/notes/list.ts:" not in out or "Needs:" in out or "\n~ " in out:
+            bad(f"risk-check.sh --force full on a contained change printed {out!r} (exit {code}): the review must see a risk path")
+        code, out = risk("src/billing/total.ts")
+        if code or not out.startswith("Mode: full\n") or "- src/notes/list.ts:" not in out or "\n~ " in out:
+            bad(f"risk-check.sh on a contained change plus another risk path printed {out!r} (exit {code}): it is a risk path again")
+        git_("checkout", "-q", "--", ".")
+        write(os.path.join(rk, "src/notes/new.ts"), "export const x = 1;\n")
+        code, out = risk()
+        if code or not out.startswith("Mode: full\n") or "a new file" not in out:
+            bad(f"risk-check.sh with mode.risk_by: change on a new risk-path file printed {out!r} (exit {code})")
+        os.remove(os.path.join(rk, "src/notes/new.ts"))
+        code, out = risk("src/notes/planned.ts")
+        if code or not out.startswith("Mode: full\n") or "a new file" not in out or "Note:" in out:
+            bad(f"risk-check.sh with mode.risk_by: change on a planned new risk-path file printed {out!r} (exit {code}): it stays full")
+        code, out = risk("src/notes/list.ts")
+        if code or not out.startswith("Mode: full\n") or "\nNote: src/notes/list.ts isn't changed yet. With mode.risk_by: change" not in out:
+            bad(f"risk-check.sh with mode.risk_by: change on a named file not changed yet printed {out!r} (exit {code})")
+        write(cfg, read(cfg).replace("  contained_max_lines: 10 ", "  contained_max_lines: 400 "))
+        write(lst, tie)
+        code, out = risk()
+        if code or not out.startswith("Mode: full\n") or "harness.config.yml changes mode.contained_max_lines" not in out:
+            bad(f"risk-check.sh on a branch that widens mode.contained_max_lines printed {out!r} (exit {code})")
+        git_("checkout", "-q", "--", ".")
+        for bad_cfg, why in ((read(cfg).replace("  risk_by: change ", "  risk_by: maybe "), "mode.risk_by: maybe"),
+                             (read(cfg).replace("  risk_terms: [colour_code] ", "  risk_terms:\n    - colour_code\n  x_after: 1 "), "a block-list mode.risk_terms")):
+            write(cfg, bad_cfg)
+            code, out = risk("README.md")
+            if code != 2 or not out.startswith("Mode: full (risk check: mode.risk_"):
+                bad(f"risk-check.sh with {why} printed {out!r} (exit {code}): it must fail toward full")
+            git_("checkout", "-q", "--", ".")
+    finally:
+        shutil.rmtree(os.path.dirname(rk))
+
+
 def check_retro_batch(bad, t):
     """Cost: with loop.retro_every above 1 the Technical Lead decides action items for several features in one pass;
     prune-counter.sh counts the learnings files with an open or deferred item (not one the owner decides) and says
@@ -2602,6 +2722,7 @@ def check(name, fx, t):
     if code != 2 or not out.startswith("Mode: full (risk check: "):
         bad(f"risk-check.sh with no `{integ}` branch printed {out!r} (exit {code}): it must fail toward full")
     shutil.rmtree(os.path.dirname(rk))
+    check_contained_change(bad, t)
     check_end_of_task(bad, t, settings)
     check_plan_brief(bad, t, settings)
     check_code_scout(bad, t)
