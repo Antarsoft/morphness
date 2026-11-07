@@ -89,8 +89,8 @@
  },
  {
   "file": "template/scripts/risk-check.sh",
-  "line": 40,
-  "endLine": 40,
+  "line": 49,
+  "endLine": 49,
   "column": 3,
   "endColumn": 24,
   "level": "info",
@@ -100,8 +100,8 @@
  },
  {
   "file": "template/scripts/prune-counter.sh",
-  "line": 37,
-  "endLine": 37,
+  "line": 39,
+  "endLine": 39,
   "column": 3,
   "endColumn": 49,
   "level": "info",
@@ -111,13 +111,46 @@
  },
  {
   "file": "template/scripts/prune-counter.sh",
-  "line": 54,
-  "endLine": 54,
+  "line": 56,
+  "endLine": 56,
   "column": 10,
   "endColumn": 51,
   "level": "info",
   "code": 2012,
   "message": "Use find instead of ls to better handle non-alphanumeric filenames.",
+  "fix": null
+ },
+ {
+  "file": "template/scripts/prune-counter.sh",
+  "line": 149,
+  "endLine": 149,
+  "column": 20,
+  "endColumn": 120,
+  "level": "info",
+  "code": 2016,
+  "message": "Expressions don't expand in single quotes, use double quotes for that.",
+  "fix": null
+ },
+ {
+  "file": "template/scripts/plan-brief.sh",
+  "line": 53,
+  "endLine": 53,
+  "column": 30,
+  "endColumn": 51,
+  "level": "info",
+  "code": 1091,
+  "message": "Not following: scripts/lib/config.sh: openBinaryFile: does not exist (No such file or directory)",
+  "fix": null
+ },
+ {
+  "file": "template/scripts/handoff.sh",
+  "line": 43,
+  "endLine": 43,
+  "column": 3,
+  "endColumn": 24,
+  "level": "info",
+  "code": 1091,
+  "message": "Not following: ./lib/config.sh: openBinaryFile: does not exist (No such file or directory)",
   "fix": null
  },
  {
@@ -133,8 +166,8 @@
  },
  {
   "file": "template/scripts/guard.sh",
-  "line": 67,
-  "endLine": 67,
+  "line": 68,
+  "endLine": 68,
   "column": 1,
   "endColumn": 15,
   "level": "info",

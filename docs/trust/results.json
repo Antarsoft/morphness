@@ -1,8 +1,8 @@
 {
  "schema": 1,
- "generated": "2026-11-05 04:34 UTC",
- "commit": "aa9ae11c14b1fc13f4d55cdd05d3ed507b449c43",
- "release": "v0.16.0 + later commits",
+ "generated": "2026-11-07 20:14 UTC",
+ "commit": "337748214155e1e5842e6120670ac50446e9b6f6",
+ "release": "v0.17.0",
  "dirty": false,
  "rows": [
   {
@@ -13,12 +13,12 @@
    "what": "Renders the template as /morph-init would for sample projects, runs its own consistency checks, replays every guard case and runs the template scripts.",
    "command": "STRICT=1 GUARD_FULL=1 scripts/kit-selftest.sh",
    "status": "pass",
-   "summary": "4 of 4 sample projects pass; 1025 guard cases replayed on each (4100 replays; per project 327 allowed, 354 asked, 344 denied, all as expected)",
+   "summary": "4 of 4 sample projects pass; 1127 guard cases replayed on each (4508 replays; per project 376 allowed, 393 asked, 358 denied, all as expected)",
    "findings": [],
    "logs": [
     "kit-selftest.txt"
    ],
-   "finished": "2026-11-05 04:33 UTC",
+   "finished": "2026-11-07 20:13 UTC",
    "notes": "Sample projects: go-service, monorepo-apps, nextjs-supabase, python-cli."
   },
   {
@@ -29,12 +29,12 @@
    "what": "Every kit change has an update note, and every note is well formed.",
    "command": "scripts/check-updates.sh",
    "status": "pass",
-   "summary": "125 update note(s) checked, 0 problem(s)",
+   "summary": "144 update note(s) checked, 0 problem(s)",
    "findings": [],
    "logs": [
     "check-updates.txt"
    ],
-   "finished": "2026-11-05 04:33 UTC"
+   "finished": "2026-11-07 20:13 UTC"
   },
   {
    "group": "own",
@@ -49,7 +49,7 @@
    "logs": [
     "check-lessons.txt"
    ],
-   "finished": "2026-11-05 04:33 UTC"
+   "finished": "2026-11-07 20:13 UTC"
   },
   {
    "group": "public",
@@ -59,7 +59,7 @@
    "what": "Config correctness of CLAUDE.md, AGENTS.md, rules, agents, settings, hooks and skills, on a rendered sample install and on the kit's skills.",
    "command": "npx agnix@0.59.0 --format json <path>",
    "status": "triaged",
-   "summary": "12 finding(s), all judged (9 informational)",
+   "summary": "14 finding(s), all judged (9 informational)",
    "findings": [
     {
      "rule": "CC-AG-010",
@@ -143,7 +143,7 @@
      "path": "install/.claude/settings.json",
      "line": 33,
      "level": "warning",
-     "message": "Allow rule 'Bash(bash scripts/doc-section.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+     "message": "Allow rule 'Bash(bash scripts/plan-brief.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
      "triage": {
       "status": "accepted",
       "reason": "These allow the kit's own scripts so routine steps don't prompt. The guard still checks each call but not what a script does inside (tests/known-gaps.md), and in auto mode Claude Code drops the rules, which only adds prompts."
@@ -153,6 +153,28 @@
      "rule": "CC-SET-036",
      "path": "install/.claude/settings.json",
      "line": 34,
+     "level": "warning",
+     "message": "Allow rule 'Bash(bash scripts/handoff.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+     "triage": {
+      "status": "accepted",
+      "reason": "These allow the kit's own scripts so routine steps don't prompt. The guard still checks each call but not what a script does inside (tests/known-gaps.md), and in auto mode Claude Code drops the rules, which only adds prompts."
+     }
+    },
+    {
+     "rule": "CC-SET-036",
+     "path": "install/.claude/settings.json",
+     "line": 35,
+     "level": "warning",
+     "message": "Allow rule 'Bash(bash scripts/doc-section.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+     "triage": {
+      "status": "accepted",
+      "reason": "These allow the kit's own scripts so routine steps don't prompt. The guard still checks each call but not what a script does inside (tests/known-gaps.md), and in auto mode Claude Code drops the rules, which only adds prompts."
+     }
+    },
+    {
+     "rule": "CC-SET-036",
+     "path": "install/.claude/settings.json",
+     "line": 36,
      "level": "warning",
      "message": "Allow rule 'Bash(bash scripts/checks.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
      "triage": {
@@ -198,8 +220,8 @@
     "agnix-install.json",
     "agnix-skills.json"
    ],
-   "finished": "2026-11-05 04:33 UTC",
-   "notes": "68 files checked. Errors and warnings need a verdict; info notes are only counted."
+   "finished": "2026-11-07 20:13 UTC",
+   "notes": "72 files checked. Errors and warnings need a verdict; info notes are only counted."
   },
   {
    "group": "public",
@@ -209,13 +231,13 @@
    "what": "The kit's bash scripts and the scripts installed into projects, including the guard hook.",
    "command": "shellcheck -x -f json $(git ls-files '*.sh')",
    "status": "clean",
-   "summary": "0 findings (16 informational)",
+   "summary": "0 findings (19 informational)",
    "findings": [],
    "logs": [
     "shellcheck.json"
    ],
-   "finished": "2026-11-05 04:33 UTC",
-   "notes": "18 scripts. Errors and warnings need a verdict; style notes and info are only counted."
+   "finished": "2026-11-07 20:13 UTC",
+   "notes": "21 scripts. Errors and warnings need a verdict; style notes and info are only counted."
   },
   {
    "group": "public",
@@ -230,8 +252,8 @@
    "logs": [
     "gitleaks.json"
    ],
-   "finished": "2026-11-05 04:33 UTC",
-   "notes": "194 commits scanned."
+   "finished": "2026-11-07 20:13 UTC",
+   "notes": "216 commits scanned."
   },
   {
    "group": "public",
@@ -306,7 +328,7 @@
     "skillspector-morph-share.json",
     "skillspector-morph-update.json"
    ],
-   "finished": "2026-11-05 04:34 UTC",
+   "finished": "2026-11-07 20:14 UTC",
    "notes": "Risk scores (0 is best): morph-doctor 0/100, morph-init 49/100, morph-module 0/100, morph-share 0/100, morph-update 20/100."
   }
  ],
@@ -326,14 +348,14 @@
   "The real protection for shared environments is the host: branch protection, and environment secrets that only the owner holds.",
   "Static scanners read the kit's text and scripts. They do not run an agent, so they say nothing about how a model behaves with these rules.",
   "Process rules, such as planning before code, which mode a change runs in and which files each agent may edit, are instructions to the model, and the model can skip them. Only the guard, the tool limits set on an agent and the checks run at the end of a task are code. In the lighter modes (light, small and research) no separate agent tests the work.",
-  "Before a task counts as done, the kit runs the project's checks (tests, lint and the like) as committed on the branch the work merges into. An agent that moves that branch in its own clone (with `git update-ref` or a fetch refspec) changes which commands run, and the guard does not ask.",
-  "The checks at the end of a task skip files that count as documentation: the kit's documentation folders, Markdown files, the README and LICENSE. A project can add paths to that list or remove them, but the check script keeps the kit's own list, so a path the project added is still checked as code and code under a path it removed is still skipped.",
+  "Before a task counts as done, the kit runs the project's checks (tests, lint and the like) as committed on the branch the work merges into. The guard asks before a command moves that branch in the clone (`git update-ref`, a fetch refspec that writes it, `checkout -B`), but a change to the git config's fetch refspec, or a script that runs git itself, can still move it unseen.",
+  "The checks at the end of a task skip files that count as documentation: the kit's documentation folders, Markdown files, the README and LICENSE. A project adds or removes paths with `checks.doc_paths_add` and `checks.doc_paths_remove` in `harness.config.yml`. CI's own path filters (`paths-ignore` in a workflow) are separate and are not read from that list.",
   "When a bug fix finds the same mistake in other places, those are left for separate changes unless the owner says otherwise. The fix's record lists each one, and they stay unfixed until someone plans them.",
-  "A change that touches sign-in, secrets, money or people's data gets a security review, and the review always runs again on the final code after its findings are fixed, so such a change pays for two reviews. The security module widens which changes get one.",
+  "A change that touches sign-in, secrets, money or people's data gets a security review, and when it had findings to fix, a second pass on the fix round's changes, so such a change can pay for two reviews. The security module widens which changes get one.",
   "`/morph-update` does not scan upstream update notes and lessons when it applies them. The kit's own checks scan them for commands, links and changes to the guard, settings or secrets when they are proposed and merged, and the owner reads each item before it is applied. A copy installed from a fork gets that fork's notes, which the kit's checks never saw.",
   "Installs and updates are pinned to the commit a release tag named when the copy first read it. A tag moved before a copy reads it cannot be told apart from the original.",
-  "With no option, the cost estimate (`feature-cost.sh`) counts the whole current Claude Code session. When the session did other work before the feature, the figure includes it unless `--since` is given.",
-  "The kit does not isolate a headless run (`claude -p`). One started from inside another Claude Code session inherits that session's environment, including its memory and settings, and a fresh config folder alone does not isolate it."
+  "With no option, the cost estimate (`feature-cost.sh`) counts the whole current Claude Code session. When that session began more than three hours before the branch's first commit, the Cost line says so and asks for `--since`; a session that did other work within those hours is still counted whole.",
+  "A headless run (`claude -p`) started from inside another Claude Code session inherits that session's environment, including its memory and settings, unless it goes through `scripts/headless.sh` (CONTRIBUTING.md). The kit's own skills and scripts don't check for this."
  ],
  "stale_triage": [
   "agnix CDX-AG-005 install/AGENTS.md",

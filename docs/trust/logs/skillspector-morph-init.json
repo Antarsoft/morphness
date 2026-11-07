@@ -2,7 +2,7 @@
  "skill": {
   "name": "morph-init",
   "source": "<repo>/skills/morph-init",
-  "scanned_at": "2026-11-05T04:33:47.599213+00:00"
+  "scanned_at": "2026-11-07T20:13:48.095632+00:00"
  },
  "risk_assessment": {
   "score": 49,
@@ -16,7 +16,7 @@
    "type": "markdown",
    "lines": 148,
    "executable": false,
-   "size_bytes": 11198,
+   "size_bytes": 11338,
    "source_url": null,
    "source_identity": null,
    "source_digest": null
@@ -34,9 +34,9 @@
   {
    "path": "references/questions.md",
    "type": "markdown",
-   "lines": 334,
+   "lines": 338,
    "executable": false,
-   "size_bytes": 22924,
+   "size_bytes": 23411,
    "source_url": null,
    "source_identity": null,
    "source_digest": null
@@ -46,7 +46,7 @@
    "type": "markdown",
    "lines": 344,
    "executable": false,
-   "size_bytes": 29584,
+   "size_bytes": 29617,
    "source_url": null,
    "source_identity": null,
    "source_digest": null
@@ -56,7 +56,7 @@
  "issues": [
   {
    "id": "AS1",
-   "finding_id": "finding-e17b762c2b97468ebe358c658df5df32",
+   "finding_id": "finding-4109a49b2ac648e6baa160d903d6b88e",
    "category": "Agent Snooping",
    "pattern": "Agent Config Directory Access",
    "severity": "HIGH",
@@ -70,7 +70,7 @@
    "finding": "/.claude/settings.json",
    "explanation": "Skill reads from agent configuration directories (.claude/, .codex/, .gemini/). These directories may contain API keys, personal settings, and other credentials that the skill has no legitimate need to access.",
    "remediation": "Remove all code or instructions that access agent configuration directories (.claude/, .codex/, .gemini/). If configuration values are needed, pass them explicitly as parameters or environment variables \u2014 never read the agent's own config files.",
-   "code_snippet": "## 3. Fill placeholders\n\nEvery change \u00a7\u00a7 3 to 6 make to `.claude/settings.json` goes into \u00a7 6b's build of that file, away from\n`T`, never into `T/.claude/settings.json` itself. Replace every `{{key}}` in the copied files with its answer. Keys: `project.name`, `project.description`,\n`human.name`, `human.github` (the owner), `branches.integration`, `branches.production`, `stack.summary`,\n`stack.package_manager`, `stack.toolchain_setup`, `stack.install_cmd`, `cmd.<check-name>`, `models.tl`,\n`models.fullstack`, `models.fullstack_medium`, `models.qa`, `models.qa_medium`, `models.researcher`, `models.researcher_high`, `models.legal`, `morphness.repo`, `morphness.commit`, `morphness.release`,",
+   "code_snippet": "## 3. Fill placeholders\n\nEvery change \u00a7\u00a7 3 to 6 make to `.claude/settings.json` goes into \u00a7 6b's build of that file, away from\n`T`, never into `T/.claude/settings.json` itself. Replace every `{{key}}` in the copied files with its answer. Keys: `project.name`, `project.description`,\n`human.name`, `human.github` (the owner), `branches.integration`, `branches.production`, `stack.summary`,\n`stack.package_manager`, `stack.toolchain_setup`, `stack.install_cmd`, `cmd.<check-name>`, `models.tl`,\n`models.fullstack`, `models.fullstack_medium`, `models.qa`, `models.qa_medium`, `models.researcher`, `models.researcher_high`, `models.scout`, `models.closer`, `models.legal`, `morphness.repo`, `morphness.commit`, `morphness.release`,",
    "intent": null,
    "tags": [
     "Agent Snooping"
@@ -88,7 +88,7 @@
   },
   {
    "id": "AS1",
-   "finding_id": "finding-7eed6b23f78c4654925be68f9fa8b9c8",
+   "finding_id": "finding-05ddc71aeb0b4a30a13a9fde05b7c370",
    "category": "Agent Snooping",
    "pattern": "Agent Config Directory Access",
    "severity": "HIGH",
@@ -120,14 +120,14 @@
   },
   {
    "id": "EA2",
-   "finding_id": "finding-506c8a72b1df437fbf1e20942bb5c79f",
+   "finding_id": "finding-43b5bc72f30d40479f698cfae7d6bce5",
    "category": "Excessive Agency",
    "pattern": "Autonomous Decision Making",
    "severity": "MEDIUM",
    "confidence": 0.85,
    "location": {
     "file": "references/questions.md",
-    "start_line": 286,
+    "start_line": 288,
     "end_line": null,
     "start_column": 31
    },
@@ -144,7 +144,7 @@
    "occurrences": [
     {
      "file": "references/questions.md",
-     "start_line": 286,
+     "start_line": 288,
      "end_line": null,
      "start_column": 31
     }
@@ -152,7 +152,7 @@
   },
   {
    "id": "RP1",
-   "finding_id": "finding-1133cb211d9f4f88b9b9f49a3e790e3e",
+   "finding_id": "finding-4081871dd5b54f4eacf76235cb18360b",
    "category": "MCP Rug Pull",
    "pattern": "MCP server referenced without pinned version: 'npx vitest'.",
    "severity": "MEDIUM",

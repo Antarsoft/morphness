@@ -1,6 +1,6 @@
 {
  "version": "0.59.0",
- "files_checked": 60,
+ "files_checked": 64,
  "diagnostics": [
   {
    "level": "error",
@@ -92,7 +92,7 @@
    "file": "<install-root>/nextjs-supabase/.claude/settings.json",
    "line": 33,
    "column": 7,
-   "message": "Allow rule 'Bash(bash scripts/doc-section.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+   "message": "Allow rule 'Bash(bash scripts/plan-brief.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
    "suggestion": "Allow the specific commands instead, for example Bash(npm run test) or Bash(devbox run npm test).",
    "category": "claude-settings",
    "rule_severity": "MEDIUM",
@@ -103,6 +103,30 @@
    "rule": "CC-SET-036",
    "file": "<install-root>/nextjs-supabase/.claude/settings.json",
    "line": 34,
+   "column": 7,
+   "message": "Allow rule 'Bash(bash scripts/handoff.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+   "suggestion": "Allow the specific commands instead, for example Bash(npm run test) or Bash(devbox run npm test).",
+   "category": "claude-settings",
+   "rule_severity": "MEDIUM",
+   "applies_to_tool": "claude-code"
+  },
+  {
+   "level": "warning",
+   "rule": "CC-SET-036",
+   "file": "<install-root>/nextjs-supabase/.claude/settings.json",
+   "line": 35,
+   "column": 7,
+   "message": "Allow rule 'Bash(bash scripts/doc-section.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+   "suggestion": "Allow the specific commands instead, for example Bash(npm run test) or Bash(devbox run npm test).",
+   "category": "claude-settings",
+   "rule_severity": "MEDIUM",
+   "applies_to_tool": "claude-code"
+  },
+  {
+   "level": "warning",
+   "rule": "CC-SET-036",
+   "file": "<install-root>/nextjs-supabase/.claude/settings.json",
+   "line": 36,
    "column": 7,
    "message": "Allow rule 'Bash(bash scripts/checks.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
    "suggestion": "Allow the specific commands instead, for example Bash(npm run test) or Bash(devbox run npm test).",
@@ -195,7 +219,7 @@
  ],
  "summary": {
   "errors": 2,
-  "warnings": 8,
+  "warnings": 10,
   "info": 6
  }
 }

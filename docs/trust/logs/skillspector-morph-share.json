@@ -2,7 +2,7 @@
  "skill": {
   "name": "morph-share",
   "source": "<repo>/skills/morph-share",
-  "scanned_at": "2026-11-05T04:33:54.795265+00:00"
+  "scanned_at": "2026-11-07T20:13:56.524666+00:00"
  },
  "risk_assessment": {
   "score": 0,
@@ -14,9 +14,9 @@
   {
    "path": "SKILL.md",
    "type": "markdown",
-   "lines": 132,
+   "lines": 134,
    "executable": false,
-   "size_bytes": 8196,
+   "size_bytes": 8427,
    "source_url": null,
    "source_identity": null,
    "source_digest": null
@@ -315,8 +315,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 126,
-    "end_line": 126,
+    "start_line": 128,
+    "end_line": 128,
     "fatal": false
    }
   ],
@@ -772,7 +772,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 126,
+    "line": 128,
     "column": 5,
     "evidence": "`project/STACK.md`; for an anonymous share there must be none.",
     "target_path": null,
