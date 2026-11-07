@@ -1038,6 +1038,7 @@ DEPLOY_ASK = [
     ("deploys", r"^(netlify|ntl)\b.*\bdeploy\b", "netlify deploy"),
     ("deploys", r"^(netlify|ntl)\b.*\benv(:|\s+)(set|unset|import|clone|migrate)\b", "netlify env set"),
     ("deploys", r"^supabase\b.*\bfunctions\s+deploy\b", "supabase functions deploy"),
+    ("deploys", r"^expo\b.*\s(publish(:(set|rollback))?|build:(ios|android)|upload:(ios|android))(\s|$)", "expo publish (or a classic expo build or upload)"),
     ("schema_pushes", r"\bprisma\s+db\s+push\b", "prisma db push"),
     ("schema_pushes", r"\bprisma\s+(migrate\s+reset|db\s+execute)\b", "prisma migrate reset"),
     ("schema_pushes", r"^drizzle-kit\b.*\b(push|migrate)\b", "drizzle-kit push"),
@@ -1754,6 +1755,32 @@ def check_cli(words):
     if any((t in WRITE_VERBS or t in CLI_WRITE_EXTRA) and t not in CLI_NOUNS for t in tokens) or not any(t in CLI_READ for t in tokens):
         cli_asks(f"{name} {joined}".strip())
 
+# Expo: `eas` builds, submits and ships updates with the owner\u2019s Expo login and store credentials. A call asks unless its
+# subcommand only reads (`whoami`, `build:list`, `update:view`, `env:list` …) or it asks for help or the version. The
+# generic CLI check doesn't fit: flag values such as `--profile preview` read like the `preview` verb.
+EAS_READ_WORDS = {"whoami", "diagnostics", "config", "autocomplete", "help", "open", "build:download", "build:run", "metadata:pull"}
+EAS_READ_VERBS = {"list", "view", "info", "get", "inspect", "logs", "runs", "status", "compare", "generate"}
+
+def check_eas(words):
+    # `yarn eas build`, `pnpm eas build`, `bun eas build` run the installed bin without `exec`
+    if len(words) > 1 and words[0] in ("yarn", "pnpm", "bun") and os.path.basename(words[1]) == "eas":
+        words = words[1:]
+    if not words or os.path.basename(words[0]) != "eas" or not GROUP_ASK["deploys"]:
+        return
+    rest = words[1:]
+    rest = rest[:rest.index("--")] if "--" in rest else rest
+    # oclif reads the version flag only as the first argument; help anywhere before `--`
+    if rest[:1] in (["--version"], ["-v"]) or any(w in ("--help", "-h") for w in rest):
+        return
+    sub = next((w.lower() for w in rest if not w.startswith("-")), "")
+    parts = sub.split(":")
+    sensitive = any(w == "--include-sensitive" or w.startswith("--include-sensitive=") for w in rest)
+    if not sensitive and (not sub or sub in EAS_READ_WORDS or (len(parts) > 1 and parts[-1] in EAS_READ_VERBS)):
+        return
+    ask(f"`eas {sub}` can build, submit to the app stores, ship an update, print secret values or change the Expo project with "
+        "the owner\u2019s Expo login; only the owner approves it (the Shared remote environments golden rule in AGENTS.md). "
+        "`guard.deploys: off` in harness.config.yml turns this prompt off.")
+
 # ---- code that is fetched and run, script files, deploy scripts, tree searches ---------------------
 SEGMENT_END = lambda t: t in SEPARATORS or set(t) <= set(";&|()")
 
@@ -2308,6 +2335,7 @@ def check_bash(cmd):
                 ask(f"`{label}` changes a shared remote environment or registry; only the owner approves it (the Shared remote environments golden rule in AGENTS.md). "
                     f"`guard.{group}: off` in harness.config.yml turns this prompt off.")
         check_cli(runner_words(words))
+        check_eas(runner_words(words))
         check_migrate(runner_words(words))
 
     if BARE_ENV:
