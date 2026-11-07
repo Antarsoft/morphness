@@ -3059,6 +3059,9 @@ def check(name, fx, t):
             run(["git", "remote", "remove", "origin"], t)
             run(["git", "remote", "add", "origin", case["origin"]], t)
         env = dict(os.environ, CLAUDE_PROJECT_DIR=t)
+        for k in ("MORPH_AUTO", "MORPH_AUTO_SESSION", "MORPH_AUTO_BRANCH", "MORPH_AUTO_FEATURE"):
+            env.pop(k, None)
+        env.update(case.get("env", {}))   # "env": {"MORPH_AUTO": "1", ...} runs the case as a session of an autonomous run
         lib = os.path.join(t, "scripts/lib/config.sh")
         if case.get("without") == "python3":
             # A PATH holding only the tools the script itself needs, so `command -v python3` fails.

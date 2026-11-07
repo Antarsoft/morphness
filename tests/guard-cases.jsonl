@@ -1125,3 +1125,41 @@
 {"expect": "pass", "tool": "Bash", "input": {"command": "eas -v"}}
 {"expect": "pass", "tool": "Bash", "input": {"command": "eas update:list -h"}}
 {"expect": "pass", "tool": "Bash", "input": {"command": "yarn eas whoami"}}
+{"expect": "pass", "tool": "Write", "input": {"file_path": "_harness/auto/state.json", "content": "{}"}}
+{"expect": "pass", "tool": "Write", "input": {"file_path": "docs/product/product.md", "content": "x"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git merge feature/x"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git checkout auto/v1"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git push -u origin feature/login"}}
+{"expect": "deny", "tool": "Write", "input": {"file_path": "_harness/auto/state.json", "content": "{}"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "deny", "tool": "Edit", "input": {"file_path": "_harness/auto/ledger.md", "old_string": "a", "new_string": "b"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "deny", "tool": "Write", "input": {"file_path": "scripts/auto/driver.py", "content": "x"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "deny", "tool": "Write", "input": {"file_path": "harness/templates/auto/feature-prompt.md", "content": "x"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "director", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "echo '{}' > _harness/auto/state.json"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "rm -rf scripts/auto"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "sed -i s/a/b/ _harness/auto/tracker.md"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "director", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "deny", "tool": "Write", "input": {"file_path": "harness.config.yml", "content": "auto:\n  budget_usd: 999\n"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "pass", "tool": "Write", "input": {"file_path": "_harness/auto/cards/login.md", "content": "**Status:** passed\n"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "pass", "tool": "Read", "input": {"file_path": "_harness/auto/state.json"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "cat _harness/auto/ledger.md"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "deny", "tool": "Write", "input": {"file_path": "docs/product/product.md", "content": "x"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "rm docs/product/order.md"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "prune", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "pass", "tool": "Write", "input": {"file_path": "docs/product/product.md", "content": "x"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "director", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git push -u origin feature/login"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git merge feature/x"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git pull origin auto/v1"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git checkout auto/v1"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git switch {I}"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git branch -D auto/v1"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git branch -f auto/v1 HEAD"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git update-ref refs/heads/auto/v1 HEAD"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git -C . merge --ff-only feature/x"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git add -A && git commit -m 'login form'"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git checkout -b feature/selftest-part"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git log --oneline auto/v1..HEAD"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git show auto/v1:docs/product/product.md"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "gh pr create --fill"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "gh pr list"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "deny", "tool": "mcp__github__create_pull_request", "input": {"owner": "o", "repo": "r", "title": "t", "head": "a", "base": "b"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git reset --hard HEAD~1"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git reset --hard HEAD~1"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature", "MORPH_AUTO_BRANCH": "auto/v1"}}
+{"expect": "deny", "tool": "Bash", "input": {"command": "git checkout auto/v1"}, "env": {"MORPH_AUTO": "1", "MORPH_AUTO_SESSION": "feature"}}
