@@ -2,7 +2,7 @@
 id: 2026-11-05-security-review-once
 title: The security review runs once, with a diff-only second pass after a fix round
 kind: template
-release: unreleased
+release: v0.17.0
 applies_to: { modules: [security] }
 files:
   - harness/SETUP.md

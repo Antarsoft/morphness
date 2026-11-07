@@ -2,7 +2,7 @@
 id: 2026-11-06-guard-docs-env-ref
 title: GUARD.md lists the environment-branch moves the guard asks about
 kind: template
-release: unreleased
+release: v0.17.0
 applies_to: { modules: [] }
 files:
   - harness/GUARD.md

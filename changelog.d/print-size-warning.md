@@ -1,1 +1,0 @@
-`scripts/doc-section.sh` now says on its first line when the sections it prints together are over 12000 characters, and `harness/TECHNICAL_LEAD.md` tells the Technical Lead to keep each print under about 12,000 characters and to print files and sections in separate calls. A batched print that was cut cost the full-mode runs two more calls to read again.

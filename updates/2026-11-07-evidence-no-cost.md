@@ -2,7 +2,7 @@
 id: 2026-11-07-evidence-no-cost
 title: The evidence summary that /morph-share offers no longer carries cost figures
 kind: rule
-release: unreleased
+release: v0.17.0
 applies_to: { modules: [] }
 files:
   - scripts/evidence.sh

@@ -2,7 +2,7 @@
 id: 2026-11-06-guard-env-ref-moves
 title: The guard asks before a command moves an environment branch in the local clone
 kind: fix
-release: unreleased
+release: v0.17.0
 applies_to: { modules: [] }
 files:
   - scripts/guard.sh

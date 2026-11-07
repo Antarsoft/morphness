@@ -2,7 +2,7 @@
 id: 2026-11-07-shared-code-map
 title: The code scout writes its map to a file that the Full-stack engineer, the review and QA read too
 kind: rule
-release: unreleased
+release: v0.17.0
 applies_to: { modules: [] }
 files:
   - .claude/agents/code-scout.md
