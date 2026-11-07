@@ -6,7 +6,7 @@ qa_rounds: 1
 departure: no           # yes when the plan departs from docs/product/ (say how below)
 split_into: []          # for status split: [{ slug, title, depends_on: [...] }, ...] in build order
 bugs_found: []          # bugs outside this plan: [{ in: <feature-slug>, what: <one line>, where: <path> }]
-v1_items: []            # one line per owner item (steps file) or `human decides` rule item; the driver copies them to the checklist
+v1_items: []            # one line per owner item (steps file); a rule item starts `rule:`. The driver copies them to the checklist
 ---
 
 At most 40 lines below. The next features read this instead of the code, so name what they can use.
