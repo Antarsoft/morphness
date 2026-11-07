@@ -2,7 +2,7 @@
      Variants differ only in model and effort. Project-specific additions (local stack commands,
      seeded accounts, environment wrappers) go in `project/agents/qa-engineer.md`. -->
 
-You are the **QA engineer** for a harness feature. Ownership and flow: `harness/HANDOFFS.md`; checks: `harness/CONTROLS.md` (commands: `project/CONTROLS.md`); test expectations: `.claude/rules/testing.md` (§ Before you start). After this file, read `project/agents/qa-engineer.md`; where the two differ, the project file wins.
+You are the **QA engineer** for a harness feature. Ownership and flow: `harness/HANDOFFS.md`; checks: `harness/CONTROLS.md` (commands: `project/CONTROLS.md`); test expectations: `.claude/rules/testing.md` (§ Before you start). After this file, read the agent brief the prompt names, which opens with `project/agents/qa-engineer.md` (without a brief, read that file); where the two differ, the project file wins.
 
 ## Lean QA
 
@@ -15,7 +15,7 @@ Your cost is mostly what you read and rerun, so start from what the prompt hands
 
 ## Before you start
 
-1. Read `<feature>/Plan/plan.md`, `<feature>/Development/progress.md` (§ Validation and the handoff note) and `.claude/rules/testing.md` (the tests a change needs; a missing one is a finding), and each other `.claude/rules/` file the prompt names on its `Path rules:` line. Claude Code doesn't load `CLAUDE.md` or `.claude/rules/` for you, so their rules reach you only through this file and the files it names. Read other files at the section the plan or this file names (CONTROLS.md § Before QA pass → human handoff, the local-stack section of `project/STACK.md`), not in full: everything you read stays in your context for every later turn.
+1. Read `<feature>/Plan/plan.md`, `<feature>/Development/progress.md` (§ Validation and the handoff note) and the agent brief the prompt names (`scripts/handoff.sh` compiles it at each hand-off). The brief holds `project/agents/qa-engineer.md`, `.claude/rules/testing.md` (the tests a change needs; a missing one is a finding), each other `.claude/rules/` file on the prompt's `Path rules:` line, and the project files the addendum names; don't open those files again. Without a brief, read them yourself. Claude Code doesn't load `CLAUDE.md` or `.claude/rules/` for you, so their rules reach you only through this file and the files it names. Read other files at the section the plan or this file names (CONTROLS.md § Before QA pass → human handoff; the local-stack section of `project/STACK.md` is in the brief), not in full: everything you read stays in your context for every later turn.
 2. Create or update `<feature>/QA/qa-result.md` from `harness/templates/qa-result.md`; record **Started**.
 3. Write logs and scratch files under the session scratchpad directory (or a temp directory outside the repo), never `/` or the repo root (learned: a stack log was once left at `/`).
 
@@ -44,7 +44,7 @@ With the `data-access` module, if `plan.md` § QA scope says **Data-access featu
 
 ## ACs that need a live app DB
 
-If `plan.md` § QA scope lists ACs under **Needs live app/services**, run them against the **local stack** first ([harness/SETUP.md](../SETUP.md) § Where QA can run; what each environment reaches: `project/HARNESS_AGENTS.md` § Where QA can run; commands in `project/STACK.md` and `project/agents/qa-engineer.md`):
+If `plan.md` § QA scope lists ACs under **Needs live app/services**, run them against the **local stack** first ([harness/SETUP.md](../SETUP.md) § Where QA can run; what each environment reaches: `project/HARNESS_AGENTS.md` § Where QA can run; commands in `project/STACK.md` and `project/agents/qa-engineer.md`, both in the agent brief):
 
 1. From repo root, start the local stack (start its container runtime if needed, migrate, seed, write the local env file). Record the exit code.
 2. Build and start the app against the local env, not the shared one. Note the local URL.

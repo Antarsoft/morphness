@@ -121,13 +121,14 @@ Where threads and a coordinator exist depends on the environment (`environment` 
 
 ## Subagent prompt blocks (customize paths)
 
-`bash scripts/handoff.sh <scout|fullstack|fullstack-bug|qa|qa-repro|closer> <slug> [--version N] [--base <commit>]` prints a block with every field a script can fill already filled (paths, the code map's commit, path rules, the merge base, the diff stat, the untracked files, the check results, the cost flag) and lists the placeholders left for the conversation. Edit a block here and the script prints the edited one.
+`bash scripts/handoff.sh <scout|fullstack|fullstack-bug|qa|qa-repro|closer> <slug> [--version N] [--base <commit>]` prints a block with every field a script can fill already filled (paths, the code map's commit, path rules, the merge base, the diff stat, the untracked files, the check results, the cost flag) and lists the placeholders left for the conversation. For Full-stack and QA it also compiles the agent brief, the project files the role reads before starting (the addendum, `.claude/rules/testing.md`, the path rules and the project docs the role body and addendum name, without comments), into one file in the git folder, rebuilt at every hand-off; edit the sources, never the brief. Edit a block here and the script prints the edited one.
 
 ### Full-stack engineer
 
 ```text
 You are the Full-stack engineer for this harness feature.
 Read: <abs-path>/Plan/plan.md (must be approved).
+Agent brief (drop this line when there is none): <the file handoff.sh compiles>. It holds this project's addendum, .claude/rules/testing.md, the path rules and the project files harness/agents/fullstack-engineer.md § Before you start names; read it in place of those files.
 Code map (full mode; drop this line in bug mode, which has no map): <abs-path>/Plan/code-map.md, written at commit <its Commit line>. Read it after the plan, then open the code by its line ranges (Read with offset and limit) and only where your change goes beyond them read further; never print a whole file the map covers. When git rev-parse --short HEAD differs from the map's commit, the file wins over the map where they disagree.
 Implement the plan in the application codebase.
 Add or update a test for each behaviour the change adds or changes (.claude/rules/testing.md): one that fails when that behaviour breaks.
@@ -150,6 +151,7 @@ Before any fix ([MODES.md](./MODES.md) § Bug mode, step 2).
 ```text
 You are the QA engineer for a bug-mode plan. This is the reproduction run: no fix exists yet.
 Read: <abs-path>/Plan/plan.md (must be approved), § Symptom, § Reproduction and § Regression test.
+Agent brief (drop this line when there is none): <the file handoff.sh compiles>. It holds this project's addendum, .claude/rules/testing.md, the path rules and the project files the addendum names; read it in place of those files.
 Write the regression test § Regression test assigns, in the file and at the level it names. Add only its § Regression test → Edge inputs cases, no other tests, and change no product code.
 Path rules: <each .claude/rules/*.md file whose paths: match the plan's files, or none>. Read them first.
 Run it and fill <abs-path>/QA/qa-result.md § Reproduction: commit, command, exit code, the failure's tail, and whether it fails for the reason the plan gives. A failure for another reason (setup, fixtures) means fix the test.
@@ -174,6 +176,7 @@ Do not edit the regression test. If the fix needs anything § Fix limit names as
 ```text
 You are the QA engineer for this harness feature. Follow harness/agents/qa-engineer.md § Lean QA.
 Read: <abs-path>/Plan/plan.md and <abs-path>/Development/progress.md (§ Validation and the handoff note).
+Agent brief (drop this line when there is none): <the file handoff.sh compiles>. It holds this project's addendum, .claude/rules/testing.md, the path rules and the project files the addendum names; read it in place of those files.
 The change: base <git merge-base origin/<integration> HEAD; in round 2, the commit round 1 tested>; files: <git diff --stat <base> output>, untracked: <new files from git status --porcelain, or none>. Review it with git diff <base> (it includes uncommitted changes) and read each untracked file, not the whole codebase.
 Code map (full mode; drop this line in bug mode): <abs-path>/Plan/code-map.md: its Callers and readers and Tests sections say where the code outside the diff is; open those by their line ranges when a criterion needs them, instead of searching.
 Check results: <bash scripts/checks.sh status output>.

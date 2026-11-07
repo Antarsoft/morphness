@@ -9,8 +9,12 @@
 # .claude/rules/*.md files whose paths: match the files plan.md names and the branch changes; for QA the merge base,
 # `git diff --stat`, the untracked files and `bash scripts/checks.sh status`; for the closer the mode, the commit QA
 # passed on and the cost script's --branch flag.
+# For Full-stack and QA it also compiles the agent brief: the project addendum, .claude/rules/testing.md, the path rules
+# and the project files the role body and the addendum name (with their comments and emptied headings taken out),
+# written to <git folder>/morphness/briefs/<slug>-<version>-<fullstack|qa>.md and named on the Agent brief line, so
+# the agent reads one file instead of five to seven. It is rebuilt at every hand-off, so it never lags its sources.
 # It writes nothing in the work tree: it runs git commands that read (without optional locks) and `checks.sh status`,
-# which keeps its records inside the git folder.
+# which keeps its records inside the git folder, and the brief goes in the git folder too.
 #
 # Usage: bash scripts/handoff.sh <role> <slug> [--version N] [--base <commit>]
 #   role: scout | fullstack | fullstack-bug | qa | qa-repro | closer
@@ -137,6 +141,154 @@ for name in sorted(os.listdir(rules_dir)) if os.path.isdir(rules_dir) else []:
     if any(glob_re(g).match(f) for g in globs for f in files):
         rules.append(f".claude/rules/{name}")
 
+# The agent brief (Full-stack and QA): the project files the role body says to read before starting, compiled into one
+# file in the git folder, so the agent reads one file instead of five to seven. Comments (morph-init's placeholders)
+# and headings left empty without them are dropped; each source keeps its own words. It is compiled at every
+# hand-off from the files as they are, so a retro edit or a fact the Full-stack engineer adds is in the next brief.
+def headings(lines):
+    out, fence = [], None
+    for i, line in enumerate(lines):
+        f = re.match(r"^\s*(`{3,}|~{3,})", line)
+        if f:
+            fence = f.group(1) if fence is None else (None if f.group(1)[0] == fence[0] and len(f.group(1)) >= len(fence) else fence)
+            continue
+        m = None if fence else re.match(r"^(#{1,6})\s+(.*?)(?:\s+#+)?\s*$", line)
+        if m and m.group(2):
+            out.append((i, len(m.group(1)), m.group(2)))
+    return out
+
+def norm(s):
+    s = re.sub(r"[`*]", "", s).strip()
+    return re.sub(r"\s+", " ", re.sub(r"^[#§\s]+", "", s)).strip().lower()
+
+def clean(src, rel=""):
+    src = re.sub(r"\A---\n.*?\n---\n", "", src, flags=re.S)            # a rule file's paths: frontmatter
+    # Comments and links are rewritten only outside code: a fence or a `span` keeps its text as written.
+    parts = re.split(r"(^[ \t]*(?:`{3,}|~{3,})[^\n]*\n.*?^[ \t]*(?:`{3,}|~{3,})[ \t]*$)", src, flags=re.M | re.S)
+    keep_code = lambda pat, fn: lambda t: re.sub(r"(`[^`\n]*`)|" + pat, lambda m: m.group(1) or fn(m), t, flags=re.S)
+    # A relative link would point the wrong way from the git folder: write its target as a repo path instead.
+    def link(m):
+        label, target = m.group(2), m.group(3)
+        if re.match(r"^[a-z]+:|^#|^/", target):
+            return m.group(0)
+        path, hash_, anchor = target.partition("#")
+        path = os.path.normpath(os.path.join(os.path.dirname(rel), path)).replace(os.sep, "/")
+        bare = label.strip("`")
+        shown = path + hash_ + anchor
+        return f"`{shown}`" if bare == path else f"{label} (`{shown}`)"
+    strip = keep_code(r"<!--.*?-->", lambda m: "")
+    links = keep_code(r"(?<!!)\[([^\]\n]+)\]\(([^)\s]+)\)", lambda m: link(m))
+    src = "".join(t if k % 2 else links(strip(t)) for k, t in enumerate(parts))
+    return [l.rstrip() for l in src.split("\n")]
+
+def spans(lines):
+    hs = headings(lines)
+    return [(i, lvl, t, next((h[0] for h in hs[k + 1:] if h[1] <= lvl), len(lines))) for k, (i, lvl, t) in enumerate(hs)]
+
+def drop_empty(lines):
+    # A heading whose section holds nothing but blank lines and headings goes, with its empty subsections.
+    gone = set()
+    for i, lvl, t, end in spans(lines):
+        body = [l for j, l in enumerate(lines[i + 1:end], i + 1) if l.strip()]
+        if all(re.match(r"^#{1,6}\s", l) for l in body):
+            gone.update(range(i, end))
+    return [l for j, l in enumerate(lines) if j not in gone]
+
+def demote(lines, by):
+    hs = {i: lvl for i, lvl, _ in headings(lines)}
+    return [("#" * min(6, hs[j] + by) + l[hs[j]:]) if j in hs else l for j, l in enumerate(lines)]
+
+def section(lines, name):
+    want, sp = norm(name), spans(lines)
+    hit = [s for s in sp if norm(s[2]) == want] or [s for s in sp if norm(s[2]).startswith(want)]
+    return lines[hit[0][0]:hit[0][3]] if len(hit) == 1 else None
+
+def part(rel, names=None, note=()):
+    src = read(rel)
+    if not src:
+        return None, [f"{rel} is missing"]
+    lines, missing = clean(src, rel), []
+    if lines and re.match(r"^# ", next((l for l in lines if l.strip()), "")):
+        first = next(j for j, l in enumerate(lines) if l.strip())
+        lines = lines[first + 1:]                                            # the file's own title
+    for name, said in note:                                                  # a line under a heading
+        got = section(lines, name)
+        if got is not None:
+            k = next(j for j in range(len(lines)) if lines[j:j + len(got)] == got)
+            lines[k + 1:k + 1] = ["", said]
+    if names:
+        picked = []
+        for name in names:
+            got = section(lines, name)
+            if got is None:
+                missing.append(f"{rel} has no single section § {name}")
+            else:
+                picked += got + [""]
+        lines = picked
+    lines = drop_empty(lines)
+    top = min((lvl for _, lvl, _ in headings(lines)), default=3)
+    lines = demote(lines, 3 - top)
+    text_ = re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip()
+    return text_, missing
+
+def reads_named(addendum):
+    # The project files and sections the addendum's § Read before you start names, as "project/STACK.md § A, § B and
+    # § C" on one line (a link's label counts as its text). A file named after skip, not, never, except or without is
+    # left out; anything else the list says (another doc, a condition) stays in the brief's copy of the list.
+    m = section(clean(read(addendum), addendum), "Read before you start")
+    out = {}
+    for line in (m[1:] if m else []):
+        refs = list(re.finditer(r"`?(project/[\w./-]+\.md)`?", line))
+        for k, r in enumerate(refs):
+            if re.search(r"\b(?:skip|not|never|except|without|no)\b[^.;]{0,30}$", line[:r.start()], re.I):
+                continue
+            seg = line[r.end():refs[k + 1].start() if k + 1 < len(refs) else len(line)]
+            seg = re.split(r";|\.(?:\s|$)", seg)[0]
+            names = [n.strip() for n in re.findall(r"§\s*(.+?)(?=\s*(?:,\s*(?:and\s+)?§|\s+and\s+§|$))", seg)]
+            names = [n for n in names if n]
+            prev = out.get(r.group(1), [])
+            out[r.group(1)] = None if prev is None or not names else prev + [n for n in names if n not in prev]
+    return list(out.items())
+
+def agent_brief(kind):
+    addendum = f"project/agents/{'fullstack-engineer' if kind == 'fullstack' else 'qa-engineer'}.md"
+    said = ("(The project files and sections this list names are below in this brief, so don't open them; read "
+            "anything else it names yourself.)")
+    srcs = [(addendum, None, (("Read before you start", said),)), (".claude/rules/testing.md", None, ())]
+    srcs += [(r, None, ()) for r in rules]
+    if kind == "fullstack":
+        srcs += [("project/TESTING.md", None, ()), ("project/PROJECT.md", None, ())]
+    whole = {rel for rel, names, _ in srcs}
+    srcs += [(f, names, ()) for f, names in reads_named(addendum) if f not in whole]
+    body, listed, problems = [], [], []
+    for rel, names, note in srcs:
+        got, missing = part(rel, names, note)
+        problems += missing
+        if got is None:
+            continue
+        found = [n for n in (names or []) if not any(n in p for p in missing)]
+        label = rel + (" § " + ", § ".join(found) if found else "")
+        listed.append(label)
+        body.append(f"## {label}\n\n{got or '(nothing filled in yet)'}")
+    common = git("rev-parse", "--git-common-dir")                           # where checks.sh keeps its records too
+    gitdir = os.path.normpath(os.path.join(root, common)) if common else ""
+    if not gitdir:
+        return None, ["not a git checkout: no agent brief, so the agent reads the files itself"]
+    path = os.path.join(gitdir, "morphness", "briefs", f"{slug}-{version}-{kind}.md")
+    head = (f"# Agent brief: {'Full-stack engineer' if kind == 'fullstack' else 'QA engineer'}, {slug} v{version}\n\n"
+            f"Compiled by scripts/handoff.sh at commit {git('rev-parse', '--short', 'HEAD') or 'none'} from the files below, "
+            "with their comments taken out. Read this instead of them; open a source only for a section that is "
+            "missing here. Don't edit this file: it is rebuilt at every hand-off, so a change goes in the source.\n\n"
+            "Sources: " + "; ".join(listed) + "\n"
+            + ("".join(f"\nMissing: {p}; read the file itself for it.\n" for p in problems)))
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(head + "\n" + "\n\n".join(body) + "\n")
+    except OSError as e:
+        return None, problems + [f"could not write the agent brief ({e.strerror}), so the agent reads the files itself"]
+    return path, problems
+
 def sub(old, new):
     global text
     text = text.replace(old, new)
@@ -153,6 +305,14 @@ sub("<version>", version)
 sub_re(r"<the files plan-brief\.sh or risk-check\.sh named>", ", ".join(risk_files()) or "<the files plan-brief.sh or risk-check.sh named>")
 text = re.sub(r"^Path rules: <[^\n]*?>(?=\. )", "Path rules: " + (", ".join(rules) or "none"), text, flags=re.M)
 
+brief_kind = {"fullstack": "fullstack", "fullstack-bug": "fullstack", "qa": "qa", "qa-repro": "qa"}.get(role)
+brief_path, brief_notes = agent_brief(brief_kind) if brief_kind and plan else (None, [])
+if brief_path:
+    text = re.sub(r"^Agent brief \(drop this line when there is none\): <[^\n]*?>", "Agent brief: " + brief_path, text, flags=re.M)
+    text = re.sub(r"^(Path rules: [^\n]*?\. )Read them (?:before the first edit|first)\.", r"\1They are in the agent brief.", text, flags=re.M)
+else:
+    text = re.sub(r"^Agent brief \(drop this line[^\n]*\n", "", text, flags=re.M)
+
 commit = (re.search(r"\*\*Commit:\*\*\s*`?([0-9a-f]{7,40})", cmap) or re.search(r"Commit[^\n]*?`?([0-9a-f]{7,40})", cmap))
 if cmap and not bug:
     sub("<its Commit line>", commit.group(1) if commit else "<its Commit line>")
@@ -165,6 +325,8 @@ if not plan and role not in ("scout",):
     notes.append(f"{os.path.relpath(feature, root)}/Plan/plan.md is missing")
 if role in ("fullstack", "qa") and not bug and not cmap:
     notes.append("no code map in this full-mode feature: run the code scout first (bash scripts/handoff.sh scout " + slug + ")")
+
+notes += ["agent brief: " + n for n in brief_notes]
 
 if role == "qa":
     if merge_base:
