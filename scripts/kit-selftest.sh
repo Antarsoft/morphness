@@ -1186,11 +1186,58 @@ def check_handoff(bad, pb, settings, sample, integ):
         bad("handoff.sh in bug mode doesn't fill the slug, keeps the Code map line, or reads the bug plan as full mode")
     if run(["git", "status", "--porcelain", "--untracked-files=all"], pb).stdout != before:
         bad("handoff.sh changed the working tree: it must only read")
+    check_agent_brief(bad, pb, out, feat)
     for args in (["nope", "sel-test"], ["qa"], ["qa", "Bad_Slug"], ["qa", "sel-test", "--version", "0"], ["qa", "sel-test", "--base", "x;y"],
                  ["qa", "sel-test", "--base", "-R"], ["qa", "sel-test", "--base", "deadbeef0000"]):
         r = sh(*args)
         if r.returncode != 2:
             bad(f"handoff.sh {' '.join(args)} exited {r.returncode}: a bad role, slug, version or base must be a usage error")
+
+
+def check_agent_brief(bad, pb, out, feat):
+    """Cost: handoff.sh compiles the Full-stack and QA agent brief (the addendum, testing.md, the path rules and the
+    project docs the role body and addendum name, comments out) into one file in the git folder, rebuilt at every
+    hand-off, so each agent reads one file instead of five to seven and never a stale copy."""
+    gitdir = run(["git", "rev-parse", "--absolute-git-dir"], pb).stdout.strip()
+    want = {"fullstack": ["## project/agents/fullstack-engineer.md", "## .claude/rules/testing.md", "## .claude/rules/data.md",
+                          "## project/TESTING.md", "## project/PROJECT.md", "## project/STACK.md § "],
+            "qa": ["## project/agents/qa-engineer.md", "## .claude/rules/testing.md", "## .claude/rules/data.md", "## project/CONTROLS.md"]}
+    for role, heads in want.items():
+        path = os.path.join(gitdir, "morphness", "briefs", f"sel-test-1-{role}.md")
+        text = read(path) if os.path.isfile(path) else ""
+        if f"Agent brief: {path}" not in out[role] or not text:
+            bad(f"handoff.sh {role} didn't write the agent brief to the git folder and name it on the Agent brief line")
+            continue
+        missing = [h for h in heads if h not in text]
+        if missing:
+            bad(f"handoff.sh {role}'s agent brief lacks {missing}")
+        if "<!--" in text or "\npaths:\n" in text or "](../" in text or "](./" in text or "don't open them" not in text:
+            bad(f"handoff.sh {role}'s agent brief keeps comments, a rule's paths: header or a relative link, or lacks the reading list's note")
+        if "handoff: agent brief:" in out[role] or "\nMissing: " in text:
+            bad(f"handoff.sh {role}'s agent brief misses a file or section the role reads: {out[role].rsplit('handoff:', 1)[-1][:200]!r}")
+        if "They are in the agent brief." not in out[role] or "drop this line" in out[role]:
+            bad(f"handoff.sh {role} still says to read the path rules apart from the brief, or left the Agent brief line unfilled")
+    fsrc = re.search(r"^Sources: .*$", read(os.path.join(gitdir, "morphness", "briefs", "sel-test-1-fullstack.md")), re.M)
+    fsrc = fsrc.group(0) if fsrc else ""
+    if not all(f"§ {n}" in fsrc for n in ("Commands", "Database", "Local stack (QA)")) or "Hosting" in fsrc:
+        bad(f"handoff.sh fullstack's agent brief doesn't hold exactly the project/STACK.md sections the addendum names: {fsrc!r}")
+    for role, slug_ in (("fullstack-bug", "sel-bugfill"), ("qa-repro", "sel-bugfill")):
+        if "Agent brief: " not in run(["bash", "scripts/handoff.sh", role, slug_], pb).stdout:
+            bad(f"handoff.sh {role} didn't name an agent brief")
+    if "Agent brief" in out["scout"] or "Agent brief" in out["closer"]:
+        bad("handoff.sh gave the scout or the closer an agent brief: only Full-stack and QA read the project docs")
+    testing, addendum = os.path.join(pb, "project/TESTING.md"), os.path.join(pb, "project/agents/fullstack-engineer.md")
+    keep, keep_add = read(testing), read(addendum)
+    write(testing, keep + "\n- Selftest marker rule (fresh brief), with `<!--` in code.\n")
+    write(addendum, re.sub(r"(## Read before you start\n)", r"\1\nBefore UI styling, read [docs/DESIGN.md](../../docs/DESIGN.md) § Tokens; never read project/RELEASE.md.\n", keep_add, count=1))
+    sh = run(["bash", "scripts/handoff.sh", "fullstack", "sel-test"], pb)
+    write(testing, keep)
+    write(addendum, keep_add)
+    text = read(os.path.join(gitdir, "morphness", "briefs", "sel-test-1-fullstack.md"))
+    if "Selftest marker rule (fresh brief), with `<!--` in code." not in text:
+        bad(f"handoff.sh fullstack's agent brief didn't pick up an edit to project/TESTING.md whole: it must be rebuilt at every hand-off and keep code spans (exit {sh.returncode})")
+    if "read `docs/DESIGN.md` § Tokens" not in text or "## project/RELEASE.md" in text:
+        bad("handoff.sh fullstack's agent brief dropped a non-project read from the addendum's list, or took in a file the list says never to read")
 
 
 def check_plan_brief(bad, t, settings):
