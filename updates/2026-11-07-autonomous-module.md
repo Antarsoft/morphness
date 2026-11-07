@@ -31,10 +31,10 @@ reviewed: "It adds a module folder, templates, an auto: config block that is off
 
 ## What changed
 
-- A new optional module, **autonomous**: the run rules, phases, stop conditions and files for an unattended run that goes from `docs/brief.md` to the first version on its own branch. The owner approves the product docs once; each feature then runs through the normal harness in its own session, and owner items go to the version checklist's § Needs you.
+- A new optional module, **autonomous**: the run rules, phases, stop conditions and files for an unattended run that goes from `docs/brief.md` to the first version on its own branch. The owner approves the product docs once; each feature then runs through the normal harness in its own session, and owner items go to the feature's steps file and, through the driver, the version checklist's § Needs you.
 - Templates and prompts in `harness/templates/auto/`, and an `auto:` block in `harness.config.yml` (`enabled: false`).
 - With the module, one line in `harness/TECHNICAL_LEAD.md` § Must do and one in each plan template's § Approval point to the run rules. They are marked `module:autonomous`, so installs without the module don't get them.
-- The driver (`scripts/auto/`) and the `/morph-auto` skill come in a later release; until then the module can't start a run.
+- The driver (`scripts/auto/`), its guard rules and the `/morph-auto` skill come in a later release; until then the module can't start a run.
 
 ## Why
 

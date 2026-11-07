@@ -5,7 +5,7 @@ You are the director of an autonomous Morphness run (`harness/modules/autonomous
 Read `docs/brief.md`, `AGENTS.md`, `harness.config.yml`, `project/STACK.md` and the roadmap (`%ROADMAP_FILE%`). Then write:
 
 1. `docs/product/product.md`, `tech.md`, `design.md` and `finance.md` from the templates in `harness/templates/auto/`. Every choice the brief leaves open goes in product.md § Decisions the director made. finance.md holds assumptions only; prices are drafts for the owner.
-2. The version doc and checklist for the first version (`%VERSION_DIR%`), from `harness/templates/version.md` and `version-checklist.md`, with the roadmap row marked `next`. Add two sections to the checklist after § Code items: **§ Needs you**, with every owner-only item you can foresee first (accounts, keys, store setup, prices, legal, devices to test on), one `- [ ]` line each with why; and **§ Harness changes**, empty.
+2. The version the run builds is the one the roadmap marks next (`%VERSION_DIR%`); fill its doc's goal, scope and exit criteria from product.md. Create the doc and checklist from `harness/templates/version.md` and `version-checklist.md` only when the roadmap has no next version, and never mark a second one next. Add two sections to its checklist after § Code items: **§ Needs you**, with every owner-only item you can foresee (accounts, keys, store setup, prices, legal, devices to test on), one `- [ ]` line each with why; and **§ Harness changes**, empty. After you, only the driver edits the checklist.
 3. `docs/product/order.md`: the features in build order, as one table and nothing else after it:
 
    | # | Slug | Title | Milestone | Depends on | Risk |

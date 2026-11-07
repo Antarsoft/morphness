@@ -96,7 +96,7 @@ Full-stack **must** pass the `before_qa` checks in `harness/CONTROLS.md` § Befo
 
 - **Approver:**
 - **Date:**
-- In an autonomous run (`MORPH_AUTO=1`), the Technical Lead approves: **Approver:** `Technical Lead (autonomous mode); product doc approved by <owner> on <date>` (`harness/modules/autonomous/README.md` § Run rules). <!-- module:autonomous -->
+- In a driver-started autonomous run (`MORPH_AUTO=1`), the Technical Lead approves: **Approver:** `Technical Lead (autonomous mode); product doc approved by <owner> on <date>` (`harness/modules/autonomous/README.md` § Run rules). <!-- module:autonomous -->
 
 ## Decisions
 

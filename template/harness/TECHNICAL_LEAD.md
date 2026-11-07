@@ -27,7 +27,7 @@ The sections each step needs, besides the ones the § Must do bullets link for i
 
 ## Must do
 
-- With `MORPH_AUTO=1`, [modules/autonomous](./modules/autonomous/README.md) § Run rules replace owner approvals and asks. <!-- module:autonomous -->
+- Driver-started run: [autonomous](./modules/autonomous/README.md) § Run rules replace owner asks and git steps. <!-- module:autonomous -->
 - Full mode: write `_harness/features/.../Plan/plan.md`, the owner's request in its § Request and the acceptance criteria below it (small, bug, light and research modes use their own shorter artefacts: [harness/MODES.md](./MODES.md)).
 - Before writing acceptance criteria, read `.claude/rules/testing.md` (which tests a change needs, and the security-boundary and regression-test rules); it loads only for test files, so the plan brief carries a copy.
 - Write plans in full detail: exact files and functions, contracts, limits, error messages and UI wording, and reference values for tests (checked independently before approval). Detail up front is the cheapest quality lever: it prevents rework rounds, which cost more than the planning.
