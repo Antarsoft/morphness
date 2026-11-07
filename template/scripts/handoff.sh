@@ -42,8 +42,9 @@ here="$(cd "$(dirname "$0")" && pwd)"
 root="$(cd "$here/.." && pwd)"
 . "$here/lib/config.sh" 2>/dev/null || { echo "handoff: scripts/lib/config.sh is missing" >&2; exit 2; }
 integration="$(cd "$root" && config_get branches.integration)"
+bug_repro="$(cd "$root" && config_get mode.bug_repro)"
 
-GIT_OPTIONAL_LOCKS=0 ROLE="$role" SLUG="$slug" VERSION="$version" BASE="$base" INTEGRATION="${integration:-main}" \
+GIT_OPTIONAL_LOCKS=0 ROLE="$role" SLUG="$slug" VERSION="$version" BASE="$base" INTEGRATION="${integration:-main}" BUG_REPRO="${bug_repro:-qa}" \
   exec python3 -I - "$root" <<'PY'
 import fnmatch, os, re, subprocess, sys
 
@@ -74,10 +75,18 @@ def block(name):
 text = block(heading)
 if text is None:
     sys.exit(f"handoff: harness/HANDOFFS.md has no ```text block under ### {heading}")
+own_repro = os.environ.get("BUG_REPRO") == "fullstack"   # mode.bug_repro: fullstack (a trial, harness/MODES.md § Bug mode)
+if os.environ.get("BUG_REPRO") not in ("qa", "fullstack"):
+    sys.stderr.write(f"handoff: harness.config.yml mode.bug_repro is {os.environ.get('BUG_REPRO')!r}; it takes qa or fullstack, so qa is used\n")
+if role == "qa-repro" and own_repro:
+    sys.stderr.write("handoff: mode.bug_repro is fullstack, so there is no QA reproduction run: the Full-stack engineer "
+                     "writes and commits the failing test (bash scripts/handoff.sh fullstack-bug " + slug + ")\n")
+    sys.exit(2)
 if role == "fullstack-bug":
-    extra = block("Full-stack engineer, bug mode")
+    name = "Full-stack engineer, bug mode with its own reproduction" if own_repro else "Full-stack engineer, bug mode"
+    extra = block(name)
     if extra is None:
-        sys.exit("handoff: harness/HANDOFFS.md has no ```text block under ### Full-stack engineer, bug mode")
+        sys.exit(f"handoff: harness/HANDOFFS.md has no ```text block under ### {name}")
     text = text + "\n" + extra
 
 plan = read(os.path.relpath(os.path.join(feature, "Plan", "plan.md"), root))
@@ -128,6 +137,9 @@ def glob_re(g):
         else: out += re.escape(g[i]); i += 1
     return re.compile(out + r"\Z")
 
+def expand(g):   # a {a,b} brace in a paths: glob
+    return [x for b in re.findall(r"\{([^{}]*)\}", g)[:1] for o in b.split(",") for x in expand(g.replace("{" + b + "}", o, 1))] or [g]
+
 rules = []
 rules_dir = os.path.join(root, ".claude", "rules")
 for name in sorted(os.listdir(rules_dir)) if os.path.isdir(rules_dir) else []:
@@ -136,7 +148,6 @@ for name in sorted(os.listdir(rules_dir)) if os.path.isdir(rules_dir) else []:
     head = re.match(r"\A---\n(.*?)\n---\n", read(f".claude/rules/{name}"), re.S)
     block = re.search(r"^paths:\s*\n((?:[ \t]+-[^\n]*\n?)+)", head.group(1) + "\n", re.M) if head else None
     globs = re.findall(r"^\s*-\s*[\"']?([^\"'\n]+?)[\"']?\s*$", block.group(1), re.M) if block else []
-    expand = lambda g: [x for b in re.findall(r"\{([^{}]*)\}", g)[:1] for o in b.split(",") for x in expand(g.replace("{" + b + "}", o, 1))] or [g]
     globs = [x for g in globs for x in expand(g)]
     if any(glob_re(g).match(f) for g in globs for f in files):
         rules.append(f".claude/rules/{name}")
@@ -327,6 +338,76 @@ if role in ("fullstack", "qa") and not bug and not cmap:
     notes.append("no code map in this full-mode feature: run the code scout first (bash scripts/handoff.sh scout " + slug + ")")
 
 notes += ["agent brief: " + n for n in brief_notes]
+
+# Bug order (mode.bug_repro: fullstack): the failing test is committed alone, as WIP(<slug>): failing test, before any
+# product change, and the test is unchanged since. The check reads the branch's own commits (none reachable from the
+# integration or production branch, so a merge of either and a QA round 2's --base don't move it), and lists the
+# product files the branch changed, which QA puts back as they were at that commit to see the test fail.
+test_globs = []
+_head = re.match(r"\A---\n(.*?)\n---\n", read(".claude/rules/testing.md"), re.S)
+_block = re.search(r"^paths:\s*\n((?:[ \t]+-[^\n]*\n?)+)", _head.group(1) + "\n", re.M) if _head else None
+for g in re.findall(r"^\s*-\s*[\"']?([^\"'\n]+?)[\"']?\s*$", _block.group(1), re.M) if _block else []:
+    test_globs += [glob_re(x) for x in expand(g)]
+
+def test_file(f):
+    return any(r.match(f) for r in test_globs)
+
+def own_commits():
+    production = subprocess.run(["bash", "-c", ". scripts/lib/config.sh && config_get branches.production"],
+                                capture_output=True, text=True, cwd=root).stdout.strip()
+    stop = [r for b in dict.fromkeys([integration, production]) if b
+            for r in (b, f"origin/{b}") if git("rev-parse", "--verify", "-q", r)]
+    if not stop:
+        return None
+    return git("rev-list", "--reverse", "--topo-order", "--no-merges", "HEAD", "--not", *stop).splitlines()
+
+def changed_in(sha):
+    return [f for f in git("diff-tree", "--no-commit-id", "--name-only", "-r", sha).splitlines() if not f.startswith("_harness/")]
+
+def bug_order():
+    commits = own_commits()
+    if commits is None:
+        return None, [], f"no {integration} branch here, so the order can't be checked: QA checks it by hand"
+    marks = [c for c in commits if re.fullmatch(rf"WIP\({re.escape(slug)}\): failing test\.?", git("log", "-1", "--format=%s", c).strip())]
+    if len(marks) != 1:
+        return None, [], f"PROBLEM: {len(marks)} commits on this branch are named WIP({slug}): failing test; there must be exactly one"
+    mark, problems = marks[0], []
+    before = commits[:commits.index(mark)]
+    for sha in before:
+        product = [f for f in changed_in(sha) if not test_file(f)]
+        if product:
+            problems.append(f"{sha[:9]} changes {', '.join(product)} before the failing-test commit")
+    in_mark = changed_in(mark)
+    tests = [f for f in in_mark if test_file(f)]
+    if [f for f in in_mark if not test_file(f)] or not tests:
+        problems.append(f"the failing-test commit changes {', '.join(f for f in in_mark if not test_file(f)) or 'no test file'}: it must hold only the test")
+    # What the branch itself changed after it: its own later commits and the work tree, not a merged teammate's change.
+    since = list(dict.fromkeys([f for c in commits[commits.index(mark) + 1:] for f in changed_in(c)]
+                               + [f for f in git("diff", "--name-only", "HEAD").splitlines() if not f.startswith("_harness/")]))
+    edited = [f for f in tests if f in since]
+    if edited:
+        problems.append(f"the test changed after the failing-test commit ({', '.join(edited)})")
+    product = [f for f in since if not test_file(f)]
+    support = [f for f in since if test_file(f) and f not in tests]
+    short = git("rev-parse", "--short", mark)
+    extra = (f" Other test files changed since: {', '.join(support)}; check they don't weaken the test." if support else "")
+    if problems:
+        return short, product, "PROBLEM: " + "; ".join(problems) + "." + extra
+    return short, product, (f"ok: failing test {short} ({', '.join(tests)}) holds only test files, no product change comes before "
+                            f"it, and the test is unchanged since. That shows the order of the commits, not that the fix wasn't "
+                            f"already in the work tree; the run below shows that. Product files the branch changed since: "
+                            f"{', '.join(product) or 'none'}." + extra)
+
+if role == "qa" and own_repro and bug:
+    mark, product, said = bug_order()
+    text = re.sub(r"^Bug order \(mode\.bug_repro: fullstack; drop this line otherwise\): <[^\n]*?>", "Bug order: " + said.rstrip("."), text, flags=re.M)
+    if mark:
+        sub("<the failing-test commit>", mark)
+        sub("each product file the branch changed", "each product file the Bug order line lists")
+    if said.startswith(("PROBLEM", "no merge")):
+        notes.append("bug order: " + said)
+else:
+    text = re.sub(r"^Bug order \(mode\.bug_repro[^\n]*\n", "", text, flags=re.M)
 
 if role == "qa":
     if merge_base:

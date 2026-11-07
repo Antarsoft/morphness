@@ -87,7 +87,7 @@ Full and bug mode. Light and small mode run no subagent ([MODES.md](./MODES.md) 
 4. After QA **pass**, the **feature closer** (`feature-closer`, § Subagent prompt blocks) drafts the closing records: the steps file (or none), `plan.md` set to `passed` with its **Steps file** line, and the learnings file. The Technical Lead checks them against the records and the conversation, decides the action items, then hands to the human; for a UI change the reply shows every screenshot. The retro follows without waiting for the human ([SETUP.md](./SETUP.md) § Retrospective).
 5. **Features with migrations:** the steps file lists the migrations in order. They reach the integration environment after the feature PR merges, by the project's migration workflow or by the human (`project/RELEASE.md`). Agents never apply them.<!-- module:data-access --> Once they are applied, the Technical Lead runs a QA stage B pass (read-only, [modules/data-access/](./modules/data-access/README.md)). The feature is done when it passes.<!-- /module:data-access -->
 
-In bug mode the order changes: QA's reproduction run (the failing test) comes before step 1 ([MODES.md](./MODES.md) § Bug mode).
+In bug mode the order changes: QA's reproduction run (the failing test) comes before step 1, or with `mode.bug_repro: fullstack` Full-stack commits the failing test first ([MODES.md](./MODES.md) § Bug mode).
 
 In full and bug mode the Technical Lead must not implement or QA even if the human says "execute", "run", "develop" or "implement". See `harness/TECHNICAL_LEAD.md`.
 
@@ -171,6 +171,18 @@ Fill progress.md § Root cause before changing code. Then make the smallest fix 
 Do not edit the regression test. If the fix needs anything § Fix limit names as a stop, record what you found in § Root cause and hand back without changing code.
 ```
 
+### Full-stack engineer, bug mode with its own reproduction
+
+With `mode.bug_repro: fullstack` in `harness.config.yml` (a trial, [MODES.md](./MODES.md) § Bug mode), add it to the Full-stack block above in place of the bug-mode block; there is no reproduction run.
+
+```text
+This is a bug-mode plan with mode.bug_repro: fullstack (harness/agents/fullstack-engineer.md § Bug mode). No failing test exists yet: you write it first.
+Read plan.md § Symptom, § Reproduction and § Regression test. Write the regression test § Regression test assigns, in the file and at the level it names, with its § Regression test → Edge inputs cases, and change no product code yet.
+Run it and fill <abs-path>/Development/progress.md § Reproduction: commit, command, exit code, the failure's tail, and whether it fails for the reason the plan gives. The reported case must fail today; the edge input cases may pass. If it doesn't fail for that reason, or you can't make it fail, record what you tried and hand back without fixing anything.
+Commit the test alone, staged by path, as WIP(<slug>): failing test, with the failure's tail in the message. It must be the branch's first commit that changes a file outside _harness/.
+Then fill progress.md § Root cause before changing code, and make the smallest fix that turns the test green and holds for the edge inputs, within plan.md § Fix limit. Do not edit the regression test after its commit. If the fix needs anything § Fix limit names as a stop, record what you found in § Root cause and hand back without changing code.
+```
+
 ### QA engineer
 
 ```text
@@ -180,6 +192,7 @@ Agent brief (drop this line when there is none): <the file handoff.sh compiles>.
 The change: base <git merge-base origin/<integration> HEAD; in round 2, the commit round 1 tested>; files: <git diff --stat <base> output>, untracked: <new files from git status --porcelain, or none>. Review it with git diff <base> (it includes uncommitted changes) and read each untracked file, not the whole codebase.
 Code map (full mode; drop this line in bug mode): <abs-path>/Plan/code-map.md: its Callers and readers and Tests sections say where the code outside the diff is; open those by their line ranges when a criterion needs them, instead of searching.
 Check results: <bash scripts/checks.sh status output>.
+Bug order (mode.bug_repro: fullstack; drop this line otherwise): <handoff.sh's check of the failing-test commit>. A PROBLEM there is a QA fail. Then show the test fails without the fix: back up each product file the branch changed, write its version from the failing-test commit (git show <the failing-test commit>:path/to/file > path/to/file; move a file the fix added aside), run the regression test, record the run in qa-result.md § Reproduction, and restore the backups. A test that passes there is a QA fail.
 Test against acceptance criteria only: one pass, each criterion once.
 Path rules: <the same .claude/rules/*.md files as the Full-stack prompt, or none>. Read them first.
 Update only: <abs-path>/QA/qa-result.md

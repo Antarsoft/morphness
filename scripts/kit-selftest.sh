@@ -1187,6 +1187,7 @@ def check_handoff(bad, pb, settings, sample, integ):
     if run(["git", "status", "--porcelain", "--untracked-files=all"], pb).stdout != before:
         bad("handoff.sh changed the working tree: it must only read")
     check_agent_brief(bad, pb, out, feat)
+    check_bug_repro(bad, pb, integ, sample)
     for args in (["nope", "sel-test"], ["qa"], ["qa", "Bad_Slug"], ["qa", "sel-test", "--version", "0"], ["qa", "sel-test", "--base", "x;y"],
                  ["qa", "sel-test", "--base", "-R"], ["qa", "sel-test", "--base", "deadbeef0000"]):
         r = sh(*args)
@@ -1238,6 +1239,71 @@ def check_agent_brief(bad, pb, out, feat):
         bad(f"handoff.sh fullstack's agent brief didn't pick up an edit to project/TESTING.md whole: it must be rebuilt at every hand-off and keep code spans (exit {sh.returncode})")
     if "read `docs/DESIGN.md` § Tokens" not in text or "## project/RELEASE.md" in text:
         bad("handoff.sh fullstack's agent brief dropped a non-project read from the addendum's list, or took in a file the list says never to read")
+
+
+def check_bug_repro(bad, pb, integ, sample):
+    """Cost: with mode.bug_repro: fullstack (a trial) bug mode has no QA reproduction run: Full-stack commits the
+    failing test first, and handoff.sh qa checks that order (test-only commit, nothing before it, test unchanged)."""
+    cfg = os.path.join(pb, "harness.config.yml")
+    keep = read(cfg)
+    if not re.search(r"^  bug_repro: qa\b", keep, re.M):
+        bad("harness.config.yml has no mode.bug_repro: qa default")
+        return
+    write(cfg, re.sub(r"^  bug_repro: qa\b", "  bug_repro: fullstack", keep, flags=re.M))
+    git_ = lambda *a: run(["git", "-c", "user.name=selftest", "-c", "user.email=selftest@example.com", *a], pb)
+    sh = lambda *a: run(["bash", "scripts/handoff.sh", *a], pb)
+    try:
+        if sh("qa-repro", "sel-bugfill").returncode != 2:
+            bad("handoff.sh qa-repro with mode.bug_repro: fullstack didn't refuse: there is no reproduction run")
+        fb = sh("fullstack-bug", "sel-bugfill").stdout
+        if "No failing test exists yet" not in fb or "WIP(sel-bugfill): failing test" not in fb:
+            bad("handoff.sh fullstack-bug with mode.bug_repro: fullstack doesn't print the own-reproduction block")
+        r = run(["bash", "scripts/plan-brief.sh", "--bug", "sel-bugnext", sample], pb)
+        if "handoff.sh fullstack-bug sel-bugnext" not in r.stdout:
+            bad("plan-brief.sh --bug with mode.bug_repro: fullstack doesn't name fullstack-bug as the next step")
+        git_("checkout", "-q", "-b", "sel-bugorder", integ)
+        test = os.path.join(pb, "tests/sel-bug.test.ts")
+        os.makedirs(os.path.dirname(test), exist_ok=True)
+        write(test, "red\n")
+        git_("add", "--", "tests/sel-bug.test.ts")
+        git_("commit", "-q", "-m", "WIP(sel-bugfill): failing test")
+        write(os.path.join(pb, "sel-fix.txt"), "fix\n")
+        git_("add", "--", "sel-fix.txt")
+        git_("commit", "-q", "-m", "fix")
+        qa = sh("qa", "sel-bugfill", "--base", integ).stdout
+        if (not re.search(r"^Bug order: ok: failing test [0-9a-f]+ \(tests/sel-bug\.test\.ts\)", qa, re.M) or "<the failing-test commit>" in qa
+                or not re.search(r"changed since: [^\n]*\bsel-fix\.txt", qa)):
+            bad(f"handoff.sh qa didn't pass a test-first bug branch and list its product file: {qa[qa.find('Bug order'):][:200]!r}")
+        fix = run(["git", "rev-parse", "HEAD"], pb).stdout.strip()
+        git_("checkout", "-q", integ)
+        write(os.path.join(pb, "sel-teammate.txt"), "theirs\n")
+        git_("add", "--", "sel-teammate.txt")
+        git_("commit", "-q", "-m", "a teammate's change")
+        git_("checkout", "-q", "sel-bugorder")
+        git_("merge", "-q", "--no-edit", integ)
+        r2 = sh("qa", "sel-bugfill", "--base", fix).stdout
+        if "Bug order: ok" not in r2 or "sel-teammate" in r2.split("Bug order", 1)[-1].split("\n", 1)[0]:
+            bad(f"handoff.sh qa's bug order broke on a merge of the integration branch or a round-2 --base: {r2[r2.find('Bug order'):][:200]!r}")
+        write(test, "edited\n")
+        if "PROBLEM: the test changed after" not in sh("qa", "sel-bugfill", "--base", integ).stdout:
+            bad("handoff.sh qa didn't flag a regression test edited after its failing-test commit")
+        write(test, "red\n")
+        git_("checkout", "-q", "-B", "sel-bugorder2", integ)
+        write(os.path.join(pb, "sel-early.txt"), "early\n")
+        git_("add", "--", "sel-early.txt")
+        git_("commit", "-q", "-m", "early fix")
+        os.makedirs(os.path.dirname(test), exist_ok=True)
+        write(test, "red\n")
+        git_("add", "--", "tests/sel-bug.test.ts")
+        git_("commit", "-q", "-m", "WIP(sel-bugfill): failing test")
+        if "changes sel-early.txt before the failing-test commit" not in sh("qa", "sel-bugfill", "--base", integ).stdout:
+            bad("handoff.sh qa didn't flag a product change committed before the failing test")
+        write(cfg, keep)
+        if "Bug order" in sh("qa", "sel-bugfill", "--base", integ).stdout:
+            bad("handoff.sh qa printed the Bug order line with mode.bug_repro: qa")
+    finally:
+        write(cfg, keep)
+        git_("checkout", "-q", "sel-feature")
 
 
 def check_plan_brief(bad, t, settings):

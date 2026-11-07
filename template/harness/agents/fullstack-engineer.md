@@ -40,7 +40,7 @@ Build to the plan's acceptance criteria and write tests from them. Never fetch t
 
 ## Bug mode
 
-When the plan says **Mode:** bug ([harness/MODES.md](../MODES.md) § Bug mode), QA has already committed a failing regression test (`WIP(<slug>): failing test`; `qa-result.md` § Reproduction).
+When the plan says **Mode:** bug ([harness/MODES.md](../MODES.md) § Bug mode), QA has already committed a failing regression test (`WIP(<slug>): failing test`; `qa-result.md` § Reproduction); with `mode.bug_repro: fullstack` you write it first, as the last paragraph says.
 
 1. **Cause before code.** Find why the test fails and fill `progress.md` § Root cause (the `file:line`, since when, why no test caught it, the same pattern elsewhere with the grep and its hit count) before changing any code.
 2. **Smallest fix.** Change only what makes the regression test pass and holds for the plan's **Edge inputs** (an order the bug touches ends with a unique key), plus the same-pattern places the plan's **Fix limit** covers. No refactors or cleanups nearby; list them in Notes for Technical Lead instead.
@@ -48,6 +48,8 @@ When the plan says **Mode:** bug ([harness/MODES.md](../MODES.md) § Bug mode), 
 4. **Stop at the fix limit.** If the fix needs anything the plan's **Fix limit** names as a stop (new behaviour, a migration, a public API change, a risk area it doesn't name, other files), record what you found in § Root cause and hand back without changing code.
 
 The failing-test commit is the negative run `.claude/rules/testing.md` asks for; you don't repeat it.
+
+**With `mode.bug_repro: fullstack`** (a trial; the prompt says so) no failing test exists yet, and you write it first: the test § Regression test assigns, with its edge inputs, and no product code. Run it, fill `progress.md` § Reproduction, and commit it alone (staged by path) as `WIP(<slug>): failing test`, the branch's first commit outside `_harness/`. When it doesn't fail for the reason the plan gives, hand back without a fix. Then steps 1 to 4 above. QA checks the order and runs the test against the code as it was at that commit, so a product change before it, or a test edited after it, fails QA.
 
 ## Ownership limits
 

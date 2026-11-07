@@ -50,7 +50,8 @@ if [ -f "$dir/plan.md" ]; then
 fi
 mkdir -p "$dir" || { echo "plan-brief: can't create $dir" >&2; exit 2; }
 [ -f "$dir/.gitignore" ] || printf 'brief.md\n' > "$dir/.gitignore"
-FILES="${files[*]}" RISK="$risk" BUG="$bug" python3 -I - "$root" "$dir/brief.md" "$slug" "$version" <<'PY' || exit 2
+bug_repro="$(cd "$root" && . scripts/lib/config.sh 2>/dev/null && config_get mode.bug_repro)"
+FILES="${files[*]}" RISK="$risk" BUG="$bug" BUG_REPRO="$bug_repro" python3 -I - "$root" "$dir/brief.md" "$slug" "$version" <<'PY' || exit 2
 import os, re, subprocess, sys, datetime
 root, out, slug, version = sys.argv[1:5]
 bug = os.environ["BUG"] == "1"
@@ -106,7 +107,7 @@ open(out, "w", encoding="utf-8").write(text)
 print(f"Brief: _harness/features/{slug}/{version}/Plan/brief.md ({len(text)} characters). "
       "Read it with the Read tool in one call; it holds the mode section, testing.md, the effort and QA-run sections, "
       "the plan checklist groups that always run and the plan template, so don't print those again. "
-      + (f"Next: bash scripts/handoff.sh qa-repro {slug}{'' if version == '1' else ' --version ' + version} once the plan is approved." if bug else
+      + (f"Next: bash scripts/handoff.sh {'fullstack-bug' if os.environ.get('BUG_REPRO') == 'fullstack' else 'qa-repro'} {slug}{'' if version == '1' else ' --version ' + version} once the plan is approved." if bug else
          f"Next: bash scripts/handoff.sh scout {slug}{'' if version == '1' else ' --version ' + version} prints the code scout's prompt, filled; launch the code-scout agent with it."))
 PY
 exit "$rc"
