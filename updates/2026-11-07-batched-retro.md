@@ -2,7 +2,7 @@
 id: 2026-11-07-batched-retro
 title: "loop.retro_every: decide several features' retro action items in one pass"
 kind: rule
-release: unreleased
+release: v0.17.0
 applies_to: { modules: [] }
 files:
   - harness.config.yml

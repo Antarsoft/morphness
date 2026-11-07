@@ -2,7 +2,7 @@
 id: 2026-11-05-print-size-warning
 title: A print over 12000 characters warns on its first line, and the Technical Lead prints in smaller calls
 kind: template
-release: unreleased
+release: v0.17.0
 applies_to: { modules: [] }
 files:
   - scripts/doc-section.sh

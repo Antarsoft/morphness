@@ -2,7 +2,7 @@
 id: 2026-11-06-code-scout
 title: A cheap code scout maps the code before a full-mode plan, and the Technical Lead reads only the lines the plan changes
 kind: template
-release: unreleased
+release: v0.17.0
 applies_to: { modules: [] }
 files:
   - .claude/agents/code-scout.md

@@ -2,7 +2,7 @@
 id: 2026-11-07-agent-brief
 title: Full-stack and QA read one compiled agent brief instead of five to seven project files
 kind: rule
-release: unreleased
+release: v0.17.0
 applies_to: { modules: [] }
 files:
   - scripts/handoff.sh

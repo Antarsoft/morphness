@@ -2,7 +2,7 @@
 id: 2026-11-07-plan-reads
 title: While a full-mode plan is written, the guard sends whole-file prints of source back to the code scout's line ranges
 kind: template
-release: unreleased
+release: v0.17.0
 applies_to: { modules: [] }
 files:
   - harness.config.yml

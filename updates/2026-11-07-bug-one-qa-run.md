@@ -2,7 +2,7 @@
 id: 2026-11-07-bug-one-qa-run
 title: "A trial switch for bug mode with one QA run: Full-stack commits the failing test first"
 kind: rule
-release: unreleased
+release: v0.17.0
 applies_to: { modules: [] }
 files:
   - harness.config.yml

@@ -2,7 +2,7 @@
 id: 2026-11-07-guard-expo-eas
 title: The guard asks before Expo EAS builds, store submits and updates, and classic expo publish
 kind: template
-release: unreleased
+release: v0.17.0
 applies_to: { modules: [] }
 files:
   - harness/GUARD.md
