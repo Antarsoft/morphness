@@ -209,6 +209,7 @@ loop:
 #   director_model   the session that writes docs/product/ and the order; last_try_model: Full-stack after a QA fail or a crash
 #   ledger_kb        size of _harness/auto/ledger.md before the director compacts it
 #   usage_wait_minutes  wait after a usage limit, doubling up to 4 hours; the try doesn't count
+#   session_hours    wall-clock limit for one session; past it the session is stopped and counts as a crash
 auto:
   enabled: false
   branch: auto/v1
@@ -220,6 +221,7 @@ auto:
   last_try_model: opus
   ledger_kb: 8
   usage_wait_minutes: 30
+  session_hours: 4
 
 # Where /morph-update, /morph-doctor and the prune's upstream check read Morphness from.
 # github: release notes and template text straight from installed_from.repo on GitHub (read-only,

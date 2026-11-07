@@ -38,6 +38,7 @@ reviewed: "It adds a module folder, templates, an auto: config block that is off
 - Templates and prompts in `harness/templates/auto/`, and an `auto:` block in `harness.config.yml` (`enabled: false`).
 - With the module, one line in each plan template's § Approval points to the run rules. It is marked `module:autonomous`, so installs without the module don't get it. `harness/TECHNICAL_LEAD.md` is unchanged: the driver's prompts point the Technical Lead to the run rules.
 - The driver, `bash scripts/auto/run.sh` (`start`, `approve`, `run`, `resume`, `status`, `stop`), with `card.sh` and `tracker.sh`. It keeps the live run state and session logs in the git folder, starts each session with `--permission-prompts none` and `--max-budget-usd`, checks every card against the feature's own records before it merges into the run branch, and redraws `_harness/auto/tracker.md` after each feature.
+- `auto.session_hours` (default 4): a wall-clock limit for one session. A card lists the items the driver acts on as body sections (§ Owner items, § Bugs found, § Split into), one line each.
 - The guard rules for a run and the `/morph-auto` skill come in a later release; until then a run has no guard protection for the driver's files.
 
 ## Why

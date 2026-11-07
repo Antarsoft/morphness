@@ -20,13 +20,14 @@ One feature runs at a time. The run branch is never pushed to an environment bra
 
 | Stop | What happens |
 |------|--------------|
-| A feature runs out of tries: QA failed past `loop.qa_max_rounds` (`failed-escalated`), a crash after `auto.crash_retries` restarts, or `loop.feature_budget_usd` spent (the Technical Lead's budget stop, or the session's hard cap ending it; never counted as a crash) | The run exits at once and writes `_harness/auto/exit.md` |
+| A feature runs out of tries: QA failed past `loop.qa_max_rounds` (`failed-escalated`), a crash after `auto.crash_retries` restarts, or the feature's spend passing 1.5 times `loop.feature_budget_usd` (the session's hard cap; never counted as a crash, and a passed card written before the cap still counts) | The run exits at once and writes `_harness/auto/exit.md` |
 | The run budget (`auto.budget_usd`), `auto.max_hours` or `auto.max_features` would be passed by the next feature | The run exits before starting it |
 | The owner runs `bash scripts/auto/run.sh stop` (from a second terminal) or creates `_harness/auto/STOP` | The run exits after the current feature |
-| A usage limit | Not a stop: the driver waits `auto.usage_wait_minutes` (doubling, at most 4 hours) and tries again; the try doesn't count |
+| A usage limit (the session's own error says so) | Not a stop: the driver waits `auto.usage_wait_minutes` (doubling, at most 4 hours) and tries again; the try doesn't count. After 12 waits in a row it exits |
+| A session runs past `auto.session_hours`, moves a protected branch or the run branch, or a merge conflicts | A session past its hours is a crash; the others exit the run at once |
 | A crash (no card, or a non-zero exit) | The driver starts the feature again from its last commit with the resume prompt, with Full-stack on `auto.last_try_model`, up to `auto.crash_retries` times (default once); the next crash exits |
 
-`exit.md` opens with what the owner has to do, then the reason, the feature, the spend and the command to resume. `bash scripts/auto/run.sh resume` starts the feature again from its last commit with fresh crash tries and budget. After `failed-escalated`, the harness allows no more QA rounds on that version: the owner writes a direction in `exit.md`, and resume starts the feature's next version folder with it in § Request (`harness/SETUP.md` § QA iteration).
+`exit.md` opens with what the owner has to do, then the reason, the feature, the spend and the command to resume. `bash scripts/auto/run.sh resume` starts the feature again from its last commit with fresh crash tries, budget and clock; after `done_waiting` it runs the waiting features again once the owner has done their items. A driver that was killed (a closed terminal, a sleeping Mac) is picked up by `run`: the interrupted session counts as a crash. After `failed-escalated`, the harness allows no more QA rounds on that version: the owner writes a direction in `exit.md` § Owner direction and commits it (resume refuses without one), and resume starts the feature's next version folder with it in § Request (`harness/SETUP.md` § QA iteration).
 
 ## Run rules
 
@@ -40,17 +41,17 @@ These apply only in a session the driver started: `MORPH_AUTO=1` is set and `MOR
    - A reversible gap (a label, a default, an order): choose the default the docs point to, record it in the plan's § Decisions and, for a product decision, in the version doc's Decisions table marked `assumed`, and add an `assumed, confirm` item to the steps file.
    - Pricing, legal wording, data and privacy promises: draft them, mark them draft in the code, and add a steps-file item. Never present them as final.
    - An accepted risk (a threat model's § Accepted risks) or a security exception: never accept one yourself. When the plan can't go on without it, write the card with `status: waiting_owner`.
-4. **Owner items** go to the feature's steps file as usual (`harness/SETUP.md` § After QA pass, step 4), each also one line under `v1_items` on the card (a rule item starts `rule:`); the driver copies those lines to the checklist's § Needs you and § Harness changes after the merge. Features never edit the checklist.
+4. **Owner items** go to the feature's steps file as usual (`harness/SETUP.md` § After QA pass, step 4), each also one line in the card's § Owner items (a rule item starts `rule:`); the driver copies those lines to the checklist's § Needs you and § Harness changes after the merge. Features never edit the checklist.
 5. **Guard denials.** A denied call (in a headless run every call that would prompt is denied) becomes a steps-file item with the command and why it was needed. Finish the feature without it when you can; otherwise write the card with `status: waiting_owner` and what the owner must do.
 6. **Rework model.** After the first QA fail, and in a resumed session, Full-stack rework runs on `auto.last_try_model` (the Agent call's model), in place of the same-variant rule.
-7. **Retro and prune.** Action items that change a rule get `human decides` (listed under `v1_items`). No new trials start in a run; a trial already on in the config runs as configured. On `Prune is DUE`, don't write the proposal, and its exit code doesn't hold the hand-off: the driver runs the prune session.
-8. **Bugs outside the plan** go on the card under `bugs_found` with where they are; don't fix them in this feature.
+7. **Retro and prune.** Action items that change a rule get `human decides` (listed in § Owner items with `rule:`). No new trials start in a run; a trial already on in the config runs as configured. On `Prune is DUE`, don't write the proposal, and its exit code doesn't hold the hand-off: the driver runs the prune session.
+8. **Bugs outside the plan** go in the card's § Bugs found with where they are; don't fix them in this feature.
 9. **Never** run store builds or submits, EAS updates, deploys, publishes or hotfixes, connector writes, writes to a remote database, migrations on a shared environment, or changes to hosted settings and variables, and never touch secrets, billing or access settings. Each one needed becomes a steps-file item; they are the owner's alone.
 10. **End by writing the card**, `_harness/auto/cards/<slug>.md` from `harness/templates/auto/card.md`, as the feature's last commit.
 
 ## The card and the ledger
 
-The card is what the next features know about this one: a header the driver reads (`status`, `mode`, `qa_rounds`, `departure`, `split_into`, `bugs_found`, `v1_items`) and at most 40 lines on what was built, the interfaces other features can use, decisions and departures. A card with `status: passed` counts only when the mode's own record says so: full and bug mode, `plan.md` **Status** `passed` and the last `qa-result.md` verdict `pass`; small mode, `plan.md` **Status** `passed` with § Check filled; light mode and a small bug fix, the feature's commit with its checks passing (`checks.on_stop`, run by the driver).
+The card is what the next features know about this one: a header the driver reads (`status`, `mode`, `qa_rounds`, `departure`) and at most 40 lines on what was built, the interfaces other features can use, decisions and departures, with three lists the driver acts on, one `- ` line per item: § Owner items, § Bugs found and § Split into. `bash scripts/auto/card.sh <card>` checks one. The card must be written in the session that ends with it, and the branch must change more than the card. A card with `status: passed` counts only when the mode's own record says so: full and bug mode, `plan.md` **Status** `passed` and the last `qa-result.md` verdict `pass`; small mode, `plan.md` **Status** `passed` with § Check filled; light mode and a small bug fix, the feature's commit with its checks passing (`checks.on_stop`, run by the driver; with no `on_stop` checks such a card doesn't count).
 
 The driver appends each passed card's body to `_harness/auto/ledger.md`. A feature session reads only the cards of the features it depends on, not the whole ledger. When the ledger passes `auto.ledger_kb`, the director writes a compacted copy, `ledger.next.md` (by milestone, the last five cards whole), and the driver swaps it in.
 
@@ -61,11 +62,11 @@ What the driver does with each card status:
 | `passed` | Merges, runs the end-of-task checks, appends to the ledger |
 | `escalated` | Exits the run |
 | `waiting_owner` | Marks the feature and every feature that depends on it `waiting_owner`, and carries on with the rest |
-| `split` | Puts the parts from `split_into` in the feature's place; they keep its dependants |
-| `bugs_found` (with any status) | Adds a fix item for each bug before the first remaining feature that depends on the buggy one, or next when none does |
+| `split` | Puts the parts from § Split into in the feature's place (checked like the order: kebab-case, new slugs, known dependencies); every feature that depended on it depends on all the parts |
+| § Bugs found (with any status) | Adds a fix item for each bug before the first remaining feature that depends on the buggy one, or next when none does |
 | `departure: yes` | Runs a director re-plan of the remaining order before the next feature |
 
-The driver also runs a re-plan when `docs/product/` changes in a commit the run didn't make (the owner edited it). It records each re-plan in `state.json`, and the director adds it to product.md § Decisions the director made, so the final PR shows what changed after approval.
+The driver also runs a re-plan when the committed `docs/product/` changes outside the run's own commits (the owner edited and committed it between runs). A re-plan keeps the fixes and split parts the run added unless the director orders them, and a failed one restores `docs/product/`. The driver records each re-plan in `state.json`, and the director adds it to product.md § Decisions the director made, so the final PR shows what changed after approval.
 
 ## Pruning and rule changes
 
@@ -78,7 +79,7 @@ After each feature the driver runs `scripts/prune-counter.sh`. When a prune is d
 | `docs/brief.md` | The owner's brief (from `harness/templates/auto/brief.md`) |
 | `docs/product/product.md`, `tech.md`, `design.md`, `finance.md` | The director's docs (templates in `harness/templates/auto/`). The finance doc holds cost and pricing assumptions only; prices are the owner's |
 | `docs/product/order.md` | The feature order the driver reads |
-| `<versions_dir>/<id>/checklist.md`, `steps/` | The version checklist, with § Needs you (owner items: the director's first, then the driver's copies of each card's `v1_items`) and § Harness changes (rule changes and prune proposals waiting for the owner), and each feature's steps file as usual |
+| `<versions_dir>/<id>/checklist.md`, `steps/` | The version checklist, with § Needs you (owner items: the director's first, then the driver's copies of each card's § Owner items) and § Harness changes (rule changes and prune proposals waiting for the owner), and each feature's steps file as usual |
 | `_harness/auto/state.json` | A snapshot of the run state, committed on the run branch. The live state, the session logs and the stop request live in the git folder (`.git/morphness/auto/`), outside every branch, so no session can commit them |
 | `_harness/auto/ledger.md` | Passed cards, compacted when it grows |
 | `_harness/auto/tracker.md` | The tracker the driver redraws after each feature: a table and a flowchart coloured by status |
@@ -102,6 +103,7 @@ auto:
   last_try_model: opus
   ledger_kb: 8
   usage_wait_minutes: 30
+  session_hours: 4
 ```
 
 `enabled: true` lets `run.sh start` begin a run; the owner sets it. `budget_usd: 0` refuses to start a run. `loop.feature_budget_usd` must be above 0 too (the start suggests 15), and each session gets `--max-budget-usd` at 1.5 times it. Feature sessions use the models in `agents:`; the director runs on `auto.director_model`. With this module, `mode.bug_repro: fullstack` is recommended (one QA run per bug); it is a trial, so the owner turns it on before the run. A `loop.feature_budget_usd` set for a run also caps features outside runs; set it back to 0 after the run if you don't want that.
@@ -109,6 +111,10 @@ auto:
 ## Safety
 
 The driver is a script, not an agent. It refuses to start inside a Claude Code session, inside a session it started, or on a dirty tree; runs every session with `--permission-prompts none` (anything that would prompt is denied) and `--max-budget-usd`, and refuses a Claude Code without those flags; never uses a mode that skips permissions; and pushes only the run branch and feature branches, never the integration, production or an environment branch. A later release adds guard rules: while a run is on, the guard denies agent writes to `harness.config.yml`, `_harness/auto/state.json`, `_harness/auto/ledger.md` and `scripts/auto/`, and agent pushes, merges and checkouts of the run branch.
+
+## Starting over
+
+To drop a run: delete the run branch (`git branch -D auto/v1`), its `feature/*` branches, and the live state folder `.git/morphness/auto/`. After a failed director, `run.sh start` tries again on the same branch without that.
 
 ## On install
 

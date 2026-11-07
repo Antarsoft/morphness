@@ -3498,7 +3498,7 @@ for path in fixtures:
             shutil.rmtree(work_u, ignore_errors=True)
     print(f"{name}: {'ok' if len(failures) == before else str(len(failures) - before) + ' problem(s)'}")
 # ---- once: the autonomous module's driver, against a stub claude (tests/auto-driver-test.py) ----------------
-auto_test = subprocess.run([sys.executable, os.path.join(root, "tests/auto-driver-test.py")], cwd=root,
+auto_test = subprocess.run([sys.executable, "-B", os.path.join(root, "tests/auto-driver-test.py")], cwd=root,
                            capture_output=True, text=True)
 failures += [l[len("FAIL "):] for l in auto_test.stdout.splitlines() if l.startswith("FAIL ")]
 if auto_test.returncode and not any(l.startswith("FAIL ") for l in auto_test.stdout.splitlines()):

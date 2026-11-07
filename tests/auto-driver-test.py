@@ -36,7 +36,7 @@ calls.append({"key": key, "kind": kind, "model": model, "resume": "started again
 json.dump(calls, open(calls_file, "w"))
 steps = plan.get(key, ["pass"])
 act = steps[min(n, len(steps) - 1)]
-cost = plan.get("cost", 1.0)
+cost = plan.get("costs", {}).get(key, plan.get("cost", 1.0))
 
 def out(is_error=False, subtype="success", result="done", code=0):
     print(json.dumps({"type": "result", "subtype": subtype, "is_error": is_error, "total_cost_usd": cost, "result": result}))
@@ -69,23 +69,45 @@ if kind == "prune":
     w("_harness/prunes/2026-01-01-prune.md", "# Prune\n")
     out()
 card = {"pass": "passed", "fakepass": "passed", "waiting": "waiting_owner", "escalate": "escalated", "split": "split",
-        "bug": "passed", "depart": "passed"}[act]
-extra = ""
+        "splitbad": "split", "bug": "passed", "depart": "passed", "bugdepart": "passed", "nomode": "passed",
+        "checkout-dev": "passed", "rate-crash": "passed"}[act]
+if act == "rate-crash":
+    out(True, "error_during_execution", "Implemented the 429 rate limit handler, then a test runner crashed", 1)
+if act == "checkout-dev":
+    git("checkout", "-q", "dev")
+    w("oops.txt", "x\n")
+    git("add", "oops.txt")
+    git("commit", "-q", "-m", "oops")
+    out()
+lists = {"owner": [], "bugs": [], "split": []}
+if act in ("waiting", "pass"):
+    lists["owner"] = ["Sign in to the store account, e.g. App Store Connect: team ABC", "rule: decide the copy rule"]
 if act == "split":
-    extra = "split_into: [{ slug: %s-1, title: First half }, { slug: %s-2, title: Second half, depends_on: [%s-1] }]\n" % (slug, slug, slug)
-if act == "bug":
-    extra = "bugs_found: [{ in: a-1, what: total is off by one, where: src/a-1.txt }]\n"
-v1 = "v1_items: [Sign in to the store account, 'rule: decide the copy rule']\n" if act in ("waiting", "pass") else "v1_items: []\n"
-departure = "departure: yes\n" if act == "depart" else "departure: no\n"
-if act in ("pass", "bug", "depart"):
+    lists["split"] = [f"{slug}-1 | First half | -", f"{slug}-2 | Second half | -"]
+if act == "splitbad":
+    lists["split"] = ["Bad_Slug | Nope | -"]
+if act in ("bug", "bugdepart"):
+    lists["bugs"] = ["a-1 | total is off by one | src/a-1.txt:42"] if slug != "b" else ["a | total is off | src/a.txt:7"]
+mode = "" if act == "nomode" else "full"
+departure = "yes" if act in ("depart", "bugdepart") else "no"
+if act in ("pass", "bug", "depart", "bugdepart", "nomode"):
     w(f"_harness/features/{slug}/1/Plan/plan.md", "# Plan\n\n**Status:** passed  \n")
     w(f"_harness/features/{slug}/1/QA/qa-result.md", "## Verdict\n\n- **Result:** pass\n")
     w(f"src/{slug}.txt", f"{slug}\n")
 if act == "fakepass":
     w(f"_harness/features/{slug}/1/Plan/plan.md", "# Plan\n\n**Status:** approved  \n")
-w(f"_harness/auto/cards/{slug}.md", f"---\nslug: {slug}\nstatus: {card}\nmode: full\nqa_rounds: 1\n{departure}{extra}{v1}---\n\n## Built\n\n{slug} works.\n")
+    w(f"src/{slug}.txt", f"{slug}\n")
+if os.path.exists("_harness/auto/exit.md"):
+    calls[-1]["saw_exit"] = True
+    json.dump(calls, open(calls_file, "w"))
+calls[-1]["prompt_has_direction"] = "owner's direction" in prompt.lower()
+json.dump(calls, open(calls_file, "w"))
+body = "\n".join(["## Built", "", f"{slug} works.", "", "## Owner items", ""] + [f"- {i}" for i in lists["owner"] or ["none"]]
+                 + ["", "## Bugs found", ""] + [f"- {i}" for i in lists["bugs"] or ["none"]]
+                 + ["", "## Split into", ""] + [f"- {i}" for i in lists["split"] or ["none"]])
+w(f"_harness/auto/cards/{slug}.md", f"---\nslug: {slug}\nstatus: {card}\nmode: {mode}\nqa_rounds: 1\ndeparture: {departure}\n---\n\n{body}\n")
 git("add", "-A")
-git("commit", "-q", "-m", f"{slug}: {act}")
+git("commit", "-q", "--allow-empty", "-m", f"{slug}: {act}")
 out()
 '''
 
@@ -203,7 +225,7 @@ def scenario_happy():
     ledger = open(os.path.join(t, "_harness/auto/ledger.md")).read()
     check("happy", "## a (A)" in ledger and "## b (B)" in ledger, "ledger misses a card")
     checklist = open(os.path.join(t, "docs/versions/v1/checklist.md")).read()
-    check("happy", "## Needs you" in checklist and "Sign in to the store account (from `a`)" in checklist
+    check("happy", "## Needs you" in checklist and "Sign in to the store account, e.g. App Store Connect: team ABC (from `a`)" in checklist
           and "## Harness changes" in checklist and "rule: decide the copy rule" in checklist.split("## Harness changes")[1],
           f"v1_items not copied: {checklist}")
     committed = json.loads(subprocess.run(["git", "show", "auto/v1:_harness/auto/state.json"], cwd=t,
@@ -251,14 +273,20 @@ def scenario_escalate():
     note = open(os.path.join(t, "_harness/auto/exit.md")).read()
     check("escalate", r.returncode == 1 and "## Owner direction" in note and "**You need to:**" in note, f"exit {r.returncode}: {note}")
     r = drive(t, "resume")
+    check("escalate", r.returncode == 2 and "Owner direction" in r.stderr, f"resume without a direction: {r.stderr}")
+    p = os.path.join(t, "_harness/auto/exit.md")
+    open(p, "a").write("Keep the old layout and drop the animation.\n")
+    subprocess.run(["git", "commit", "-qam", "direction"], cwd=t, check=True)
+    r = drive(t, "resume")
     cs = [c for c in calls(t) if c["key"] == "a"]
-    check("escalate", r.returncode == 0 and statuses(t) == {"a": "passed"} and cs[-1]["resume"], f"resume: {r.stdout[-300:]}")
+    check("escalate", r.returncode == 0 and statuses(t) == {"a": "passed"} and cs[-1]["resume"]
+          and cs[-1]["prompt_has_direction"], f"resume: {r.stdout[-300:]} {cs[-1]}")
 
 
 def scenario_budget():
-    t = make_repo({"order": order(("a", []), ("b", [])), "cost": 1.0}, budget=1.5, feature_budget=1)
+    t = make_repo({"order": order(("a", []), ("b", [])), "cost": 1.0, "costs": {"director": 0}}, budget=1.5, feature_budget=1)
     *_, r = full_run(t)
-    check("budget", r.returncode == 1 and statuses(t)["b"] == "todo", f"exit {r.returncode} {statuses(t)}")
+    check("budget", r.returncode == 1 and statuses(t) == {"a": "passed", "b": "todo"}, f"exit {r.returncode} {statuses(t)}")
     check("budget", "run budget" in state(t)["exit"]["reason"], f"reason {state(t)['exit']}")
 
 
@@ -280,10 +308,11 @@ def scenario_refusals():
     t = make_repo({"order": order(("a", []))})
     r = drive(t, "start", extra_env={"CLAUDECODE": "1"})
     check("refuse", r.returncode == 2 and "terminal" in r.stderr, f"inside a session: {r.returncode} {r.stderr}")
-    open(os.path.join(t, "dirty.txt"), "w").write("x")
+    brief = os.path.join(t, "docs/brief.md")
+    open(brief, "a").write("draft\n")
     r = drive(t, "start")
     check("refuse", r.returncode == 2 and "working tree" in r.stderr, f"dirty tree: {r.stderr}")
-    os.remove(os.path.join(t, "dirty.txt"))
+    subprocess.run(["git", "checkout", "--", "docs/brief.md"], cwd=t, check=True)
     cfg = os.path.join(t, "harness.config.yml")
     text = open(cfg).read()
     open(cfg, "w").write(text.replace("budget_usd: 50", "budget_usd: 0"))
@@ -297,7 +326,7 @@ def scenario_refusals():
 def scenario_bad_order():
     t = make_repo({"order": "", "director": ["cycle"]})
     r = drive(t, "start")
-    check("bad-order", r.returncode == 1 and state(t)["status"] == "exited" and "cycle" in state(t)["exit"]["reason"],
+    check("bad-order", r.returncode == 1 and state(t)["status"] == "docs_failed" and "cycle" in r.stdout,
           f"{r.returncode} {r.stdout[-200:]}")
     check("bad-order", len([c for c in calls(t) if c["kind"] == "director"]) == 2, "the director got no second try")
 
@@ -315,7 +344,7 @@ def scenario_split_and_bug():
     check("split", r.returncode == 0 and st.get("a") == "split" and st.get("a-1") == "passed" and st.get("a-2") == "passed"
           and st.get("b") == "passed", f"exit {r.returncode} {st}")
     b = next(f for f in state(t)["features"] if f["slug"] == "b")
-    check("split", "a-2" in b["depends_on"], f"b doesn't depend on the last part: {b['depends_on']}")
+    check("split", {"a-1", "a-2"} <= set(b["depends_on"]) and "a" not in b["depends_on"], f"b's dependencies: {b['depends_on']}")
     fixes = [f for f in state(t)["features"] if (f.get("inserted_by") or "").startswith("bug:")]
     check("bug", len(fixes) == 1 and fixes[0]["status"] == "passed", f"fix items {fixes}")
 
@@ -334,6 +363,105 @@ def scenario_stop():
     drive(t, "stop")
     r = drive(t, "run")
     check("stop", r.returncode == 1 and "stop file" in state(t)["exit"]["reason"] and statuses(t)["a"] == "todo", f"{state(t)['exit']}")
+
+
+def scenario_killed_driver():
+    t = make_repo({"order": order(("a", []), ("b", []))})
+    drive(t, "start"); drive(t, "approve")
+    common = subprocess.run(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=t,
+                            capture_output=True, text=True).stdout.strip()
+    sp = os.path.join(common, "morphness/auto/state.json")
+    st = json.load(open(sp))
+    st["features"][0]["status"] = "running"
+    json.dump(st, open(sp, "w"))
+    r = drive(t, "run")
+    a = [c for c in calls(t) if c["key"] == "a"]
+    check("killed", r.returncode == 0 and statuses(t) == {"a": "passed", "b": "passed"} and a and a[0]["resume"],
+          f"{r.returncode} {statuses(t)} {a}")
+
+
+def scenario_director_fails():
+    t = make_repo({"order": order(("a", [])), "director": ["crash", "pass"]})
+    r = drive(t, "start")
+    check("director-fails", r.returncode == 1 and state(t)["status"] == "docs_failed", f"{r.returncode} {state(t)['status']}")
+    r = drive(t, "resume")
+    check("director-fails", r.returncode == 2, "resume accepted a run that was never approved")
+    r = drive(t, "start")
+    check("director-fails", r.returncode == 0 and state(t)["status"] == "awaiting_approval", f"retry: {r.stdout}{r.stderr}")
+
+
+def scenario_budget_resume():
+    t = make_repo({"order": order(("a", [])), "a": ["budget", "pass"], "costs": {"a": 14, "director": 0}}, budget=100)
+    *_, r = full_run(t)
+    check("budget-resume", r.returncode == 1 and "spent its budget" in state(t)["exit"]["reason"], f"{state(t)['exit']}")
+    r = drive(t, "resume")
+    check("budget-resume", r.returncode == 0 and statuses(t) == {"a": "passed"}, f"{r.stdout[-300:]} {statuses(t)}")
+
+
+def scenario_replan_keeps_fixes():
+    t = make_repo({"order": order(("a", []), ("b", ["a"]), ("c", ["a"])), "b": ["bugdepart"]})
+    *_, r = full_run(t)
+    fixes = [f for f in state(t)["features"] if (f.get("inserted_by") or "").startswith("bug:")]
+    check("replan-fixes", r.returncode == 0 and len(state(t)["replans"]) == 1 and len(fixes) == 1
+          and fixes[0]["status"] == "passed", f"{r.returncode} {statuses(t)} {state(t)['replans']}")
+
+
+def scenario_rate_text_is_a_crash():
+    t = make_repo({"order": order(("a", [])), "a": ["rate-crash", "pass"]})
+    *_, r = full_run(t)
+    f = state(t)["features"][0]
+    check("rate-text", r.returncode == 0 and f["tries"]["crashes"] == 1, f"{f['tries']}")
+
+
+def scenario_stop_file_in_tree():
+    t = make_repo({"order": order(("a", [])), })
+    drive(t, "start"); drive(t, "approve")
+    os.makedirs(os.path.join(t, "_harness/auto"), exist_ok=True)
+    open(os.path.join(t, "_harness/auto/STOP"), "w").write("stop\n")
+    r = drive(t, "run")
+    check("stop-tree", r.returncode == 1 and "stop file" in state(t)["exit"]["reason"], f"{state(t)['exit']}")
+
+
+def scenario_session_moves_branch():
+    t = make_repo({"order": order(("a", [])), "a": ["checkout-dev"]})
+    *_, r = full_run(t)
+    check("moves-branch", r.returncode == 1 and "changed branch dev" in state(t)["exit"]["reason"], f"{state(t)['exit']}")
+
+
+def scenario_done_waiting_resume():
+    t = make_repo({"order": order(("a", []), ("b", ["a"])), "a": ["waiting", "pass"]})
+    full_run(t)
+    r = drive(t, "resume")
+    check("waiting-resume", r.returncode == 0 and statuses(t) == {"a": "passed", "b": "passed"}, f"{r.stdout[-200:]} {statuses(t)}")
+
+
+def scenario_bad_cards():
+    t = make_repo({"order": order(("a", []), ("b", [])), "a": ["nomode", "nomode"]})
+    *_, r = full_run(t)
+    check("bad-card", r.returncode == 1 and "mode" in state(t)["exit"]["reason"], f"{state(t)['exit']}")
+    t = make_repo({"order": order(("a", [])), "a": ["splitbad", "splitbad"]})
+    *_, r = full_run(t)
+    check("bad-split", r.returncode == 1 and "kebab" in state(t)["exit"]["reason"], f"{state(t)['exit']}")
+
+
+def scenario_existing_branch():
+    t = make_repo({"order": order(("a", []))})
+    drive(t, "start")
+    subprocess.run(["git", "branch", "feature/a", "dev"], cwd=t, check=True)
+    r = drive(t, "approve")
+    check("existing-branch", r.returncode == 2 and "feature/a" in r.stderr, f"{r.returncode} {r.stderr}")
+
+
+def scenario_card_cli():
+    t = make_repo({"order": order(("a", []))})
+    p = os.path.join(t, "card.md")
+    open(p, "w").write("---\nslug: a\nstatus: passed\nmode: full\nqa_rounds: 2\ndeparture: no\n---\n\n## Owner items\n\n"
+                       "- Buy a domain, e.g. example.com, and set DNS\n- rule: keep copy short\n\n## Bugs found\n\n"
+                       "- b | off by one | src/b.ts:42\n")
+    r = subprocess.run(["bash", "scripts/auto/card.sh", p], cwd=t, capture_output=True, text=True)
+    out = json.loads(r.stdout or "{}")
+    check("card-cli", r.returncode == 0 and len(out.get("v1_items", [])) == 2 and out["bugs_found"][0]["where"] == "src/b.ts:42",
+          f"{r.returncode} {r.stdout} {r.stderr}")
 
 
 SCENARIOS = {n[len("scenario_"):]: f for n, f in globals().items() if n.startswith("scenario_")}
