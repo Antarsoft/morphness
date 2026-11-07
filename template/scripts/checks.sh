@@ -168,7 +168,8 @@ if not tree or not all(keys.values()):
 def key_of(name):
     return keys[name in SECRET_CHECKS]
 head = (git("rev-parse", "HEAD") or "").strip()
-clean = (git("status", "--porcelain", "--untracked-files=normal") or "x").strip() == ""
+porcelain = git("status", "--porcelain", "--untracked-files=normal")
+clean = porcelain is not None and porcelain.strip() == ""   # git failing counts as dirty; empty output is clean
 
 ref = None
 for cand in (f"origin/{integ}", integ):

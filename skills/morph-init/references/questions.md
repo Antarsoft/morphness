@@ -69,7 +69,7 @@ then a table of named checks (`install`, `typecheck`, `lint`, `unit`, `build`, `
 project doesn't have (render.md § 3b then leaves it out). A new project with no tooling yet gets "none" for all and a note that the first
 feature should add them. Also ask: "Any other checks agents should run (a migrations check, a
 security scan)?" and add each as a named check. Follow-up: "Which must pass before QA, and which before sign-off?" Suggest
-`before_qa`: everything but e2e; `before_signoff`: everything. The end-of-task hook (`checks.on_stop`) gets the fast ones the project has among `typecheck`, `lint` and `unit` (plus `secrets` with the security module); ask only when `unit` usually takes more than a few minutes, and then leave it out. It runs them with no prompt, so it stays empty when the owner answers Q14 with `allow_checks: false` (they chose a prompt for each check command). → `cmd.*`, `checks.*`
+`before_qa`: everything but `e2e-full` (with the browser-e2e module, `e2e-targeted` and `e2e-repeat` stay in it: the Full-stack engineer runs them before every QA handoff, module README § On install); `before_signoff`: everything. The end-of-task hook (`checks.on_stop`) gets the fast ones the project has among `typecheck`, `lint` and `unit` (plus `secrets` with the security module); ask only when `unit` usually takes more than a few minutes, and then leave it out. It runs them with no prompt, so it stays empty when the owner answers Q14 with `allow_checks: false` (they chose a prompt for each check command). → `cmd.*`, `checks.*`
 
 Follow-up when the stack has a tool that can narrow a check to what changed (a monorepo runner such as
 Turborepo, Nx or pnpm filters; a test runner's changed-files mode such as `vitest --changed`,

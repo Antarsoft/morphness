@@ -1604,6 +1604,11 @@ def check_end_of_task(bad, t, settings):
     rec = os.path.join(ck, log.group(1)) if log else ""
     if not rec or "CHECKS_VIA=wrapper" not in read(rec.replace(".log", ".json")):
         bad("checks.sh did not run the check inside project/CONTROLS.md § End-of-task checks → Run through")
+    for cmd in (["add", "-A"], ["commit", "-q", "-m", "everything committed"]):
+        run(g + cmd, ck)
+    st = run(["bash", "scripts/checks.sh", "status"], ck)
+    if ", clean;" not in st.stdout:
+        bad(f"checks.sh status on a clean working tree must say clean: {st.stdout[:200]!r}")
     r = run(["bash", "scripts/checks.sh", "run", "lint", "nosuch"], ck)
     if r.returncode != 1 or "nosuch: not run: no row" not in r.stdout or "lint: pass" not in r.stdout:
         bad(f"checks.sh run with an unknown check must record it as not run and exit 1: {r.stdout!r}")
