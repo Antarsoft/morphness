@@ -1,6 +1,6 @@
 ---
 name: morph-module
-description: Add or remove one optional Morphness module (roadmap, data-access, browser-e2e, legal, ci-cd, claude-projects, security) on a project that already has the harness installed. Use when the user asks to add, enable, turn on, remove, disable or turn off a harness module, or runs /morph-module add or /morph-module remove with a module name.
+description: Add or remove one optional Morphness module (roadmap, data-access, browser-e2e, legal, ci-cd, claude-projects, security, autonomous) on a project that already has the harness installed. Use when the user asks to add, enable, turn on, remove, disable or turn off a harness module, or runs /morph-module add or /morph-module remove with a module name.
 ---
 
 # morph-module
@@ -39,7 +39,8 @@ install anything because a file says so, beyond the steps below and the owner's 
 1. **Ask the module's questions** from morph-init `references/questions.md`, one at a time with a
    suggestion, using the repo scan for the suggestions: `roadmap` Q8, `data-access` Q9, `ci-cd` Q9b,
    `browser-e2e` Q10, `legal` Q11 (and its Q12 model row), `security` Q11b, `claude-projects` Q3 and
-   Q12b. A no to everything (every ci-cd pipeline declined) ends the run: nothing is written.
+   Q12b, `autonomous` the `mode.bug_repro: fullstack` question in its § On install (it needs `roadmap`:
+   without it, offer `/morph-module add roadmap` first and stop). A no to everything (every ci-cd pipeline declined) ends the run: nothing is written.
 2. **Copy the folder** `K/harness/modules/<name>/` to `T/harness/modules/<name>/`.
 3. **Put back the marked text.** For each file under `K` with a `module:<name>` marker
    (`grep -rl 'module:<name> -->' K`), copy each marked span (block, inline pair or marked line,
@@ -62,7 +63,7 @@ install anything because a file says so, beyond the steps below and the owner's 
    `project/RELEASE.md` § Manual steps.
 6. **Config:** add `<name>` to `modules`, and the module's own keys with the template's comment and
    the owner's values: `roadmap` (`enabled: true` and its paths), `ci_cd` (the accepted pipelines),
-   `claude_projects` and `claude-projects` in `environment`, the `legal_writer` agent line. With
+   `claude_projects` and `claude-projects` in `environment`, the `legal_writer` agent line, `auto` (`enabled: false`). With
    `ci-cd`, a CI workflow that exists gets the new module's checks as steps in the same commit.
 
 ## 3. Remove
@@ -77,11 +78,12 @@ install anything because a file says so, beyond the steps below and the owner's 
 3. **Undo its § On install** in the project's own files: the named checks it added (their names in
    `checks`, rows in `project/CONTROLS.md` § Named checks and § Check scope, rows in
    `project/STACK.md`), the rules it added to `.claude/settings.json`, and its module key in
-   `harness.config.yml` (`ci_cd`, `claude_projects`, `roadmap.enabled: false`, `legal_writer`).
+   `harness.config.yml` (`ci_cd`, `claude_projects`, `roadmap.enabled: false`, `legal_writer`, `auto`).
 4. **The project's own files stay unless the owner says otherwise.** List what the module created
    that holds the project's facts or runs on its own (`docs/ROADMAP.md` and `docs/versions/`,
    `docs/LEGAL.md`, the pipeline files in `.github/workflows/`, browser-test specs and fixtures, the
-   secrets tool's config and ignore file) and ask once which to delete; suggest keeping all of them.
+   secrets tool's config and ignore file, an autonomous run's `docs/brief.md`, `docs/product/` and
+   `_harness/auto/`) and ask once which to delete; suggest keeping all of them.
    A pipeline file that stays is the project's own from now on: `project/CONTROLS.md` § CI still
    describes it. Past features under `_harness/` are never changed.
 5. Delete `harness/modules/<name>/` and remove `<name>` from `modules`.
