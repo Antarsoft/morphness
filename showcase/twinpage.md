@@ -5,7 +5,6 @@ Generated 2026-10-20 from the project's own run records. Counts and rates only: 
 - **Span:** 2026-09-28 to 2026-10-11, 153 features finished, Morphness release 2026-10-20.3
 - **Quality:** 88% passed QA first time; 1.14 QA rounds per feature on average
 - **Escapes:** 4 bugs recorded as found after QA passed (counted from `Escaped` lines in learnings files not yet folded by a prune)
-- **Cost:** average n/a, median n/a per feature over 0 measured; estimates at API list prices
 - **Git history:** 1249 commits on the integration branch since the first feature, 8 titled fix and 0 reverts (by commit title only; titles are a convention, not a measure of escapes)
 - **Retro items:** 188 applied, 20 skipped, 0 open or deferred
 - **Prunes:** 15; rule audit rows: 59 fired, 72 insurance, 1 never fired, 44 too new, 36 other; decisions: 194 keep, 2 merge, 1 remove, 10 shorten
@@ -14,19 +13,19 @@ Generated 2026-10-20 from the project's own run records. Counts and rates only: 
 
 ## By prune window
 
-| Window | Ends | Features | QA first time | Avg QA rounds | Avg cost |
-|---|---|---|---|---|---|
-| 1 | 2026-09-29 | 20 | 90% | 1.1 | n/a |
-| 2 | 2026-09-30 | 22 | 73% | 1.27 | n/a |
-| 3 | 2026-10-01 | 5 (fewer than 10: too few to read a trend) | 100% | 1.0 | n/a |
-| 4 | 2026-10-02 | 12 | 100% | 1.0 | n/a |
-| 5 | 2026-10-03 | 8 (fewer than 10: too few to read a trend) | 100% | 1.0 | n/a |
-| 6 | 2026-10-05 | 15 | 93% | 1.07 | n/a |
-| 7 | 2026-10-06 | 12 | 100% | 1.0 | n/a |
-| 8 | 2026-10-07 | 17 | 71% | 1.41 | n/a |
-| 9 | 2026-10-08 | 16 | 75% | 1.25 | n/a |
-| 10 | 2026-10-10 | 10 | 90% | 1.1 | n/a |
-| 11 | 2026-10-11 | 16 | 100% | 1.0 | n/a |
+| Window | Ends | Features | QA first time | Avg QA rounds |
+|---|---|---|---|---|
+| 1 | 2026-09-29 | 20 | 90% | 1.1 |
+| 2 | 2026-09-30 | 22 | 73% | 1.27 |
+| 3 | 2026-10-01 | 5 (fewer than 10: too few to read a trend) | 100% | 1.0 |
+| 4 | 2026-10-02 | 12 | 100% | 1.0 |
+| 5 | 2026-10-03 | 8 (fewer than 10: too few to read a trend) | 100% | 1.0 |
+| 6 | 2026-10-05 | 15 | 93% | 1.07 |
+| 7 | 2026-10-06 | 12 | 100% | 1.0 |
+| 8 | 2026-10-07 | 17 | 71% | 1.41 |
+| 9 | 2026-10-08 | 16 | 75% | 1.25 |
+| 10 | 2026-10-10 | 10 | 90% | 1.1 |
+| 11 | 2026-10-11 | 16 | 100% | 1.0 |
 
 Records read: 6 learnings files, 149 folded entries, 15 of 15 prune files (approved or applied), 212 rule audit rows.
 
@@ -35,9 +34,4 @@ Records read: 6 learnings files, 149 folded entries, 15 of 15 prune files (appro
 - Every figure is recorded by the project's own agents and has not been audited.
 - Escapes are under-counted: a bug found by a fix PR only counts once someone records its `Escaped` line.
 - Windows that mix different models, effort levels or feature sizes are not like for like.
-- Cost is an estimate at public API prices, not a bill.
 - Without a control, these figures show what the process produced, not what it saved.
-
-## Owner note on cost
-
-Not produced by `scripts/evidence.sh`, which reports n/a because the run records hold no dollar figures. From Claude Code session records (API-equivalent cost, not what was paid): about $3,930 across the whole build from 2026-09-28 to 2026-10-19, covering the project threads, their coordinators and the early command-line sessions. It is a lower bound, since session records start on 2026-09-28, and it is a project total. Rough per-feature estimate: the 230 project threads averaged about $14 each, and a feature is one thread (build and QA inside it). By size, a small or bug-fix feature is about $5 to $10, a normal full-mode feature about $15 to $25, and a large or high-risk one (auth, billing, public API) about $30 to $50. These tiers are estimates anchored on the thread average, not measured per feature.
