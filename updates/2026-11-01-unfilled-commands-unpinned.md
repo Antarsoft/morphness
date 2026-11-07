@@ -2,7 +2,7 @@
 id: 2026-11-01-unfilled-commands-unpinned
 title: Session start doesn't pin commands morph-init hasn't filled yet
 kind: fix
-release: unreleased
+release: v0.16.0
 applies_to: { modules: [] }
 files:
   - scripts/session-start.sh

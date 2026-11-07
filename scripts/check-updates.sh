@@ -58,7 +58,7 @@ RISKY = [
     ("the guard, settings, harness config or permissions", re.compile(
         r"\bguard(\.sh|\.[a-z_]+)?\b|settings(\.local)?\.json|\.claude/|harness\.config\.yml|\binstalled_from\b|\bpermissions?\b|\bdefaultMode\b"
         r"|\bbypassPermissions\b|--dangerously|\ballow(ed)?Tools\b|\bdeny\b|\bdisable\w*\s+(the\s+)?(hook|guard|check)"
-        r"|\b(network|installs|deploys|publishes|mcp_writes|pr_writes|schema_pushes|source)\s*:\s*(off|allow|local)\b", re.I)),
+        r"|\b(network|installs|deploys|publishes|mcp_writes|pr_writes|plan_reads|schema_pushes|source)\s*:\s*(off|allow|local)\b", re.I)),
     ("secrets or tokens", re.compile(r"(?<![\w-])\.env\b|\bsecrets?\b|\b(access|auth|api|bearer|refresh|github|gh|npm|deploy)[_ -]?tokens?\b"
                                      r"|\bapi[_ -]?keys?\b|\bcredentials?\b|\bpasswords?\b", re.I)),
 ]
@@ -207,7 +207,13 @@ if since:
         if rel in changed_notes and fm["_risky"]:
             old = subprocess.run(["git", "-C", root, "show", f"{since}:{rel}"], capture_output=True, text=True)
             was = re.search(r"^reviewed:\s*(.*?)\s*$", old.stdout, re.M) if old.returncode == 0 else None
-            if not rv:
+            # a release PR only sets `release:` (scripts/release-changelog.sh): the text a maintainer read is the same
+            no_release = lambda t: re.sub(r"^release:.*$", "", t, count=1, flags=re.M)
+            with open(os.path.join(root, rel), encoding="utf-8") as fh:
+                now = fh.read()
+            if old.returncode == 0 and no_release(old.stdout) == no_release(now):
+                pass
+            elif not rv:
                 for what, hit in fm["_risky"]:
                     errors.append(f"{rel}: has {what} (`{hit}`). The agent applying the note follows its text, so a "
                                   "maintainer reads it before merging: rewrite it without that, or add `reviewed: <why it is safe>` to the frontmatter")

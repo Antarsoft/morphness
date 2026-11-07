@@ -42,7 +42,7 @@ DEFAULTS = {
     # the shipped default preset (harness.config.yml → agents): every role on sonnet, the legal writer on fable
     "models.tl": "sonnet", "models.fullstack": "sonnet", "models.fullstack_medium": "sonnet",
     "models.qa": "sonnet", "models.qa_medium": "sonnet", "models.researcher": "sonnet",
-    "models.researcher_high": "sonnet", "models.legal": "fable",
+    "models.researcher_high": "sonnet", "models.scout": "haiku", "models.closer": "haiku", "models.legal": "fable",
     "morphness.repo": "https://github.com/antarsoft/morphness", "morphness.commit": "0000000",
     "morphness.release": "unreleased", "ci.on_drafts": "false",
     "ci.docs_regex": r"^(_harness|docs|harness|project)/|\.md$",
@@ -431,6 +431,21 @@ if r.returncode:
     failures.append(f"kit: check-lessons.sh flagged a plain lesson: {r.stdout[-300:]!r}")
 # a note: a copy of the repo's checked files in a scratch git repository, with the note added after its first commit
 kit = os.path.join(scratch, "kit")
+# scripts/headless.sh: a headless try gets a fresh HOME and config folder and none of the calling session's
+# CLAUDE_*, GIT_CONFIG_* or token variables, but keeps sign-in (ANTHROPIC_*) and what --keep / --set name
+hl_env = dict(os.environ, CLAUDE_CODE_SESSION_ID="leak", CLAUDE_MEMORY_STORES="leak", GIT_CONFIG_COUNT="1",
+              GH_TOKEN="tok", ANTHROPIC_BASE_URL="https://api.example", HTTPS_PROXY="http://proxy.example:1")
+r = subprocess.run(["bash", os.path.join(root, "scripts/headless.sh"), "--keep", "GH_TOKEN", "--set", "GIT_AUTHOR_NAME=x", "--", "env"],
+                   capture_output=True, text=True, env=hl_env)
+got = dict(l.split("=", 1) for l in r.stdout.splitlines() if "=" in l)
+if (r.returncode or any(k in got for k in ("CLAUDE_CODE_SESSION_ID", "CLAUDE_MEMORY_STORES", "GIT_CONFIG_COUNT"))
+        or got.get("GH_TOKEN") != "tok" or got.get("GIT_AUTHOR_NAME") != "x" or got.get("ANTHROPIC_BASE_URL") != "https://api.example"
+        or got.get("HTTPS_PROXY") != "http://proxy.example:1" or got.get("CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS") != "0"
+        or got.get("HOME") == os.environ.get("HOME") or got.get("CLAUDE_CONFIG_DIR") != got.get("HOME", "") + "/.claude"):
+    failures.append(f"kit: scripts/headless.sh passed the wrong environment: {sorted(got)} (exit {r.returncode}, {r.stderr[-200:]!r})")
+r = subprocess.run(["bash", os.path.join(root, "scripts/headless.sh"), "env"], capture_output=True, text=True)
+if r.returncode != 2:
+    failures.append(f"kit: scripts/headless.sh ran a command given without -- (exit {r.returncode})")
 for d in ("scripts", "updates", "template", "changelog.d", ".claude-plugin", "lessons"):
     shutil.copytree(os.path.join(root, d), os.path.join(kit, d), symlinks=True)
 shutil.copy(os.path.join(root, "CHANGELOG.md"), kit)
@@ -458,6 +473,12 @@ write(os.path.join(kit, "changelog.d/network-check.md"), "A quieter check, again
 r = run(["bash", "scripts/check-updates.sh", "--since", "HEAD"], kit)
 if r.returncode != 1 or "same `reviewed:` reason" not in r.stdout:
     failures.append(f"kit: check-updates.sh --since kept an old `reviewed:` reason for changed text: {r.stdout[-300:]!r}")
+# a release PR sets only `release:` in a note already read, and that is not a change to re-read
+write(os.path.join(kit, "updates/2026-10-30-network-check.md"), reviewed_note.replace("release: unreleased", "release: v0.99.0"))
+r = run(["bash", "scripts/check-updates.sh", "--since", "HEAD"], kit)
+if "2026-10-30-network-check.md: changed since" in r.stdout or "2026-10-30-network-check.md: has" in r.stdout:
+    failures.append(f"kit: check-updates.sh --since asked to re-read a note whose only change is its release: {r.stdout[-300:]!r}")
+write(os.path.join(kit, "updates/2026-10-30-network-check.md"), reviewed_note)
 # a lesson moved to another folder and edited in the same change is checked as a new one
 ldir = os.path.join(kit, "lessons/practice")
 os.makedirs(ldir, exist_ok=True)
@@ -1013,7 +1034,7 @@ def check_small_bugs(bad, t):
     for want in ("`Mode: plain`", "WIP(<slug>): failing test", "Root cause", "**Escaped**", "hotfix",
                  "**No test can reach it**", "git diff <hash> HEAD -- <test file>", "**No plan file.**",
                  "**edge inputs**", "equal values", "unique key", "**No learnings file** unless something went wrong",
-                 "**Should**", "**Proof**", "**Commit**", "only for restoring behaviour"):
+                 "**Should**", "**Proof**", "**Commit**", "only for restoring behaviour", "an adjacent defect"):
         if want not in fix:
             bad(f"harness/MODES.md § Fixing a bug doesn't say {want!r}")
     choose = modes.split("\n## Choosing mode", 1)[-1]
@@ -1040,6 +1061,487 @@ def check_small_bugs(bad, t):
         bad("AGENTS.md § Golden rules' mode line doesn't send a risky fix or a hotfix to bug mode")
 
 
+def check_feature_closer(bad, t):
+    """Cost: the feature closer drafts the closing records after a QA pass on a cheap model, edits only them, decides
+    no action item, and the Technical Lead checks the draft and decides."""
+    p = os.path.join(t, ".claude/agents/feature-closer.md")
+    if not os.path.exists(p):
+        bad(".claude/agents/feature-closer.md is missing")
+        return
+    fm = read(p).split("\n---", 1)[0]
+    tools = re.search(r"^tools: *(.+)$", fm, re.M)
+    allowed = {x.strip() for x in tools.group(1).split(",")} if tools else None
+    if allowed is None or not {"Read", "Write", "Edit", "Bash"} <= allowed or allowed - {"Read", "Write", "Edit", "Bash", "Grep", "Glob"}:
+        bad(f".claude/agents/feature-closer.md tools are {allowed}: it needs Read, Write, Edit and Bash, and no web or MCP tool")
+    body = read(os.path.join(t, "harness/agents/feature-closer.md"))
+    for want in ("status `open`", "bash scripts/feature-cost.sh", "never invent", "Never touch `progress.md`, `qa-result.md` or `review.md`", "Never commit",
+                 "`human decides`", "doc-section.sh harness/SETUP.md \"After QA pass\"", "doc-section.sh harness/SETUP.md \"Retrospective\""):
+        if want not in body:
+            bad(f"harness/agents/feature-closer.md lost {want!r}")
+    tl = read(os.path.join(t, "harness/TECHNICAL_LEAD.md"))
+    row = next((l for l in tl.splitlines() if l.startswith("| After QA pass |")), "")
+    if ("feature-closer" not in row or "Decide each action item" not in row or "prune-counter.sh" not in row
+            or "against the records and the conversation" not in row or "failed-escalated" not in row):
+        bad("harness/TECHNICAL_LEAD.md's After QA pass row doesn't launch the feature closer and keep the item decisions and the commit with the Technical Lead")
+    handoffs = read(os.path.join(t, "harness/HANDOFFS.md"))
+    block = handoffs.split("\n### Feature closer\n", 1)[-1].split("\n### ", 1)[0] if "\n### Feature closer\n" in handoffs else ""
+    for want in ("Verdict:", "Human corrections", "Agent stops", "Remote config", "Runs:", "Fired rules", "Cost script:", "Never commit"):
+        if want not in block:
+            bad(f"harness/HANDOFFS.md § Feature closer doesn't pass {want!r}")
+    cfg = read_agents_config(read(os.path.join(t, "harness.config.yml"))).get("closer", {})
+    model = re.search(r'^model: *"?([^"\n]+?)"? *$', fm, re.M)
+    if not cfg.get("model") or not model or model.group(1) != cfg["model"]:
+        bad(f".claude/agents/feature-closer.md runs {model and model.group(1)!r}, but agents.closer.model is {cfg.get('model')!r}")
+    eff = re.search(r"^effort: *(\S+)", fm, re.M)
+    if not eff or eff.group(1) != cfg.get("effort"):
+        bad(f".claude/agents/feature-closer.md has effort {eff and eff.group(1)!r}, but agents.closer.effort is {cfg.get('effort')!r}")
+
+
+def check_code_scout(bad, t):
+    """Cost: the code scout maps the code before a full or bug plan on a cheap model, can search (headless Claude Code
+    has no Grep or Glob tool), writes the map file and nothing else (Write, no Edit, web or MCP tools); the Technical
+    Lead's plan step launches it and the Full-stack prompt hands the map on."""
+    p = os.path.join(t, ".claude/agents/code-scout.md")
+    if not os.path.exists(p):
+        bad(".claude/agents/code-scout.md is missing")
+        return
+    fm = read(p).split("\n---", 1)[0]
+    tools = re.search(r"^tools: *(.+)$", fm, re.M)
+    allowed = {x.strip() for x in tools.group(1).split(",")} if tools else None
+    if allowed is None or not {"Bash", "Read", "Write"} <= allowed or allowed - {"Read", "Write", "Bash", "Grep", "Glob"}:
+        bad(f".claude/agents/code-scout.md tools are {allowed}: the scout needs Read and Bash to search and Write for its one map file, and nothing that edits, browses or reaches MCP")
+    body = read(os.path.join(t, "harness/agents/code-scout.md"))
+    for want in ("git grep", "never edit", "Adjacent defects", "Not found", "path:line", "Plan/code-map.md", "One file"):
+        if want not in body:
+            bad(f"harness/agents/code-scout.md lost {want!r}")
+    tl = read(os.path.join(t, "harness/TECHNICAL_LEAD.md"))
+    row = next((l for l in tl.splitlines() if l.startswith("| Map the code |")), "")
+    if "code-scout" not in row or "| Write the plan | The line ranges the map names" not in tl:
+        bad("harness/TECHNICAL_LEAD.md § Full mode, step by step doesn't launch the code scout before the plan and read only the ranges it names")
+    handoffs = read(os.path.join(t, "harness/HANDOFFS.md"))
+    block = handoffs.split("\n### Code scout\n", 1)[-1].split("\n### ", 1)[0] if "\n### Code scout\n" in handoffs else ""
+    heads = re.findall(r"^- \*\*(.+?):\*\*", body.split("\n## The map\n", 1)[-1].split("\n## ", 1)[0], re.M)
+    if not block or not heads or any(h not in block for h in heads) or ".env" not in block:
+        bad(f"harness/HANDOFFS.md § Code scout doesn't name every heading of the role body's map ({heads}) or the secrets rule")
+    fs_block = handoffs.split("\n### Full-stack engineer\n", 1)[-1].split("\n### ", 1)[0] if "\n### Full-stack engineer\n" in handoffs else ""
+    if "Plan/code-map.md" not in block or "Code map" not in fs_block or "Plan/code-map.md" not in read(os.path.join(t, "harness/agents/fullstack-engineer.md")):
+        bad("the code scout's map doesn't reach the builder: § Code scout must write Plan/code-map.md and the Full-stack prompt block and role body must read it")
+    flow = handoffs.split("\n## Mandatory flow", 1)[-1].split("\n## ", 1)[0]
+    if not re.search(r"^0\. Full mode, before the plan → Agent \*\*code scout\*\*", flow, re.M) or "Bug mode skips it" not in flow:
+        bad("harness/HANDOFFS.md § Mandatory flow doesn't start full mode with the code scout, or doesn't say bug mode skips it")
+    if "`git grep -n` each function" not in tl or "comes from your own read" not in tl:
+        bad("harness/TECHNICAL_LEAD.md's plan step takes callers from the scout's map without checking them")
+    cfg = read_agents_config(read(os.path.join(t, "harness.config.yml"))).get("scout", {})
+    model = re.search(r'^model: *"?([^"\n]+?)"? *$', fm, re.M)
+    if not cfg.get("model") or not model or model.group(1) != cfg["model"]:
+        bad(f".claude/agents/code-scout.md runs {model and model.group(1)!r}, but agents.scout.model is {cfg.get('model')!r}")
+
+
+def check_handoff(bad, pb, settings, sample, integ):
+    """Cost: scripts/handoff.sh prints each subagent's HANDOFFS.md prompt block with the fields a script can fill
+    filled (feature folder, code map commit, path rules, merge base, diff stat, untracked files, checks status, mode,
+    tested commit, cost flag), so a hand-off is one call, and it changes nothing in the work tree."""
+    if "Bash(bash scripts/handoff.sh:*)" not in settings.get("permissions", {}).get("allow", []):
+        bad(".claude/settings.json doesn't allow bash scripts/handoff.sh: every hand-off would start at a permission prompt")
+    sh = lambda *a: run(["bash", "scripts/handoff.sh", *a], pb)
+    def put(path, text):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        write(path, text)
+    feat = os.path.join(pb, "_harness/features/sel-test/1")
+    os.makedirs(os.path.join(pb, "db/migrations"), exist_ok=True)
+    put(os.path.join(feat, "Plan/plan.md"), "# Plan\n\nStatus: approved\n\nAdds `db/migrations/002_tags.sql:1-20`.\n")
+    r = sh("fullstack", "sel-test")
+    if "run the code scout first" not in r.stdout:
+        bad("handoff.sh fullstack in a full-mode feature with no code map doesn't say to run the scout first")
+    put(os.path.join(feat, "Plan/code-map.md"), "# Code map\n\n- **Commit:** `abc1234`\n")
+    os.makedirs(os.path.join(pb, os.path.dirname(sample) or "."), exist_ok=True)
+    put(os.path.join(pb, sample), "x\n")
+    run(["git", "add", "--", sample], pb)
+    run(["git", "-c", "user.name=selftest", "-c", "user.email=selftest@example.com", "commit", "-q", "-m", "sample"], pb)
+    put(os.path.join(pb, "db/migrations/002_tags.sql"), "select 1;\n")
+    base = run(["git", "rev-parse", "--short", integ], pb).stdout.strip()
+    bugf = os.path.join(pb, "_harness/features/sel-bugfill/1")
+    put(os.path.join(bugf, "Plan/plan.md"), "# Bug plan: paging\n\n## Fix limit\n\nOne file.\n")
+    before = run(["git", "status", "--porcelain", "--untracked-files=all"], pb).stdout
+    out = {}
+    for role in ("scout", "fullstack", "qa", "closer"):
+        r = sh(role, "sel-test")
+        out[role] = r.stdout
+        if r.returncode or "<abs-path>" in r.stdout or feat not in r.stdout or "\nhandoff: " not in r.stdout:
+            bad(f"handoff.sh {role} didn't print its block with the feature folder filled (exit {r.returncode}, {r.stderr[:160]!r})")
+    if "written at commit abc1234" not in out["fullstack"] or "Path rules: .claude/rules/data.md" not in out["fullstack"]:
+        bad("handoff.sh fullstack doesn't fill the code map's commit, or misses data.md for a migration the plan names by line range")
+    if f"base {base}" not in out["qa"] or "1 file changed" not in out["qa"] or "db/migrations/002_tags.sql" not in out["qa"] \
+            or f"git diff {base}" not in out["qa"] or "<bash scripts/checks.sh status output>" in out["qa"]:
+        bad("handoff.sh qa doesn't fill the merge base, the diff stat, the untracked files and the check results")
+    if "--branch sel-feature" not in out["closer"] or "mode: full;" not in out["closer"] or "Verdict" not in out["closer"].rsplit("handoff:", 1)[-1]:
+        bad("handoff.sh closer doesn't fill the mode and the cost flag, or doesn't list the verdict as left to fill")
+    if "still to fill from the conversation: <the owner's ask" not in out["scout"] and "Request" not in out["scout"].rsplit("handoff:", 1)[-1]:
+        bad("handoff.sh scout doesn't list the request as left to fill")
+    r = sh("qa", "sel-test", "--base", integ)
+    if r.returncode or f"base {base}" not in r.stdout:
+        bad(f"handoff.sh qa --base {integ} didn't resolve the ref to its commit (exit {r.returncode})")
+    fb, cl = sh("fullstack-bug", "sel-bugfill").stdout, sh("closer", "sel-bugfill").stdout
+    if "WIP(sel-bugfill)" not in fb or "Code map" in fb or "mode: bug;" not in cl or "code scout first" in fb:
+        bad("handoff.sh in bug mode doesn't fill the slug, keeps the Code map line, or reads the bug plan as full mode")
+    if run(["git", "status", "--porcelain", "--untracked-files=all"], pb).stdout != before:
+        bad("handoff.sh changed the working tree: it must only read")
+    check_agent_brief(bad, pb, out, feat)
+    check_bug_repro(bad, pb, integ, sample)
+    for args in (["nope", "sel-test"], ["qa"], ["qa", "Bad_Slug"], ["qa", "sel-test", "--version", "0"], ["qa", "sel-test", "--base", "x;y"],
+                 ["qa", "sel-test", "--base", "-R"], ["qa", "sel-test", "--base", "deadbeef0000"]):
+        r = sh(*args)
+        if r.returncode != 2:
+            bad(f"handoff.sh {' '.join(args)} exited {r.returncode}: a bad role, slug, version or base must be a usage error")
+
+
+def check_agent_brief(bad, pb, out, feat):
+    """Cost: handoff.sh compiles the Full-stack and QA agent brief (the addendum, testing.md, the path rules and the
+    project docs the role body and addendum name, comments out) into one file in the git folder, rebuilt at every
+    hand-off, so each agent reads one file instead of five to seven and never a stale copy."""
+    gitdir = run(["git", "rev-parse", "--absolute-git-dir"], pb).stdout.strip()
+    want = {"fullstack": ["## project/agents/fullstack-engineer.md", "## .claude/rules/testing.md", "## .claude/rules/data.md",
+                          "## project/TESTING.md", "## project/PROJECT.md", "## project/STACK.md § "],
+            "qa": ["## project/agents/qa-engineer.md", "## .claude/rules/testing.md", "## .claude/rules/data.md", "## project/CONTROLS.md"]}
+    for role, heads in want.items():
+        path = os.path.join(gitdir, "morphness", "briefs", f"sel-test-1-{role}.md")
+        text = read(path) if os.path.isfile(path) else ""
+        if f"Agent brief: {path}" not in out[role] or not text:
+            bad(f"handoff.sh {role} didn't write the agent brief to the git folder and name it on the Agent brief line")
+            continue
+        missing = [h for h in heads if h not in text]
+        if missing:
+            bad(f"handoff.sh {role}'s agent brief lacks {missing}")
+        if "<!--" in text or "\npaths:\n" in text or "](../" in text or "](./" in text or "don't open them" not in text:
+            bad(f"handoff.sh {role}'s agent brief keeps comments, a rule's paths: header or a relative link, or lacks the reading list's note")
+        if "handoff: agent brief:" in out[role] or "\nMissing: " in text:
+            bad(f"handoff.sh {role}'s agent brief misses a file or section the role reads: {out[role].rsplit('handoff:', 1)[-1][:200]!r}")
+        if "They are in the agent brief." not in out[role] or "drop this line" in out[role]:
+            bad(f"handoff.sh {role} still says to read the path rules apart from the brief, or left the Agent brief line unfilled")
+    fsrc = re.search(r"^Sources: .*$", read(os.path.join(gitdir, "morphness", "briefs", "sel-test-1-fullstack.md")), re.M)
+    fsrc = fsrc.group(0) if fsrc else ""
+    if not all(f"§ {n}" in fsrc for n in ("Commands", "Database", "Local stack (QA)")) or "Hosting" in fsrc:
+        bad(f"handoff.sh fullstack's agent brief doesn't hold exactly the project/STACK.md sections the addendum names: {fsrc!r}")
+    for role, slug_ in (("fullstack-bug", "sel-bugfill"), ("qa-repro", "sel-bugfill")):
+        if "Agent brief: " not in run(["bash", "scripts/handoff.sh", role, slug_], pb).stdout:
+            bad(f"handoff.sh {role} didn't name an agent brief")
+    if "Agent brief" in out["scout"] or "Agent brief" in out["closer"]:
+        bad("handoff.sh gave the scout or the closer an agent brief: only Full-stack and QA read the project docs")
+    testing, addendum = os.path.join(pb, "project/TESTING.md"), os.path.join(pb, "project/agents/fullstack-engineer.md")
+    keep, keep_add = read(testing), read(addendum)
+    write(testing, keep + "\n- Selftest marker rule (fresh brief), with `<!--` in code.\n")
+    write(addendum, re.sub(r"(## Read before you start\n)", r"\1\nBefore UI styling, read [docs/DESIGN.md](../../docs/DESIGN.md) § Tokens; never read project/RELEASE.md.\n", keep_add, count=1))
+    sh = run(["bash", "scripts/handoff.sh", "fullstack", "sel-test"], pb)
+    write(testing, keep)
+    write(addendum, keep_add)
+    text = read(os.path.join(gitdir, "morphness", "briefs", "sel-test-1-fullstack.md"))
+    if "Selftest marker rule (fresh brief), with `<!--` in code." not in text:
+        bad(f"handoff.sh fullstack's agent brief didn't pick up an edit to project/TESTING.md whole: it must be rebuilt at every hand-off and keep code spans (exit {sh.returncode})")
+    if "read `docs/DESIGN.md` § Tokens" not in text or "## project/RELEASE.md" in text:
+        bad("handoff.sh fullstack's agent brief dropped a non-project read from the addendum's list, or took in a file the list says never to read")
+
+
+def check_bug_repro(bad, pb, integ, sample):
+    """Cost: with mode.bug_repro: fullstack (a trial) bug mode has no QA reproduction run: Full-stack commits the
+    failing test first, and handoff.sh qa checks that order (test-only commit, nothing before it, test unchanged)."""
+    cfg = os.path.join(pb, "harness.config.yml")
+    keep = read(cfg)
+    if not re.search(r"^  bug_repro: qa\b", keep, re.M):
+        bad("harness.config.yml has no mode.bug_repro: qa default")
+        return
+    write(cfg, re.sub(r"^  bug_repro: qa\b", "  bug_repro: fullstack", keep, flags=re.M))
+    git_ = lambda *a: run(["git", "-c", "user.name=selftest", "-c", "user.email=selftest@example.com", *a], pb)
+    sh = lambda *a: run(["bash", "scripts/handoff.sh", *a], pb)
+    try:
+        if sh("qa-repro", "sel-bugfill").returncode != 2:
+            bad("handoff.sh qa-repro with mode.bug_repro: fullstack didn't refuse: there is no reproduction run")
+        fb = sh("fullstack-bug", "sel-bugfill").stdout
+        if "No failing test exists yet" not in fb or "WIP(sel-bugfill): failing test" not in fb:
+            bad("handoff.sh fullstack-bug with mode.bug_repro: fullstack doesn't print the own-reproduction block")
+        r = run(["bash", "scripts/plan-brief.sh", "--bug", "sel-bugnext", sample], pb)
+        if "handoff.sh fullstack-bug sel-bugnext" not in r.stdout:
+            bad("plan-brief.sh --bug with mode.bug_repro: fullstack doesn't name fullstack-bug as the next step")
+        git_("checkout", "-q", "-b", "sel-bugorder", integ)
+        test = os.path.join(pb, "tests/sel-bug.test.ts")
+        os.makedirs(os.path.dirname(test), exist_ok=True)
+        write(test, "red\n")
+        git_("add", "--", "tests/sel-bug.test.ts")
+        git_("commit", "-q", "-m", "WIP(sel-bugfill): failing test")
+        write(os.path.join(pb, "sel-fix.txt"), "fix\n")
+        git_("add", "--", "sel-fix.txt")
+        git_("commit", "-q", "-m", "fix")
+        qa = sh("qa", "sel-bugfill", "--base", integ).stdout
+        if (not re.search(r"^Bug order: ok: failing test [0-9a-f]+ \(tests/sel-bug\.test\.ts\)", qa, re.M) or "<the failing-test commit>" in qa
+                or not re.search(r"changed since: [^\n]*\bsel-fix\.txt", qa)):
+            bad(f"handoff.sh qa didn't pass a test-first bug branch and list its product file: {qa[qa.find('Bug order'):][:200]!r}")
+        fix = run(["git", "rev-parse", "HEAD"], pb).stdout.strip()
+        git_("checkout", "-q", integ)
+        write(os.path.join(pb, "sel-teammate.txt"), "theirs\n")
+        git_("add", "--", "sel-teammate.txt")
+        git_("commit", "-q", "-m", "a teammate's change")
+        git_("checkout", "-q", "sel-bugorder")
+        git_("merge", "-q", "--no-edit", integ)
+        r2 = sh("qa", "sel-bugfill", "--base", fix).stdout
+        if "Bug order: ok" not in r2 or "sel-teammate" in r2.split("Bug order", 1)[-1].split("\n", 1)[0]:
+            bad(f"handoff.sh qa's bug order broke on a merge of the integration branch or a round-2 --base: {r2[r2.find('Bug order'):][:200]!r}")
+        write(test, "edited\n")
+        if "PROBLEM: the test changed after" not in sh("qa", "sel-bugfill", "--base", integ).stdout:
+            bad("handoff.sh qa didn't flag a regression test edited after its failing-test commit")
+        write(test, "red\n")
+        git_("checkout", "-q", "-B", "sel-bugorder2", integ)
+        write(os.path.join(pb, "sel-early.txt"), "early\n")
+        git_("add", "--", "sel-early.txt")
+        git_("commit", "-q", "-m", "early fix")
+        os.makedirs(os.path.dirname(test), exist_ok=True)
+        write(test, "red\n")
+        git_("add", "--", "tests/sel-bug.test.ts")
+        git_("commit", "-q", "-m", "WIP(sel-bugfill): failing test")
+        if "changes sel-early.txt before the failing-test commit" not in sh("qa", "sel-bugfill", "--base", integ).stdout:
+            bad("handoff.sh qa didn't flag a product change committed before the failing test")
+        write(cfg, keep)
+        if "Bug order" in sh("qa", "sel-bugfill", "--base", integ).stdout:
+            bad("handoff.sh qa printed the Bug order line with mode.bug_repro: qa")
+    finally:
+        write(cfg, keep)
+        git_("checkout", "-q", "sel-feature")
+
+
+def check_contained_change(bad, t):
+    """Cost: with mode.risk_by: change (a trial) a small change to a risk-path file that keeps clear of users, access,
+    sign-in, secrets, money and deleting runs in small mode with one review; anything unsure stays full."""
+    for want in ("### Contained change (a trial)", "mode.risk_by: change", "`~ <file>: ordering or paging only`",
+                 "mode.contained_max_lines", "mode.risk_terms", "/code-review medium", "`git diff -W`", "ordering or paging"):
+        if want not in read(os.path.join(t, "harness/MODES.md")):
+            bad(f"harness/MODES.md § Contained change doesn't say {want}")
+    cfg_text = read(os.path.join(t, "harness.config.yml"))
+    for want in ("  risk_by: file ", "  contained_max_lines: 10 ", "  risk_terms: [] "):
+        if want not in cfg_text:
+            bad(f"harness.config.yml has no `{want.strip()}` default under mode:")
+            return
+    rk = os.path.join(tempfile.mkdtemp(prefix="contained-"), "p")
+    shutil.copytree(t, rk, symlinks=True)
+    integ = run(["bash", "-c", ". scripts/lib/config.sh; config_get branches.integration"], rk).stdout.strip() or "dev"
+    git_ = lambda *a: run(["git", "-c", "user.name=selftest", "-c", "user.email=selftest@example.com", *a], rk)
+    def risk(*args):
+        r = run(["bash", "scripts/risk-check.sh", *args], rk)
+        return r.returncode, r.stdout
+    controls = os.path.join(rk, "project/CONTROLS.md")
+    write(controls, re.sub(r"(^## Risk paths[^\n]*\n(?:.*\n)*?)(?=^- )",
+                           lambda m: m.group(1) + "- **Who can see a note:** `src/notes/`\n- **Billing:** `src/billing/`\n",
+                           read(controls), count=1, flags=re.M))
+    os.makedirs(os.path.join(rk, "src/notes"), exist_ok=True)
+    os.makedirs(os.path.join(rk, "src/billing"), exist_ok=True)
+    notes = ("export function sortNotes(list) {\n  return list\n    .slice()\n    .sort((a, b) => b.pinned - a.pinned)\n"
+             "    .sort((a, b) => b.createdAt - a.createdAt);\n}\n\n"
+             "export function noteTitle(n) {\n  const t = n.title;\n  return t.trim();\n}\n\n"
+             "export async function listMine(db, x) {\n  const size = 20;\n  const rows = await db.notes.where({ x }).limit(size);\n  return rows;\n}\n\n"
+             "export function deleteNote(db, id) {\n  const tag = 'x';\n  return db.notes.drop(id, tag);\n}\n\n"
+             "export function layout() {\n" + "".join(f"  const p{k} = {k};\n" for k in range(1, 7)) + "  return p1;\n}\n")
+    lst = os.path.join(rk, "src/notes/list.ts")
+    write(lst, notes)
+    write(os.path.join(rk, "src/notes/q.sql"), "select 1;\n")
+    write(os.path.join(rk, "src/billing/total.ts"), "export const total = (a) => a.length;\n")
+    with open(os.path.join(rk, "src/notes/logo.png"), "wb") as fh:
+        fh.write(b"\x89PNG\x00\x01")
+    cfg = os.path.join(rk, "harness.config.yml")
+    base_cfg = read(cfg)
+    for cmd in (["add", "-A"], ["commit", "-q", "--allow-empty", "-m", "state"], ["branch", "-f", integ],
+                ["checkout", "-q", "-B", "selftest-contained"]):
+        git_(*cmd)
+    tie = notes.replace("    .sort((a, b) => b.createdAt - a.createdAt);", "    .sort((a, b) => b.createdAt - a.createdAt || b.id - a.id);")
+    def case(why, body, want_plain, needle, path=lst, args=()):
+        if body is None:
+            os.remove(path)
+        elif isinstance(body, bytes):
+            with open(path, "wb") as fh:
+                fh.write(body)
+        else:
+            write(path, body)
+        code, out = risk(*args)
+        is_plain = out.startswith("Mode: plain") and "\n~ " in out and "Needs: one code review" in out
+        if code or is_plain != want_plain or needle not in out:
+            bad(f"risk-check.sh with mode.risk_by: change on {why} printed {out!r} (exit {code})")
+        git_("checkout", "-q", "--", ".")
+    try:
+        write(lst, tie)
+        code, out = risk()
+        if code or not out.startswith("Mode: full\n") or "- src/notes/list.ts: Who can see a note" not in out or "~ " in out:
+            bad(f"risk-check.sh with the default mode.risk_by: file on a one-line risk-path change printed {out!r} (exit {code})")
+        git_("checkout", "-q", "--", ".")
+        write(cfg, base_cfg.replace("  risk_by: file ", "  risk_by: change ").replace("  risk_terms: [] ", "  risk_terms: [colour_code] "))
+        for cmd in (["add", "-A"], ["commit", "-q", "-m", "trial"], ["branch", "-f", integ]):
+            git_(*cmd)
+        case("a one-line tie-breaker", tie, True, "~ src/notes/list.ts: ordering or paging only (2 lines;")
+        case("a new comment line", notes.replace("  return list\n", "  // newest first\n  return list\n"), True, "ordering or paging only (1 line;")
+        case("exactly mode.contained_max_lines lines", notes.replace("  return list\n", "  // x\n" * 10 + "  return list\n"), True, "(10 lines;")
+        case("one line over mode.contained_max_lines", notes.replace("  return list\n", "  // x\n" * 11 + "  return list\n"), False, "11 lines change, more than mode.contained_max_lines (10)")
+        case("a title change", notes.replace("return t.trim();", "return t.trim().slice(0, 80);"), False, "a changed line that isn't ordering or paging")
+        case("a deleted chain line", notes.replace("    .slice()\n", "", 1), False, "a changed line that isn't ordering or paging (`.slice()`)")
+        case("a changed query", notes.replace("  return list\n", "  return list.filter((n) => n.title)\n"), False, "isn't ordering or paging")
+        case("a new import", "import { z } from './z';\n" + notes, False, "isn't ordering or paging")
+        case("an ordering call that calls something", notes.replace("    .slice()\n", "    .slice()\n    .sort(pick())\n"), False, "an ordering call that calls something")
+        case("an ordering call with a template", notes.replace("    .slice()\n", "    .slice()\n    .order(`${col}`)\n"), False, "an ordering call with an argument it can't read")
+        case("a comment in a function about deleting", notes.replace("  const tag = 'x';\n", "  // keep the tag\n  const tag = 'x';\n"), False, "a line in the same function is about `delete")
+        case("a project term from mode.risk_terms", notes.replace("    .slice()\n", "    .slice()\n    .sort((a, b) => a.colourCode - b.colourCode)\n"), False, "a changed line is about `colour_code`")
+        case("a deleted file", None, False, "the branch deletes it")
+        case("a binary file", b"\x89PNG\x00\x02", False, "a binary file", path=os.path.join(rk, "src/notes/logo.png"))
+        case("a .sql file", "select 2;\n", False, "- src/notes/q.sql:", path=os.path.join(rk, "src/notes/q.sql"))
+        case("a money area", "export const total = (a) => a.length + 0;\n", False, "a sign-in, secrets or money area (Billing)",
+             path=os.path.join(rk, "src/billing/total.ts"))
+        write(controls, read(controls).replace("- **Billing:**", "- **Reports:**", 1))
+        case("a branch that renames a risk area", tie, False, "project/CONTROLS.md changes § Risk paths")
+        write(lst, tie)
+        code, out = risk("--force", "full")
+        if code or not out.startswith("Mode: full (the owner chose full") or "- src/notes/list.ts:" not in out or "Needs:" in out or "\n~ " in out:
+            bad(f"risk-check.sh --force full on a contained change printed {out!r} (exit {code}): the review must see a risk path")
+        code, out = risk("src/billing/total.ts")
+        if code or not out.startswith("Mode: full\n") or "- src/notes/list.ts:" not in out or "\n~ " in out:
+            bad(f"risk-check.sh on a contained change plus another risk path printed {out!r} (exit {code}): it is a risk path again")
+        git_("checkout", "-q", "--", ".")
+        write(os.path.join(rk, "src/notes/new.ts"), "export const x = 1;\n")
+        code, out = risk()
+        if code or not out.startswith("Mode: full\n") or "a new file" not in out:
+            bad(f"risk-check.sh with mode.risk_by: change on a new risk-path file printed {out!r} (exit {code})")
+        os.remove(os.path.join(rk, "src/notes/new.ts"))
+        code, out = risk("src/notes/planned.ts")
+        if code or not out.startswith("Mode: full\n") or "a new file" not in out or "Note:" in out:
+            bad(f"risk-check.sh with mode.risk_by: change on a planned new risk-path file printed {out!r} (exit {code}): it stays full")
+        code, out = risk("src/notes/list.ts")
+        if code or not out.startswith("Mode: full\n") or "\nNote: src/notes/list.ts isn't changed yet. With mode.risk_by: change" not in out:
+            bad(f"risk-check.sh with mode.risk_by: change on a named file not changed yet printed {out!r} (exit {code})")
+        write(cfg, read(cfg).replace("  contained_max_lines: 10 ", "  contained_max_lines: 400 "))
+        write(lst, tie)
+        code, out = risk()
+        if code or not out.startswith("Mode: full\n") or "harness.config.yml changes mode.contained_max_lines" not in out:
+            bad(f"risk-check.sh on a branch that widens mode.contained_max_lines printed {out!r} (exit {code})")
+        git_("checkout", "-q", "--", ".")
+        for bad_cfg, why in ((read(cfg).replace("  risk_by: change ", "  risk_by: maybe "), "mode.risk_by: maybe"),
+                             (read(cfg).replace("  risk_terms: [colour_code] ", "  risk_terms:\n    - colour_code\n  x_after: 1 "), "a block-list mode.risk_terms")):
+            write(cfg, bad_cfg)
+            code, out = risk("README.md")
+            if code != 2 or not out.startswith("Mode: full (risk check: mode.risk_"):
+                bad(f"risk-check.sh with {why} printed {out!r} (exit {code}): it must fail toward full")
+            git_("checkout", "-q", "--", ".")
+    finally:
+        shutil.rmtree(os.path.dirname(rk))
+
+
+def check_retro_batch(bad, t):
+    """Cost: with loop.retro_every above 1 the Technical Lead decides action items for several features in one pass;
+    prune-counter.sh counts the learnings files with an open or deferred item (not one the owner decides) and says
+    when the batch is due. At 1 (the default) it prints nothing new."""
+    if "Retro decisions" in run(["bash", "scripts/prune-counter.sh"], t).stdout:
+        bad("prune-counter.sh prints a Retro decisions line with loop.retro_every: 1")
+    tmp = tempfile.mkdtemp(prefix="retro-")
+    try:
+        rb = os.path.join(tmp, "p")
+        shutil.copytree(t, rb, symlinks=True, ignore=shutil.ignore_patterns("node_modules", ".venv"))
+        cfg = os.path.join(rb, "harness.config.yml")
+        text = read(cfg)
+        if not re.search(r"^  retro_every: 1\b", text, re.M):
+            bad("harness.config.yml has no loop.retro_every: 1 default")
+            return
+        setto = lambda v: write(cfg, re.sub(r"^  retro_every: 1\b", f"  retro_every: {v}", text, flags=re.M))
+        setto(3)
+        if run(["bash", "-c", ". scripts/lib/config.sh; config_get loop.retro_every"], rb).stdout.strip() != "3":
+            bad("config_get loop.retro_every doesn't read the value")
+        d = os.path.join(rb, "_harness/learnings")
+        os.makedirs(d, exist_ok=True)
+        row = lambda slug, status, note="lands in: z": (
+            f"# {slug} v1 learnings\n\n## Action items\n\n| From retro | # | Type | Action | Why raised | Status | Note |\n"
+            f"|---|---|---|---|---|---|---|\n| {slug} v1 | 1 | Doc | x | What went wrong #1: y | {status} | {note} |\n")
+        write(os.path.join(d, "sel a-v1.md"), row("sel a", "open (batched)", "lands in: a \\| b"))
+        write(os.path.join(d, "sel-b-v1.md"), row("sel-b", "approved"))
+        write(os.path.join(d, "sel-c-v1.md"), row("sel-c", "open", "human decides: costs money"))
+        r = run(["bash", "scripts/prune-counter.sh"], rb)
+        if (r.returncode or not r.stdout.startswith("Prune counter: ") or "Retro decisions: 1/3 features with open items" not in r.stdout
+                or "Retro decisions are DUE" in r.stdout):
+            bad(f"prune-counter.sh with loop.retro_every: 3 should count only the open (batched) item, not an approved or owner's one: {r.stdout!r}")
+        write(os.path.join(d, "sel-b-v1.md"), row("sel-b", "deferred", "from sel a"))
+        write(os.path.join(d, "sel-d-v1.md"), row("sel-d", "`open`"))
+        out = run(["bash", "scripts/prune-counter.sh"], rb).stdout
+        if not re.search(r"^Retro decisions are DUE: _harness/learnings/sel a-v1\.md, .*sel-b-v1\.md, .*sel-d-v1\.md ", out, re.M):
+            bad(f"prune-counter.sh with three features' open or deferred items doesn't print the DUE line naming all three: {out!r}")
+        setto(9)
+        r = run(["bash", "scripts/prune-counter.sh"], rb)
+        if "the allowed range is 1 to 5, so 5 is used" not in r.stderr or "/5 features" not in r.stdout:
+            bad("prune-counter.sh doesn't clamp loop.retro_every above 5 to 5 and say so")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def check_plan_brief(bad, t, settings):
+    """Cost: scripts/plan-brief.sh gathers the plan step's docs into one file the Technical Lead reads once, writes
+    nothing for a plain change, and keeps the brief out of commits."""
+    pb = os.path.join(tempfile.mkdtemp(prefix="brief-"), "p")
+    shutil.copytree(t, pb, symlinks=True)
+    integ = run(["bash", "-c", ". scripts/lib/config.sh; config_get branches.integration"], pb).stdout.strip() or "dev"
+    for cmd in (["add", "-A"], ["-c", "user.name=selftest", "-c", "user.email=selftest@example.com", "commit", "-q", "--allow-empty", "-m", "state"],
+                ["branch", "-f", integ]):
+        run(["git", *cmd], pb)
+    run(["git", "checkout", "-q", "-B", "sel-feature"], pb)   # off the integration branch, so it can be deleted below
+    if "Bash(bash scripts/plan-brief.sh:*)" not in settings.get("permissions", {}).get("allow", []):
+        bad(".claude/settings.json doesn't allow bash scripts/plan-brief.sh: every plan would start at a permission prompt")
+    risky = next((g for g in re.findall(r"`([^`\s]+)`", read(os.path.join(pb, "project/CONTROLS.md")).split("## Risk paths", 1)[-1].split("\n## ", 1)[0])
+                  if g.endswith("/")), "auth/")
+    sample = risky.lstrip("/").replace("**/", "a/").replace("**", "a").replace("*", "x") + "f.ts"
+    brief = os.path.join(pb, "_harness/features/sel-test/1/Plan/brief.md")
+    r = run(["bash", "scripts/plan-brief.sh", "sel-test", sample], pb)
+    if r.returncode or not r.stdout.startswith("Mode: full\n") or not os.path.isfile(brief):
+        bad(f"plan-brief.sh on a risk path didn't print the risk check and write the brief (exit {r.returncode}, {r.stdout[:160]!r})")
+    else:
+        text = read(brief)
+        plan_tpl = read(os.path.join(pb, "harness/templates/plan.md")).strip()
+        for want, why in (("## Risk check", "the risk check"), ("## Full harness", "MODES.md § Full harness"),
+                          ("## Effort per feature", "SETUP.md § Effort per feature"), ("## Where QA can run", "SETUP.md § Where QA can run"),
+                          ("## .claude/rules/testing.md", "testing.md"), ("## Planning and scope", "the checklist's always-run groups"),
+                          ("## Process", "PLAN_CHECKLIST.md § Process"), ("## project/PLAN_CHECKLIST.md", "the project checklist"),
+                          ("handoff.sh scout", "the next step's handoff.sh call"), ("Files: " + sample, "the files it was made for")):
+            if want not in (r.stdout if want.startswith("handoff") else text):
+                bad(f"plan-brief.sh's brief has no {why} ({want!r})")
+        if plan_tpl not in text or "doc-section: this print is" in text:
+            bad("plan-brief.sh's brief doesn't hold the plan template whole, or carries doc-section's size warning")
+        if "Read it with the Read tool" not in r.stdout or len(r.stdout) > 2000:
+            bad(f"plan-brief.sh printed the brief instead of naming the file to Read ({len(r.stdout)} characters)")
+        st = run(["git", "status", "--porcelain", "--untracked-files=all"], pb).stdout
+        if "brief.md" in st:
+            bad(f"plan-brief.sh's brief would be committed: {st!r}")
+    r = run(["bash", "scripts/plan-brief.sh", "--bug", "sel-bug", sample], pb)
+    btext = read(os.path.join(pb, "_harness/features/sel-bug/1/Plan/brief.md")) if r.returncode == 0 else ""
+    if ("## Bug mode" not in btext or "## Full harness" not in btext or read(os.path.join(pb, "harness/templates/bug-plan.md")).strip() not in btext
+            or read(os.path.join(pb, "harness/templates/plan.md")).strip() in btext
+            or "## Planning and scope" not in btext or "## Process" in btext or "## project/PLAN_CHECKLIST.md" in btext):
+        bad(f"plan-brief.sh --bug didn't write a brief with § Full harness, § Bug mode and the bug plan template only (exit {r.returncode})")
+    if "\npaths:\n" in read(brief):
+        bad("plan-brief.sh's brief kept testing.md's `paths:` header")
+    r = run(["bash", "scripts/plan-brief.sh", "sel-test", sample], pb)
+    if "already has a plan" in r.stdout:
+        bad("plan-brief.sh warned about an existing plan where there is none")
+    open(os.path.join(os.path.dirname(brief), "plan.md"), "w").write("# Plan\n")
+    r = run(["bash", "scripts/plan-brief.sh", "sel-test", sample], pb)
+    if "already has a plan" not in r.stdout or "--version 2" not in r.stdout:
+        bad(f"plan-brief.sh on a version that has a plan.md didn't point to --version 2: {r.stdout[:200]!r}")
+    r = run(["bash", "scripts/plan-brief.sh", "--bug", "sel-bugplain", "src/plain-file.ts"], pb)
+    if r.returncode or os.path.exists(os.path.join(pb, "_harness/features/sel-bugplain")):
+        bad("plan-brief.sh --bug on a plain fix wrote a brief: a plain bug fix is small mode")
+    r = run(["bash", "scripts/plan-brief.sh", "sel-plain", "src/plain-file.ts"], pb)
+    if r.returncode or not r.stdout.startswith("Mode: plain") or os.path.exists(os.path.join(pb, "_harness/features/sel-plain")):
+        bad(f"plan-brief.sh on a plain change wrote a brief or didn't print the risk check (exit {r.returncode}, {r.stdout[:160]!r})")
+    for args in (["Bad_Slug", sample], ["../up", sample], [], ["--version", "x", "ok", sample], ["--version", "0", "ok", sample],
+                 ["--force", "bogus", "sel-force", sample]):
+        r = run(["bash", "scripts/plan-brief.sh", *args], pb)
+        if r.returncode != 2:
+            bad(f"plan-brief.sh {' '.join(args) or '(no slug)'} exited {r.returncode}: a bad slug or version must be a usage error")
+    if os.path.exists(os.path.join(pb, "_harness/features/sel-force")):
+        bad("plan-brief.sh with a bad --force wrote a brief: a usage error writes nothing")
+    check_handoff(bad, pb, settings, sample, integ)
+    run(["git", "branch", "-D", integ], pb)
+    r = run(["bash", "scripts/plan-brief.sh", "sel-undecided", "README.md"], pb)
+    if r.returncode != 2 or not r.stdout.startswith("Mode: full") or not os.path.isfile(os.path.join(pb, "_harness/features/sel-undecided/1/Plan/brief.md")):
+        bad(f"plan-brief.sh when the risk check can't decide exited {r.returncode} without a brief: it must read as full and exit 2")
+    shutil.rmtree(os.path.dirname(pb))
+
+
 def check_doc_sections(bad, t):
     """H3: scripts/doc-section.sh prints one section of a harness doc, and every call the docs spell out names a
     section that exists, so the Technical Lead reads the part a step needs, not the whole file."""
@@ -1047,6 +1549,12 @@ def check_doc_sections(bad, t):
     r = run(ds + ["harness/MODES.md", "Choosing mode"], t)
     if r.returncode or not r.stdout.startswith("## Choosing mode") or "\n## Research mode" in r.stdout:
         bad(f"scripts/doc-section.sh didn't print only § Choosing mode (exit {r.returncode}, {r.stdout[:80]!r})")
+    r = run(ds + ["harness/SETUP.md", "After QA pass", "Retrospective", "Prune"], t)
+    if r.returncode or not r.stdout.startswith("doc-section: this print is ") or "fewer sections per call" not in r.stdout.splitlines()[0]:
+        bad(f"scripts/doc-section.sh didn't warn on its first line that a print over 12000 characters can be cut: {r.stdout[:120]!r}")
+    r = run(ds + ["harness/SETUP.md", "Effort per feature", "Where QA can run"], t)
+    if r.returncode or r.stdout.startswith("doc-section:"):
+        bad(f"scripts/doc-section.sh warned on a print under 12000 characters: {r.stdout[:120]!r}")
     r = run(ds + ["harness/MODES.md", "Small mode"], t)
     if r.returncode or "\n### Fixing a bug\n" not in r.stdout or "\n## Bug mode" in r.stdout:
         bad("scripts/doc-section.sh doesn't keep a section's subsections and stop at the next section")
@@ -1573,6 +2081,23 @@ def check_end_of_task(bad, t, settings):
     code2, _, _ = hook(event="SubagentStop", agent_id="other")
     if code2:
         bad("checks.sh hook sent a second agent back for a failure another agent already got, on the same code")
+    # is_doc reads checks.doc_paths_add / checks.doc_paths_remove: a removed path is code, an added one is
+    # documentation, and neither can pull in scripts, hooks, settings or a `..` path
+    src = read(os.path.join(ck, "scripts/checks.sh"))
+    ns = {"os": os}
+    exec(re.search(r"def names\(value\):.*?\n\n", src, re.S).group(0), ns)
+    code_part = src[src.index("DOC_DIRS ="):src.index("def tree_key")]
+    for add, remove, path, want in (
+            ("", "", "docs/a.md", True), ("", "docs/", "docs/a.md", False), ("", "docs/site/", "docs/site/p.md", False),
+            ("", "docs/site/", "docs/other.md", True), ("", "", "content/p.txt", False), ("content/", "", "content/p.txt", True),
+            ("./content/", "", "content/p.txt", True), ("content/", "", "content/../src/a.ts", False),
+            ("scripts/", "", "scripts/checks.sh", False), (".claude/hooks/", "", ".claude/hooks/x.sh", False),
+            ("README.md", "", "README.md", True), ("", "README.md", "README.md", False)):
+        env = dict(CHECKS_DOC_ADD=add, CHECKS_DOC_REMOVE=remove)
+        local = dict(ns, os=type("O", (), {"environ": env})())
+        exec(code_part, local)
+        if local["is_doc"](path) != want:
+            bad(f"checks.sh is_doc({path!r}) with doc_paths_add={add!r} and doc_paths_remove={remove!r} should be {want}")
     seen = []
     for i in range(3):
         write(os.path.join(ck, "src-change.ts"), f"export const x = {10 + i};\n")
@@ -1973,6 +2498,7 @@ def check(name, fx, t):
         repin()
     if cfg("branches.integration") != fx["branches"]["integration"]:
         bad("config_get branches.integration doesn't print the integration branch")
+    check_retro_batch(bad, t)
     r = run(["bash", "scripts/prune-counter.sh"], t)
     lines = r.stdout.splitlines()
     if r.returncode or not lines or lines[0] != "Prune counter: 0/10":
@@ -2201,7 +2727,11 @@ def check(name, fx, t):
     if code != 2 or not out.startswith("Mode: full (risk check: "):
         bad(f"risk-check.sh with no `{integ}` branch printed {out!r} (exit {code}): it must fail toward full")
     shutil.rmtree(os.path.dirname(rk))
+    check_contained_change(bad, t)
     check_end_of_task(bad, t, settings)
+    check_plan_brief(bad, t, settings)
+    check_code_scout(bad, t)
+    check_feature_closer(bad, t)
     # prune states: proposed and approved are open (named, no DUE); declined, applied and README are not
     pdir, ldir = os.path.join(t, "_harness/prunes"), os.path.join(t, "_harness/learnings")
     os.makedirs(pdir, exist_ok=True)
@@ -2294,6 +2824,39 @@ def check(name, fx, t):
         r, last = cost_run("--sinse", "2026-10-21")
         if r.returncode != 2 or "bad option: --sinse" not in r.stdout:
             bad(f"feature-cost.sh with an unknown option exited {r.returncode}: {r.stdout!r}")
+        # no option: a session that began long before the branch's first commit gets a note on the Cost line
+        gt = tempfile.mkdtemp(prefix="fc-since-")
+        try:
+            os.makedirs(os.path.join(gt, "scripts")); os.makedirs(os.path.join(gt, "harness"))
+            shutil.copytree(os.path.join(t, "scripts/lib"), os.path.join(gt, "scripts/lib"))
+            for rel in ("scripts/feature-cost.sh", "harness/MODEL_PRICES.md"):
+                shutil.copy(os.path.join(t, rel), os.path.join(gt, rel))
+            gid = ["git", "-c", "user.name=x", "-c", "user.email=x@x", "-c", "commit.gpgsign=false"]
+            def gcommit(msg, when):
+                run(gid + ["add", "-A"], gt)
+                run(gid + ["commit", "-q", "-m", msg], gt, env=dict(os.environ, GIT_AUTHOR_DATE=when, GIT_COMMITTER_DATE=when))
+            run(["git", "init", "-q", "-b", "main"], gt)
+            gcommit("base", "2026-10-21T08:00:00Z")
+            run(["git", "update-ref", "refs/remotes/origin/main", "HEAD"], gt)
+            run(["git", "checkout", "-q", "-b", "feat"], gt)
+            open(os.path.join(gt, "a"), "w").write("a")
+            gcommit("feature", "2026-10-22T12:00:00Z")
+            ghome = os.path.join(t, "cost-home-since")
+            gproj = os.path.join(ghome, ".claude/projects", re.sub(r"[^A-Za-z0-9]", "-", os.path.realpath(gt)))
+            os.makedirs(gproj)
+            open(os.path.join(gproj, "g1.jsonl"), "w").write(
+                cost_entry("g1", mtok, ts="2026-10-21T09:00:00Z", branch="feat") + "\n"
+                + cost_entry("g2", mtok, ts="2026-10-22T12:30:00Z", branch="feat") + "\n")
+            genv = {k: v for k, v in os.environ.items() if k != "CLAUDE_CODE_SESSION_ID"}
+            r = run(["bash", os.path.join(gt, "scripts/feature-cost.sh")], gt, env=dict(genv, HOME=ghome))
+            last = (r.stdout.strip().splitlines() or [""])[-1]
+            if r.returncode or "began 27 h before this branch's first commit" not in last or "--since" not in last:
+                bad(f"feature-cost.sh with no option didn't note a session that began before the branch: {r.stdout!r} {r.stderr.strip()[-200:]!r}")
+            r = run(["bash", os.path.join(gt, "scripts/feature-cost.sh"), "--since", "2026-10-22T12:00"], gt, env=dict(genv, HOME=ghome))
+            if "began" in r.stdout:
+                bad(f"feature-cost.sh --since still printed the whole-session note: {r.stdout!r}")
+        finally:
+            shutil.rmtree(gt, ignore_errors=True)
         # a project path with an emoji: Claude Code names its folder with "--" for it (JavaScript string length)
         emo = os.path.join(t, "cost-emoji", "app \U0001F600")
         os.makedirs(os.path.join(emo, "harness"))
@@ -2334,6 +2897,11 @@ def check(name, fx, t):
     r = run(["bash", "scripts/evidence.sh"], t)
     if r.returncode or "2 features finished" not in r.stdout or "1 of 1 prune files" not in r.stdout or "1 fired" not in r.stdout or "50% passed QA first time" not in r.stdout:
         bad(f"evidence.sh misread the older record forms: {r.stdout!r} (stderr {r.stderr.strip()!r})")
+    # the summary shares what the harness caught, decided and learned, never a cost or spend figure,
+    # even when the records carry one (the entry above has ≈ $1.50)
+    rj = run(["bash", "scripts/evidence.sh", "--json"], t)
+    if re.search(r"(?i)cost|spend|\$\s*[0-9]|usd", r.stdout + rj.stdout):
+        bad(f"evidence.sh shares a cost figure: {r.stdout!r} {rj.stdout!r}")
     open(lf, "w").write(keep.split("## Entries")[0] + "## Entries\n\n- not an entry\n- nor this\n- **one v1** (2026-01-01): pass; QA 1\n")
     r = run(["bash", "scripts/evidence.sh"], t)
     if r.returncode != 3 or r.stdout:
@@ -2367,7 +2935,6 @@ def check(name, fx, t):
     want_keys = {"generated", "morphness_release", "first_feature", "last_feature", "windows", "escapes_recorded",
                  "failure_causes_unfolded", "modes_unfolded", "prunes", "prune_decisions", "lessons_adopted", "git",
                  "overall", "overall.features", "overall.enough_data", "overall.first_time_pass", "overall.avg_qa_rounds",
-                 "overall.cost_measured", "overall.avg_cost_usd", "overall.median_cost_usd",
                  "retro_items", "retro_items.applied", "retro_items.deferred", "retro_items.open", "retro_items.skipped",
                  "rule_audit", "rule_audit.fired", "rule_audit.insurance", "rule_audit.never fired", "rule_audit.other",
                  "rule_audit.too new", "trials",

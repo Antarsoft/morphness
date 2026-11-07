@@ -20,7 +20,7 @@ This folder is the **kit**. It was installed from Morphness, but it now belongs 
 | [GUARD.md](./GUARD.md) | What the guard hook denies, asks and does not see, and its switches |
 | [PLAN_CHECKLIST.md](./PLAN_CHECKLIST.md) | The Technical Lead's checklist before asking for plan approval |
 | [templates/](./templates/) | `plan.md`, `small-plan.md`, `bug-plan.md`, `progress.md`, `qa-result.md`, `prune.md`, `research.md`, `trial.md`, `release-qa-result.md`,<!-- module:roadmap --> `version.md`, `version-checklist.md`,<!-- /module:roadmap --> `learnings-entry.md`, `steps.md` |
-| [agents/](./agents/) | Generic role bodies for the Full-stack, QA<!-- module:legal -->, legal-writer<!-- /module:legal --> and researcher subagents (project addenda in `project/agents/`) |
+| [agents/](./agents/) | Generic role bodies for the Full-stack, QA<!-- module:legal -->, legal-writer<!-- /module:legal -->, researcher, code-scout and feature-closer subagents (project addenda in `project/agents/`) |
 | [modules/](./modules/) | Optional parts, switched on in `harness.config.yml` → `modules` |
 
 ## Layers

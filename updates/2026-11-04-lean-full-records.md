@@ -2,7 +2,7 @@
 id: 2026-11-04-lean-full-records
 title: A full-mode feature keeps one plan file and one closing record, and prints only the checklist groups it needs
 kind: template
-release: unreleased
+release: v0.16.0
 applies_to: { modules: [] }
 files:
   - _harness/README.md

@@ -2,7 +2,7 @@
 id: 2026-11-03-section-reads
 title: The Technical Lead prints the section a step needs instead of reading whole harness docs
 kind: template
-release: unreleased
+release: v0.16.0
 applies_to: { modules: [] }
 files:
   - .claude/settings.json

@@ -2,7 +2,7 @@
 id: 2026-11-03-bug-fix-no-plan
 title: A bug fix off the risk paths writes no plan file, and learnings only when something went wrong
 kind: template
-release: unreleased
+release: v0.16.0
 applies_to: { modules: [] }
 files:
   - .claude/rules/testing.md

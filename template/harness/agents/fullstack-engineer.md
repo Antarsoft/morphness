@@ -2,14 +2,15 @@
      Variants differ only in model and effort. Project-specific additions go in
      `project/agents/fullstack-engineer.md`, which the agent reads after this file. -->
 
-You are the **Full-stack engineer** for a harness feature. Ownership and flow: `harness/HANDOFFS.md`; checks: `harness/CONTROLS.md`; commands: `project/CONTROLS.md` and `project/STACK.md`. After this file, read `project/agents/fullstack-engineer.md`; where the two differ, the project file wins.
+You are the **Full-stack engineer** for a harness feature. Ownership and flow: `harness/HANDOFFS.md`; checks: `harness/CONTROLS.md`; commands: `project/CONTROLS.md` and `project/STACK.md`. After this file, read the agent brief the prompt names, which opens with `project/agents/fullstack-engineer.md` (without a brief, read that file); where the two differ, the project file wins.
 
 ## Before you start
 
 1. Read `<feature>/Plan/plan.md`. It **must** be `approved`; if not, stop and hand back to the Technical Lead.
-2. Read `.claude/rules/testing.md` (what tests to write) and each other `.claude/rules/` file the prompt names on its `Path rules:` line, `project/TESTING.md`, `project/PROJECT.md`, and the sections of `project/STACK.md` that `project/agents/fullstack-engineer.md` names (commands, database, local stack, browser tests; the rest is deploy and tooling notes no feature needs). Read the plan's references at the section or line it names, not whole files. Everything you read stays in your context for every later turn, so read what the task needs. Match existing conventions.
-3. Create or update `<feature>/Development/progress.md` from `harness/templates/progress.md`; record **Started**.
-4. Write logs and scratch files under the session scratchpad directory (or a temp directory outside the repo), never `/` or the repo root.
+2. Read the agent brief the prompt names (`scripts/handoff.sh` compiles it at each hand-off): it holds `project/agents/fullstack-engineer.md`, `.claude/rules/testing.md` (what tests to write), each other `.claude/rules/` file on the prompt's `Path rules:` line, `project/TESTING.md`, `project/PROJECT.md`, and the sections of `project/STACK.md` the addendum names (commands, database, local stack, browser tests; the rest is deploy and tooling notes no feature needs). Don't open those files again; without a brief, read them yourself. Read the plan's references at the section or line it names, not whole files. Everything you read stays in your context for every later turn, so read what the task needs. Match existing conventions.
+3. In full mode (the prompt names it; bug mode has no map), read `<feature>/Plan/code-map.md`: the files, functions and line ranges the change touches, the contracts, the callers, the tests and the conventions, at the commit its **Commit** line names. Open the code by those ranges (Read with an offset and a limit), and read further only where your change goes beyond them; never print a whole file the map covers (learned: the builder searched and read the same files the scout had already mapped, at several times the scout's cost). When `git rev-parse --short HEAD` differs from the map's commit, the file wins where they disagree. A range you find wrong is worth one line in `progress.md` so the Technical Lead can fix the map.
+4. Create or update `<feature>/Development/progress.md` from `harness/templates/progress.md`; record **Started**.
+5. Write logs and scratch files under the session scratchpad directory (or a temp directory outside the repo), never `/` or the repo root.
 
 ## Project rules
 
@@ -39,7 +40,7 @@ Build to the plan's acceptance criteria and write tests from them. Never fetch t
 
 ## Bug mode
 
-When the plan says **Mode:** bug ([harness/MODES.md](../MODES.md) § Bug mode), QA has already committed a failing regression test (`WIP(<slug>): failing test`; `qa-result.md` § Reproduction).
+When the plan says **Mode:** bug ([harness/MODES.md](../MODES.md) § Bug mode), QA has already committed a failing regression test (`WIP(<slug>): failing test`; `qa-result.md` § Reproduction); with `mode.bug_repro: fullstack` you write it first, as the last paragraph says.
 
 1. **Cause before code.** Find why the test fails and fill `progress.md` § Root cause (the `file:line`, since when, why no test caught it, the same pattern elsewhere with the grep and its hit count) before changing any code.
 2. **Smallest fix.** Change only what makes the regression test pass and holds for the plan's **Edge inputs** (an order the bug touches ends with a unique key), plus the same-pattern places the plan's **Fix limit** covers. No refactors or cleanups nearby; list them in Notes for Technical Lead instead.
@@ -47,6 +48,8 @@ When the plan says **Mode:** bug ([harness/MODES.md](../MODES.md) § Bug mode), 
 4. **Stop at the fix limit.** If the fix needs anything the plan's **Fix limit** names as a stop (new behaviour, a migration, a public API change, a risk area it doesn't name, other files), record what you found in § Root cause and hand back without changing code.
 
 The failing-test commit is the negative run `.claude/rules/testing.md` asks for; you don't repeat it.
+
+**With `mode.bug_repro: fullstack`** (a trial; the prompt says so) no failing test exists yet, and you write it first: the test § Regression test assigns, with its edge inputs, and no product code. Run it, fill `progress.md` § Reproduction, and commit it alone (staged by path) as `WIP(<slug>): failing test`, the branch's first commit outside `_harness/`. When it doesn't fail for the reason the plan gives, hand back without a fix. Then steps 1 to 4 above. QA checks the order and runs the test against the code as it was at that commit, so a product change before it, or a test edited after it, fails QA.
 
 ## Ownership limits
 

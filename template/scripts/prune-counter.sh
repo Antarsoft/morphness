@@ -9,6 +9,8 @@
 # with a token estimate and the agent and skill descriptions Claude Code also loads, and the plan
 # checklists and project/*.md against their budgets.
 # Each active trial (_harness/trials/*.md) gets a line with how many of its features have run.
+# With loop.retro_every above 1 it also prints `Retro decisions: N/<retro_every> features with open items`, and
+# `Retro decisions are DUE: <files>` once N reaches it (harness/SETUP.md § Retrospective → Batched decisions).
 # Exits 1 when a size budget is over and no prune proposal is open: the hand-off waits for the
 # proposal (harness/SETUP.md § Prune). Exits 2 when it can't measure all of it, with a "not measured"
 # line saying why (a tool it needs is missing, a record it reads isn't UTF-8), or on an unknown option
@@ -120,6 +122,43 @@ if [ "$obudget" -gt 0 ]; then allowance="$budget kit + $obudget for your own tex
 echo "Rules: $(kb "$bytes")/$total KB always loaded (${allowance}≈$(tok "$bytes") tokens; agent and skill descriptions add $(kb "$desc") KB, ≈$(tok "$desc") tokens)"
 echo "Checklists: $(kb "$cbytes")/$cbudget KB"
 echo "Project docs: $(kb "$dbytes")/$dbudget KB"
+# Batched retro decisions (loop.retro_every above 1): the learnings files with an action item still `open` or
+# `deferred` (its Status column, the second to last; `open (batched)` counts too), not counting a row whose Note says
+# `human decides` (the owner has it). A file that was there where this branch left the integration branch is read
+# from the integration branch, where a batch may have decided it since; a file only there is read from there too.
+retro_every="$(config_get loop.retro_every)"
+case "$retro_every" in
+  '') retro_every=1 ;;
+  *[!0-9]*|0) echo "(loop.retro_every is $retro_every; it takes 1 to 5, so 1 is used)" >&2; retro_every=1 ;;
+esac
+retro_every=$((10#$retro_every))
+if [ "$retro_every" -gt 5 ]; then
+  echo "(loop.retro_every is $retro_every; the allowed range is 1 to 5, so 5 is used)" >&2; retro_every=5
+fi
+if [ "$retro_every" -gt 1 ]; then
+  pending=""
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    p="_harness/learnings/$f"
+    if [ -n "$integration" ] && [ -n "${base:-}" ] && git cat-file -e "$base:$p" 2>/dev/null \
+      && git cat-file -e "origin/$integration:$p" 2>/dev/null; then body="$(git show "origin/$integration:$p" 2>/dev/null)"
+    elif [ -f "$p" ]; then body="$(cat "$p")"
+    elif [ -n "$integration" ]; then body="$(git show "origin/$integration:$p" 2>/dev/null)"
+    else body=""; fi
+    if printf '%s\n' "$body" | sed 's/\\|//g' | grep -v -i 'human decides' \
+      | grep -q -E '^[[:space:]]*\|.*\|[[:space:]]*`?(open|deferred)( \([^)|]*\))?`?[[:space:]]*\|[^|]*\|[[:space:]]*$'; then
+      pending="$pending${pending:+, }$p"
+    fi
+  done <<EOF_FILES
+$(printf '%s\n' "$files" | grep . | sort -u)
+EOF_FILES
+  npending=0
+  [ -n "$pending" ] && npending="$(printf '%s\n' "$pending" | tr ',' '\n' | grep -c .)"
+  echo "Retro decisions: $npending/$retro_every features with open items"
+  if [ "$npending" -ge "$retro_every" ]; then
+    echo "Retro decisions are DUE: $pending (decide every open item in them now: harness/SETUP.md § Retrospective → Batched decisions)"
+  fi
+fi
 # A proposal still open (proposed: the owner hasn't decided; approved: decided, cuts not applied yet):
 # the hand-off names it instead of writing another. A declined one is closed by prune step 6 (fold, reset).
 waiting=""

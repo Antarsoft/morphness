@@ -1,4 +1,4 @@
-<!-- One file per feature: _harness/learnings/<feature-slug>-v<version>.md, the feature's closing record and its retro, written by the Technical Lead on the feature branch (harness/SETUP.md § Retrospective).
+<!-- One file per feature: _harness/learnings/<feature-slug>-v<version>.md, the feature's closing record and its retro, drafted by the feature closer and checked by the Technical Lead on the feature branch (harness/SETUP.md § Retrospective).
      Never write into _harness/LEARNINGS.md itself: parallel branches would conflict there. The prune condenses the entry to one line in LEARNINGS.md § Entries, moves each action item row to the matching LEARNINGS.md table, and deletes this file.
      The number of *-v*.md files in _harness/learnings/ is the prune counter. -->
 

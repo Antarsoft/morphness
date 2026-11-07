@@ -8,6 +8,9 @@
 # With no names, prints the file's headings with the size of each section, so you can pick.
 # Exits 1 when a name matches no heading or more than one: it prints the sections the other names found, then
 # the problem and the headings on stderr. Exits 2 on a usage error (no file, an empty name).
+# When the sections printed together are over 12000 characters, the first line says so: one tool result that big
+# was cut in a benchmark run (15.6K printed in one call), and the reader had to print it again; print fewer
+# sections per call.
 # Usage: bash scripts/doc-section.sh <file.md> ["<heading>" ...]   (read-only)
 
 [ $# -ge 1 ] || { echo "usage: bash scripts/doc-section.sh <file.md> [\"<heading>\" ...]" >&2; exit 2; }
@@ -77,7 +80,10 @@ for name in names:
     s, e = span(hits[0])
     out.append("\n".join(lines[s:e]).rstrip())
 if out:
-    print("\n\n".join(out))
+    text = "\n\n".join(out)
+    if len(text) > 12000:
+        print(f"doc-section: this print is {len(text)} characters; a tool result this big can be cut, so print fewer sections per call.")
+    print(text)
 if bad:
     print("\n".join(bad), file=sys.stderr)
     print(f"Headings in {path}:", file=sys.stderr)

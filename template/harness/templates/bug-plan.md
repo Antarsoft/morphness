@@ -36,7 +36,7 @@ The `file:line` of each function on the path the TL read itself, and the suspect
 
 ## Regression test
 
-Written by **QA** before any fix (`harness/MODES.md` § Bug mode, step 2). QA adds only this test.
+Written by **QA** before any fix (`harness/MODES.md` § Bug mode, step 2; with `mode.bug_repro: fullstack`, by Full-stack as its first commit). The commit holds only this test; tests for the same-pattern places go in later commits, in a file of their own.
 
 - **Level:** unit | integration | browser e2e: one-line reason (the lowest level that shows the symptom).
 - **File:** the test file path (new or existing).

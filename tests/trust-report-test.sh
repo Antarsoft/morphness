@@ -30,6 +30,38 @@ $(row selftest own pass "all fine" "")]}" >"$tmp/good.json"
 check good "Every check in this run finished"
 grep -q brightgreen "$tmp/out/trust/badge.json" || { echo "FAIL good: badge is not green"; fail=1; }
 if grep -q "This run has problems" "$tmp/out/trust.html"; then echo "FAIL good: page claims problems"; fail=1; fi
+msg="$(python3 -I -c 'import json, sys; print(json.load(open(sys.argv[1]))["message"])' "$tmp/out/trust/badge.json")"
+[ "$msg" = "all checks pass · x 0000000 · 2026-01-01" ] || { echo "FAIL good: badge lacks release, commit and date: $msg"; fail=1; }
+# 2b. --check-release: the page must be the run at the tag (its commit, named as the tag, a clean tree).
+# A throwaway repo with the script in it: a tagged commit, a squash-merge-like commit outside the tag, a later one.
+rr="$tmp/rel-repo"; mkdir -p "$rr/scripts" "$rr/docs/trust"; cp "$ROOT/scripts/trust-report.sh" "$rr/scripts/"
+g() { git -C "$rr" -c user.name=t -c user.email=t@t -c commit.gpgsign=false -c tag.gpgsign=false "$@"; }
+g init -q; g commit -q --allow-empty -m one; old="$(g rev-parse HEAD)"
+g commit -q --allow-empty -m two; g tag v1.0.0; at="$(g rev-parse HEAD)"
+g checkout -q -b side "$old"; g commit -q --allow-empty -m side; side="$(g rev-parse HEAD)"; g checkout -q -
+res() { printf '{"schema":1,"generated":"2026-01-01 00:00 UTC","commit":"%s","release":"%s","dirty":%s,"limits":[],"rows":[]}\n' "$1" "$2" "$3" >"$rr/docs/trust/results.json"; }
+cr() { "$rr/scripts/trust-report.sh" --check-release "$@" 2>&1; }
+res "$at" v1.0.0 false
+cr v1.0.0 >/dev/null || { echo "FAIL check-release: the run at the tag was refused: $(cr v1.0.0)"; fail=1; }
+refused() { # <commit> <release> <dirty> <text the refusal must hold>
+  res "$1" "$2" "$3"
+  local out; out="$(cr v1.0.0)" && { echo "FAIL check-release: passed a page it should refuse ($4)"; fail=1; }
+  case "$out" in *"$4"*) ;; *) echo "FAIL check-release: wanted \"$4\", got: $out"; fail=1 ;; esac
+}
+refused "$old" v1.0.0 false "is older than"
+refused "$side" v1.0.0 false "is not in"
+refused "$at" "v1.0.0 + later commits" false "names release"
+refused "$at" v1.0.0 true "uncommitted"
+res "$at" v2.0.0 false
+case "$(cr v2.0.0)" in *"no tag v2.0.0"*) ;; *) echo "FAIL check-release: a missing tag was not reported"; fail=1 ;; esac
+# 2c. A real run at a tag, every tool faked to fail (no network), passes --check-release: the run must not read
+# its own tracked logs as uncommitted changes, and with two tags on the commit TRUST_TAG names the release.
+e2e="$tmp/e2e"; mkdir -p "$e2e"
+(cd "$ROOT" && git ls-files -z --cached --others --exclude-standard | xargs -0 cp --parents -t "$e2e" 2>/dev/null) || true
+g2() { git -C "$e2e" -c user.name=t -c user.email=t@t -c commit.gpgsign=false -c tag.gpgsign=false "$@"; }
+g2 init -q; g2 add -A; g2 commit -q -m snapshot; g2 tag v0.0.1; g2 tag v9.0.0   # both lightweight: describe names v0.0.1
+TRUST_TAG=v9.0.0 TRUST_FAKE_FAIL=selftest,agnix,shellcheck,gitleaks,skillspector "$e2e/scripts/trust-report.sh" --skip-selftest --allow-untriaged >/dev/null 2>&1 || true
+out="$("$e2e/scripts/trust-report.sh" --check-release v9.0.0 2>&1)" || { echo "FAIL check-release: a run at the tag was refused: $out"; fail=1; }
 # 3. gitleaks download: checked against the pinned checksum (not one fetched from the same place), extracted
 # on a Python without tar extraction filters, and a server that never answers fails the row instead of hanging.
 # Every other tool is faked to fail, and gitleaks itself is a fake served from a local folder.

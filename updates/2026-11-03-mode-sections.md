@@ -2,7 +2,7 @@
 id: 2026-11-03-mode-sections
 title: The main chat prints the mode sections it needs instead of reading MODES.md whole
 kind: template
-release: unreleased
+release: v0.16.0
 applies_to: { modules: [] }
 files:
   - AGENTS.md

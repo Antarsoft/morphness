@@ -2,7 +2,7 @@
 id: 2026-11-03-additive-migrations
 title: A new migration that only adds runs in small mode, with the database tests and one code review
 kind: template
-release: unreleased
+release: v0.16.0
 applies_to: { modules: [] }
 files:
   - harness/MODES.md

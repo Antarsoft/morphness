@@ -89,6 +89,12 @@ checks:
   # a pass costs no model turn, a failure sends the agent back. Keep it to fast checks; [] turns the hook off.
   on_stop: [typecheck, lint, unit]
   stop_retries: 2   # times in a row one failure sends the agent back before the turn ends with it on record
+  # doc_paths_add / doc_paths_remove: this project's changes to the documentation-only list (harness/CONTROLS.md
+  # § Documentation paths): folders ending in `/`, or single files, from the repository root. A removed path is
+  # always checked as code (a docs site whose markdown is compiled into pages); an added one is skipped like
+  # documentation. Here and not in a document, so an agent can't switch a check off by editing one.
+  doc_paths_add: []
+  doc_paths_remove: []
 
 # true: CI on the PR is a required gate. false: QA/qa-result.md on the final commit is the gate.
 ci_gate: false
@@ -115,6 +121,13 @@ risk_areas: []
 mode:
   plain_max_files: 6      # a change to more files than this (documentation not counted) gets full mode
   force: auto             # auto lets the script decide; full or plain makes every change run that way
+  bug_repro: qa           # bug mode's failing test: qa (a QA reproduction run before the fix) | fullstack (a trial:
+                          # Full-stack writes and commits it first, QA runs once; harness/MODES.md § Bug mode)
+  risk_by: file           # file: a change to a risk path is full mode | change (a trial): an ordering or paging edit
+                          # (order, sort, limit, range calls only) runs in small mode with one code review
+                          # (harness/MODES.md § Contained change)
+  contained_max_lines: 10 # with risk_by: change, the most lines (added and removed) a contained change makes in a file
+  risk_terms: []          # with risk_by: change, the project's own words that make a change not contained, one line (e.g. [org_id])
 
 agents:
   # Default: Sonnet in every role, at about half the cost of Opus; the plan, QA and checks carry the quality.
@@ -123,6 +136,8 @@ agents:
   fullstack: { model: sonnet, medium_model: sonnet, default: high, variants: [medium, high, xhigh] }
   qa: { model: sonnet, medium_model: sonnet, default: medium, variants: [medium, high] }   # high when Full-stack is xhigh
   researcher: { model: sonnet, high_model: sonnet, default: medium, variants: [medium, high] }   # read-only; research mode and research before a plan
+  scout: { model: haiku, effort: medium }   # code scout: maps the code before a full-mode plan into Plan/code-map.md, the one file it writes
+  closer: { model: haiku, effort: medium }   # feature closer: drafts the closing records after QA; the Technical Lead checks and decides
   legal_writer: { model: fable, effort: high }   # use opus if fable isn't available to you
 
 # Advisory only: Claude Projects settings can't be set from a repo.
@@ -163,14 +178,19 @@ cost: { track: true, prices: harness/MODEL_PRICES.md }
 #                  ssh, scp, sftp, rsync to or from another machine, nc, socat, telnet, ftp
 #   installs       a package runner (npx, bunx, pnpm dlx, uvx) downloading a package that isn't installed in the
 #                  project, unless it is a common dev tool, and `skills add`
+#   plan_reads     a cost rule, on unless off: while a full-mode plan is written, the main chat reads source
+#                  files over 80 lines by the code scout's line ranges (Read with offset and limit, sed -n),
+#                  not whole (a Read without a range, cat, nl, less ...); a deny, not an ask
 #   fail_open      true lets calls through when python3 is missing; by default a guard that can't run
 #                  (no python3, no config reader, unreadable input, a crash) blocks the call
 # A command with --dry-run or --help passes in every group. What the guard denies, asks and does not see:
 # harness/GUARD.md.
-guard: { mcp_writes: ask, pr_writes: allow, deploys: ask, publishes: ask, schema_pushes: ask, network: ask, installs: ask }
+guard: { mcp_writes: ask, pr_writes: allow, deploys: ask, publishes: ask, schema_pushes: ask, network: ask, installs: ask, plan_reads: on }
 
 loop:
   retro_max_items: 3      # usual action items per retro (soft: more with one line why, none is fine)
+  retro_every: 1          # features whose action items the Technical Lead decides together: 1 = at each feature's close;
+                          # 2 to 5 batches them (an Escaped line's item and an item the owner decides are decided at once)
   prune_every: 10         # learnings files between prunes (8 to 30; below 8 the prune has too few rules old enough to judge)
   rule_budget_kb: 16      # always-loaded rule files (CLAUDE.md, AGENTS.md, .claude/rules/ without paths:); over it, a prune is due
   owner_rules_kb: 0       # your own always-loaded text kept at install, on top of rule_budget_kb (/morph-init sets it)

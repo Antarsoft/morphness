@@ -9,7 +9,10 @@
 #
 # Usage: scripts/trust-report.sh [--out DIR] [--allow-untriaged] [--skip-selftest]
 #        scripts/trust-report.sh --render-only results.json [--out DIR]   (re-renders the page, runs nothing)
+#        scripts/trust-report.sh --check-release TAG [results.json]   (runs nothing; exit 1 unless the results
+#            were made at that tag: its commit, release named as the tag, a clean tree. Default: docs/trust/results.json)
 #   --out DIR  where docs/trust.html and docs/trust/ go (default: docs/ in the repo)
+#   TRUST_TAG=v1.2.3  the release tag being published (the release workflow sets it), when HEAD has more than one tag
 #   TRUST_FAKE_FAIL=agnix,gitleaks  makes those tools fail to start (tests that a crash is shown as "did not run")
 #   TRUST_NET_TIMEOUT=60  seconds a download may wait for the server (default 60) and, times 5, its whole time
 #   TRUST_GITLEAKS_URL, TRUST_GITLEAKS_SHA256  another gitleaks release folder and tarball checksum (for tests:
@@ -51,6 +54,7 @@ REPO = "https://github.com/antarsoft/morphness"
 out_dir = os.path.join(root, "docs")
 allow_untriaged = skip_selftest = False
 render_only = None
+check_release = None
 i = 0
 while i < len(args):
     a = args[i]
@@ -58,6 +62,11 @@ while i < len(args):
     elif a == "--allow-untriaged": allow_untriaged = True
     elif a == "--skip-selftest": skip_selftest = True
     elif a == "--render-only": render_only = args[i + 1]; i += 1
+    elif a == "--check-release":
+        if i + 1 >= len(args) or args[i + 1].startswith("--"): sys.exit("--check-release needs a tag")
+        check_release = [args[i + 1]]; i += 1
+        if i + 1 < len(args) and not args[i + 1].startswith("--"):
+            check_release.append(args[i + 1]); i += 1
     else: sys.exit(f"unknown option {a}")
     i += 1
 fake_fail = set(filter(None, os.environ.get("TRUST_FAKE_FAIL", "").split(",")))
@@ -224,11 +233,41 @@ def write_page(data):
     # shields.io endpoint data for the README badge: derived from the same rows as the page
     problems = [r for r in data["rows"] if r["status"] in ("fail", "did-not-run", "untriaged")]
     day = data["generated"][:10]
+    # the release and commit the run tested, beside the date, so a badge that has fallen behind shows it
+    tested = data["release"].replace(" + later commits", "+") + " " + data["commit"][:7]
     badge = {"schemaVersion": 1, "label": "tests",
-             "message": (f"{len(problems)} problem(s) · {day}" if problems else f"all checks pass · {day}"),
+             "message": (f"{len(problems)} problem(s) · {tested} · {day}" if problems else f"all checks pass · {tested} · {day}"),
              "color": "red" if problems else "brightgreen"}
     os.makedirs(data_dir, exist_ok=True)
     open(os.path.join(data_dir, "badge.json"), "w", encoding="utf-8").write(json.dumps(badge) + "\n")
+
+if check_release:
+    # The release workflow runs this after the report: the page it publishes must be the run at the tag, not
+    # an older page or a run on another commit (a squash-merged release branch, a checkout of main).
+    tag = check_release[0]
+    path = check_release[1] if len(check_release) > 1 else os.path.join(data_dir, "results.json")
+    try:
+        data = json.load(open(path, encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        sys.exit(f"check-release: can't read {path}: {e}")
+    tagged = sh(["git", "rev-parse", "--verify", "--quiet", f"refs/tags/{tag}^{{commit}}"]).stdout.strip()
+    problems = []
+    if not tagged:
+        problems.append(f"no tag {tag} in this checkout (git fetch --tags)")
+    elif data.get("commit") != tagged:
+        inside = sh(["git", "merge-base", "--is-ancestor", str(data.get("commit")), tagged]).returncode == 0
+        problems.append(f"the page tested commit {str(data.get('commit'))[:12]}, which "
+                        + ("is older than" if inside else "is not in") + f" tag {tag} ({tagged[:12]})")
+    if data.get("release") != tag:
+        problems.append(f"the page names release {data.get('release')!r}, not {tag!r}")
+    if data.get("dirty"):
+        problems.append("the run had uncommitted changes")
+    for p in problems:
+        print("check-release: " + p, file=sys.stderr)
+    if problems:
+        sys.exit(1)
+    print(f"check-release: {path} is the run at {tag} ({tagged[:12]})")
+    sys.exit(0)
 
 if render_only:
     data = json.load(open(render_only, encoding="utf-8"))
@@ -241,7 +280,6 @@ if render_only:
 # ---------------------------------------------------------------------------------------------------------
 tmp = tempfile.mkdtemp(prefix="morphness-trust-")
 tools = os.path.join(tmp, "tools"); os.makedirs(tools)
-shutil.rmtree(log_dir, ignore_errors=True); os.makedirs(log_dir)
 install_dir = None            # rendered sample install, set by the self-test run
 rows = []
 redact = [(root, "<repo>"), (tmp, "<tmp>")]
@@ -297,6 +335,11 @@ release = sh(["git", "describe", "--tags", "--abbrev=0"]).stdout.strip() or "unr
 head_tag = sh(["git", "describe", "--tags", "--exact-match", "HEAD"]).stdout.strip()
 if not head_tag and release != "unreleased":
     release += " + later commits"
+# Two tags on one commit: describe names either, so the release workflow says which one it is publishing.
+if os.environ.get("TRUST_TAG") and os.environ["TRUST_TAG"] in sh(["git", "tag", "--points-at", "HEAD"]).stdout.split():
+    release = os.environ["TRUST_TAG"]
+# Only now clear the old logs: they are tracked, so deleting them first made every run read as a dirty tree.
+shutil.rmtree(log_dir, ignore_errors=True); os.makedirs(log_dir)
 
 # --- own checks -------------------------------------------------------------------------------------------
 cases = [json.loads(l) for l in open(os.path.join(root, "tests/guard-cases.jsonl"), encoding="utf-8") if l.strip()]

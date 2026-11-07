@@ -54,7 +54,8 @@ GUARD_INSTALLS="$(config_get guard.installs)"
 GUARD_PR_WRITES="$(config_get guard.pr_writes)"
 GUARD_ALLOW_HOSTS="$(config_get guard.allow_hosts)"
 GUARD_FAIL_OPEN="$(config_get guard.fail_open)"
-export GUARD_LIB_DIR GUARD_FAIL_OPEN GUARD_CONFIG_READABLE GUARD_INTEGRATION GUARD_PRODUCTION GUARD_ENV_BRANCHES GUARD_MCP_WRITES GUARD_DEPLOYS GUARD_PUBLISHES GUARD_SCHEMA_PUSHES GUARD_NETWORK GUARD_INSTALLS GUARD_PR_WRITES GUARD_ALLOW_HOSTS
+GUARD_PLAN_READS="$(config_get guard.plan_reads)"
+export GUARD_LIB_DIR GUARD_FAIL_OPEN GUARD_PLAN_READS GUARD_CONFIG_READABLE GUARD_INTEGRATION GUARD_PRODUCTION GUARD_ENV_BRANCHES GUARD_MCP_WRITES GUARD_DEPLOYS GUARD_PUBLISHES GUARD_SCHEMA_PUSHES GUARD_NETWORK GUARD_INSTALLS GUARD_PR_WRITES GUARD_ALLOW_HOSTS
 
 # The checks below run in python3. It reads them from this file (the GUARD_PY block at the end) rather than from a
 # `-c` argument, because Linux caps a single argument at 128 KB. Line numbers in a traceback match this file.
@@ -65,7 +66,7 @@ rc=$?
 exit "$rc"
 
 : <<'GUARD_PY'
-import fnmatch, glob as globmod, json, os, re, shlex, subprocess, sys, tempfile, threading
+import fnmatch, glob as globmod, itertools, json, os, re, shlex, subprocess, sys, tempfile, threading, time
 
 # Claude Code lets a call through when a hook runs past its timeout (60 s in .claude/settings.json), so the guard
 # stops its own check after 15 s and blocks the call. GUARD_TIME_LIMIT can only lower the limit (the self-test uses it).
@@ -831,6 +832,21 @@ def split_flags(rest):
         (flags if w.startswith("-") else positional).append(w)
     return positional, flags
 
+def env_ref(ref):
+    """The environment branch a ref name points at, or "": `dev`, `refs/heads/dev`, `refs/remotes/origin/dev`,
+    `origin/dev` and any other `.../dev` all count, since git resolves a bare `origin/dev` from .git/origin/dev
+    before refs/remotes/origin/dev."""
+    ref = ref.lstrip("+").strip()
+    for name in PROTECTED_LOW:
+        low = ref.lower()
+        if low == name or low.endswith("/" + name):
+            return name
+    return ""
+
+ENV_REF_ASK = ("the end-of-task checks and the merge gate read the project's checks from the integration branch as "
+               "this clone has it, so moving that branch here changes which commands they run; the owner approves it. "
+               "Fetch it as it is (`git fetch origin`) and work on a feature branch.")
+
 def follow_git(sub, rest, git_dir_args):
     """Update SIM for the git commands that move HEAD or change where a plain push goes, and deny
     deleting or force-moving an environment branch."""
@@ -842,6 +858,8 @@ def follow_git(sub, rest, git_dir_args):
             return
         for k, w in enumerate(rest):
             if w in ("-b", "-B", "-c", "-C", "--orphan") and k + 1 < len(rest):
+                if w in ("-B", "-C") and env_ref(rest[k + 1]):
+                    ask(f"`git {sub} {w} {rest[k + 1]}` resets an environment branch in this clone: " + ENV_REF_ASK)
                 SIM["head"] = rest[k + 1]
                 return
         if "--" in rest or not positional or positional[0] == "-":
@@ -880,6 +898,22 @@ def follow_git(sub, rest, git_dir_args):
                 check_config_key(key, value, f"git {sub} --config sets it")
             elif w == "--template" or w.startswith("--template="):
                 config_ask("--template", f"git {sub} copies hooks from a template folder")
+    elif sub == "update-ref":
+        if "--stdin" in flags:
+            ask("`git update-ref --stdin` moves refs the guard can’t see; " + ENV_REF_ASK)
+        ref = positional[0] if positional else ""
+        if "$" in ref or "`" in ref:
+            ask(f"`git update-ref` target `{ref}` is built at run time, so the guard cannot see which ref it is. Name it in the command.")
+        if env_ref(ref):
+            ask(f"`git update-ref {ref}` moves an environment branch in this clone: " + ENV_REF_ASK)
+    elif sub == "fetch":
+        # `git fetch <remote> <src>:<dst>` writes <dst> here; a plain `git fetch origin dev` only updates origin/dev from the remote.
+        for spec in positional[1:]:
+            dst = spec.split(":", 1)[1] if ":" in spec else ""
+            if dst and ("$" in dst or "`" in dst):
+                ask(f"`git fetch` target `{dst}` is built at run time, so the guard cannot see which ref it writes. Name it in the command.")
+            if dst and env_ref(dst):
+                ask(f"`git fetch ... {spec}` writes an environment branch in this clone: " + ENV_REF_ASK)
     elif sub == "tag":
         if positional and not any(f in ("-d", "--delete", "-l", "--list") for f in flags):
             SIM["tags"].add(positional[0])
@@ -1004,6 +1038,7 @@ DEPLOY_ASK = [
     ("deploys", r"^(netlify|ntl)\b.*\bdeploy\b", "netlify deploy"),
     ("deploys", r"^(netlify|ntl)\b.*\benv(:|\s+)(set|unset|import|clone|migrate)\b", "netlify env set"),
     ("deploys", r"^supabase\b.*\bfunctions\s+deploy\b", "supabase functions deploy"),
+    ("deploys", r"^expo\b.*\s(publish(:(set|rollback))?|build:(ios|android)|upload:(ios|android))(\s|$)", "expo publish (or a classic expo build or upload)"),
     ("schema_pushes", r"\bprisma\s+db\s+push\b", "prisma db push"),
     ("schema_pushes", r"\bprisma\s+(migrate\s+reset|db\s+execute)\b", "prisma migrate reset"),
     ("schema_pushes", r"^drizzle-kit\b.*\b(push|migrate)\b", "drizzle-kit push"),
@@ -1720,6 +1755,32 @@ def check_cli(words):
     if any((t in WRITE_VERBS or t in CLI_WRITE_EXTRA) and t not in CLI_NOUNS for t in tokens) or not any(t in CLI_READ for t in tokens):
         cli_asks(f"{name} {joined}".strip())
 
+# Expo: `eas` builds, submits and ships updates with the owner\u2019s Expo login and store credentials. A call asks unless its
+# subcommand only reads (`whoami`, `build:list`, `update:view`, `env:list` …) or it asks for help or the version. The
+# generic CLI check doesn't fit: flag values such as `--profile preview` read like the `preview` verb.
+EAS_READ_WORDS = {"whoami", "diagnostics", "config", "autocomplete", "help", "open", "build:download", "build:run", "metadata:pull"}
+EAS_READ_VERBS = {"list", "view", "info", "get", "inspect", "logs", "runs", "status", "compare", "generate"}
+
+def check_eas(words):
+    # `yarn eas build`, `pnpm eas build`, `bun eas build` run the installed bin without `exec`
+    if len(words) > 1 and words[0] in ("yarn", "pnpm", "bun") and os.path.basename(words[1]) == "eas":
+        words = words[1:]
+    if not words or os.path.basename(words[0]) != "eas" or not GROUP_ASK["deploys"]:
+        return
+    rest = words[1:]
+    rest = rest[:rest.index("--")] if "--" in rest else rest
+    # oclif reads the version flag only as the first argument; help anywhere before `--`
+    if rest[:1] in (["--version"], ["-v"]) or any(w in ("--help", "-h") for w in rest):
+        return
+    sub = next((w.lower() for w in rest if not w.startswith("-")), "")
+    parts = sub.split(":")
+    sensitive = any(w == "--include-sensitive" or w.startswith("--include-sensitive=") for w in rest)
+    if not sensitive and (not sub or sub in EAS_READ_WORDS or (len(parts) > 1 and parts[-1] in EAS_READ_VERBS)):
+        return
+    ask(f"`eas {sub}` can build, submit to the app stores, ship an update, print secret values or change the Expo project with "
+        "the owner\u2019s Expo login; only the owner approves it (the Shared remote environments golden rule in AGENTS.md). "
+        "`guard.deploys: off` in harness.config.yml turns this prompt off.")
+
 # ---- code that is fetched and run, script files, deploy scripts, tree searches ---------------------
 SEGMENT_END = lambda t: t in SEPARATORS or set(t) <= set(";&|()")
 
@@ -2274,11 +2335,164 @@ def check_bash(cmd):
                 ask(f"`{label}` changes a shared remote environment or registry; only the owner approves it (the Shared remote environments golden rule in AGENTS.md). "
                     f"`guard.{group}: off` in harness.config.yml turns this prompt off.")
         check_cli(runner_words(words))
+        check_eas(runner_words(words))
         check_migrate(runner_words(words))
 
     if BARE_ENV:
         deny(f"`{BARE_ENV[0]}` here prints every environment variable, secrets included (as a bare `env` or `printenv` does). "
              "Name the variable you need (`printenv NAME`).")
+
+# ---- whole-file prints while a full-mode plan is written -------------------------------------------
+# A cost rule, not a safety one. While the Technical Lead writes a full-mode plan, it reads the line ranges the code
+# scout's map names (harness/TECHNICAL_LEAD.md § Full mode, step by step); printing a whole source file there costs what
+# the scout saved. So in the main chat only (a subagent's call carries agent_id), while the newest brief from
+# plan-brief.sh is a full-mode one under 12 hours old and its plan.md is missing or still a draft, a Read without a
+# range, or a `cat`-like print that reaches the chat, of a text file over PLAN_READ_LINES lines is denied with the way
+# to read a range. Docs, config files, the harness folders and scripts/ pass. `guard.plan_reads: off` turns it off.
+PLAN_READS = os.environ.get("GUARD_PLAN_READS", "").strip().lower() not in ("off", "false", "no")
+PLAN_READ_LINES = 80
+PLAN_READ_CMDS = {"cat", "nl", "tac", "less", "more"}
+PLAN_DOC_DIRS = ("_harness/", "harness/", "project/", ".claude/", "docs/", "scripts/", "node_modules/", ".git/")
+PLAN_DOC_EXTS = (".md", ".mdx", ".markdown", ".txt", ".rst", ".adoc", ".yml", ".yaml", ".json", ".toml", ".ini", ".cfg", ".lock",
+                 ".svg", ".pdf", ".ipynb", ".csv", ".tsv", ".log")
+PLAN_STDOUT = ("/dev/stdout", "/dev/stderr", "/dev/tty", "/dev/fd/1", "/dev/fd/2")
+PLAN_BRIEF = []
+
+def planning_brief():
+    """The full-mode brief of a plan still being written, as a project path, or "" when there is none."""
+    if PLAN_BRIEF:
+        return PLAN_BRIEF[0]
+    found = ""
+    if PLAN_READS and not event.get("agent_id"):
+        feats = os.path.join(globmod.escape(ROOT), "_harness", "features", "*", "*", "Plan")
+        def stamped(name):
+            out = []
+            for f in globmod.glob(os.path.join(feats, name)):
+                try:
+                    out.append((os.path.getmtime(f), f))
+                except OSError:
+                    pass
+            return out
+        briefs = stamped("brief.md")
+        if briefs:
+            mtime, brief = max(briefs)
+            plan = os.path.join(os.path.dirname(brief), "plan.md")
+            try:
+                newer_plan = any(m > mtime and f != plan for m, f in stamped("plan.md"))
+                if time.time() - mtime <= 12 * 3600 and not newer_plan:
+                    with open(brief, encoding="utf-8", errors="replace") as f:
+                        full_mode = "(full mode)" in f.readline()
+                    status = "draft"
+                    if full_mode and os.path.exists(plan):
+                        with open(plan, encoding="utf-8", errors="replace") as f:
+                            m = re.search(r"\*\*Status:\*\*\s*([a-z-]+)", f.read(4000))
+                        status = m.group(1) if m else "draft"
+                    if full_mode and status == "draft":
+                        found = os.path.relpath(brief, ROOT)
+            except OSError:
+                pass
+    PLAN_BRIEF.append(found)
+    return found
+
+def whole_read(word, how, shell=False):
+    """Deny a whole print of a source file over PLAN_READ_LINES lines while a full-mode plan is written. A Read path is
+    literal; a shell word is tried from the hook's cwd and each `cd` in the command, and globbed when no file has its name."""
+    brief = planning_brief()
+    if not brief:
+        return
+    w = expand_home(str(word).strip())
+    for var in ("${CLAUDE_PROJECT_DIR}", "$CLAUDE_PROJECT_DIR", "${PWD}", "$PWD"):
+        w = w.replace(var, ROOT)
+    if not w or any(c in w for c in "$`"):
+        return
+    cwd = event.get("cwd")
+    cwd = cwd if isinstance(cwd, str) and os.path.isabs(cwd) else ROOT
+    paths = [w] if os.path.isabs(w) else [os.path.join(cwd, d, w) for d in ([""] + CD_DIRS if shell else [""])]
+    if shell and any(c in w for c in "*?[") and not any(os.path.isfile(x) for x in paths):
+        paths = sorted(g for x in paths for g in itertools.islice(globmod.iglob(x), 200))[:20]
+    rels = {r for x in paths for r in rels_to_root(x)}
+    for rel in sorted(rels):
+        low = rel.replace(os.sep, "/").lower()
+        if low.startswith(PLAN_DOC_DIRS) or low.endswith(PLAN_DOC_EXTS) or low.startswith(".."):
+            continue
+        full = os.path.join(ROOT, rel)
+        if not os.path.isfile(full):
+            continue
+        try:
+            with open(full, "rb") as f:
+                data = f.read(4 << 20)
+        except OSError:
+            continue
+        if b"\0" in data[:8192]:
+            continue   # binary (an image, a PDF): the Read tool shows it, it isn't lines of code
+        lines = data.count(b"\n")
+        if lines <= PLAN_READ_LINES:
+            continue
+        size = f"{lines}" if len(data) < 4 << 20 else f"more than {lines}"
+        deny(f"{how} prints all {size} lines of `{rel}` while the full-mode plan is written (brief: `{brief}`). Read the line "
+             f"ranges the code scout’s map names instead: Read with offset and limit, or `sed -n \x27START,ENDp\x27 {rel}`. "
+             f"If the plan needs the whole file, Read it with offset 1 and limit {lines} (harness/TECHNICAL_LEAD.md § Full mode, step by step). "
+             "`guard.plan_reads: off` in harness.config.yml turns this rule off.")
+
+def check_whole_prints(cmd):
+    """A `cat`, `nl`, `tac`, `less` or `more` whose output reaches the chat: the last command of its pipeline, not inside
+    a substitution, not redirected to a file. Its file operands (and a `<` input) go to whole_read."""
+    if not planning_brief():
+        return
+    cmd = re.sub(r"(<<-?\s*([\x27\"]?)(\w+)\2[^\n]*)\n.*?\n[ \t]*\3[ \t]*(?=\n|\)|$)", r"\1", cmd, flags=re.S)
+    for _ in range(3):   # a substitution's output goes into the command, not the chat
+        cmd = re.sub(r"[$<>]\((?:[^()]|\([^()]*\))*\)", " _ ", cmd)
+    cmd = re.sub(r"`[^`]*`", " _ ", cmd)
+    cmd = re.sub(r"\d*>&\d", " ", cmd).replace("&>", ">")   # 1>&2, >&2, 2>&1 still reach the chat
+    pipelines = [[[]]]
+    for t in tokens(cmd.replace("\n", " ; ")):
+        if t in ("|", "|&"):
+            pipelines[-1].append([])
+        elif t in SEPARATORS or set(t) <= set(";&|()"):
+            pipelines.append([[]])
+        else:
+            pipelines[-1][-1].append(t)
+    def parsed(words):
+        """(command name, file operands, output goes to a file) for one stage, past wrappers and their options."""
+        while words and (os.path.basename(words[0]) in WRAPPERS or re.match(r"^[A-Za-z_]\w*=", words[0])):
+            base = os.path.basename(words[0])
+            words = words[1:]
+            if base in WRAPPERS:
+                values = WRAPPER_VALUE_OPTS.get(base, set())
+                while words and words[0].startswith("-") and words[0] != "--":
+                    words = words[2:] if words[0] in values else words[1:]
+                if words and words[0] == "--":
+                    words = words[1:]
+                if base == "timeout" and words:
+                    words = words[1:]
+        if not words:
+            return "", [], False
+        files, to_file, k = [], False, 1
+        while k < len(words):
+            t = words[k]
+            m = re.match(r"^(\d*)(>>?|<)(.*)$", t)
+            if m:
+                target = m.group(3) or (words[k + 1] if k + 1 < len(words) else "")
+                k += 1 if m.group(3) else 2
+                if m.group(2) == "<":
+                    files.append(target)
+                elif m.group(1) in ("", "1") and target not in PLAN_STDOUT:
+                    to_file = True
+                continue
+            if not t.startswith(("-", "+")) and t != "_":
+                files.append(t)
+            k += 1
+        return os.path.basename(words[0]), files, to_file
+    for stages in pipelines:
+        parts = [parsed(s) for s in stages if s]
+        if not parts or parts[-1][0] not in PLAN_READ_CMDS or parts[-1][2]:
+            continue
+        # The last stage prints what it reads: its own files, or (`cat f | less`, `cat f | cat`) what earlier
+        # print-only stages pass it.
+        reach = [parts[-1]] if parts[-1][1] or len(parts) == 1 else parts if all(p[0] in PLAN_READ_CMDS for p in parts) else []
+        for name, files, _ in reach:
+            for f in files:
+                whole_read(f, f"`{name}`", shell=True)
 
 # ---- dispatch ------------------------------------------------------------------------------------
 # An MCP tool passes when a word of its name is a read verb and none is a write verb
@@ -2315,6 +2529,7 @@ def own_repo(a):
 if tool == "Bash":
     HELD_ASK.append(None)
     check_bash(str(args.get("command", "")))
+    check_whole_prints(str(args.get("command", "")))
     held = HELD_ASK.pop()
     if held:
         ask(held)
@@ -2331,6 +2546,14 @@ elif tool in ("Read", "Edit", "MultiEdit", "Write", "NotebookEdit"):
         ask(f"`{p}` is under ~/.claude: Claude Code settings, permissions and other projects\u2019 transcripts; the owner approves a read or change of it.")
     if tool != "Read" and p and outside_repo(p) and not rel_inside(p):
         ask(f"`{p}` is outside this project, and {tool} would write it; the owner approves a write anywhere but the repo and /tmp.")
+    # A limit, an offset past line 1 or a PDF page range is a ranged read; a Read without any prints the whole file.
+    if tool == "Read" and p and args.get("limit") is None and not args.get("pages"):
+        try:
+            read_from = int(args.get("offset") or 1)
+        except Exception:
+            read_from = 1
+        if read_from <= 1:
+            whole_read(p, "Read")
 elif tool == "WebFetch":
     # The update checks read GitHub with `gh api` or `curl` (allowed by path in .claude/settings.json); WebFetch
     # has no allow rule, so Claude Code asks for every page. A project that adds a domain-wide allow for

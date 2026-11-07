@@ -55,7 +55,7 @@ A change to any of these paths can break pages or flows it doesn't name, so it g
 
 ## Risk paths
 
-A change to any of these paths always gets full mode (plan, Full-stack and QA), however small: `bash scripts/risk-check.sh` reads this list ([harness/MODES.md](../harness/MODES.md) § Choosing mode). One bullet per risk area, its paths in backticks, `.gitignore` style: a pattern with a slash is from the repo root, one without matches in any folder, `**` crosses folders. Keep each to the code that holds the risky behaviour, not a whole layer: every path listed here sends every change to it to full mode. One exception: a new `.sql` migration that only adds, or a database test, in an area named for the database runs in small mode with the database tests and one review ([harness/MODES.md](../harness/MODES.md) § Additive migration).
+A change to any of these paths always gets full mode (plan, Full-stack and QA), however small: `bash scripts/risk-check.sh` reads this list ([harness/MODES.md](../harness/MODES.md) § Choosing mode). One bullet per risk area, its paths in backticks, `.gitignore` style: a pattern with a slash is from the repo root, one without matches in any folder, `**` crosses folders. Keep each to the code that holds the risky behaviour, not a whole layer: every path listed here sends every change to it to full mode. One exception: a new `.sql` migration that only adds, or a database test, in an area named for the database runs in small mode with the database tests and one review ([harness/MODES.md](../harness/MODES.md) § Additive migration). With `mode.risk_by: change` (a trial), an ordering or paging edit to a file here can run in small mode with one review ([harness/MODES.md](../harness/MODES.md) § Contained change), except in an area named for sign-in, secrets, money or the database.
 
 - **Database schema and migrations:** `**/migrations/`, `*.sql`, `schema.prisma`
 - **Sign-in, sessions and access rules:** `**/auth/`, `auth.*`, `**/session/`, `**/sessions/`, `session.*`, `middleware.*`, `**/policies/`
@@ -93,7 +93,7 @@ Steps QA runs by hand when the UI changed, picking the ones that apply.
 
 ## Documentation paths
 
-The list is [harness/CONTROLS.md](../harness/CONTROLS.md) § Documentation paths. This project's changes to it:
+The list is [harness/CONTROLS.md](../harness/CONTROLS.md) § Documentation paths. This project's changes to it are set in `harness.config.yml` (`checks.doc_paths_add`, `checks.doc_paths_remove`), where `scripts/checks.sh` reads them; list them here too, with why:
 
 - None.
 

@@ -115,13 +115,15 @@ Needs `scripts/evidence.sh` in the project (`/morph-update` adds it); without it
    "ab-testing-saas" points back at the project), and keep the PR title and body free of what the
    project is or does.
 2. Run `bash scripts/evidence.sh --out`. It reads only the project's run records and prints counts
-   and rates (features finished, first-time QA pass rate, rework by prune window, escapes, estimated
-   cost, retro items, rule audit results, trials, lessons adopted) with a "Read with care" list.
+   and rates (features finished, first-time QA pass rate, rework by prune window, escapes, retro
+   items, rule audit results, trials, lessons adopted) with a "Read with care" list.
    When it stops with "Records read … the rest do not match a known entry format", do not pass
    `--force` to get past it: tell the user their entry format needs fixing first.
 3. Show the user the **whole** file. Add nothing to it and take nothing out, except to remove a line
    the user doesn't want public. Say what it can't show: it's agent-recorded, escapes are
-   under-counted, and there is no control run.
+   under-counted, and there is no control run. It holds no cost or spend figures, and none is added
+   to it or to the PR, not even as an owner note: a cost without the feature's size, mode and model
+   says more about the owner's spend than about what the harness caught, decided and learned.
 4. Grep it for the project's name, the owner's name, repo name, domain and any id from
    `project/STACK.md`; for an anonymous share there must be none.
 5. Only on the user's yes, open it as its own PR, never in the lessons PR. With a showcase row

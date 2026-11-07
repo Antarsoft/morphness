@@ -77,6 +77,17 @@ needs `"every": true` to replay on each copy; the others run once; `GUARD_FULL=1
 guard rule needs a case. A new README promise (a row in "Why use it", an install route) needs an entry in
 `tests/claims.jsonl` ([tests/claims.md](tests/claims.md)); the self-test fails without one.
 
+To try a change headless (`claude -p`, for example an unattended `/morph-init`), run it through
+`scripts/headless.sh`: `bash scripts/headless.sh -- claude -p "<prompt>" --model <model>`. It sets
+`CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0` (without it, `-p` stops background subagents some minutes after
+the main thread's last turn) and starts the command with a fresh `HOME` and config folder and none of the
+calling shell's `CLAUDE_*`, `GIT_CONFIG_*` or token variables. Started from inside another Claude Code
+session, a plain `claude -p` inherits that session's environment: its memory, its settings and its commit
+trailers end up in the run, and a fresh `CLAUDE_CONFIG_DIR` alone does not stop that. Sign-in
+(`ANTHROPIC_*`) and the proxy and CA variables pass through; pass anything else with `--keep VAR` or
+`--set VAR=VALUE` (the fresh `HOME` has no git identity, so a run that commits needs `GIT_AUTHOR_NAME` and
+the like).
+
 ## Catalog entries
 
 Skills and connectors suggested by morph-init live in `skills/morph-init/references/catalog.md`.
@@ -174,6 +185,15 @@ dotted date, `2026.10.13`; the new form sorts above it.)
    to the plugin build number. `scripts/check-updates.sh` checks that the three agree.
 2. After it merges, a maintainer creates the GitHub release with tag `<vX.Y.Z>` on the merge commit,
    using the changelog section as the release notes.
+3. Publishing the release runs `.github/workflows/release.yml`. It runs `scripts/trust-report.sh` at the
+   tag, fails unless the page it wrote is the run at that tag (`scripts/trust-report.sh --check-release
+   <vX.Y.Z>`: the tag's own commit, the release named as the tag, a clean tree), and opens a PR named
+   "Test results page for `<vX.Y.Z>`". Merge it, so the results page and the README badge show the
+   release, its commit and the date. When the report itself found a problem the job is red and the PR
+   still opens, so the page shows it: a tool that failed to download can be retried with "Run
+   workflow" for the same tag; a check that fails in the kit needs a fix and a patch release. It needs
+   the repo setting "Allow GitHub Actions to create and approve pull requests" (Settings > Actions >
+   General). The weekly run (`trust.yml`) later refreshes the page as "`<vX.Y.Z>` + later commits".
 
 By taking part you agree to the [Code of Conduct](CODE_OF_CONDUCT.md). Security issues go through
 [SECURITY.md](SECURITY.md), not public issues.

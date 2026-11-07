@@ -231,10 +231,10 @@ the owner's install; the check is recorded as not run until then. → `modules`,
 "Which models should the agents use?" Offer two presets, then show the table for the one picked
 and ask "Keep it?" (any cell can change).
 
-- **All Sonnet (default, cheaper):** Sonnet in every role below except the legal writer. With the
+- **All Sonnet (default, cheaper):** Sonnet in every role below except the legal writer, the code scout and the feature closer (Haiku: one maps the code before a plan, the other drafts the closing records the Technical Lead checks). With the
   plan, QA and checks around it, it holds up well at about half the cost.
 - **Opus for planning and building:** Opus for the Technical Lead, Full-stack (high and xhigh) and
-  the high researcher; Sonnet elsewhere. For projects where a missed edge case is costly and cost
+  the high researcher; Sonnet elsewhere, Haiku for the code scout and the feature closer. For projects where a missed edge case is costly and cost
   matters less.
 
 Say how the two compare on cost, in relative terms only, never as dollars: "All Sonnet = 1x. The Opus
@@ -253,6 +253,8 @@ when `cost.track` is off.
 | Full-stack | sonnet / opus (sonnet for the medium variant) | high by default; xhigh for sign-in, secrets and money |
 | QA | sonnet / sonnet | medium by default; high when Full-stack is xhigh |
 | Researcher (read-only, research mode) | sonnet / sonnet (opus for the high variant) | medium by default; high for architecture or risk areas |
+| Code scout (maps the code to `Plan/code-map.md` before a full-mode plan) | haiku / haiku | medium |
+| Feature closer (drafts the closing records after a QA pass) | haiku / haiku | medium |
 | Legal writer | fable (opus if fable isn't available) | high |
 
 12a. "Which areas are risky enough that every change to them gets the full process (plan, build,
@@ -326,6 +328,8 @@ agents: { technical_lead: { model: opus, effort: high },
           fullstack: { model: opus, medium_model: sonnet, default: high },
           qa: { model: sonnet, medium_model: sonnet, default: medium },
           researcher: { model: sonnet, high_model: opus, default: medium },
+          scout: { model: haiku, effort: medium },
+          closer: { model: haiku, effort: medium },
           legal_writer: { model: fable, effort: high } }
 claude_projects: { coordinator: { model: sonnet, effort: medium }, feature_threads: { model: sonnet, effort: high },
                    one_shot_threads: { model: sonnet, effort: medium } }

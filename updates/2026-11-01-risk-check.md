@@ -2,7 +2,7 @@
 id: 2026-11-01-risk-check
 title: A script picks the mode from the files a change touches
 kind: rule
-release: unreleased
+release: v0.16.0
 applies_to: { modules: [] }
 files:
   - .claude/rules/harness.md

@@ -1,12 +1,12 @@
 # Harness subagents: {{project.name}}
 
-The Technical Lead delegates the **Full-stack engineer**, the **QA engineer**<!-- module:legal -->, the **legal writer** (legal wording)<!-- /module:legal --> and the **researcher** (research mode) with Claude Code's **Agent** tool. This file states which agent and effort each piece of work gets; the models are in `harness.config.yml` → `agents` (§ Agents).
+The Technical Lead delegates the **Full-stack engineer**, the **QA engineer**<!-- module:legal -->, the **legal writer** (legal wording)<!-- /module:legal -->, the **researcher** (research mode), the **code scout** (before a full-mode plan) and the **feature closer** (after a QA pass) with Claude Code's **Agent** tool. This file states which agent and effort each piece of work gets; the models are in `harness.config.yml` → `agents` (§ Agents).
 
 ## Agents
 
 Subagents are defined in `.claude/agents/`. Each file sets only `model`, `effort` and, for the read-mostly roles, tool limits; the instructions are the generic role bodies in `harness/agents/` plus this project's addenda in `project/agents/`, so edit those, not the variant files. The Technical Lead never passes a model or effort: it picks the `subagent_type`.
 
-**Tool limits.** The researcher files set `disallowedTools: Bash, Edit, MultiEdit, Write, NotebookEdit` (no shell and no edit tools, so nothing can be run, sent or changed from there; it replies, and the Technical Lead writes the reply into the research file)<!-- module:legal --> and the legal writer's sets `tools: Read, Grep, Glob, Edit, Write` (no shell, web or MCP tools)<!-- /module:legal -->. Claude Code can't limit Edit to one path or Bash to read-only commands, so which file the others may edit stays a rule in the role bodies. Full-stack and QA keep every tool: QA needs the shell and scratch edits for its checks. Keep these lines when adding a variant (`harness/MORPHING.md` § Trials).
+**Tool limits.** The researcher files set `disallowedTools: Bash, Edit, MultiEdit, Write, NotebookEdit` (no shell and no edit tools, so nothing can be run, sent or changed from there; it replies, and the Technical Lead writes the reply into the research file)<!-- module:legal --> and the legal writer's sets `tools: Read, Grep, Glob, Edit, Write` (no shell, web or MCP tools)<!-- /module:legal -->. The code scout's file sets `tools: Read, Write, Bash, Grep, Glob` (no Edit, web or MCP tools): it keeps the shell to search (`git grep`, `rg`, `find`; headless Claude Code has no Grep or Glob tool), Write for the one map file its role body allows (`<feature>/Plan/code-map.md`), and its role body allows only commands that read. The feature closer's sets `tools: Read, Write, Edit, Bash, Grep, Glob` (no web or MCP tools): it writes the three closing records its role body names and runs only the cost and doc-section scripts. Claude Code can't limit Edit to one path or Bash to read-only commands, so which file the others may edit stays a rule in the role bodies. Full-stack and QA keep every tool: QA needs the shell and scratch edits for its checks. Keep these lines when adding a variant (`harness/MORPHING.md` § Trials).
 
 | Role | `subagent_type` | Model (`harness.config.yml` → `agents`) | Effort |
 |------|-----------------|-------|--------|
@@ -17,11 +17,13 @@ Subagents are defined in `.claude/agents/`. Each file sets only `model`, `effort
 | QA engineer | `qa-engineer` | `qa.model` | `high` |
 | Researcher | `researcher` (default) | `researcher.model` | `medium` |
 | Researcher | `researcher-high` | `researcher.high_model` | `high` |
+| Code scout | `code-scout` | `scout.model` | `medium` |
+| Feature closer | `feature-closer` | `closer.model` | `medium` |
 | Legal writer | `legal-writer` | `legal_writer.model` | `high` | <!-- module:legal -->
 
 **One source for models:** `harness.config.yml` → `agents` holds each model. Claude Code reads the copies: each agent file's `model:` line and, for the Technical Lead, `.claude/settings.json` → `model`. To change a model, change the config, then the files it maps to in the table above, in the same commit; `/morph-doctor` reports a copy that disagrees with the config.
 
-<!-- morph-init: fill the default marks from harness.config.yml → agents (advised models: all `sonnet` by default; the Opus preset sets the Technical Lead, Full-stack (high and xhigh) and the high researcher to `opus`; legal writer `fable`, fallback `opus`), and write the same models into the config, the agent files and `.claude/settings.json`. Drop the legal writer row when the legal module is off. -->
+<!-- morph-init: fill the default marks from harness.config.yml → agents (advised models: all `sonnet` by default; the Opus preset sets the Technical Lead, Full-stack (high and xhigh) and the high researcher to `opus`; code scout and feature closer `haiku` in both presets; legal writer `fable`, fallback `opus`), and write the same models into the config, the agent files and `.claude/settings.json`. Drop the legal writer row when the legal module is off. -->
 
 Pass the absolute feature folder path (and the `plan.md` / `progress.md` paths) in the prompt. QA-fail rework goes to the same Full-stack variant as the first round.
 
