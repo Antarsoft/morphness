@@ -14,12 +14,21 @@
 #          folder outside the migrations: printed as `+ <file>: …` lines and a `Needs:` line
 #          (harness/MODES.md § Additive migration). When anything else makes the change full, or the owner
 #          forces full, they are risk paths again.
+#          With mode.risk_by: change (a trial; the default, file, judges by path alone), a file on a risk path
+#          that isn't a .sql file also counts as plain when the change to it is an ordering or paging edit: every
+#          changed line is an order/sort/limit/range call, a blank line or a comment (an allow-list, ORDER_CALL
+#          below); the file is on the integration branch and still there; at most mode.contained_max_lines lines
+#          change; no risk area it matches is about sign-in, secrets, money or the database; and no line of the
+#          functions the change is in has a risk word (RISK_TERMS_* below, plus mode.risk_terms). Printed as
+#          `~ <file>: …` lines and a `Needs:` line (harness/MODES.md § Contained change). A file named but not
+#          changed yet is full, with a note to make the change first and run this again.
 # The files: the ones named on the command line (what a plan will change), plus what the branch has
 # changed so far (its commits since it left the integration branch, uncommitted changes, new files).
 # The owner's word wins over the paths: --force full|plain, or mode.force in harness.config.yml.
 # When it can't decide (no file named and none changed, the integration branch missing, no python3,
 # an unknown option), it prints
-# `Mode: full` with the reason and exits 2; otherwise it exits 0. Read-only.
+# `Mode: full` with the reason and exits 2; otherwise it exits 0. Read-only (under the trial it writes one temporary
+# git attributes file, removed on exit).
 # Usage: bash scripts/risk-check.sh [--force full|plain] [file ...]   (from anywhere in the repo)
 
 force=""
@@ -46,8 +55,12 @@ cd "$root" || { echo "Mode: full (risk check: cannot enter the project folder)";
 [ -n "$force" ] || force="$(config_get mode.force)"
 max="$(config_get mode.plain_max_files)"
 integration="$(config_get branches.integration)"
+risk_by="$(config_get mode.risk_by)"
+contained_max="$(config_get mode.contained_max_lines)"
+risk_terms="$(config_get mode.risk_terms)"
 
 RISK_FORCE="$force" RISK_MAX="$max" RISK_INTEGRATION="$integration" RISK_PREFIX="$prefix" \
+  RISK_BY="$risk_by" RISK_CONTAINED_MAX="$contained_max" RISK_TERMS="$risk_terms" \
   python3 -I - "${files[@]}" <<'PY'
 import os, re, subprocess, sys
 
@@ -70,6 +83,22 @@ elif force not in ("full", "plain"):
 raw_max = os.environ.get("RISK_MAX", "").strip()
 max_files = int(raw_max, 10) if raw_max.isdigit() else 6
 prefix = os.environ.get("RISK_PREFIX", "")
+risk_by = os.environ.get("RISK_BY", "").strip().strip("\"'") or "file"
+if risk_by not in ("file", "change"):
+    fail(f"mode.risk_by is {risk_by!r}; it takes file or change")
+raw_cmax = os.environ.get("RISK_CONTAINED_MAX", "").strip()
+contained_max = int(raw_cmax, 10) if raw_cmax.isdigit() else 10
+raw_terms = os.environ.get("RISK_TERMS", "").strip()
+if risk_by == "change":
+    try:
+        with open("harness.config.yml", encoding="utf-8-sig") as fh:
+            block_list = re.search(r"^[ \t]+risk_terms:[ \t]*(#.*)?$", fh.read(), re.M)
+    except OSError:
+        block_list = None
+    if block_list or (raw_terms and not re.fullmatch(r"\[[^\[\]]*\]|[\w.-]+", raw_terms)):
+        fail("mode.risk_terms must be one line: a list such as [team_id, org_id], or one word")
+extra_terms = [w.strip().strip("\"'").lower() for w in raw_terms.strip("[]").split(",")]
+extra_terms = [w for w in extra_terms if w]
 root = os.getcwd()
 
 def named(p):
@@ -510,12 +539,176 @@ def is_new(p):
         return False  # no git history to compare with: never counted as new
     return git("cat-file", "-e", f"{base}:{p}") is None
 
+# mode.risk_by: change (a trial, harness/MODES.md § Contained change): an ordering or paging edit to a risk-path file.
+# An allow-list, like the additive migration's: every changed line must be one of the shapes below, so a change to
+# who sees what never fits (two reviews showed that a list of risky words can't be made safe). As a second guard
+# the whole function around each change (git diff -W) must have no word from the risk list. False "full" answers
+# are fine; false "plain" ones are not.
+ORDER_CALL = re.compile(r"\s*\.?(order|orderBy|order_by|thenBy|thenByDescending|sort|sortBy|sort_by|range|limit|"
+                        r"offset|take|skip|reverse|desc|asc|nullsLast|nulls_last|nullsFirst|nulls_first)\s*"
+                        r"\((?:[^()]|\((?:[^()]|\([^()]*\))*\))*\)\s*[;,]?\s*")
+ARG_OK = re.compile(r"[\w\s\"'`.,:{}\[\]\-+*/%|&<>=!?()]*")   # literals, names, objects, comparators; no ${} or calls checked below
+COMMENT_LINE = {"//": ("js", "jsx", "ts", "tsx", "mjs", "cjs", "go", "java", "kt", "cs", "c", "cc", "cpp", "h",
+                       "hpp", "rs", "swift", "scala", "dart", "php"),
+                "#": ("py", "rb", "sh", "bash", "yml", "yaml", "toml", "ex", "exs", "pl", "pm", "r")}
+RISK_TERMS_LONG = ("user", "owner", "auth", "session", "login", "logout", "token", "passw", "secret", "credential",
+                   "cookie", "csrf", "permission", "privilege", "access", "admin", "polic", "grant", "revoke",
+                   "tenant", "member", "account", "team", "workspace", "visib", "public", "private", "share",
+                   "allow", "deny", "forbid", "guard", "scope", "bearer", "apikey", "privatekey", "email", "billing",
+                   "payment", "invoice", "charge", "price", "subscription", "refund", "amount", "discount", "credit",
+                   "balance", "cost", "tax", "quota", "delete", "destroy", "remove", "drop", "truncate", "purge",
+                   "unlink", "rmtree", "prune", "wipe", "archive", "unscoped", "sudo", "impersonat", "encrypt",
+                   "decrypt", "verify", "sign", "role", "redirect", "upload", "creator", "createdby", "viewer",
+                   "staff", "moderator", "editor", "collaborator", "invite", "company", "customer", "cannot")
+RISK_TERMS_SHORT = ("uid", "jwt", "acl", "rls", "env", "sql", "raw", "exec", "eval", "pwd", "perm", "org", "fee", "mine")
+RISK_TERMS_EXACT = {"can", "may", "me", "rm", "del"}
+SENSITIVE_AREA = re.compile(r"sign[ -]?in|auth|session|login|password|secret|credential|token|billing|money|payment|"
+                            r"price|invoice|subscription|checkout|refund|payout|wallet|stripe|\btax", re.I)
+SECRET_LITERAL = re.compile(r"sk_live_|sk_test_|AKIA[0-9A-Z]{12}|-----BEGIN|ghp_|xox[bp]-")
+
+def words(text):
+    text = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", text)
+    text = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1 \2", text)
+    return [w.lower() for w in re.findall(r"[A-Za-z]+", text)]
+
+def flat(text):
+    return re.sub(r"[_\-\s]", "", text.lower())
+
+def risky_word(text):
+    """The first risk word in a line, or None. Each identifier is read whole (flattened) and split into words; the
+    project's terms (mode.risk_terms) match anywhere, with `_`, `-` and spaces ignored."""
+    low = flat(text)
+    for t in extra_terms:
+        if flat(t) in low:
+            return t
+    if SECRET_LITERAL.search(text):
+        return "a secret-shaped literal"
+    for ident in re.findall(r"[A-Za-z_$][\w$]*", text):
+        whole = flat(ident)
+        for w in [whole] + words(ident):
+            if w in RISK_TERMS_EXACT:
+                return w
+            for t in RISK_TERMS_SHORT:
+                if w.startswith(t):
+                    return w
+            for t in RISK_TERMS_LONG:
+                if t in w:
+                    return w
+    return None
+
+def allowed_line(p, text):
+    """None when a changed line is blank, a whole-line comment or an ordering or paging call; else why not."""
+    ext = p.rsplit(".", 1)[-1].lower() if "." in p.rsplit("/", 1)[-1] else ""
+    code = text.strip()
+    if not code:
+        return None
+    for mark, exts in COMMENT_LINE.items():
+        if ext in exts and code.startswith(mark) and not code.startswith("#!"):
+            return None if mark != "#" or not re.match(r"#\s*(if|ifdef|ifndef|define|include|\[)", code) else "a directive"
+    body = code
+    if ext in COMMENT_LINE["//"]:
+        body = re.sub(r"\s//\s[^\"'`]*$", "", body)  # a trailing comment with no quote in it
+    m = ORDER_CALL.fullmatch(body)
+    if not m:
+        return f"a changed line that isn't ordering or paging (`{short(code)}`)"
+    args = body[body.index("(") + 1:body.rindex(")")]
+    if "${" in args or "#{" in args or not ARG_OK.fullmatch(args):
+        return f"an ordering call with an argument it can't read (`{short(code)}`)"
+    if re.search(r"[A-Za-z_$][\w$]*\s*\(", args) and not re.fullmatch(r"\s*\(?\s*\w+\s*,\s*\w+\s*\)?\s*=>.*", args):
+        return f"an ordering call that calls something (`{short(code)}`)"
+    hit = risky_word(body)
+    if hit:
+        return f"a changed line is about `{hit}`"
+    return None
+
+# git's own diff drivers (git ships these), so a method is found as its own function where the language has one.
+DRIVERS = {"py": "python", "rb": "ruby", "go": "golang", "java": "java", "kt": "kotlin", "php": "php", "rs": "rust",
+           "cs": "csharp", "cpp": "cpp", "cc": "cpp", "c": "cpp", "h": "cpp", "hpp": "cpp", "ex": "elixir",
+           "exs": "elixir", "pl": "perl", "pm": "perl", "m": "objc", "css": "css"}
+attrs_file = None
+
+def function_patch(p):
+    """The diff of p with each change's whole function (git diff -W). None when it can't be read."""
+    global attrs_file
+    if attrs_file is None:
+        import atexit, tempfile
+        try:
+            fd, attrs_file = tempfile.mkstemp(prefix="risk-attrs-")
+            with os.fdopen(fd, "w") as fh:
+                fh.write("".join(f"*.{e} diff={d}\n" for e, d in DRIVERS.items()))
+        except OSError:
+            return None
+        atexit.register(lambda: os.path.exists(attrs_file) and os.remove(attrs_file))
+    return git("-c", f"core.attributesFile={attrs_file}", "--literal-pathspecs", "diff", "-W", "--no-renames",
+               "--no-color", "--no-ext-diff", "--no-textconv", base, "--", p)
+
+def contained(p, hits):
+    """(True, line) when the change to p is contained; (False, why) otherwise; (None, why) when it isn't made yet."""
+    areas = [a for a, _ in hits if SENSITIVE_AREA.search(a)]
+    if areas:
+        return False, f"a sign-in, secrets or money area ({areas[0]})"
+    areas = [a for a, _ in hits if DB_AREA.search(a)]
+    if areas:
+        return False, f"a database area ({areas[0]}): only a migration that adds counts there"
+    if base is None or base == EMPTY_TREE or is_new(p):
+        return False, "a new file"
+    if not os.path.isfile(p):
+        return False, "the branch deletes it"
+    if p not in changed:
+        return None, "not changed yet"
+    patch = function_patch(p)
+    if patch is None:
+        return False, "git diff failed"
+    if "\nBinary files " in patch or "\nGIT binary patch" in patch:
+        return False, "a binary file"
+    ext = p.rsplit(".", 1)[-1].lower() if "." in p.rsplit("/", 1)[-1] else ""
+    count, body, in_block = 0, False, False
+    for line in patch.split("\n"):
+        if line.startswith("@@"):
+            body, in_block = True, False  # with -W the hunk holds the whole function; the header names the one before it
+            continue
+        if not body or not line or line.startswith("\\"):
+            continue
+        sign, text = line[0], line[1:]
+        if sign in "+-":
+            count += 1
+            why = allowed_line(p, text)
+            if why:
+                return False, why
+            continue
+        # an unchanged line of the same function: comments run nothing, the code around them is read
+        code = text.strip()
+        if in_block or code.startswith("/*"):
+            in_block = "*/" not in code
+            continue
+        if any(ext in exts and code.startswith(mark) for mark, exts in COMMENT_LINE.items()) and not re.match(r"#\s*(if|ifdef|ifndef|define|include|\[)", code):
+            continue
+        hit = risky_word(text)
+        if hit:
+            return False, f"a line in the same function is about `{hit}`"
+    if count == 0:
+        return False, "no line changes (a mode or rename only)"
+    if count > contained_max:
+        return False, f"{count} lines change, more than mode.contained_max_lines ({contained_max})"
+    return True, f"ordering or paging only ({count} line{'s' if count != 1 else ''}; no word from the risk check's list in its functions)"
+
 reasons, additions, unwritten = [], [], []
+contained_lines, unwritten_code = [], []
 for p in files:
     hits = [(area, g) for area, g, rx in compiled if rx.match(p)]
     if not hits:
         continue
     reason = f"- {p}: {hits[0][0]} (`{hits[0][1]}`)"
+    if risk_by == "change" and not p.lower().endswith(".sql"):
+        ok, why = contained(p, hits)
+        if ok:
+            contained_lines.append((reason, f"~ {p}: {why}"))
+        elif ok is None:
+            unwritten_code.append(p)
+            reasons.append(reason)
+        else:
+            reasons.append(f"{reason}: not contained ({why})")
+        continue
     if not p.lower().endswith(".sql") or not all(DB_AREA.search(area) and not NOT_DB_AREA.search(area) for area, _ in hits):
         reasons.append(reason)
         continue
@@ -562,15 +755,42 @@ if base and "project/CONTROLS.md" in files:
     if dropped:
         reasons.append("- project/CONTROLS.md drops risk path " + ", ".join(f"`{g}`" for g in dropped))
 
+# Under the trial the area names decide too, and scripts/lib/config.sh reads the switch, so any change to either
+# is a reason; turning the trial on, or changing how it judges, is the owner's call in a change of its own.
+if risk_by == "change" and base and base != EMPTY_TREE:
+    def section(text):
+        m = re.search(r"^## Risk paths[ \t]*$(.*?)(?=^## |\Z)", text or "", re.M | re.S)
+        return m.group(1).strip() if m else ""
+    if "project/CONTROLS.md" in files and section(git("show", f"{base}:project/CONTROLS.md")) != section(controls):
+        reasons.append("- project/CONTROLS.md changes § Risk paths: its area names decide what a contained change may touch")
+    if "scripts/lib/config.sh" in files:
+        reasons.append("- scripts/lib/config.sh: it reads the risk check's settings")
+    if ".gitattributes" in files:
+        reasons.append("- .gitattributes: it can change how the risk check reads a function")
+if risk_by == "change" and base and base != EMPTY_TREE and "harness.config.yml" in files:
+    before_cfg = git("show", f"{base}:harness.config.yml") or ""
+    def cfg_before(key):
+        try:
+            r = subprocess.run(["bash", "-c", '. scripts/lib/config.sh && config_get "$1" /dev/stdin', "_", key],
+                               input=before_cfg.encode(), capture_output=True, timeout=20)
+            return r.stdout.decode("utf-8", "replace").strip()
+        except (OSError, subprocess.TimeoutExpired):
+            return None
+    for key, now in (("mode.risk_by", os.environ.get("RISK_BY", "")), ("mode.contained_max_lines", raw_cmax),
+                     ("mode.risk_terms", os.environ.get("RISK_TERMS", ""))):
+        if cfg_before(key) != now.strip():
+            reasons.append(f"- harness.config.yml changes {key}: how the risk check judges a change")
+
 counted = [p for p in files if not is_record(p)]
 if len(counted) > max_files:
     reasons.append(f"- {len(counted)} files change, more than mode.plain_max_files ({max_files}), documentation not counted")
 
+only_unwritten = bool(unwritten_code) and not unwritten and len(reasons) == len(unwritten_code)
 auto = "full" if reasons else "plain"
 if auto == "full" or force == "full":
     # anything else already needs full mode, or the owner chose it: the database files are risk paths again
-    reasons = [r for r, _ in additions] + reasons
-    additions = []
+    reasons = [r for r, _ in additions + contained_lines] + reasons
+    additions, contained_lines = [], []
 if force and force != auto:
     print(f"Mode: {force} (the owner chose {force}; without that: {auto})")
 elif force:
@@ -579,17 +799,25 @@ elif auto == "plain" and not counted:
     print("Mode: plain (documentation only)")
 elif auto == "plain" and additions:
     print(f"Mode: plain ({len(counted)} file{'s' if len(counted) != 1 else ''}, database changes that only add)")
+elif auto == "plain" and contained_lines:
+    print(f"Mode: plain ({len(counted)} file{'s' if len(counted) != 1 else ''}, risk-path changes that stay contained)")
 elif auto == "plain":
     print(f"Mode: plain ({len(counted)} file{'s' if len(counted) != 1 else ''}, none on a risk path)")
 else:
     print("Mode: full")
 for r in reasons:
     print(r)
-for _, line in additions:
+for _, line in additions + contained_lines:
     print(line)
 if additions:
     print("Needs: the database tests and one code review before the hand-off (harness/MODES.md § Small mode)")
+if contained_lines:
+    print("Needs: one code review before the hand-off, and this run again with no files then (harness/MODES.md § Contained change)")
 if unwritten and auto == "full":
     print("Note: " + ", ".join(unwritten) + " isn't written yet. A new migration that only adds tables or columns with "
           "row-level security can run in small mode: write it first, then run this again (harness/MODES.md § Choosing mode)")
+if only_unwritten and force != "full":
+    print("Note: " + ", ".join(unwritten_code) + " isn't changed yet. With mode.risk_by: change, an ordering or paging "
+          f"edit there (order, sort, limit or range calls, at most {contained_max} lines) can run in small mode: make it "
+          "first, then run this again (harness/MODES.md § Contained change)")
 PY

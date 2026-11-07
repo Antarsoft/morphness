@@ -11,7 +11,7 @@ This short plan replaces the full plan. The main chat builds and checks it itsel
 
 ## Why small
 
-The output of `bash scripts/risk-check.sh <the files below>` (it must print `Mode: plain`), and one line on what behaviour changes (`harness/MODES.md` § Choosing mode).
+The output of `bash scripts/risk-check.sh <the files below>` (it must print `Mode: plain`; under `mode.risk_by: change`, the run after the change with its `~` line, `harness/MODES.md` § Contained change), and one line on what behaviour changes (`harness/MODES.md` § Choosing mode).
 
 ## Change
 
@@ -27,7 +27,7 @@ The paths to change and the function in each, read before planning (`file:line`)
 
 ## Limit
 
-Stop before the change, and write a full plan with this one linked, when it needs: a file not listed, a risk path (`project/CONTROLS.md` § Risk paths), a change to who can read or change data, to what a customer is charged or where money moves, to how secrets are handled, to deleting or sharing people's data, a schema change beyond the additive migration the risk check named (`harness/MODES.md` § Additive migration), a new dependency, a new page or flow, or behaviour § Acceptance criteria doesn't name.
+Stop before the change, and write a full plan with this one linked, when it needs: a file not listed, a risk path (`project/CONTROLS.md` § Risk paths; under `mode.risk_by: change`, one the check doesn't print a `~` line for), a change to who can read or change data, to what a customer is charged or where money moves, to how secrets are handled, to deleting or sharing people's data, a schema change beyond the additive migration the risk check named (`harness/MODES.md` § Additive migration), a new dependency, a new page or flow, or behaviour § Acceptance criteria doesn't name.
 
 ## QA scope
 

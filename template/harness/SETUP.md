@@ -73,7 +73,7 @@ See [MODES.md](./MODES.md). Summary:
 |------|------------------------------|--------------|
 | **Full** | Yes | Yes |
 | **Light** | No | None: the main chat makes the change and runs the named checks |
-| **Small** | Yes, with the short small plan | None: the main chat builds, runs the checks and fills the plan's § Check; the learnings file is the look-back. A bug fix off the risk paths writes no plan: failing test first, the record in its commits and PR |
+| **Small** | Yes, with the short small plan | None: the main chat builds, runs the checks and fills the plan's § Check; the learnings file is the look-back. A bug fix off the risk paths writes no plan: failing test first, the record in its commits and PR. With `mode.risk_by: change` (a trial), an ordering or paging edit to a risk-path file runs here too, with one code review ([MODES.md](./MODES.md) § Contained change) |
 | **Bug** (fix on a risk path, or a hotfix) | Yes, with the short bug plan | Yes: QA writes the failing test first (Full-stack, with `mode.bug_repro: fullstack`), then Full-stack fixes, then QA re-runs; the learnings file is the look-back |
 | **Research** | `_harness/research/` only | Researcher only; no code, no QA, no retro |
 
