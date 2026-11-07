@@ -87,6 +87,7 @@ See [MODES.md](./MODES.md). Summary:
 | Full-stack engineer | Agent tool subagent with the path to `plan.md`; implements in the codebase; edits only `Development/progress.md` under that feature |
 | QA engineer | Agent tool subagent; reads `plan.md` and `progress.md`; runs the checks in [CONTROLS.md](./CONTROLS.md); edits only `QA/qa-result.md` |
 | Legal writer | Agent tool subagent (legal module); edits only `Legal/legal-copy.md` | <!-- module:legal -->
+| Feature closer | Agent tool subagent after a full- or bug-mode QA pass; drafts the steps file, the plan's `passed` status and the learnings file, leaves every action item `open`; the Technical Lead checks and decides |
 | Code scout | Agent tool subagent before a full-mode plan; tools Read, Bash, Grep and Glob, read-only by its role body; replies with a map of the code, and the Technical Lead reads only the lines the plan changes |
 | Researcher | Agent tool subagent with the absolute path of its research file; no shell or edit tools: it replies with the sections between the file's two lines, and the Technical Lead writes them in ([MODES.md](./MODES.md) § Research mode) |
 | Model and effort | Set in `.claude/agents/*.md`; the plan's **Agent effort** picks the variant (`project/HARNESS_AGENTS.md`) |
@@ -155,8 +156,8 @@ Deferred ACs go into the feature's steps file ([HANDOFFS.md](./HANDOFFS.md) § S
 2. Human approves → Technical Lead sets `approved` in `plan.md` and commits → Full-stack implements → `progress.md` complete.
 3. A risk path or Full-stack `xhigh`<!-- module:security --> (or, with the `security` module, a security feature)<!-- /module:security -->: Technical Lead review → `Plan/review.md` (§ Code review before QA).
 4. QA: `qa-result.md` → pass or fail (within `loop.qa_max_rounds`).
-5. Pass: Technical Lead writes the steps file (or none) → `passed`. Last allowed fail: `failed-escalated`.
-6. Technical Lead: the feature's `_harness/learnings/` file (§ Retrospective).
+5. Pass: the feature closer drafts the steps file (or none) and `passed`; the Technical Lead checks them. Last allowed fail: `failed-escalated`.
+6. The feature closer drafts the feature's `_harness/learnings/` file; the Technical Lead checks it and decides its items (§ Retrospective).
 7. Human merges the ready PR into the integration branch (or the Technical Lead, per `merge_by_agent`). Production comes later, in a release ([RELEASE.md](./RELEASE.md)).
 
 ---
@@ -191,7 +192,7 @@ flowchart TD
 
 ## After QA pass
 
-Technical Lead:
+Technical Lead. In full and bug mode the feature closer drafts step 4's records and the learnings file (§ Retrospective) from the files and what the Technical Lead passes it ([HANDOFFS.md](./HANDOFFS.md) § Feature closer); the Technical Lead checks the draft against the records, decides the action items and owns every step below:
 
 1. Confirm the `before_signoff` checks are recorded in `qa-result.md` (small mode: `plan.md` § Check) on the final commit ([CONTROLS.md](./CONTROLS.md) § Merge gate). Read the record; don't run the checks again: QA ran them on that commit, and the end-of-task hook re-runs what it needs (learned: the main chat re-ran the database and unit suites after a QA pass, a whole turn that changed nothing).
 2. The project fact docs (what the product does and holds: `project/PROJECT.md` and the domain docs) were updated by Full-stack as plan steps with their own acceptance criteria, so QA checked them against the code; the Technical Lead edits the rule and process docs (`project/CONTROLS.md` for new risk paths, `project/TESTING.md`, `project/PLAN_CHECKLIST.md`, a retro item).

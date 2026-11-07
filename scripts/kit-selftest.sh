@@ -42,7 +42,7 @@ DEFAULTS = {
     # the shipped default preset (harness.config.yml → agents): every role on sonnet, the legal writer on fable
     "models.tl": "sonnet", "models.fullstack": "sonnet", "models.fullstack_medium": "sonnet",
     "models.qa": "sonnet", "models.qa_medium": "sonnet", "models.researcher": "sonnet",
-    "models.researcher_high": "sonnet", "models.scout": "haiku", "models.legal": "fable",
+    "models.researcher_high": "sonnet", "models.scout": "haiku", "models.closer": "haiku", "models.legal": "fable",
     "morphness.repo": "https://github.com/antarsoft/morphness", "morphness.commit": "0000000",
     "morphness.release": "unreleased", "ci.on_drafts": "false",
     "ci.docs_regex": r"^(_harness|docs|harness|project)/|\.md$",
@@ -1059,6 +1059,42 @@ def check_small_bugs(bad, t):
     mode_line = next((l for l in agents.splitlines() if l.startswith("- **Pick the mode first**")), "")
     if "bug mode for a fix" not in mode_line or "hotfix is bug mode" not in mode_line:
         bad("AGENTS.md § Golden rules' mode line doesn't send a risky fix or a hotfix to bug mode")
+
+
+def check_feature_closer(bad, t):
+    """Cost: the feature closer drafts the closing records after a QA pass on a cheap model, edits only them, decides
+    no action item, and the Technical Lead checks the draft and decides."""
+    p = os.path.join(t, ".claude/agents/feature-closer.md")
+    if not os.path.exists(p):
+        bad(".claude/agents/feature-closer.md is missing")
+        return
+    fm = read(p).split("\n---", 1)[0]
+    tools = re.search(r"^tools: *(.+)$", fm, re.M)
+    allowed = {x.strip() for x in tools.group(1).split(",")} if tools else None
+    if allowed is None or not {"Read", "Write", "Edit", "Bash"} <= allowed or allowed - {"Read", "Write", "Edit", "Bash", "Grep", "Glob"}:
+        bad(f".claude/agents/feature-closer.md tools are {allowed}: it needs Read, Write, Edit and Bash, and no web or MCP tool")
+    body = read(os.path.join(t, "harness/agents/feature-closer.md"))
+    for want in ("status `open`", "bash scripts/feature-cost.sh", "never invent", "Never touch `progress.md`, `qa-result.md` or `review.md`", "Never commit",
+                 "`human decides`", "doc-section.sh harness/SETUP.md \"After QA pass\"", "doc-section.sh harness/SETUP.md \"Retrospective\""):
+        if want not in body:
+            bad(f"harness/agents/feature-closer.md lost {want!r}")
+    tl = read(os.path.join(t, "harness/TECHNICAL_LEAD.md"))
+    row = next((l for l in tl.splitlines() if l.startswith("| After QA pass |")), "")
+    if ("feature-closer" not in row or "Decide each action item" not in row or "prune-counter.sh" not in row
+            or "against the records and the conversation" not in row or "failed-escalated" not in row):
+        bad("harness/TECHNICAL_LEAD.md's After QA pass row doesn't launch the feature closer and keep the item decisions and the commit with the Technical Lead")
+    handoffs = read(os.path.join(t, "harness/HANDOFFS.md"))
+    block = handoffs.split("\n### Feature closer\n", 1)[-1].split("\n### ", 1)[0] if "\n### Feature closer\n" in handoffs else ""
+    for want in ("Verdict:", "Human corrections", "Agent stops", "Remote config", "Runs:", "Fired rules", "Cost script:", "Never commit"):
+        if want not in block:
+            bad(f"harness/HANDOFFS.md § Feature closer doesn't pass {want!r}")
+    cfg = read_agents_config(read(os.path.join(t, "harness.config.yml"))).get("closer", {})
+    model = re.search(r'^model: *"?([^"\n]+?)"? *$', fm, re.M)
+    if not cfg.get("model") or not model or model.group(1) != cfg["model"]:
+        bad(f".claude/agents/feature-closer.md runs {model and model.group(1)!r}, but agents.closer.model is {cfg.get('model')!r}")
+    eff = re.search(r"^effort: *(\S+)", fm, re.M)
+    if not eff or eff.group(1) != cfg.get("effort"):
+        bad(f".claude/agents/feature-closer.md has effort {eff and eff.group(1)!r}, but agents.closer.effort is {cfg.get('effort')!r}")
 
 
 def check_code_scout(bad, t):
@@ -2347,6 +2383,7 @@ def check(name, fx, t):
     check_end_of_task(bad, t, settings)
     check_plan_brief(bad, t, settings)
     check_code_scout(bad, t)
+    check_feature_closer(bad, t)
     # prune states: proposed and approved are open (named, no DUE); declined, applied and README are not
     pdir, ldir = os.path.join(t, "_harness/prunes"), os.path.join(t, "_harness/learnings")
     os.makedirs(pdir, exist_ok=True)
