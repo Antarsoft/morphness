@@ -2660,6 +2660,11 @@ def check(name, fx, t):
     r = run(["bash", "scripts/evidence.sh"], t)
     if r.returncode or "2 features finished" not in r.stdout or "1 of 1 prune files" not in r.stdout or "1 fired" not in r.stdout or "50% passed QA first time" not in r.stdout:
         bad(f"evidence.sh misread the older record forms: {r.stdout!r} (stderr {r.stderr.strip()!r})")
+    # the summary shares what the harness caught, decided and learned, never a cost or spend figure,
+    # even when the records carry one (the entry above has ≈ $1.50)
+    rj = run(["bash", "scripts/evidence.sh", "--json"], t)
+    if re.search(r"(?i)cost|spend|\$\s*[0-9]|usd", r.stdout + rj.stdout):
+        bad(f"evidence.sh shares a cost figure: {r.stdout!r} {rj.stdout!r}")
     open(lf, "w").write(keep.split("## Entries")[0] + "## Entries\n\n- not an entry\n- nor this\n- **one v1** (2026-01-01): pass; QA 1\n")
     r = run(["bash", "scripts/evidence.sh"], t)
     if r.returncode != 3 or r.stdout:
@@ -2693,7 +2698,6 @@ def check(name, fx, t):
     want_keys = {"generated", "morphness_release", "first_feature", "last_feature", "windows", "escapes_recorded",
                  "failure_causes_unfolded", "modes_unfolded", "prunes", "prune_decisions", "lessons_adopted", "git",
                  "overall", "overall.features", "overall.enough_data", "overall.first_time_pass", "overall.avg_qa_rounds",
-                 "overall.cost_measured", "overall.avg_cost_usd", "overall.median_cost_usd",
                  "retro_items", "retro_items.applied", "retro_items.deferred", "retro_items.open", "retro_items.skipped",
                  "rule_audit", "rule_audit.fired", "rule_audit.insurance", "rule_audit.never fired", "rule_audit.other",
                  "rule_audit.too new", "trials",
