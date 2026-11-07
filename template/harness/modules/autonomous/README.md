@@ -4,7 +4,7 @@ Optional, off by default. It runs a whole first version from a product brief wit
 
 The default mode is unchanged. Unless the driver started the session (`MORPH_AUTO=1` set and the run state running that feature), nothing in this module applies, and the owner approves every plan as usual.
 
-**Needs the roadmap module** (owner items go to its steps files and version checklist). The driver is `bash scripts/auto/run.sh` (`start`, `approve`, `run`, `resume`, `status`, `stop`). **Not for real runs yet:** the guard rules in § Safety and the `/morph-auto` skill come in a later kit release.
+**Needs the roadmap module** (owner items go to its steps files and version checklist). The driver is `bash scripts/auto/run.sh` (`start`, `approve`, `run`, `resume`, `status`, `stop`). The `/morph-auto` skill comes in a later kit release; until then the owner runs the driver from a terminal.
 
 ## How a run goes
 
@@ -110,7 +110,7 @@ auto:
 
 ## Safety
 
-The driver is a script, not an agent. It refuses to start inside a Claude Code session, inside a session it started, or on a dirty tree; runs every session with `--permission-prompts none` (anything that would prompt is denied) and `--max-budget-usd`, and refuses a Claude Code without those flags; never uses a mode that skips permissions; and pushes only the run branch and feature branches, never the integration, production or an environment branch. A later release adds guard rules: while a run is on, the guard denies agent writes to `harness.config.yml`, `_harness/auto/state.json`, `_harness/auto/ledger.md` and `scripts/auto/`, and agent pushes, merges and checkouts of the run branch.
+The driver is a script, not an agent. It refuses to start inside a Claude Code session, inside a session it started, or on a dirty tree; runs every session with `--permission-prompts none` (anything that would prompt is denied) and `--max-budget-usd`, and refuses a Claude Code without those flags; never uses a mode that skips permissions; and pushes only the run branch and feature branches, never the integration, production or an environment branch. Each session runs with `MORPH_AUTO=1`, `MORPH_AUTO_SESSION` and `MORPH_AUTO_BRANCH`, and the guard then turns every ask into a deny and denies agent writes to the driver's files and `harness.config.yml`, writes to `docs/product/` outside a director session, pushes, merges, checkouts of the run branch, and PR writes on the code host (`harness/GUARD.md` § During an autonomous run). Outside a run the guard behaves as before.
 
 ## Starting over
 

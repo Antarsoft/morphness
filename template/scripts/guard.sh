@@ -55,7 +55,8 @@ GUARD_PR_WRITES="$(config_get guard.pr_writes)"
 GUARD_ALLOW_HOSTS="$(config_get guard.allow_hosts)"
 GUARD_FAIL_OPEN="$(config_get guard.fail_open)"
 GUARD_PLAN_READS="$(config_get guard.plan_reads)"
-export GUARD_LIB_DIR GUARD_FAIL_OPEN GUARD_PLAN_READS GUARD_CONFIG_READABLE GUARD_INTEGRATION GUARD_PRODUCTION GUARD_ENV_BRANCHES GUARD_MCP_WRITES GUARD_DEPLOYS GUARD_PUBLISHES GUARD_SCHEMA_PUSHES GUARD_NETWORK GUARD_INSTALLS GUARD_PR_WRITES GUARD_ALLOW_HOSTS
+GUARD_AUTO_BRANCH="$(config_get auto.branch)"
+export GUARD_AUTO_BRANCH GUARD_LIB_DIR GUARD_FAIL_OPEN GUARD_PLAN_READS GUARD_CONFIG_READABLE GUARD_INTEGRATION GUARD_PRODUCTION GUARD_ENV_BRANCHES GUARD_MCP_WRITES GUARD_DEPLOYS GUARD_PUBLISHES GUARD_SCHEMA_PUSHES GUARD_NETWORK GUARD_INSTALLS GUARD_PR_WRITES GUARD_ALLOW_HOSTS
 
 # The checks below run in python3. It reads them from this file (the GUARD_PY block at the end) rather than from a
 # `-c` argument, because Linux caps a single argument at 128 KB. Line numbers in a traceback match this file.
@@ -110,6 +111,16 @@ def config_branches(env=os.environ):
 
 PROTECTED, CONFIG_PROBLEMS = config_branches()
 PROTECTED_LOW = {b.lower() for b in PROTECTED}
+
+# ---- autonomous run (harness/modules/autonomous) --------------------------------------------------
+# scripts/auto/run.sh starts every session with MORPH_AUTO=1, MORPH_AUTO_SESSION (director, feature, prune) and
+# MORPH_AUTO_BRANCH. Then no owner is there to answer a prompt, and the driver alone keeps the run's state, merges
+# into the run branch and pushes: the rules marked AUTO below apply. Outside a run nothing here changes.
+AUTO = os.environ.get("MORPH_AUTO") == "1"
+AUTO_SESSION = os.environ.get("MORPH_AUTO_SESSION", "").strip().lower() if AUTO else ""
+AUTO_BRANCH = (os.environ.get("MORPH_AUTO_BRANCH") or os.environ.get("GUARD_AUTO_BRANCH") or "auto/v1").strip().strip("\"\x27") if AUTO else ""
+if AUTO_BRANCH and BRANCH_WORD.match(AUTO_BRANCH):
+    PROTECTED_LOW.add(AUTO_BRANCH.lower())   # AUTO: the run branch is moved by the driver only
 def protected_branch(name):
     # Branch names are case sensitive on the code host but not on every remote or file system, so `Main` counts as `main`.
     return str(name).lower() in PROTECTED_LOW
@@ -140,6 +151,9 @@ def deny(reason):
 HELD_ASK = []
 
 def ask(reason):
+    if AUTO:
+        deny(reason + " During an autonomous run no owner is there to answer, so the guard blocks it: finish without it, or "
+             "write it down as an owner item (harness/modules/autonomous/README.md \u00a7 Run rules).")
     if HELD_ASK and HELD_ASK[0] is None:
         HELD_ASK[0] = reason
         return
@@ -182,6 +196,12 @@ GUARD_FILES = ["scripts/session-start.sh", ".git/hooks/*", ".git/config", ".git/
 OWNER_FILES = [".claude/settings.local.json"]
 # CI definitions run with the repository\u2019s secrets, so a change to one asks (the `deploys` switch turns it off).
 CI_FILES = [".github/workflows/*", ".github/actions/*", ".gitlab-ci.yml"]
+# AUTO: the driver's own files. Sessions write cards (_harness/auto/cards/) and, in a director session, docs/product/.
+AUTO_FILES = (["_harness/auto", "_harness/auto/state.json", "_harness/auto/ledger.md", "_harness/auto/tracker.md",
+               "_harness/auto/exit.md", "_harness/auto/stop", "scripts/auto", "scripts/auto/*", "harness/templates/auto",
+               "harness/templates/auto/*", "harness/modules/autonomous", "harness/modules/autonomous/*", ".git/morphness/auto",
+               ".git/morphness/auto/*"]
+              + (["docs/product", "docs/product/*"] if AUTO_SESSION != "director" else [])) if AUTO else []
 ROOT = os.getcwd()
 CD_DIRS = []   # directories a `cd` in the same command moves to; a relative path is also tried under each
 
@@ -246,7 +266,7 @@ def protected_kind(word):
             return "persist"
         globbed = any(c in part for c in "*?[")
         for rel in rels_to_root(part) if part else ():
-            for kind, names in (("owner", OWNER_FILES), ("holder", HOLDER_DIRS), ("core", CORE_FILES), ("settings", SETTINGS_FILES),
+            for kind, names in (("auto", AUTO_FILES), ("owner", OWNER_FILES), ("holder", HOLDER_DIRS), ("core", CORE_FILES), ("settings", SETTINGS_FILES),
                                 ("config", CONFIG_FILES), ("guard", GUARD_FILES), ("ci", CI_FILES if GROUP_ASK["deploys"] else [])):
                 for name in names:
                     # Without letter case: on macOS and Windows `Scripts/Guard.sh` is the guard itself.
@@ -450,6 +470,13 @@ def planned_text(tool, args, path):
 def protect(path, how, after=None):
     """Deny or ask for a write to a protected file. `after` is the text the file would hold (Edit and Write), when known."""
     kind = protected_kind(path)
+    if kind == "auto":
+        if path_is_product_docs(path):
+            deny(f"`{path}` is the product docs the owner approved for this autonomous run ({how}). A feature session never "
+                 "changes them: if the feature needs a different plan, say so in the card (`departure: yes` and why); the "
+                 "driver re-plans.")
+        deny(f"`{path}` belongs to the autonomous run\u2019s driver ({how}); only scripts/auto/run.sh writes it during a run. "
+             "Report through the feature\u2019s card instead.")
     if kind == "owner":
         deny(f"`{path}` is the owner\u2019s file ({how}); an agent never writes settings.local.json.")
     if kind == "holder":
@@ -477,6 +504,9 @@ def protect(path, how, after=None):
     if kind == "ci":
         ask(f"`{path}` is a CI definition that runs with the repository\u2019s secrets ({how}); the owner reads each change to it. "
             "`guard.deploys: off` in harness.config.yml turns this prompt off.")
+
+def path_is_product_docs(word):
+    return any(r.lower() == "docs/product" or r.lower().startswith("docs/product/") for r in rels_to_root(word))
 
 # ---- secret and credential files ---------------------------------------------------------------
 SAFE_SUFFIX = (".example", ".sample", ".template")
@@ -935,6 +965,17 @@ def is_tag(spec, git_dir_args):
     return (name.startswith("refs/tags/") or name in SIM["tags"]
             or bool(git_out(git_dir_args, "rev-parse", "-q", "--verify", "refs/tags/" + name)))
 
+def auto_git(sub, rest):
+    """AUTO: the driver merges, pushes and switches the run branch; a session works on its own feature branch."""
+    if sub in ("push", "merge", "pull"):
+        deny(f"`git {sub}` is the driver\u2019s step during an autonomous run: it merges a passed feature into "
+             f"`{AUTO_BRANCH}` and pushes. Commit on your feature branch and fill in the card.")
+    if sub in ("checkout", "switch", "worktree"):
+        positional, flags = split_flags(rest)
+        for w in positional[1:] if sub == "worktree" else positional[:1]:
+            if env_ref(branch_of(w, w)) and not os.path.exists(w):
+                deny(f"`git {sub} {w}` moves to `{w}`, a branch the autonomous run\u2019s driver keeps; stay on your feature branch.")
+
 def check_git(words):
     i, git_dir_args, cfg_push = 1, [], []
     while i < len(words) and words[i].startswith("-"):
@@ -955,6 +996,8 @@ def check_git(words):
             i += 1
     if i >= len(words):
         return
+    if AUTO:
+        auto_git(words[i], words[i + 1:])
     if words[i] != "push":
         follow_git(words[i], words[i + 1:], git_dir_args)
         return
@@ -1090,6 +1133,10 @@ GH_ASK = {"repo": {"delete", "archive", "unarchive", "rename", "create", "edit",
           "gist": {"create", "new", "edit", "delete", "rename"}}
 
 def check_gh(words):
+    if AUTO and len(words) > 2 and words[1] in ("pr", "repo", "release", "workflow") and words[2] not in (
+            "view", "list", "status", "diff", "checks"):
+        deny(f"`gh {words[1]} {words[2]}` changes the code host; during an autonomous run the owner opens the PR after the "
+             "run (`/morph-auto pr`). Note it in the card.")
     if len(words) > 2 and words[2] in GH_ASK.get(words[1], ()):
         ask(f"`gh {words[1]} {words[2]}` changes the code host (deletes, releases, merges, workflow runs, credentials, extensions); only the owner approves it.")
     if len(words) > 2 and words[1] in ("secret", "variable") and words[2] in ("set", "delete", "remove"):
@@ -2576,7 +2623,7 @@ elif tool == "Grep":
     check_grep_tree(str(args.get("path") or "."), str(args.get("glob") or ""), str(args.get("type") or ""))
 elif tool.startswith("mcp__") and MCP_ASK:
     short = tool.split("__", 2)[-1]
-    if PR_ALLOW and tool.startswith("mcp__github__") and short in PR_TOOLS and own_repo(args) \
+    if PR_ALLOW and not AUTO and tool.startswith("mcp__github__") and short in PR_TOOLS and own_repo(args) \
             and not (short == "update_pull_request" and str(args.get("state", "")).lower() == "closed"):
         sys.exit(0)
     words = {w.lower() for w in re.split(r"[_\-.]|(?<=[a-z])(?=[A-Z])", short) if w}
