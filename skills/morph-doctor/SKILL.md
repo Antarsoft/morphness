@@ -71,7 +71,11 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
   Claude Code's default mode, and offer to add them from the template's `.claude/settings.json` and
   `project/CONTROLS.md` (update note `2026-10-20-fewer-permission-prompts`). A project that answered no
   keeps its prompts; don't offer again. A `Bash(<interpreter>:*)` allow rule (`bash`, `sh`, `npx`, `node`,
-  `python`) lets any code through without a prompt: report it.
+  `python`) lets any code through without a prompt: report it. For each named check that runs a test runner
+  (jest, vitest, mocha, Playwright, pytest, `go test`, `cargo test`, read from the command or the `package.json`
+  script it calls), warn when no allow rule covers the runner's single-file form (`Bash(npx jest:*)`, the list in
+  `/morph-init`'s render.md § 3b): agents then can't run one test file without a prompt, and in an autonomous run
+  QA is refused with none. Offer to add the rule (update note `2026-11-08-single-test-allow-rules`).
 - **Settings, agent files and config agree:** `.claude/settings.json` → `model`, when set, is `agents.technical_lead.model`
   (or that model's full id). Each row of `project/HARNESS_AGENTS.md` § Agents names an agent file and the `agents`
   key its model comes from: that file exists, its `model:` is the key's value (or that model's full id) and its `effort:` is

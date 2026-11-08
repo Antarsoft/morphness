@@ -90,7 +90,8 @@ if kind == "prune":
     out()
 card = {"pass": "passed", "fakepass": "passed", "waiting": "waiting_owner", "escalate": "escalated", "split": "split",
         "splitbad": "split", "bug": "passed", "depart": "passed", "bugdepart": "passed", "nomode": "passed",
-        "verdict": "passed", "verdictfail": "passed", "checkout-dev": "passed", "rate-crash": "passed"}[act]
+        "verdict": "passed", "verdictfail": "passed", "checkout-dev": "passed", "rate-crash": "passed",
+        "qa-denied": "passed", "qa-blocked": "passed"}[act]
 if act == "rate-crash":
     out(True, "error_during_execution", "Implemented the 429 rate limit handler, then a test runner crashed", 1)
 if act == "checkout-dev":
@@ -120,6 +121,20 @@ if act in ("verdict", "verdictfail"):
     w(f"_harness/features/{slug}/1/QA/qa-result.md", "# QA result\n\n**Round:** 1\n**Verdict:** pass\n"
       + ("\n## Round 2\n\n**Verdict:** `fail`\n" if act == "verdictfail" else ""))
     w(f"src/{slug}.txt", f"{slug}\n")
+if act in ("qa-denied", "qa-blocked"):
+    # The QA subagent's single-file test run is refused with no prompt; the main result lists no denials.
+    w(f"_harness/features/{slug}/1/Plan/plan.md", "# Plan\n\n**Status:** passed  \n")
+    w(f"src/{slug}.txt", f"{slug}\n")
+    if act == "qa-blocked":
+        w(f"_harness/features/{slug}/1/QA/qa-result.md", "## Verdict\n\n- **Result:** blocked: permission\n"
+          "- **Denied:** `npx jest src/sim/tick.test.ts`\n")
+    for event in ({"type": "assistant", "message": {"content": [{"type": "tool_use", "id": "t1", "name": "Agent",
+                   "input": {"subagent_type": "qa-engineer", "description": "QA"}}]}},
+                  {"type": "assistant", "parent_tool_use_id": "t1", "message": {"content": [{"type": "tool_use", "id": "t2",
+                   "name": "Bash", "input": {"command": "npx jest src/sim/tick.test.ts"}}]}},
+                  {"type": "user", "parent_tool_use_id": "t1", "message": {"content": [{"type": "tool_result", "tool_use_id": "t2",
+                   "is_error": True, "content": "Permission to use Bash has been denied. IMPORTANT: You *may* attempt ..."}]}}):
+        print(json.dumps(event))
 if act == "fakepass":
     w(f"_harness/features/{slug}/1/Plan/plan.md", "# Plan\n\n**Status:** approved  \n")
     w(f"src/{slug}.txt", f"{slug}\n")
@@ -574,6 +589,31 @@ def scenario_signed_out_feature():
     f = state(t)["features"][0]
     check("signed-out-feature", r.returncode == 0 and f["status"] == "passed" and f["tries"]["crashes"] == 0,
           f"resume: {r.stdout[-300:]} {f}")
+
+
+def scenario_qa_denied():
+    t = make_repo({"order": order(("a", [])), "a": ["qa-denied"]})
+    *_, r = full_run(t)
+    st = state(t)
+    note = open(os.path.join(t, "_harness/auto/exit.md")).read()
+    check("qa-denied", r.returncode == 1 and "qa-result.md is missing" in st["exit"]["reason"]
+          and "npx jest src/sim/tick.test.ts" in st["exit"]["reason"], f"{st['exit']}")
+    need = next((l for l in note.splitlines() if l.startswith("**You need to:**")), "")
+    check("qa-denied", "`Bash(npx jest:*)`" in need and "permissions.allow" in need, f"exit note: {note}")
+    check("qa-denied", "npx jest src/sim/tick.test.ts" in note, "exit note doesn't name the refused command")
+    t = make_repo({"order": order(("a", [])), "a": ["qa-blocked"]})
+    *_, r = full_run(t)
+    check("qa-blocked", r.returncode == 1 and "QA was blocked" in state(t)["exit"]["reason"], f"{state(t)['exit']}")
+
+
+def scenario_allow_rule():
+    sys.path.insert(0, os.path.join(TEMPLATE, "scripts/auto"))
+    import driver
+    for command, want in (("npx jest src/a.test.ts", "Bash(npx jest:*)"), ("npx vitest run src/a.test.ts", "Bash(npx vitest run:*)"),
+                          ("pytest tests/test_a.py -k x", "Bash(pytest:*)"), ("python -m pytest tests", "Bash(python -m pytest:*)"),
+                          ("go test ./sim/...", "Bash(go test:*)"), ("bash scripts/smoke.sh", "Bash(bash scripts/smoke.sh:*)"),
+                          ("npm test -- src/a.test.ts", "Bash(npm test:*)"), ("WebFetch https://example.com", "WebFetch")):
+        check("allow-rule", driver.allow_rule(command) == want, f"{command}: {driver.allow_rule(command)} != {want}")
 
 
 def scenario_progress():
