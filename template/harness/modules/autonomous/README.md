@@ -21,7 +21,7 @@ One feature runs at a time. The run branch is never pushed to an environment bra
 | Stop | What happens |
 |------|--------------|
 | A feature runs out of tries: QA failed past `loop.qa_max_rounds` (`failed-escalated`), a crash after `auto.crash_retries` restarts, or the feature's spend passing 1.5 times `loop.feature_budget_usd` (the session's hard cap; never counted as a crash, and a passed card written before the cap still counts) | The run exits at once and writes `_harness/auto/exit.md` |
-| The run budget (`auto.budget_usd`), `auto.max_hours` or `auto.max_features` would be passed by the next feature | The run exits before starting it |
+| The run budget (`auto.budget_usd`), `auto.max_hours` or `auto.max_features` (bug fixes the run inserts count too) would be passed by the next feature | The run exits before starting it |
 | The owner runs `bash scripts/auto/run.sh stop` (from a second terminal) or creates `_harness/auto/STOP` | The run exits after the current feature |
 | A usage limit (the session's own error says so) | Not a stop: the driver waits `auto.usage_wait_minutes` (doubling, at most 4 hours) and tries again; the try doesn't count. After 12 waits in a row it exits |
 | A session runs past `auto.session_hours`, moves a protected branch or the run branch, or a merge conflicts | A session past its hours is a crash; the others exit the run at once |
@@ -122,6 +122,7 @@ To drop a run: delete the run branch (`git branch -D auto/v1`), its `feature/*` 
 - Put back the marked text (`module:autonomous`): the autonomous approver line in § Approval of `harness/templates/plan.md`, `small-plan.md` and `bug-plan.md`, and the § During an autonomous run line in `harness/GUARD.md`. `harness/TECHNICAL_LEAD.md` gets no line (it sits at its size cap): the driver's feature and resume prompts tell the Technical Lead to read § Run rules first.
 - Copy `harness/templates/auto/` and `scripts/auto/`.
 - Add read-only allow rules to `.claude/settings.json` → `permissions.allow`, so a run's sessions can use them with no prompt: `Bash(date:*)`, `Bash(git show:*)`, `Bash(git grep:*)` and `Bash(git rev-parse:*)`, and the formatter's check command when the project has one that only reads (`gofmt -l`, `prettier --check`). They stay on remove.
+- When `project/CONTROLS.md` has a manual smoke, offer to make it a named check (`smoke`, a script under `scripts/` that builds the product and runs it against a scratch data folder): a run's sessions can't start the built product directly, but they can run `bash scripts/checks.sh run smoke`.
 - Add the `auto:` block above to `harness.config.yml` with `enabled: false`, and `autonomous` to `modules`.
 - Ask the owner whether to set `mode.bug_repro: fullstack`, with the reason above.
 - Tell the owner that `/morph-auto start` is the next step when they want a run: it writes the brief and sets the budgets.
