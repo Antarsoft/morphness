@@ -2564,6 +2564,15 @@ MCP_WRITE_EXTRA = {"destroy", "purge", "terminate", "scale", "flush", "overwrite
 PR_TOOLS = {"create_pull_request", "update_pull_request", "add_issue_comment", "update_issue_comment",
             "add_reply_to_pull_request_comment", "add_comment_to_pending_review"}
 
+# The Claude Projects thread tools (the optional claude-projects module): replies, reactions, the checklist,
+# decision cards and messages to the coordinator, all inside the owner own project. A thread must end every
+# turn with one of them, so a prompt here stops every turn. Tools that reach the device, connectors or the
+# model (connect_device, start_remote_control, suggest_connectors, switch_model) still ask.
+PROJECT_CHAT_TOOLS = {"post_message", "edit_message", "react", "unreact", "no_reply_needed",
+                      "update_progress_checklist", "rename_thread", "request_decision", "close_decision",
+                      "set_thread_resolved", "set_thread_reminder", "message_coordinator", "message_thread",
+                      "post_widget", "mark_draft_sent", "show_helpline_card"}
+
 def own_repo(a):
     """True when the call names this project own repository (origin), so a PR tool never reaches another repo."""
     try:
@@ -2623,6 +2632,8 @@ elif tool == "Grep":
     check_grep_tree(str(args.get("path") or "."), str(args.get("glob") or ""), str(args.get("type") or ""))
 elif tool.startswith("mcp__") and MCP_ASK:
     short = tool.split("__", 2)[-1]
+    if tool.split("__", 2)[1] == "hearthbot" and short in PROJECT_CHAT_TOOLS:
+        sys.exit(0)
     if PR_ALLOW and not AUTO and tool.startswith("mcp__github__") and short in PR_TOOLS and own_repo(args) \
             and not (short == "update_pull_request" and str(args.get("state", "")).lower() == "closed"):
         sys.exit(0)
