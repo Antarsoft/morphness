@@ -27,7 +27,7 @@ Write `<feature>/Plan/code-map.md` with these headings, in this order, about 1,5
 - **Callers and readers:** who calls or reads the code the change touches, so the plan knows what else moves.
 - **Tests:** the test files that cover this code, the helpers and fixtures they use, and how the suite is run (from the manifest or the docs; don't run it).
 - **Conventions to follow:** how the repo already does the same kind of thing (error handling, validation, naming, a similar feature), each with `path:line`.
-- **Adjacent defects:** anything wrong you noticed next to the change (an unhandled case, a missing check, an ordering bug), with `path:line`. Report it; whether to fix it is the Technical Lead's call.
+- **Adjacent defects:** anything wrong you noticed next to the change (an unhandled case, a missing check, an ordering bug), with `path:line`. When `docs/product/tech.md` lists edge cases for an interface the change touches, name each one the existing code doesn't handle, with the line that should. Report it; whether to fix it is the Technical Lead's call.
 - **Not found:** what you looked for and didn't find, with what you searched for, so nobody assumes it exists.
 - **Open questions:** what only a run or the owner can settle.
 

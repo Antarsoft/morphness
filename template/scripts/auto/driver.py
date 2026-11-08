@@ -41,6 +41,10 @@ NOT_A_BUG_REASONS = ("not-reproduced", "product-decision", "duplicate")
 EVIDENCE = re.compile(r"[\w./-]+\.\w+:\d+|\bD\d+\b|\b[a-z0-9]+(-[a-z0-9]+)+\b")
 # A bug line about a choice already recorded as assumed (a plan's D<n>) or left to the owner is the owner's call.
 OWNER_CALL = re.compile(r"\bD\d+\b|\bassumed\b|\bowner item\b|\bproduct decision\b|\bby design\b", re.I)
+# The kind on a § Bugs found line decides where it goes: only behaviour with a reproduction becomes a fix feature.
+BUG_KINDS = ("behaviour", "style", "docs", "decision")
+NO_REPRO = re.compile(r"(none|n/?a|-|unknown|not reproduced)?", re.I)
+BACKLOG = "_harness/HARNESS_BACKLOG.md"
 MODES = ("full", "bug", "small", "light", "small-bug")
 FEATURE_STATUSES = ("todo", "running", "passed", "waiting_owner", "exited", "split", "skipped")
 SETTLED = ("passed", "skipped", "split")
@@ -306,8 +310,9 @@ def docs_tree():
 def parse_card(text):
     """A card: a header of plain `key: value` lines between --- lines, then a Markdown body. The lists the driver
     acts on are body sections with one `- ` line per item, so colons and commas in an item are just text:
-    § Owner items (a rule item starts `rule:`), § Bugs found (`- <slug> | what | where`, or `- harness | what | where`
-    for a bug in the harness itself, which goes to the checklist's § Harness changes, not to a fix item) and § Split into
+    § Owner items (a rule item starts `rule:`), § Bugs found (`- <slug> | what | where | kind | reproduction`, kind one
+    of BUG_KINDS, or `- harness | what | where` for a bug in the harness itself, which goes to the checklist's
+    § Harness changes, not to a fix item) and § Split into
     (`- <slug> | title | depends on, comma separated`)."""
     m = re.match(r"\A---\r?\n(.*?)\r?\n---\r?\n?(.*)\Z", text, re.S)
     if not m:
@@ -351,7 +356,14 @@ def parse_card(text):
             problems.append(f"bug line {item!r} is not `<feature-slug> | what | where` (or `harness | what | where` "
                             "for a bug in the harness itself)")
             continue
-        card["bugs_found"].append({"in": parts[0].strip("`"), "what": parts[1], "where": parts[2] if len(parts) > 2 else ""})
+        kind = (parts[3] if len(parts) > 3 else "").strip("` ").lower().removeprefix("kind:").strip()
+        kind = {"behavior": "behaviour", "": "behaviour"}.get(kind, kind)
+        if kind not in BUG_KINDS:
+            problems.append(f"bug line {item!r} has kind {kind!r}, not one of {', '.join(BUG_KINDS)}")
+            continue
+        repro = " | ".join(parts[4:]).strip()
+        card["bugs_found"].append({"in": parts[0].strip("`"), "what": parts[1], "where": parts[2] if len(parts) > 2 else "",
+                                   "kind": kind, "repro": "" if NO_REPRO.fullmatch(repro) else repro})
     for item in sections.get("split into", []):
         parts = [p.strip() for p in item.split("|")]
         deps = [d.strip("` ") for d in (parts[2] if len(parts) > 2 else "").split(",") if d.strip() and d.strip() != "-"]
@@ -1029,7 +1041,7 @@ def run_feature(st, f):
                   "RUN_BRANCH": run_branch, "OWNER": st["approval"]["by"], "APPROVED_AT": st["approval"]["at"],
                   "WHAT": what_to_build(st, f),
                   "DEP_CARDS": ", ".join(f"`{AUTO}/cards/{d}.md`" for d in f["depends_on"]) or "none",
-                  "OWNER_ANSWERS": answers_text(owner_answers(st, f)),
+                  "OWNER_ANSWERS": answers_text(owner_answers(st, f)), "NOTES": notes_text(f),
                   "WHY": f["tries"].get("resume") or "resume", "QA_ROUNDS": f["tries"].get("qa_rounds", 0),
                   "NEW_VERSION": ("The last run escalated this feature. The owner's direction: " + f["tries"]["direction"]
                                   + " Start the feature's next version folder with it in § Request.")
@@ -1283,9 +1295,27 @@ def not_a_bug_problem(st, f, card, since):
 
 
 def insert_fix(st, bug, by=None):
-    if OWNER_CALL.search(f"{bug['what']} {bug['where']}"):   # a recorded or assumed decision: the owner's call
-        copy_v1_items(by or {"slug": "run"}, [f"Confirm or change the decision in `{bug['in']}`: {bug['what']}"
-                                              + (f" ({bug['where']})" if bug["where"] else "")])
+    """Route one § Bugs found line (README § The card and the ledger): a behaviour bug with a reproduction becomes a
+    fix feature; style goes to the next feature built on the buggy one, docs to the harness backlog, and a decision,
+    an owner question or a behaviour bug nobody reproduced to the owner."""
+    by = by or {"slug": "run"}
+    kind, at = bug.get("kind", "behaviour"), f" ({bug['where']})" if bug["where"] else ""
+    if kind == "decision" or OWNER_CALL.search(f"{bug['what']} {bug['where']}"):   # a recorded or assumed decision
+        copy_v1_items(by, [f"Confirm or change the decision in `{bug['in']}`: {bug['what']}{at}"])
+        return
+    if kind == "style":
+        nxt = next((x for x in st["features"] if x["status"] == "todo" and bug["in"] in x["depends_on"]), None)
+        if nxt is None:
+            say(f"  dropped a style note on {bug['in']} (no later feature builds on it): {bug['what']}{at}")
+        else:
+            nxt.setdefault("notes", []).append(f"{bug['what']}{at}, from `{by['slug']}`")
+        return
+    if kind == "docs":
+        add_backlog_item(bug, by)
+        return
+    if not bug.get("repro", "x"):
+        copy_v1_items(by, [f"Unconfirmed bug in `{bug['in']}` (no reproduction or failing test): {bug['what']}{at}. "
+                           "Reproduce it and add it to the order as a fix, or delete the line"])
         return
     target = feature(st, bug["in"])
     if target is None:
@@ -1293,7 +1323,8 @@ def insert_fix(st, bug, by=None):
         return
     n = 1 + sum(1 for x in st["features"] if x.get("inserted_by") == f"bug:{bug['in']}")
     slug = f"fix-{bug['in']}-{n}"
-    what = f"{bug['what']}" + (f" (at {bug['where']})" if bug["where"] else "") + f", in `{bug['in']}`."
+    what = (f"{bug['what']}" + (f" (at {bug['where']})" if bug["where"] else "") + f", in `{bug['in']}`."
+            + (f" Reproduce it first: {bug['repro']}." if bug.get("repro") else ""))
     fix = new_feature({"slug": slug, "title": f"Fix in {bug['in']}: {bug['what']}"[:80], "milestone": "fix",
                        "depends_on": [bug["in"]] if target["status"] in ("passed", "todo", "running") else [],
                        "risk": "medium"}, inserted_by=f"bug:{bug['in']}", what=what)
@@ -1305,6 +1336,26 @@ def insert_fix(st, bug, by=None):
         if x is not fix and bug["in"] in x["depends_on"] and x["status"] == "todo":
             x["depends_on"].append(slug)
             x.setdefault("driver_deps", []).append(slug)
+
+
+def add_backlog_item(bug, by):
+    """A docs bug: one item in the harness backlog, for the owner to approve like any other there."""
+    text = read(BACKLOG, "# Harness improvement backlog\n\n## Items\n\nNone yet.\n")
+    if bug["what"] in text:
+        return
+    n = 1 + len(re.findall(r"^### \d+\.", text, re.M))
+    item = (f"### {n}. Docs: {bug['what'][:70]} (low)\n\n- **Status:** open\n- **Problem:** {bug['what']}, found by "
+            f"`{by['slug']}` in an autonomous run.\n- **Change:** correct the docs.\n- **Files:** {bug['where'] or bug['in']}\n")
+    text = re.sub(r"^None yet\.\n?", "", text, flags=re.M).rstrip() + "\n\n" + item
+    write(BACKLOG, text)
+
+
+def notes_text(f):
+    notes = f.get("notes") or []
+    if not notes:
+        return ""
+    return ("Small style fixes earlier features found in code this one builds on. Fix one only if this feature "
+            "changes that file anyway, in the same change; otherwise leave it: " + "; ".join(notes[:20]))
 
 
 def copy_v1_items(f, items):

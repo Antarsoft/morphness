@@ -1624,7 +1624,7 @@ def check_lean_records(bad, t):
         bad("harness/SETUP.md § Retrospective doesn't close in one call, or still asks for a retro when nothing went wrong")
     # the group index in TECHNICAL_LEAD.md names every group of PLAN_CHECKLIST.md with its item range
     tl = read(os.path.join(t, "harness/TECHNICAL_LEAD.md"))
-    rows = dict(re.findall(r"^\| ([A-Z][^|]+?) \| (\d+-\d+) \|", tl.split("\n## Before asking for approval\n", 1)[-1], re.M))
+    rows = dict(re.findall(r"^\| ([A-Z][^|]+?) \| (\d+-\d+(?:, \d+(?:-\d+)?)*) \|", tl.split("\n## Before asking for approval\n", 1)[-1], re.M))
     pc = read(os.path.join(t, "harness/PLAN_CHECKLIST.md")).split("\n## Before asking for approval\n", 1)[-1]
     groups = re.split(r"^### ", pc, flags=re.M)[1:]
     if not groups:
@@ -1632,11 +1632,17 @@ def check_lean_records(bad, t):
     for g in groups:
         name = g.split("\n", 1)[0].strip()
         nums = [int(n) for n in re.findall(r"^(\d+)\. ", g, re.M)]
-        want = f"{min(nums)}-{max(nums)}" if nums else "?"
+        runs = []   # an item added at the end of the list sits in its group: "21-24, 41"
+        for n in sorted(nums):
+            if runs and n == runs[-1][1] + 1:
+                runs[-1][1] = n
+            else:
+                runs.append([n, n])
+        want = ", ".join(f"{a}-{b}" if a != b else f"{a}" for a, b in runs) if nums else "?"
         if rows.get(name) != want:
             bad(f"harness/TECHNICAL_LEAD.md § Before asking for approval's group index has {rows.get(name)!r} for {name!r}, "
                 f"PLAN_CHECKLIST.md has items {want}: keep the index in step")
-    skip = dict(re.findall(r"^\| ([A-Z][^|]+?) \| \d+-\d+ \| ([^|]+?) \|", tl, re.M))
+    skip = dict(re.findall(r"^\| ([A-Z][^|]+?) \| \d+-\d+(?:, \d+(?:-\d+)?)* \| ([^|]+?) \|", tl, re.M))
     for name in ("Planning and scope", "Testing", "Process"):
         if "always run it" not in skip.get(name, ""):
             bad(f"harness/TECHNICAL_LEAD.md's group index lets a plan skip {name!r}: it always runs")

@@ -107,7 +107,7 @@ card = {"pass": "passed", "fakepass": "passed", "waiting": "waiting_owner", "esc
         "splitbad": "split", "bug": "passed", "depart": "passed", "bugdepart": "passed", "nomode": "passed",
         "verdict": "passed", "verdictfail": "passed", "checkout-dev": "passed", "rate-crash": "passed",
         "qa-denied": "passed", "qa-blocked": "passed", "harness-bug": "passed", "bugreport": "passed",
-        "decisionreport": "passed"}[act]
+        "decisionreport": "passed", "kindreport": "passed", "kindvalid": "passed"}[act]
 if act == "rate-crash":
     out(True, "error_during_execution", "Implemented the 429 rate limit handler, then a test runner crashed", 1)
 if act == "checkout-dev":
@@ -130,14 +130,24 @@ if act == "splitbad":
     lists["split"] = ["Bad_Slug | Nope | -"]
 if act == "bugreport":
     act = "pass"
-    lists["bugs"] = ["a | upgrade is allowed on a failed module | src/a.txt:1"]
+    lists["bugs"] = ["a | upgrade is allowed on a failed module | src/a.txt:1 | behaviour | upgrade a failed module: exit 0"]
 if act == "decisionreport":
     act = "pass"
     lists["bugs"] = ["a | upgrade is allowed on a failed module, the assumed decision D2 | src/a.txt:1"]
 if lists_harness:
     lists["bugs"] = ["harness | checks.sh run unit <path> crashes in write_json | scripts/checks.sh"]
 if act in ("bug", "bugdepart"):
-    lists["bugs"] = ["a-1 | total is off by one | src/a-1.txt:42"] if slug != "b" else ["a | total is off | src/a.txt:7"]
+    lists["bugs"] = (["a-1 | total is off by one | src/a-1.txt:42 | behaviour | tests/a-1.test: total of [1] is 2"]
+                     if slug != "b" else ["a | total is off | src/a.txt:7 | behaviour | tests/a.test fails"])
+if act == "kindreport":
+    act = "pass"
+    lists["bugs"] = ["a | total is off | src/a.txt:7 | behaviour | -", "a | the name x says nothing | src/a.txt:3 | style",
+                     "a | the README names port 3000, the app uses 8080 | README.md | docs",
+                     "a | should streaks reset at local midnight or UTC | src/a.txt:9 | decision",
+                     "a | rounds the total | src/a.txt:8 | sideways"]
+if act == "kindvalid":
+    act = "pass"
+    lists["bugs"] = ["a | the name x says nothing | src/a.txt:3 | kind: style"]
 mode = "" if act == "nomode" else "full"
 departure = "yes" if act in ("depart", "bugdepart") else "no"
 if act in ("pass", "bug", "depart", "bugdepart", "nomode"):
@@ -171,6 +181,7 @@ if os.path.exists("_harness/auto/exit.md"):
     calls[-1]["saw_exit"] = True
     json.dump(calls, open(calls_file, "w"))
 calls[-1]["prompt_has_direction"] = "owner's direction" in prompt.lower()
+calls[-1]["prompt_has_notes"] = "the name x says nothing" in prompt
 calls[-1]["prompt_answers"] = "Owner answers recorded since this feature started" in prompt and "done (" in prompt
 calls[-1]["already_answered"] = "already answered every item" in prompt
 calls[-1]["answer_kinds"] = [k for k in ("decision (", "answered (", "done (") if k in prompt]
@@ -698,6 +709,63 @@ def scenario_decision_bug_line():
     checklist = open(os.path.join(t, "docs/versions/v1/checklist.md")).read()
     check("decision-line", r.returncode == 0 and "fix-a-1" not in statuses(t)
           and "Confirm or change the decision in `a`" in checklist.split("## Needs you")[-1], f"{statuses(t)} {checklist}")
+
+
+def scenario_bug_kinds():
+    # an unknown kind makes the card invalid
+    t = make_repo({"order": order(("a", []), ("b", ["a"])), "b": ["kindreport"]})
+    *_, r = full_run(t)
+    check("bug-kinds-invalid", r.returncode == 1 and "sideways" in state(t)["exit"]["reason"], f"{state(t).get('exit')}")
+    # each kind goes to its place; only behaviour with a reproduction becomes a fix
+    t = make_repo({"order": order(("a", []), ("b", ["a"]), ("c", ["a"])), "b": ["kindvalid"]})
+    *_, r = full_run(t)
+    c = [x for x in calls(t) if x["key"] == "c"]
+    check("bug-kinds-style", r.returncode == 0 and not [s for s in statuses(t) if s.startswith("fix-")]
+          and c and c[-1].get("prompt_has_notes"), f"{r.returncode} {statuses(t)} {c}")
+    bugs = ["a | total is off | src/a.txt:7 | behaviour | -", "a | the README names port 3000 | README.md | docs",
+            "a | should streaks reset at local midnight or UTC | src/a.txt:9 | decision",
+            "a | total is off by one | src/a.txt:7 | behavior | tests/a.test: total of [1] is 2",
+            "a | legacy line with no kind | src/a.txt:2"]
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("driver", os.path.join(TEMPLATE, "scripts/auto/driver.py"))
+    d = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(d)
+    card = d.parse_card("---\nslug: b\nstatus: passed\nmode: full\nqa_rounds: 1\n---\n\n## Bugs found\n\n"
+                        + "".join(f"- {b}\n" for b in bugs))
+    kinds = [(b["kind"], bool(b["repro"])) for b in card["bugs_found"]]
+    check("bug-kinds-parse", not card.get("problems") and kinds == [("behaviour", False), ("docs", False), ("decision", False),
+          ("behaviour", True), ("behaviour", False)], f"{card.get('problems')} {kinds}")
+    t = make_repo({"order": order(("a", []), ("b", ["a"]))})
+    d.ROOT = t
+    st = {"features": [d.new_feature({"slug": "a"}), d.new_feature({"slug": "b", "depends_on": ["a"]})]}
+    st["features"][0]["status"] = "passed"
+    for b in card["bugs_found"]:
+        d.insert_fix(st, b, {"slug": "b"})
+    fixes = [x["slug"] for x in st["features"] if (x.get("inserted_by") or "").startswith("bug:")]
+    checklist = open(d.path(d.checklist_path())).read()
+    backlog = open(os.path.join(t, "_harness/HARNESS_BACKLOG.md")).read()
+    needs = checklist.split("## Needs you")[-1].split("## Harness changes")[0]
+    check("bug-kinds-route", fixes == ["fix-a-1"] and "Reproduce it first" in st["features"][1]["what"] + str(
+          [x["what"] for x in st["features"]]), f"fixes {fixes}")
+    check("bug-kinds-route", "Unconfirmed bug in `a`" in needs and "legacy line with no kind" in needs
+          and "Confirm or change the decision in `a`: should streaks" in needs, f"Needs you: {needs}")
+    check("bug-kinds-route", "### 1. Docs: the README names port 3000" in backlog and "None yet." not in backlog,
+          f"backlog: {backlog}")
+
+
+def scenario_tech_edge_cases():
+    r = subprocess.run(["bash", os.path.join(TEMPLATE, "scripts/doc-section.sh"),
+                        os.path.join(TEMPLATE, "harness/templates/auto/tech.md"), "Interfaces between features"],
+                       capture_output=True, text=True)
+    head = next((l for l in r.stdout.splitlines() if l.startswith("| Interface")), "")
+    cols = [c.strip() for c in head.strip("|").split("|")]
+    check("tech-edge-cases", r.returncode == 0 and cols == ["Interface (path)", "Shape", "Producer → consumers",
+          "Edge case", "Expected result"] and "`none`" in r.stdout, f"exit {r.returncode}, columns {cols}")
+    director = open(os.path.join(TEMPLATE, "harness/templates/auto/director-prompt.md")).read()
+    checklist = open(os.path.join(TEMPLATE, "harness/PLAN_CHECKLIST.md")).read()
+    testing = checklist.split("\n### Testing\n", 1)[-1].split("\n### ", 1)[0]
+    check("tech-edge-cases", "edge cases" in director and "**Interface edge cases.**" in testing,
+          "the director prompt or the plan checklist's Testing group doesn't ask for the edge cases")
 
 
 def tick_owner_items(t):
