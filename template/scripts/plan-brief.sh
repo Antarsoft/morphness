@@ -32,6 +32,11 @@ done
 case "$slug" in ''|*[!a-z0-9-]*|-*) echo "plan-brief: the slug must be lowercase letters, digits and hyphens, such as tag-filter (got '$slug')" >&2; usage ;; esac
 case "$version" in ''|*[!0-9]*|0*) echo "plan-brief: --version takes a number from 1 (got '$version')" >&2; usage ;; esac
 case "${force[1]:-full}" in full|plain) ;; *) echo "plan-brief: --force takes full or plain (got '${force[1]}')" >&2; usage ;; esac
+if [ -n "${MORPH_AUTO_FEATURE:-}" ] && [ "$slug" != "$MORPH_AUTO_FEATURE" ]; then
+  # an autonomous run checks the feature's records under its exact slug (harness/modules/autonomous/README.md)
+  echo "plan-brief: this autonomous session builds '$MORPH_AUTO_FEATURE', so its folder is _harness/features/$MORPH_AUTO_FEATURE/: run bash scripts/plan-brief.sh $MORPH_AUTO_FEATURE (got '$slug')" >&2
+  exit 2
+fi
 command -v python3 >/dev/null 2>&1 || { echo "plan-brief: python3 is missing" >&2; exit 2; }
 here="$(cd "$(dirname "$0")" && pwd)"
 root="$(cd "$here/.." && pwd)"

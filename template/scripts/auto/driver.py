@@ -405,7 +405,14 @@ def records_say_passed(st, f, card, since):
     listing = git("ls-tree", "--name-only", f"{f['branch']}:{base}", check=False).splitlines()
     versions = sorted((int(v) for v in listing if v.isdigit()), reverse=True)
     if not versions:
-        return False, f"no {base}/<version>/ folder"
+        near = near_folder(st, f)
+        if not near:
+            return False, f"no {base}/<version>/ folder"
+        say(f"  warning: {f['slug']}'s records are in {near}/, not {base}/ (the slug without its -<n>); "
+            f"using them. Rename it with: git mv {near} {base}")
+        base = near
+        listing = git("ls-tree", "--name-only", f"{f['branch']}:{base}", check=False).splitlines()
+        versions = sorted((int(v) for v in listing if v.isdigit()), reverse=True)
     v = f"{base}/{versions[0]}"
     plan = git("show", f"{f['branch']}:{v}/Plan/plan.md", check=False)
     if not re.search(r"^\*\*Status:\*\*\s*passed\b", plan, re.M):
@@ -425,6 +432,17 @@ def records_say_passed(st, f, card, since):
             return False, f"QA was blocked ({blocked.group(0).strip()[:120]}) in {v}/QA/qa-result.md"
         return False, f"{v}/QA/qa-result.md verdict is not pass ({verdict or 'no verdict found'})"
     return True, "plan and QA result agree"
+
+
+def near_folder(st, f):
+    """A feature folder a session named after the slug without its trailing -<n> (fix-app-shell for
+    fix-app-shell-1), when exactly one such folder was added on this feature's branch; otherwise ""."""
+    stem = re.sub(r"-\d+$", "", f["slug"])
+    if stem == f["slug"] or feature(st, stem) is not None:   # no suffix, or the folder is another feature's
+        return ""
+    added = git("diff", "--name-only", "--diff-filter=A", f"{f.get('start_commit') or st['base']['commit']}..{f['branch']}",
+                "--", f"_harness/features/{stem}/", check=False).splitlines()
+    return f"_harness/features/{stem}" if any(p.split("/")[3:4] and p.split("/")[3].isdigit() for p in added) else ""
 
 
 DENIED = re.compile(r"^\W*(permission to use \w+[^\n]{0,200}?(has been |was )?denied|claude requested permissions? to use|"

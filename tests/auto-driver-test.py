@@ -19,7 +19,7 @@ TEMPLATE = os.path.join(ROOT, "template")
 failures = []
 
 STUB = r'''#!/usr/bin/env python3
-import json, os, subprocess, sys
+import json, os, re, subprocess, sys
 args = sys.argv[1:]
 if "--help" in args:
     print("--permission-prompts <target>\n--max-budget-usd <amount>\n--output-format <format>\n--model <model>")
@@ -107,7 +107,7 @@ card = {"pass": "passed", "fakepass": "passed", "waiting": "waiting_owner", "esc
         "splitbad": "split", "bug": "passed", "depart": "passed", "bugdepart": "passed", "nomode": "passed",
         "verdict": "passed", "verdictfail": "passed", "checkout-dev": "passed", "rate-crash": "passed",
         "qa-denied": "passed", "qa-blocked": "passed", "harness-bug": "passed", "bugreport": "passed",
-        "decisionreport": "passed", "kindreport": "passed", "kindvalid": "passed"}[act]
+        "decisionreport": "passed", "nosuffix": "passed", "kindreport": "passed", "kindvalid": "passed"}[act]
 if act == "rate-crash":
     out(True, "error_during_execution", "Implemented the 429 rate limit handler, then a test runner crashed", 1)
 if act == "checkout-dev":
@@ -148,11 +148,15 @@ if act == "kindreport":
 if act == "kindvalid":
     act = "pass"
     lists["bugs"] = ["a | the name x says nothing | src/a.txt:3 | kind: style"]
+folder = slug
+if act == "nosuffix":
+    # the session named its records after the slug without the driver's -<n> (fix-a-1 -> fix-a)
+    act, folder = "pass", re.sub(r"-\d+$", "", slug)
 mode = "" if act == "nomode" else "full"
 departure = "yes" if act in ("depart", "bugdepart") else "no"
 if act in ("pass", "bug", "depart", "bugdepart", "nomode"):
-    w(f"_harness/features/{slug}/1/Plan/plan.md", "# Plan\n\n**Status:** passed  \n")
-    w(f"_harness/features/{slug}/1/QA/qa-result.md", "## Verdict\n\n- **Result:** pass\n")
+    w(f"_harness/features/{folder}/1/Plan/plan.md", "# Plan\n\n**Status:** passed  \n")
+    w(f"_harness/features/{folder}/1/QA/qa-result.md", "## Verdict\n\n- **Result:** pass\n")
     w(f"src/{slug}.txt", f"{slug}\n")
 if act in ("verdict", "verdictfail"):
     # QA wrote the verdict as a header line; verdictfail: round 1 passed, round 2 failed
@@ -751,6 +755,26 @@ def scenario_bug_kinds():
           and "Confirm or change the decision in `a`: should streaks" in needs, f"Needs you: {needs}")
     check("bug-kinds-route", "### 1. Docs: the README names port 3000" in backlog and "None yet." not in backlog,
           f"backlog: {backlog}")
+
+
+def scenario_folder_without_suffix():
+    t = make_repo({"order": order(("a", []), ("b", ["a"]), ("c", ["b"])), "b": ["bugreport"], "fix-a-1": ["nosuffix"]})
+    *_, r = full_run(t)
+    check("no-suffix", r.returncode == 0 and statuses(t) == {"a": "passed", "b": "passed", "fix-a-1": "passed", "c": "passed"}
+          and "records are in _harness/features/fix-a/" in r.stdout and "git mv _harness/features/fix-a _harness/features/fix-a-1"
+          in r.stdout, f"{r.returncode} {statuses(t)} {state(t).get('exit')} {r.stdout[-400:]}")
+    check("no-suffix", len([c for c in calls(t) if c["key"] == "fix-a-1"]) == 1, "the fix ran more than once")
+    # a folder named after another feature of the run is that feature's, never this one's
+    t = make_repo({"order": order(("a", []), ("a-2", ["a"])), "a-2": ["nosuffix"]})
+    *_, r = full_run(t)
+    check("no-suffix-other", r.returncode == 1 and "no _harness/features/a-2/<version>/ folder"
+          in (state(t).get("exit") or {}).get("reason", ""), f"{r.returncode} {statuses(t)} {state(t).get('exit')}")
+    # the feature prompt names the folder, and plan-brief.sh refuses another slug in a run
+    prompt = open(os.path.join(TEMPLATE, "harness/templates/auto/feature-prompt.md")).read()
+    pb = subprocess.run(["bash", os.path.join(TEMPLATE, "scripts/plan-brief.sh"), "fix-a"], capture_output=True, text=True,
+                        env=dict(os.environ, MORPH_AUTO_FEATURE="fix-a-1"))
+    check("no-suffix-prompt", "`_harness/features/%SLUG%/<version>/`" in prompt and pb.returncode == 2
+          and "plan-brief.sh fix-a-1" in pb.stderr, f"plan-brief exit {pb.returncode}: {pb.stderr}")
 
 
 def scenario_tech_edge_cases():

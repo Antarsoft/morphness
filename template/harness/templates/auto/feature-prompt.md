@@ -1,6 +1,6 @@
 <!-- Autonomous module: the prompt scripts/auto/run.sh gives each feature session. Words in %CAPS% are filled by the driver. -->
 
-Autonomous run, feature `%SLUG%` (%TITLE%), milestone %MILESTONE%, on branch `%BRANCH%`. You are the Technical Lead; `MORPH_AUTO=1` is set, so `harness/modules/autonomous/README.md` § Run rules replace every owner approval and owner ask. Read that section first. Nobody is watching this session.
+Autonomous run, feature `%SLUG%` (%TITLE%), milestone %MILESTONE%, on branch `%BRANCH%`, with its records in `_harness/features/%SLUG%/<version>/` (this exact slug, `%SLUG%`, for the folder and for `bash scripts/plan-brief.sh %SLUG%`). You are the Technical Lead; `MORPH_AUTO=1` is set, so `harness/modules/autonomous/README.md` § Run rules replace every owner approval and owner ask. Read that section first. Nobody is watching this session.
 
 What to build: %WHAT% Product doc approved by %OWNER% on %APPROVED_AT%.
 
