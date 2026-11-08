@@ -22,25 +22,45 @@ args = sys.argv[1:]
 if "--help" in args:
     print("--permission-prompts <target>\n--max-budget-usd <amount>\n--output-format <format>\n--model <model>")
     sys.exit(0)
-prompt = args[args.index("-p") + 1]
-kind = os.environ.get("MORPH_AUTO_SESSION", "")
-slug = os.environ.get("MORPH_AUTO_FEATURE", "")
 plan = json.load(open(os.environ["STUB_PLAN"]))
 calls_file = os.environ["STUB_CALLS"]
 calls = json.load(open(calls_file)) if os.path.exists(calls_file) else []
+# What Claude Code printed when its sign-in had expired (a real director log, 68 ms, nothing spent).
+SIGNED_OUT = {"type": "result", "subtype": "success", "is_error": True, "duration_ms": 68, "num_turns": 0,
+              "result": "Failed to authenticate: OAuth session expired and could not be refreshed",
+              "terminal_reason": "api_error", "total_cost_usd": 0}
+if args[:2] == ["auth", "status"]:
+    calls.append({"key": "auth-status", "kind": "auth-status", "auto": ""})
+    json.dump(calls, open(calls_file, "w"))
+    print(json.dumps({"loggedIn": plan.get("logged_in", True), "authMethod": "claude.ai"}))
+    sys.exit(0)
+prompt = args[args.index("-p") + 1]
+kind = os.environ.get("MORPH_AUTO_SESSION", "")
+slug = os.environ.get("MORPH_AUTO_FEATURE", "")
 key = slug or kind
 n = sum(1 for c in calls if c["key"] == key)
 model = args[args.index("--model") + 1] if "--model" in args else ""
 calls.append({"key": key, "kind": kind, "model": model, "resume": "started again" in prompt,
-              "auto": os.environ.get("MORPH_AUTO", ""), "budget": args[args.index("--max-budget-usd") + 1]})
+              "auto": os.environ.get("MORPH_AUTO", ""), "budget": args[args.index("--max-budget-usd") + 1],
+              "stream": "stream-json" in args})
 json.dump(calls, open(calls_file, "w"))
-steps = plan.get(key, ["pass"])
+steps = plan.get(key, ["ok" if kind == "preflight" else "pass"])
 act = steps[min(n, len(steps) - 1)]
 cost = plan.get("costs", {}).get(key, plan.get("cost", 1.0))
 
 def out(is_error=False, subtype="success", result="done", code=0):
     print(json.dumps({"type": "result", "subtype": subtype, "is_error": is_error, "total_cost_usd": cost, "result": result}))
     sys.exit(code)
+
+if act == "auth":
+    print(json.dumps(SIGNED_OUT))
+    sys.exit(1)
+if kind == "preflight":
+    out(result="OK")
+if "stream-json" in args:   # one tool call before the work, as a streamed session shows it
+    print(json.dumps({"type": "assistant", "message": {"content": [
+        {"type": "tool_use", "name": "Write", "input": {"file_path": os.path.join(os.getcwd(), "docs/product/tech.md")}}]}}))
+    sys.stdout.flush()
 
 def w(p, text):
     os.makedirs(os.path.dirname(p) or ".", exist_ok=True)
@@ -238,7 +258,10 @@ def scenario_happy():
                                           capture_output=True, text=True).stdout)
     check("happy", committed["status"] == "done", "committed state snapshot is stale")
     cs = calls(t)
-    check("happy", all(c["auto"] == "1" for c in cs), "a session ran without MORPH_AUTO=1")
+    check("happy", all(c["auto"] == "1" for c in cs if c["kind"] not in ("preflight", "auth-status")),
+          "a session ran without MORPH_AUTO=1")
+    check("happy", any(c["kind"] == "preflight" for c in cs) and all(c.get("stream", True) for c in cs
+          if c["kind"] not in ("preflight", "auth-status")), "no sign-in check, or a session that isn't streamed")
     check("happy", [c for c in cs if c["kind"] == "director"][0]["model"] == "opus", "director not on director_model")
     check("happy", all(c["budget"] == "15.00" for c in cs if c["kind"] == "feature"), "session cap isn't 1.5 x feature budget")
     check("happy", not subprocess.run(["git", "status", "--porcelain"], cwd=t, capture_output=True, text=True).stdout.strip(),
@@ -491,6 +514,73 @@ def scenario_card_cli():
     out = json.loads(r.stdout or "{}")
     check("card-cli", r.returncode == 0 and len(out.get("v1_items", [])) == 2 and out["bugs_found"][0]["where"] == "src/b.ts:42",
           f"{r.returncode} {r.stdout} {r.stderr}")
+
+
+def scenario_signed_out_outcome():
+    sys.path.insert(0, os.path.join(TEMPLATE, "scripts/auto"))
+    import driver
+    real = {"type": "result", "subtype": "success", "is_error": True, "terminal_reason": "api_error", "total_cost_usd": 0,
+            "result": "Failed to authenticate: OAuth session expired and could not be refreshed"}
+    cases = [(1, real, "", "auth"),
+             (1, {"is_error": True, "result": "Invalid API key · Please run /login"}, "", "auth"),
+             (1, {}, "Error: Not logged in · Please run /login\n", "auth"),
+             (1, {"is_error": True, "result": 'API Error: 401 {"type":"error","error":{"type":"authentication_error"}}'}, "", "auth"),
+             (1, {"is_error": True, "result": "Added the OAuth login screen and a 401 handler, then the test runner crashed"}, "", "crash"),
+             (0, {"is_error": False, "result": "Failed to authenticate users is now handled"}, "", "ok"),
+             (1, {"is_error": True, "result": "Claude usage limit reached"}, "", "usage")]
+    for code, out, err, want in cases:
+        got = driver.outcome_of(code, out, err)
+        check("signed-out-outcome", got == want, f"{out} {err!r}: {got} != {want}")
+    stream = '{"type":"system"}\n' + json.dumps(real) + "\n"
+    check("signed-out-outcome", driver.result_of(stream) == real, "result_of() missed the result line of a stream")
+
+
+def scenario_signed_out_preflight():
+    for plan, why in (({"preflight": ["auth"]}, "probe"), ({"logged_in": False}, "auth status")):
+        t = make_repo({"order": order(("a", [])), **plan})
+        r = drive(t, "start")
+        branches = subprocess.run(["git", "branch", "--list", "auto/v1"], cwd=t, capture_output=True, text=True).stdout
+        log = subprocess.run(["git", "log", "--all", "--oneline"], cwd=t, capture_output=True, text=True).stdout
+        check("signed-out-preflight", r.returncode == 2 and "/login" in r.stderr and "run.sh start" in r.stderr,
+              f"{why}: {r.returncode} {r.stderr}")
+        check("signed-out-preflight", not branches.strip() and len(log.splitlines()) == 1, f"{why}: made {branches} {log}")
+        check("signed-out-preflight", not [c for c in calls(t) if c["kind"] == "director"], f"{why}: a director ran")
+        if why == "auth status":
+            check("signed-out-preflight", not [c for c in calls(t) if c["kind"] == "preflight"], "probed after auth status said no")
+
+
+def scenario_signed_out_director():
+    t = make_repo({"order": order(("a", [])), "director": ["auth", "pass"]})
+    r = drive(t, "start")
+    log = subprocess.run(["git", "log", "--oneline", "auto/v1"], cwd=t, capture_output=True, text=True).stdout
+    check("signed-out-director", r.returncode == 1 and state(t)["status"] == "docs_failed" and "/login" in r.stdout,
+          f"{r.returncode} {r.stdout[-400:]}")
+    check("signed-out-director", len(log.splitlines()) == 1 and "draft" not in log, f"misleading commit: {log}")
+    r = drive(t, "start")
+    check("signed-out-director", r.returncode == 0 and state(t)["status"] == "awaiting_approval", f"retry: {r.stdout}{r.stderr}")
+
+
+def scenario_signed_out_feature():
+    t = make_repo({"order": order(("a", [])), "a": ["auth", "pass"]})
+    *_, r = full_run(t)
+    st = state(t)
+    f = st["features"][0]
+    note = open(os.path.join(t, "_harness/auto/exit.md")).read()
+    check("signed-out-feature", r.returncode == 1 and st["exit"]["reason"].startswith("signed out")
+          and f["status"] == "todo" and f["tries"]["crashes"] == 0, f"{r.returncode} {st['exit']} {f}")
+    check("signed-out-feature", "/login" in note and "run.sh resume" in note, f"exit note: {note}")
+    check("signed-out-feature", len([c for c in calls(t) if c["key"] == "a"]) == 1, "the signed-out try was retried")
+    r = drive(t, "resume")
+    f = state(t)["features"][0]
+    check("signed-out-feature", r.returncode == 0 and f["status"] == "passed" and f["tries"]["crashes"] == 0,
+          f"resume: {r.stdout[-300:]} {f}")
+
+
+def scenario_progress():
+    t = make_repo({"order": order(("a", []))})
+    r = drive(t, "start")
+    check("progress", "director: session started" in r.stdout and "Write docs/product/tech.md" in r.stdout,
+          f"no progress lines: {r.stdout[-400:]}")
 
 
 SCENARIOS = {n[len("scenario_"):]: f for n, f in globals().items() if n.startswith("scenario_")}
