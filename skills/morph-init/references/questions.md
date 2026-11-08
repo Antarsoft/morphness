@@ -167,6 +167,16 @@ tools. Yes unlocks the roadmap module and two follow-ups: the file paths (sugges
 and `docs/versions/`), and the first version's id and goal (suggest `v1` and the project description;
 for an ongoing project, the next release the README or tags point to). → `roadmap.*`
 
+## Q8b. Autonomous run
+
+Skip unless Q8 was yes. "Do you want the option of an unattended run? You write a short brief,
+approve the product docs it turns into once, and the harness then builds the first version
+feature by feature on its own branch, writing down everything only you can do. It runs from a
+terminal on your machine and stops at a budget you set." Default no: suggest yes only for a new
+product the owner wants built from a brief. Yes adds the autonomous module, switched off with no
+budget (`auto.enabled: false`); `/morph-auto start` sets it up when the owner wants a run.
+→ `modules`
+
 ## Q9. Data
 
 Skip when the stack has no database. "Agents never write to shared remote databases. Do you want the
