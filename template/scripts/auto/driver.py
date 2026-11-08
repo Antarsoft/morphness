@@ -402,7 +402,7 @@ def session(st, kind, prompt, label, model="", on_branch=None):
     if model:
         cmd += ["--model", model]
     env = dict(os.environ, MORPH_AUTO="1", MORPH_AUTO_FEATURE=label if kind == "feature" else "",
-               MORPH_AUTO_SESSION=kind)
+               MORPH_AUTO_SESSION=kind, MORPH_AUTO_BRANCH=st["base"]["branch"])
     logs = os.path.join(live_dir(), "logs")
     os.makedirs(logs, exist_ok=True)
     st["session_count"] = st.get("session_count", 0) + 1

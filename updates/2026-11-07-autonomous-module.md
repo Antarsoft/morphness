@@ -29,7 +29,7 @@ files:
   - harness/templates/bug-plan.md
   - harness.config.yml
 removed: []
-reviewed: "It adds a module folder, templates, an auto: config block that is off, lines marked module:autonomous, and a driver under scripts/auto/ that only an owner runs from a terminal. The driver refuses to start inside a Claude Code session, on a dirty tree, with auto.enabled false or a zero budget, starts sessions with --permission-prompts none and --max-budget-usd (never a mode that skips permissions), and pushes only the run and feature branches, never the integration, production or an environment branch. It changes no guard rule or settings file and makes no network call of its own beyond git push."
+reviewed: "It adds a module folder, templates, an auto: config block that is off, lines marked module:autonomous, and a driver under scripts/auto/ that only an owner runs from a terminal. The driver refuses to start inside a Claude Code session, on a dirty tree, with auto.enabled false or a zero budget, starts sessions with --permission-prompts none and --max-budget-usd (never a mode that skips permissions), and pushes only the run and feature branches, never the integration, production or an environment branch. It changes no guard rule or settings file and makes no network call of its own beyond git push. The guard rules for a run are reviewed in their own note."
 ---
 
 ## What changed
@@ -39,7 +39,7 @@ reviewed: "It adds a module folder, templates, an auto: config block that is off
 - With the module, one line in each plan template's § Approval points to the run rules. It is marked `module:autonomous`, so installs without the module don't get it. `harness/TECHNICAL_LEAD.md` is unchanged: the driver's prompts point the Technical Lead to the run rules.
 - The driver, `bash scripts/auto/run.sh` (`start`, `approve`, `run`, `resume`, `status`, `stop`), with `card.sh` and `tracker.sh`. It keeps the live run state and session logs in the git folder, starts each session with `--permission-prompts none` and `--max-budget-usd`, checks every card against the feature's own records before it merges into the run branch, and redraws `_harness/auto/tracker.md` after each feature.
 - `auto.session_hours` (default 4): a wall-clock limit for one session. A card lists the items the driver acts on as body sections (§ Owner items, § Bugs found, § Split into), one line each.
-- The guard rules for a run and the `/morph-auto` skill come in a later release; until then a run has no guard protection for the driver's files.
+- The guard rules for a run are in their own note (`2026-11-07-guard-autonomous-run`); the `/morph-auto` skill comes in a later release.
 
 ## Why
 
