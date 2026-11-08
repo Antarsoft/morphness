@@ -21,7 +21,7 @@ One feature runs at a time. The run branch is never pushed to an environment bra
 | Stop | What happens |
 |------|--------------|
 | A feature runs out of tries: QA failed past `loop.qa_max_rounds` (`failed-escalated`), a crash after `auto.crash_retries` restarts, or the feature's spend passing 1.5 times `loop.feature_budget_usd` (the session's hard cap; never counted as a crash, and a passed card written before the cap still counts) | The run exits at once and writes `_harness/auto/exit.md` |
-| The run budget (`auto.budget_usd`), `auto.max_hours` or `auto.max_features` would be passed by the next feature | The run exits before starting it |
+| The run budget (`auto.budget_usd`), `auto.max_hours` or `auto.max_features` (bug fixes the run inserts count too) would be passed by the next feature | The run exits before starting it |
 | The owner runs `bash scripts/auto/run.sh stop` (from a second terminal) or creates `_harness/auto/STOP` | The run exits after the current feature |
 | A usage limit (the session's own error says so) | Not a stop: the driver waits `auto.usage_wait_minutes` (doubling, at most 4 hours) and tries again; the try doesn't count. After 12 waits in a row it exits |
 | A session runs past `auto.session_hours`, moves a protected branch or the run branch, or a merge conflicts | A session past its hours is a crash; the others exit the run at once |
@@ -42,7 +42,7 @@ These apply only in a session the driver started: `MORPH_AUTO=1` is set and `MOR
    - Pricing, legal wording, data and privacy promises: draft them, mark them draft in the code, and add a steps-file item. Never present them as final.
    - An accepted risk (a threat model's § Accepted risks) or a security exception: never accept one yourself. When the plan can't go on without it, write the card with `status: waiting_owner`.
 4. **Owner items** go to the feature's steps file as usual (`harness/SETUP.md` § After QA pass, step 4), each also one line in the card's § Owner items (a rule item starts `rule:`); the driver copies those lines to the checklist's § Needs you and § Harness changes after the merge. Features never edit the checklist.
-5. **Guard denials.** A denied call (in a headless run every call that would prompt is denied) becomes a steps-file item with the command and why it was needed. Finish the feature without it when you can; otherwise write the card with `status: waiting_owner` and what the owner must do.
+5. **Guard denials.** In a headless run every call that would prompt is denied, so a shell command outside the allow rules in `.claude/settings.json` is too. Run one command per call, the named checks through `bash scripts/checks.sh run`, and file work with the file tools; when a chain is denied, try its commands one at a time. A call still denied becomes a steps-file item with the command and why it was needed. Finish the feature without it when you can; otherwise write the card with `status: waiting_owner` and what the owner must do.
 6. **Rework model.** After the first QA fail, and in a resumed session, Full-stack rework runs on `auto.last_try_model` (the Agent call's model), in place of the same-variant rule.
 7. **Retro and prune.** Action items that change a rule get `human decides` (listed in § Owner items with `rule:`). No new trials start in a run; a trial already on in the config runs as configured. On `Prune is DUE`, don't write the proposal, and its exit code doesn't hold the hand-off: the driver runs the prune session.
 8. **Bugs outside the plan** go in the card's § Bugs found with where they are; don't fix them in this feature.
@@ -121,6 +121,8 @@ To drop a run: delete the run branch (`git branch -D auto/v1`), its `feature/*` 
 - Needs `roadmap` in `modules`; if it is missing, add it first with `/morph-module add roadmap`.
 - Put back the marked text (`module:autonomous`): the autonomous approver line in § Approval of `harness/templates/plan.md`, `small-plan.md` and `bug-plan.md`, and the § During an autonomous run line in `harness/GUARD.md`. `harness/TECHNICAL_LEAD.md` gets no line (it sits at its size cap): the driver's feature and resume prompts tell the Technical Lead to read § Run rules first.
 - Copy `harness/templates/auto/` and `scripts/auto/`.
+- Add read-only allow rules to `.claude/settings.json` → `permissions.allow`, so a run's sessions can use them with no prompt: `Bash(date:*)`, `Bash(git show:*)`, `Bash(git grep:*)` and `Bash(git rev-parse:*)`, and the formatter's check command when the project has one that only reads (`gofmt -l`, `prettier --check`). They stay on remove.
+- When `project/CONTROLS.md` has a manual smoke, offer to make it a named check (`smoke`, a script under `scripts/` that builds the product and runs it against a scratch data folder): a run's sessions can't start the built product directly, but they can run `bash scripts/checks.sh run smoke`.
 - Add the `auto:` block above to `harness.config.yml` with `enabled: false`, and `autonomous` to `modules`.
 - Ask the owner whether to set `mode.bug_repro: fullstack`, with the reason above.
 - Tell the owner that `/morph-auto start` is the next step when they want a run: it writes the brief and sets the budgets.

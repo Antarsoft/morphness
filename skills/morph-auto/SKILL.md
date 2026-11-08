@@ -60,6 +60,7 @@ finance docs and `order.md`) and the § Needs you section the director wrote in 
 checklist. Then give the owner a short review:
 - what the first version will do, and what it leaves out;
 - the feature order, with the cost estimate against `auto.budget_usd`;
+- whether `auto.max_features` leaves room: the bug fixes the run finds and inserts count too, so suggest about 1.5 times the order's length;
 - every decision the director made that the brief didn't (marked `assumed`), and every price,
   legal or privacy wording it drafted;
 - the owner items it foresees (accounts, keys, store setup).

@@ -70,7 +70,7 @@ if kind == "prune":
     out()
 card = {"pass": "passed", "fakepass": "passed", "waiting": "waiting_owner", "escalate": "escalated", "split": "split",
         "splitbad": "split", "bug": "passed", "depart": "passed", "bugdepart": "passed", "nomode": "passed",
-        "checkout-dev": "passed", "rate-crash": "passed"}[act]
+        "verdict": "passed", "verdictfail": "passed", "checkout-dev": "passed", "rate-crash": "passed"}[act]
 if act == "rate-crash":
     out(True, "error_during_execution", "Implemented the 429 rate limit handler, then a test runner crashed", 1)
 if act == "checkout-dev":
@@ -93,6 +93,12 @@ departure = "yes" if act in ("depart", "bugdepart") else "no"
 if act in ("pass", "bug", "depart", "bugdepart", "nomode"):
     w(f"_harness/features/{slug}/1/Plan/plan.md", "# Plan\n\n**Status:** passed  \n")
     w(f"_harness/features/{slug}/1/QA/qa-result.md", "## Verdict\n\n- **Result:** pass\n")
+    w(f"src/{slug}.txt", f"{slug}\n")
+if act in ("verdict", "verdictfail"):
+    # QA wrote the verdict as a header line; verdictfail: round 1 passed, round 2 failed
+    w(f"_harness/features/{slug}/1/Plan/plan.md", "# Plan\n\n**Status:** passed  \n")
+    w(f"_harness/features/{slug}/1/QA/qa-result.md", "# QA result\n\n**Round:** 1\n**Verdict:** pass\n"
+      + ("\n## Round 2\n\n**Verdict:** `fail`\n" if act == "verdictfail" else ""))
     w(f"src/{slug}.txt", f"{slug}\n")
 if act == "fakepass":
     w(f"_harness/features/{slug}/1/Plan/plan.md", "# Plan\n\n**Status:** approved  \n")
@@ -335,6 +341,29 @@ def scenario_fake_pass():
     t = make_repo({"order": order(("a", [])), "a": ["fakepass"]})
     *_, r = full_run(t)
     check("fake-pass", r.returncode == 1 and "Status is not passed" in state(t)["exit"]["reason"], f"{state(t)['exit']}")
+
+
+def scenario_verdict_shapes():
+    sys.path.insert(0, os.path.join(TEMPLATE, "scripts/auto"))
+    import driver
+    cases = [("## Verdict\n\n- **Result:** pass\n- **Deferred to local run:** none\n\n### Blocking issues (if fail)\n", "pass"),
+             ("## Verdict\n\n**pass.** All 5 ACs pass.\n", "pass"),
+             ("**Round:** 1\n**Verdict:** pass\n\n## Acceptance criteria\n\n| 1 | fail |\n", "pass"),
+             ("**Verdict:** pass\n\n## Round 2\n\n**Verdict:** fail\n", "fail"),
+             ("## Verdict\n\n- **Result:** fail\n\n## Notes\n\npass later\n", "fail"),
+             ("- **Result:** reproduced.\n", None)]
+    for text, want in cases:
+        got = driver.qa_verdict(text)
+        check("verdict-shapes", got == want, f"{text!r}: {got} != {want}")
+
+
+def scenario_verdict_header():
+    t = make_repo({"order": order(("a", [])), "a": ["verdict"]})
+    *_, r = full_run(t)
+    check("verdict-header", r.returncode == 0 and state(t)["features"][0]["status"] == "passed", f"{r.stderr[-300:]}")
+    t = make_repo({"order": order(("a", [])), "a": ["verdictfail"]})
+    *_, r = full_run(t)
+    check("verdict-header-fail", r.returncode == 1 and "verdict is not pass" in state(t)["exit"]["reason"], f"{state(t)['exit']}")
 
 
 def scenario_split_and_bug():
