@@ -121,6 +121,7 @@ To drop a run: delete the run branch (`git branch -D auto/v1`), its `feature/*` 
 - Needs `roadmap` in `modules`; if it is missing, add it first with `/morph-module add roadmap`.
 - Put back the marked text (`module:autonomous`): the autonomous approver line in § Approval of `harness/templates/plan.md`, `small-plan.md` and `bug-plan.md`, and the § During an autonomous run line in `harness/GUARD.md`. `harness/TECHNICAL_LEAD.md` gets no line (it sits at its size cap): the driver's feature and resume prompts tell the Technical Lead to read § Run rules first.
 - Copy `harness/templates/auto/` and `scripts/auto/`.
+- Add read-only allow rules to `.claude/settings.json` → `permissions.allow`, so a run's sessions can use them with no prompt: `Bash(date:*)`, `Bash(git show:*)`, `Bash(git grep:*)` and `Bash(git rev-parse:*)`, and the formatter's check command when the project has one that only reads (`gofmt -l`, `prettier --check`). They stay on remove.
 - Add the `auto:` block above to `harness.config.yml` with `enabled: false`, and `autonomous` to `modules`.
 - Ask the owner whether to set `mode.bug_repro: fullstack`, with the reason above.
 - Tell the owner that `/morph-auto start` is the next step when they want a run: it writes the brief and sets the budgets.

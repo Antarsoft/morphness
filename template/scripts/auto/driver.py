@@ -1013,15 +1013,21 @@ def after_feature(st, f):
             say("the prune session didn't finish; the next feature's counter asks again")
     elif r is not None and "Prune is DUE" not in r.stdout:
         st["prune_open"] = False
-    size = len(read(LEDGER, "").encode())
-    if size > number("auto.ledger_kb", 8) * 1024 and size > st.get("ledger_compacted_at", 0) + 2048:
+    ledger = read(LEDGER, "")
+    size = len(ledger.encode())
+    whole = len(re.findall(r"(?m)^## [a-z0-9-]+ \(", ledger))   # cards not yet folded into a summary
+    # The last five cards stay whole, so a session with five or fewer to keep has nothing to fold.
+    if whole > 5 and size > number("auto.ledger_kb", 8) * 1024 and size > st.get("ledger_compacted_at", 0) + 2048:
         prompt = (f"Autonomous run: compact `{LEDGER}` into `{AUTO}/ledger.next.md`: group the cards by milestone into "
                   "short summaries that keep every interface, path and decision later features need, and keep the last "
                   "five cards whole. Write only that file; no git.")
         outcome, _, _ = with_usage_wait(st, lambda: session(st, "director", prompt, "ledger",
                                                             model=config("auto.director_model", "opus")))
-        if outcome == "ok" and os.path.isfile(path(f"{AUTO}/ledger.next.md")):
-            os.replace(path(f"{AUTO}/ledger.next.md"), path(LEDGER))
+        nxt = path(f"{AUTO}/ledger.next.md")
+        if outcome == "ok" and os.path.isfile(nxt) and os.path.getsize(nxt) < size:
+            os.replace(nxt, path(LEDGER))
+        elif os.path.isfile(nxt):
+            os.remove(nxt)   # not smaller: keep the ledger as it is
         st["ledger_compacted_at"] = len(read(LEDGER, "").encode())
     save_state(st)
     render_tracker(st)
