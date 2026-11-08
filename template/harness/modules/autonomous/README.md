@@ -4,7 +4,7 @@ Optional, off by default. It runs a whole first version from a product brief wit
 
 The default mode is unchanged. Unless the driver started the session (`MORPH_AUTO=1` set and the run state running that feature), nothing in this module applies, and the owner approves every plan as usual.
 
-**Needs the roadmap module** (owner items go to its steps files and version checklist). The driver is `bash scripts/auto/run.sh` (`start`, `approve`, `run`, `resume`, `status`, `stop`). The `/morph-auto` skill comes in a later kit release; until then the owner runs the driver from a terminal.
+**Needs the roadmap module** (owner items go to its steps files and version checklist). The driver is `bash scripts/auto/run.sh` (`start`, `approve`, `run`, `resume`, `status`, `stop`). `/morph-auto` prepares each step (brief, budgets, review of the docs, status, stop, resume, the run's PR) and gives the owner the command to type.
 
 ## How a run goes
 
@@ -12,7 +12,7 @@ The default mode is unchanged. Unless the driver started the session (`MORPH_AUT
 2. **Docs.** The owner runs `bash scripts/auto/run.sh start` from a terminal (the driver refuses to run inside a Claude Code session). It creates the run branch (`auto.branch`, default `auto/v1`) from the integration branch, and the director session writes `docs/product/` (product, tech, design and finance docs, and `order.md`), and in the next version's checklist (the one the roadmap marks next; created only when there is none) a § Needs you section with every owner item it can foresee. The driver checks the order (unique slugs, known dependencies, no cycle), commits, and prints a cost estimate.
 3. **Approval.** The owner reads the docs, edits them if needed, and runs `bash scripts/auto/run.sh approve`, then `run`. That is the only approval in a run. The driver records who approved, when, and a hash of `docs/product/`; it updates the hash after each of its own re-plans.
 4. **Features.** For each feature in order whose dependencies have passed, the driver branches `feature/<slug>` from the run branch and starts one headless session. The Technical Lead picks the mode, writes the plan, approves it under § Run rules, delegates, runs QA and the retro, and ends by writing the feature's card. The driver checks the card against the feature's records (§ The card and the ledger), merges the branch into the run branch (`--no-ff`), runs `checks.on_stop`, and moves on.
-5. **End.** The run ends `done` when every feature passed, `done_waiting` when the rest wait on the owner, or `exited` (below). A later release's `/morph-auto pr` opens one PR from the run branch to the integration branch, after merging the integration branch into it; the owner reviews and merges it as usual.
+5. **End.** The run ends `done` when every feature passed, `done_waiting` when the rest wait on the owner, or `exited` (below). `/morph-auto pr` opens one PR from the run branch to the integration branch, after merging the integration branch into it; the owner reviews and merges it as usual.
 
 One feature runs at a time. The run branch is never pushed to an environment branch, and nothing in a run deploys, publishes or merges into the integration branch.
 
@@ -119,10 +119,11 @@ To drop a run: delete the run branch (`git branch -D auto/v1`), its `feature/*` 
 ## On install
 
 - Needs `roadmap` in `modules`; if it is missing, add it first with `/morph-module add roadmap`.
-- Put back the marked text (`module:autonomous`): the autonomous approver line in § Approval of `harness/templates/plan.md`, `small-plan.md` and `bug-plan.md`. `harness/TECHNICAL_LEAD.md` gets no line (it sits at its size cap): the driver's feature and resume prompts tell the Technical Lead to read § Run rules first.
+- Put back the marked text (`module:autonomous`): the autonomous approver line in § Approval of `harness/templates/plan.md`, `small-plan.md` and `bug-plan.md`, and the § During an autonomous run line in `harness/GUARD.md`. `harness/TECHNICAL_LEAD.md` gets no line (it sits at its size cap): the driver's feature and resume prompts tell the Technical Lead to read § Run rules first.
 - Copy `harness/templates/auto/` and `scripts/auto/`.
 - Add the `auto:` block above to `harness.config.yml` with `enabled: false`, and `autonomous` to `modules`.
 - Ask the owner whether to set `mode.bug_repro: fullstack`, with the reason above.
+- Tell the owner that `/morph-auto start` is the next step when they want a run: it writes the brief and sets the budgets.
 
 ## On remove
 
