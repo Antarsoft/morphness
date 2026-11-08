@@ -20,11 +20,14 @@ driver hit an error; 2 a usage error or a check that refused to start.
 import datetime
 import json
 import os
+import queue
 import re
 import shutil
 import statistics
 import subprocess
 import sys
+import tempfile
+import threading
 import time
 
 ROOT = os.getcwd()
@@ -42,6 +45,21 @@ SLUG = re.compile(r"[a-z0-9]+(-[a-z0-9]+)*")
 USAGE_LIMIT = re.compile(r"^\W*(claude( ai)? usage limit|usage limit reached|.{0,40}rate_limit_error|api error: 429)",
                          re.I)
 MAX_USAGE_WAITS = 12
+# A claude that isn't signed in (an expired sign-in, a bad API key), told the same way: from the start of the session's
+# error result or a line of its stderr, so work that talks about OAuth or a 401 handler isn't mistaken for it.
+SIGNED_OUT = re.compile(r"^\W*(error:\s*)?(failed to authenticate|not logged in|invalid api key|please run /login|"
+                        r"oauth (token|session)[^\n]{0,40}(expired|revoked|invalid)|api error: 401|"
+                        r".{0,40}authentication_error)", re.I | re.M)
+SIGN_IN_PROBE = "Reply with the single word OK."
+HEARTBEAT_MINUTES = 2   # a "still running" line when a session showed nothing for this long
+
+
+def sign_in_steps(command):
+    return ("Claude Code isn't signed in on this computer (or its sign-in expired). To fix it:\n"
+            "  1. In this terminal, type: claude   and press Enter\n"
+            "  2. Type: /login   and sign in in the browser window it opens\n"
+            "  3. Type: /exit\n"
+            f"  4. Run again: bash scripts/auto/run.sh {command}")
 
 
 class Refuse(Exception):
@@ -400,16 +418,124 @@ def remaining(st):
     return st["limits"]["budget_usd"] - st["spend_usd"]
 
 
+def result_of(stdout):
+    """The session's result object: the last `"type": "result"` line of a stream, or the whole output as one JSON
+    object (the plain json format)."""
+    lines = stdout.strip().splitlines()
+    for candidate in [l for l in reversed(lines) if '"result"' in l] + [stdout.strip()]:
+        try:
+            out = json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(out, dict) and (out.get("type") == "result" or "total_cost_usd" in out):
+            return out
+    return {}
+
+
+def progress_line(event):
+    """One short line for the terminal about what a streamed session is doing, or None. Only the tool calls are
+    shown (which file it writes, which command it runs), never the model's text."""
+    if not isinstance(event, dict) or event.get("type") != "assistant":
+        return None
+    shown = []
+    for part in (event.get("message") or {}).get("content") or []:
+        if not isinstance(part, dict) or part.get("type") != "tool_use":
+            continue
+        name, args = str(part.get("name", "")), part.get("input") or {}
+        what = args.get("file_path") or args.get("path") or args.get("command") or args.get("pattern") \
+            or args.get("description") or args.get("subagent_type") or ""
+        what = str(what).replace(ROOT + os.sep, "").splitlines()[0] if what else ""
+        shown.append(f"{name} {what}".strip()[:100])
+    return "; ".join(shown) or None
+
+
+def run_streamed(cmd, env, timeout, label, log):
+    """Runs one session, writing its stream to the log as it comes and printing a line per tool call, plus a
+    "still running" line when nothing was shown for HEARTBEAT_MINUTES. Returns (stdout, stderr, exit code)."""
+    heartbeat = HEARTBEAT_MINUTES * 60
+    lines, err_file = queue.Queue(), tempfile.TemporaryFile(mode="w+", encoding="utf-8")
+    try:
+        p = subprocess.Popen(cmd, cwd=ROOT, stdout=subprocess.PIPE, stderr=err_file, stdin=subprocess.DEVNULL,
+                             text=True, env=env, bufsize=1)
+    except OSError as e:
+        err_file.close()
+        return "", f"could not start {claude_bin()}: {e}", -1
+
+    def pump():
+        for line in p.stdout:
+            lines.put(line)
+        lines.put(None)
+    threading.Thread(target=pump, daemon=True).start()
+    started = last_shown = time.time()
+    out, code, timed_out, ended_at = [], None, False, 0
+    with open(log, "w", encoding="utf-8") as fh:
+        while True:
+            try:
+                line = lines.get(timeout=5)
+            except queue.Empty:
+                line = ""
+                exited = p.poll() is not None
+                ended_at = ended_at or (time.time() if exited else 0)
+                if exited and time.time() - ended_at > 30:
+                    break   # a process the session left running holds the output open: don't wait for it
+            if line is None:
+                break
+            if line:
+                out.append(line)
+                fh.write(line)
+                fh.flush()
+                try:
+                    shown = progress_line(json.loads(line))
+                except json.JSONDecodeError:
+                    shown = None
+                if shown:
+                    say(f"{label} [{(time.time() - started) / 60:.0f}m] {shown}")
+                    last_shown = time.time()
+            if time.time() - started > timeout:
+                p.kill()
+                timed_out = True
+                break
+            if heartbeat and time.time() - last_shown >= heartbeat:
+                say(f"{label} [{(time.time() - started) / 60:.0f}m] still running")
+                last_shown = time.time()
+        code = p.wait()
+        err_file.seek(0)
+        stderr = err_file.read()
+        err_file.close()
+        if timed_out:
+            stderr, code = f"the session ran past auto.session_hours ({timeout / 3600:g} h) and was stopped", -1
+        if stderr:
+            fh.write("\n--- stderr ---\n" + stderr[-4000:])
+    return "".join(out), stderr, code
+
+
+def outcome_of(code, out, stderr):
+    """What a finished session amounts to: ok | budget | auth | usage | crash, from its exit code, its JSON result
+    and its stderr. auth (not signed in) never counts as a try: with_usage_wait() ends the run on it."""
+    text = str(out.get("result") or stderr[-400:])
+    subtype = str(out.get("subtype", ""))
+    if "budget" in subtype:
+        return "budget"
+    if code or out.get("is_error"):
+        if SIGNED_OUT.search(text[:300]) or SIGNED_OUT.search(stderr[-2000:]):
+            return "auth"
+        if "rate" in subtype.lower() or "usage" in subtype.lower() or USAGE_LIMIT.search(text[:200]):
+            return "usage"
+        return "crash"
+    return "ok"
+
+
 def session(st, kind, prompt, label, model="", on_branch=None):
-    """One headless session. Returns (outcome, cost, text): ok | crash | usage | budget. Afterwards HEAD must be
-    on the branch it started on and no protected branch may have moved; a run that sees either exits."""
+    """One headless session. Returns (outcome, cost, text): ok | crash | usage | budget | auth (outcome_of()).
+    Afterwards HEAD must be on the branch it started on and no protected branch may have moved; a run that sees
+    either exits."""
     on_branch = on_branch or head_branch()
     guarded = {b: ref(b) for b in protected_branches() | {st["base"]["branch"]} if b != on_branch}
     cap = min(st["limits"]["session_cap_usd"], remaining(st))
     if cap < 0.5:
         raise RunExit(f"run budget: ${st['spend_usd']:.2f} spent of ${st['limits']['budget_usd']:.2f}, too little "
                       "left for another session")
-    cmd = [claude_bin(), "-p", prompt, "--output-format", "json", "--permission-prompts", "none",
+    cmd = [claude_bin(), "-p", prompt, "--output-format", "stream-json", "--verbose", "--permission-prompts", "none",
            "--max-budget-usd", f"{cap:.2f}"]
     if model:
         cmd += ["--model", model]
@@ -418,27 +544,11 @@ def session(st, kind, prompt, label, model="", on_branch=None):
     logs = os.path.join(live_dir(), "logs")
     os.makedirs(logs, exist_ok=True)
     st["session_count"] = st.get("session_count", 0) + 1
-    log = os.path.join(logs, f"{st['session_count']:04d}-{label}.json")
+    log = os.path.join(logs, f"{st['session_count']:04d}-{label}.jsonl")
     timeout = number("auto.session_hours", 4) * 3600
-    try:
-        r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, env=env, stdin=subprocess.DEVNULL,
-                           timeout=timeout)
-        stdout, stderr, code = r.stdout, r.stderr, r.returncode
-    except subprocess.TimeoutExpired as e:
-        stdout = e.stdout.decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
-        stderr, code = f"the session ran past auto.session_hours ({timeout / 3600:g} h) and was stopped", -1
-    except OSError as e:
-        stdout, stderr, code = "", f"could not start {claude_bin()}: {e}", -1
-    with open(log, "w", encoding="utf-8") as fh:
-        fh.write(stdout + ("\n--- stderr ---\n" + stderr[-4000:] if stderr else ""))
-    out = {}
-    for candidate in (stdout.strip(), (stdout.strip().splitlines() or [""])[-1]):
-        try:
-            out = json.loads(candidate)
-            break
-        except json.JSONDecodeError:
-            continue
-    out = out if isinstance(out, dict) else {}
+    say(f"{label}: session started ({kind}; live log {os.path.relpath(log, ROOT)})")
+    stdout, stderr, code = run_streamed(cmd, env, timeout, label, log)
+    out = result_of(stdout)
     cost = float(out.get("total_cost_usd") or 0.0)
     text = str(out.get("result") or stderr[-400:])
     st["spend_usd"] = round(st.get("spend_usd", 0.0) + cost, 4)
@@ -451,22 +561,18 @@ def session(st, kind, prompt, label, model="", on_branch=None):
             stash(st, f"{label}: left on {head_branch()}")
         git("checkout", on_branch)
         say(f"the {kind} session left HEAD off {on_branch}; switched back")
-    subtype = str(out.get("subtype", ""))
-    if "budget" in subtype:
-        return "budget", cost, text
-    if code or out.get("is_error"):
-        if "rate" in subtype.lower() or "usage" in subtype.lower() or USAGE_LIMIT.search(text[:200]):
-            return "usage", cost, text
-        return "crash", cost, text
-    return "ok", cost, text
+    return outcome_of(code, out, stderr), cost, text
 
 
 def with_usage_wait(st, run_once):
     """Runs run_once() again after a usage limit, waiting auto.usage_wait_minutes, doubling up to 4 hours, at
-    most MAX_USAGE_WAITS times in a row. A stop request or a spent budget ends the wait."""
+    most MAX_USAGE_WAITS times in a row. A stop request or a spent budget ends the wait. A session that wasn't
+    signed in ends the run (reason "signed out"): no try counts, and the owner signs in and resumes."""
     wait = max(1.0, number("auto.usage_wait_minutes", 30))
     for _ in range(MAX_USAGE_WAITS + 1):
         outcome, cost, text = run_once()
+        if outcome == "auth":
+            raise RunExit(f"signed out: Claude Code isn't signed in ({text[:200].strip()})")
         if outcome != "usage":
             return outcome, cost, text
         say(f"usage limit; waiting {wait:.0f} minutes (the try doesn't count)")
@@ -485,7 +591,36 @@ def stash(st, why):
 
 
 # ---- checks before anything runs -------------------------------------------------------------------------
-def preflight(need_clean=True):
+def check_signed_in(command):
+    """One cheap check that claude is signed in, before the run makes a branch, a commit or a session: `claude auth
+    status` when this Claude Code has it, then a one-word session on the small model (about a cent), run in an
+    empty folder so no project files load. Only a sign-in error refuses; anything else is left to the run."""
+    r = subprocess.run([claude_bin(), "auth", "status", "--json"], capture_output=True, text=True,
+                       stdin=subprocess.DEVNULL, timeout=60)
+    try:
+        status = json.loads(r.stdout) if r.returncode == 0 else {}
+    except json.JSONDecodeError:
+        status = {}
+    if isinstance(status, dict) and status.get("loggedIn") is False:
+        raise Refuse(sign_in_steps(command))
+    probe_dir = tempfile.mkdtemp(prefix="morph-auto-signin-")
+    try:
+        r = subprocess.run([claude_bin(), "-p", SIGN_IN_PROBE, "--output-format", "json", "--permission-prompts",
+                            "none", "--max-budget-usd", "0.05", "--model", "haiku"], cwd=probe_dir,
+                           capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=300,
+                           env=dict(os.environ, MORPH_AUTO_SESSION="preflight"))
+        stdout, stderr, code = r.stdout, r.stderr, r.returncode
+    except subprocess.TimeoutExpired:
+        return
+    finally:
+        shutil.rmtree(probe_dir, ignore_errors=True)
+    if outcome_of(code, result_of(stdout), stderr) == "auth":
+        raise Refuse(sign_in_steps(command))
+
+
+def preflight(need_clean=True, command=""):
+    """The checks every command but status and stop makes before it changes anything. With command (the one the
+    owner runs again after a refusal), it also checks that claude is signed in."""
     if os.environ.get("CLAUDECODE") and not os.environ.get("MORPH_AUTO_ALLOW_NESTED"):
         raise Refuse("run this from a terminal, not inside a Claude Code session: the sessions it starts would "
                      "inherit this one's environment")
@@ -508,6 +643,8 @@ def preflight(need_clean=True):
     if "--permission-prompts" not in help_text or "--max-budget-usd" not in help_text:
         raise Refuse("this Claude Code has no --permission-prompts or --max-budget-usd: update it first")
     lock()
+    if command:
+        check_signed_in(command)
 
 
 def limits():
@@ -554,6 +691,10 @@ def cmd_start():
     run_branch = config("auto.branch", "auto/v1")
     if run_branch in protected_branches():
         raise Refuse(f"auto.branch {run_branch} is the integration, production or an environment branch")
+    if st and st["status"] not in ("docs", "docs_failed", "done", "done_waiting"):
+        raise Refuse(f"a run is {st['status']}; use approve, run, resume or status (README § Starting over "
+                     "says how to drop a run)")
+    check_signed_in("start")
     if st and st["status"] in ("docs", "docs_failed") and st["base"]["branch"] == run_branch and ref(run_branch):
         git("checkout", run_branch)  # the director didn't finish last time: try again on the same branch
         st["limits"] = lim
@@ -593,8 +734,14 @@ def cmd_start():
     except RunExit as e:
         st["status"] = "docs_failed"
         save_state(st)
-        commit(st, "auto: product docs draft (director didn't finish)")
-        say(f"{e.reason}. Fix what it says, then run start again: it retries on {run_branch}")
+        if git("status", "--porcelain", "--", "docs/product"):
+            commit(st, "auto: product docs draft (director didn't finish)")
+        else:
+            say("the director wrote no docs, so there is nothing to commit")
+        if e.reason.startswith("signed out"):
+            say(f"{e.reason}.\n{sign_in_steps('start')}\nstart retries on {run_branch}.")
+        else:
+            say(f"{e.reason}. Fix what it says, then run start again: it retries on {run_branch}")
         return 1
     st["features"] = [new_feature(r) for r in rows]
     st["status"] = "awaiting_approval"
@@ -610,7 +757,7 @@ def cmd_start():
 
 
 def cmd_approve():
-    preflight()
+    preflight()   # no session runs here, so no sign-in check
     st = load_state()
     if not st or st["status"] != "awaiting_approval":
         raise Refuse(f"nothing awaits approval (status {st and st['status']})")
@@ -653,7 +800,7 @@ def cmd_status():
 
 
 def cmd_resume():
-    preflight()
+    preflight(command="resume")
     st = load_state()
     if not st or st["status"] not in ("exited", "done_waiting"):
         raise Refuse(f"nothing to resume (status {st and st['status']})")
@@ -687,7 +834,7 @@ def cmd_resume():
 
 def cmd_run(already_checked=False):
     if not already_checked:
-        preflight()
+        preflight(command="run")
     st = load_state()
     if not st or st["status"] != "running":
         raise Refuse(f"the run isn't running (status {st and st['status']}): start, approve or resume first")
@@ -784,8 +931,18 @@ def run_feature(st, f):
                   if f["tries"].get("direction") else ""}
         prompt = fill("resume-prompt.md" if resumed else "feature-prompt.md", values)
         model = config("auto.last_try_model", "opus") if (resumed or f["tries"]["last_try"]) else ""
-        outcome, cost, text = with_usage_wait(st, lambda: session(st, "feature", prompt, f["slug"], model=model,
-                                                                  on_branch=branch))
+        try:
+            outcome, cost, text = with_usage_wait(st, lambda: session(st, "feature", prompt, f["slug"], model=model,
+                                                                      on_branch=branch))
+        except RunExit as e:
+            if e.reason.startswith("signed out"):   # not a try and not a crash: the feature waits for the sign-in
+                if git("rev-parse", "HEAD") != since:   # it lost the sign-in partway: go on from its last commit
+                    f["tries"]["resume"] = "the last session lost its sign-in partway through"
+                if git("status", "--porcelain"):
+                    stash(st, f"{f['slug']} uncommitted work when the sign-in failed")
+                to_run_branch(st)
+                f["status"] = "todo"
+            raise
         f["sessions"] += 1
         f["cost_usd"] = round(f["cost_usd"] + cost, 4)
         card_rel = f"{AUTO}/cards/{f['slug']}.md"
@@ -1070,7 +1227,9 @@ ACTIONS = [("escalated", "write how the escalated feature should go on under § 
            ("run budget", "raise auto.budget_usd and resume, or stop here"),
            ("max hours", "resume when ready (resume starts a fresh clock)"),
            ("max features", "raise auto.max_features and resume, or stop here"),
-           ("stop file", "resume when ready"), ("usage limit", "resume when your usage limit resets")]
+           ("stop file", "resume when ready"), ("usage limit", "resume when your usage limit resets"),
+           ("signed out", "sign Claude Code in again and resume: in a terminal type `claude` and press Enter; type "
+            "/login and sign in; type /exit; then run `bash scripts/auto/run.sh resume`")]
 
 
 def finish(st, status, reason, f=None):

@@ -50,7 +50,9 @@ edit).
    1. Open a terminal in the project folder.
    2. `git checkout <integration branch> && git pull`
    3. `bash scripts/auto/run.sh start`: the director writes `docs/product/` and the feature order,
-      and the driver prints a cost estimate. This takes a few minutes.
+      and the driver prints a cost estimate. This takes a few minutes. The terminal shows a line for
+      each file the director writes, and "still running" when it's quiet. If it says Claude Code isn't
+      signed in, follow the steps it prints.
    4. Come back and run `/morph-auto approve`.
 
 ## approve
@@ -84,8 +86,18 @@ Run `bash scripts/auto/run.sh status`, and read `_harness/auto/tracker.md` on th
 - the feature running now.
 
 When the status is `exited` or `done_waiting`, lead with the **You need to:** lines from
-`_harness/auto/exit.md`. Session logs are in `.git/morphness/auto/logs/`: read one only to explain
-a crash.
+`_harness/auto/exit.md`. Session logs are in `.git/morphness/auto/logs/` (one `.jsonl` per
+session, written as it runs): read one only to explain a crash, or to say what a running session is
+doing now (its last lines).
+
+When the exit reason starts with `signed out`, or `start` refused because Claude Code isn't signed
+in, or the status is `docs_failed` and the director's log says `Failed to authenticate`, it isn't a
+crash and no try was used. Give the owner these steps, then the command to run again (`start` for
+`docs_failed`, otherwise `resume`):
+1. In the terminal, type `claude` and press Enter.
+2. Type `/login` and sign in in the browser window it opens.
+3. Type `/exit`.
+4. `bash scripts/auto/run.sh start` (or `resume`).
 
 ## stop
 
