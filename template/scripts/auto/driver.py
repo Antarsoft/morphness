@@ -35,7 +35,12 @@ AUTO = "_harness/auto"
 STATE = f"{AUTO}/state.json"
 LEDGER = f"{AUTO}/ledger.md"
 TEMPLATES = "harness/templates/auto"
-CARD_STATUSES = ("passed", "escalated", "waiting_owner", "split")
+CARD_STATUSES = ("passed", "escalated", "waiting_owner", "split", "not-a-bug")
+NOT_A_BUG_REASONS = ("not-reproduced", "product-decision", "duplicate")
+# Evidence on a not-a-bug card: a file:line, a plan's decision id (D2), or the slug of the feature it duplicates.
+EVIDENCE = re.compile(r"[\w./-]+\.\w+:\d+|\bD\d+\b|\b[a-z0-9]+(-[a-z0-9]+)+\b")
+# A bug line about a choice already recorded as assumed (a plan's D<n>) or left to the owner is the owner's call.
+OWNER_CALL = re.compile(r"\bD\d+\b|\bassumed\b|\bowner item\b|\bproduct decision\b|\bby design\b", re.I)
 MODES = ("full", "bug", "small", "light", "small-bug")
 FEATURE_STATUSES = ("todo", "running", "passed", "waiting_owner", "exited", "split", "skipped")
 SETTLED = ("passed", "skipped", "split")
@@ -310,7 +315,7 @@ def parse_card(text):
     head = {}
     for line in m.group(1).splitlines():
         line = re.sub(r"\s+#\s.*$", "", line).rstrip()
-        if not line.strip():
+        if not line.strip() or line.lstrip().startswith("#"):   # a comment line, as the template has
             continue
         k, sep, v = line.partition(":")
         if not sep or not re.fullmatch(r"[a-z_]+", k.strip()):
@@ -323,7 +328,8 @@ def parse_card(text):
         sections[title.strip().lower()] = [l.strip()[2:].strip() for l in rest.splitlines()
                                            if l.strip().startswith("- ") and not re.match(r"(none\b|$)", l.strip()[2:].strip().lower())]
     card = {"status": head.get("status", ""), "slug": head.get("slug", ""), "mode": head.get("mode", ""),
-            "departure": head.get("departure", "no").lower() in ("yes", "true")}
+            "departure": head.get("departure", "no").lower() in ("yes", "true"),
+            "reason": head.get("reason", "").lower(), "evidence": head.get("evidence", "")}
     problems = []
     try:
         card["qa_rounds"] = int(head.get("qa_rounds") or 0)
@@ -353,6 +359,14 @@ def parse_card(text):
                                    "depends_on": deps})
     if card["status"] == "split" and not card["split_into"]:
         problems.append("status split needs § Split into with the parts")
+    if card["status"] == "not-a-bug":
+        if card["reason"] not in NOT_A_BUG_REASONS:
+            problems.append(f"status not-a-bug needs reason: one of {', '.join(NOT_A_BUG_REASONS)}")
+        if not EVIDENCE.search(card["evidence"]):
+            problems.append("status not-a-bug needs evidence: a file:line, the plan decision id (D2) or the slug it "
+                            "duplicates")
+        if card["reason"] == "product-decision" and not card["v1_items"]:
+            problems.append("a product-decision card needs an owner item in § Owner items to confirm the decision")
     if len(body.splitlines()) > 40:
         problems.append(f"the body has {len(body.splitlines())} lines, over 40")
     if problems:
@@ -899,6 +913,13 @@ def cmd_resume():
         if f["status"] in ("exited", "running") or (st["status"] == "done_waiting" and f["status"] == "waiting_owner"):
             why = ("the owner did the items it waited on" if f["status"] == "waiting_owner"
                    else f"resumed after: {exit_info.get('reason', 'a stop')}")
+            if exit_info.get("reason", "").startswith("tries used up") and exit_info.get("feature") == f["slug"]:
+                # The retry starts from why the last try stopped and what its own card said, not from scratch.
+                card = git("show", f"{f['branch']}:{AUTO}/cards/{f['slug']}.md", check=False)
+                body = re.sub(r"\A---.*?---\s*", "", card, flags=re.S).strip()
+                if body:
+                    why += (". The last try's card said (fix what the reason names; if the work is not a bug, close it "
+                            "with status not-a-bug): " + re.sub(r"\s+", " ", body)[:800])
             f["status"], f["waiting_on"] = "todo", ""
             f["tries"] = {"crashes": 0, "qa_rounds": f["tries"].get("qa_rounds", 0), "last_try": True,
                           "resume": why, "direction": direction if exit_info.get("feature") == f["slug"] else ""}
@@ -976,7 +997,10 @@ def end_without_todo(st):
 
 def what_to_build(st, f):
     if (f.get("inserted_by") or "").startswith("bug:"):
-        return f"a fix for a bug found during the run: {f['what']} Run it in bug mode if it touches a risk path."
+        return (f"a fix for a bug found during the run: {f['what']} Run it in bug mode if it touches a risk path. If "
+                "it turns out not to be a bug (it doesn't reproduce, it is a product decision a plan or doc records, or "
+                "another fix covers it), change no product code and write the card with `status: not-a-bug`, `reason:` "
+                "and `evidence:` (README § The card and the ledger).")
     if (f.get("inserted_by") or "").startswith("split:"):
         parent = f["inserted_by"][len("split:"):]
         return (f"part of `{parent}`, split as its card `{AUTO}/cards/{parent}.md` says: {f['title']}. Build only "
@@ -1065,6 +1089,12 @@ def handle_card(st, f, card, since):
     run_branch = st["base"]["branch"]
     f["mode"], f["tries"]["qa_rounds"] = card["mode"], card["qa_rounds"]
     status = card["status"]
+    if status == "not-a-bug":
+        why = not_a_bug_problem(st, f, card, since)
+        if why:
+            to_run_branch(st)
+            f["status"] = "exited"
+            raise RunExit(f"tries used up: {f['slug']}'s card says not a bug but {why}", f)
     if status == "passed":
         ok, why = records_say_passed(st, f, card, since)
         if not ok:
@@ -1081,7 +1111,7 @@ def handle_card(st, f, card, since):
             raise RunExit(f"tries used up: {f['slug']}'s card says passed but {why}", f, todo)
     card_text = git("show", f"{f['branch']}:{AUTO}/cards/{f['slug']}.md")
     to_run_branch(st)
-    if status in ("passed", "split"):
+    if status in ("passed", "split", "not-a-bug"):
         shown = f"{AUTO}/cards/{f['slug']}.md"
         if git("ls-files", shown):  # a copy shown after an earlier stop: the branch's own card replaces it
             git("rm", "-q", shown)
@@ -1095,12 +1125,23 @@ def handle_card(st, f, card, since):
         f["merge_commit"] = git("rev-parse", "HEAD")
     else:
         write(f"{AUTO}/cards/{f['slug']}.md", card_text + "\n")  # the work stays on its branch; the card is shown
-    if status == "passed":
+    changed_code = [p for p in git("diff", "--name-only", f"{f['merge_commit']}~1..{f['merge_commit']}",
+                                   check=False).splitlines() if p and not p.startswith("_harness/")] \
+        if f.get("merge_commit") else []
+    if status == "passed" or (status == "not-a-bug" and changed_code):   # a not-a-bug guard test is checked too
         failed = run_checks()
         if failed:
             git("reset", "-q", "--hard", "HEAD~1")
             f["status"] = "exited"
             raise RunExit(f"tries used up: {f['slug']} passed QA but {failed} failed after the merge", f)
+    if status == "not-a-bug":
+        f["status"] = "skipped"
+        f["waiting_on"] = f"not a bug ({card['reason']}): {card['evidence']}"
+        ledger = read(LEDGER, "# Ledger\n\nPassed cards, in merge order. Features read their dependencies' cards, "
+                              "not this file.\n")
+        write(LEDGER, ledger.rstrip() + f"\n\n## {f['slug']} ({f['title']}): not a bug, {card['reason']}\n\n"
+                                        f"{card['body']}\n")
+    elif status == "passed":
         f["status"] = "passed"
         ledger = read(LEDGER, "# Ledger\n\nPassed cards, in merge order. Features read their dependencies' cards, "
                               "not this file.\n")
@@ -1123,7 +1164,7 @@ def handle_card(st, f, card, since):
             if f["slug"] in d["depends_on"] and d not in parts:
                 d["depends_on"] = [x for x in d["depends_on"] if x != f["slug"]] + names
     for b in card["bugs_found"]:
-        insert_fix(st, b)
+        insert_fix(st, b, f)
     copy_v1_items(f, card["v1_items"])
     f["docs_after"] = docs_tree()
     st["approval"]["docs_tree"] = docs_tree()  # the run's own merge: not an owner edit
@@ -1149,7 +1190,26 @@ def dependants(st, slug):
     return out
 
 
-def insert_fix(st, bug):
+def not_a_bug_problem(st, f, card, since):
+    """Why a not-a-bug card can't settle its feature, or "". Only a fix the run inserted can be closed this way,
+    with a card written in this session whose file:line evidence exists on the branch."""
+    if not (f.get("inserted_by") or "").startswith("bug:"):
+        return "only a fix the run inserted can be closed as not a bug"
+    changed = [p for p in git("diff", "--name-only", f"{since}..{f['branch']}").splitlines() if p]
+    if f"{AUTO}/cards/{f['slug']}.md" not in changed:
+        return "the card wasn't written in this session (it is an old one)"
+    for m in re.finditer(r"([\w./-]+\.\w+):\d+", card["evidence"]):
+        if subprocess.run(["git", "cat-file", "-e", f"{f['branch']}:{m.group(1)}"], cwd=ROOT,
+                          capture_output=True).returncode:
+            return f"its evidence {m.group(0)} names a file that isn't on the branch"
+    return ""
+
+
+def insert_fix(st, bug, by=None):
+    if OWNER_CALL.search(f"{bug['what']} {bug['where']}"):   # a recorded or assumed decision: the owner's call
+        copy_v1_items(by or {"slug": "run"}, [f"Confirm or change the decision in `{bug['in']}`: {bug['what']}"
+                                              + (f" ({bug['where']})" if bug["where"] else "")])
+        return
     target = feature(st, bug["in"])
     if target is None:
         copy_v1_items({"slug": "run"}, [f"A bug a feature found in unknown `{bug['in']}`: {bug['what']} ({bug['where']})"])

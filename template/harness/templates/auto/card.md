@@ -1,6 +1,8 @@
 ---
 slug: <feature-slug>
-status: passed      # passed | escalated | waiting_owner | split
+status: passed      # passed | escalated | waiting_owner | split | not-a-bug (an inserted fix that found no bug)
+# reason: product-decision   # not-a-bug only: not-reproduced | product-decision (add an owner item) | duplicate
+# evidence: src/sim/actions.ts:42 or module-detail plan D2 or the slug it duplicates   # not-a-bug only
 mode: full          # full | bug | small | light | small-bug: the mode the Technical Lead chose
 qa_rounds: 1
 departure: no       # yes when the plan departs from docs/product/ (say how in § Departures)

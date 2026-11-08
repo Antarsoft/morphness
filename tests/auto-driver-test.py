@@ -90,10 +90,24 @@ if kind == "director":
 if kind == "prune":
     w("_harness/prunes/2026-01-01-prune.md", "# Prune\n")
     out()
+if act in ("notabug", "notabug-noevidence", "cardonly"):
+    # A fix that finds no bug: no product code, no plan or QA, only the card (a product decision to confirm).
+    head = {"notabug": "status: not-a-bug\nreason: product-decision\nevidence: a plan D2",
+            "notabug-noevidence": "status: not-a-bug\nreason: product-decision\nevidence: looked at it",
+            "cardonly": "status: passed\nmode: bug"}[act]
+    w(f"_harness/auto/cards/{slug}.md", f"---\nslug: {slug}\n{head}\nqa_rounds: 0\ndeparture: no\n---\n\n## Built\n\n"
+      "Nothing: upgrading a failed module is the assumed decision D2 in a's plan.\n\n## Owner items\n\n"
+      "- Confirm decision D2: a failed module can still be upgraded\n")
+    calls[-1]["prompt_has_card"] = "last try's card said" in prompt
+    json.dump(calls, open(calls_file, "w"))
+    git("add", "-A")
+    git("commit", "-q", "-m", f"{slug}: {act}")
+    out()
 card = {"pass": "passed", "fakepass": "passed", "waiting": "waiting_owner", "escalate": "escalated", "split": "split",
         "splitbad": "split", "bug": "passed", "depart": "passed", "bugdepart": "passed", "nomode": "passed",
         "verdict": "passed", "verdictfail": "passed", "checkout-dev": "passed", "rate-crash": "passed",
-        "qa-denied": "passed", "qa-blocked": "passed", "harness-bug": "passed"}[act]
+        "qa-denied": "passed", "qa-blocked": "passed", "harness-bug": "passed", "bugreport": "passed",
+        "decisionreport": "passed"}[act]
 if act == "rate-crash":
     out(True, "error_during_execution", "Implemented the 429 rate limit handler, then a test runner crashed", 1)
 if act == "checkout-dev":
@@ -114,6 +128,12 @@ if act == "split":
     lists["split"] = [f"{slug}-1 | First half | -", f"{slug}-2 | Second half | -"]
 if act == "splitbad":
     lists["split"] = ["Bad_Slug | Nope | -"]
+if act == "bugreport":
+    act = "pass"
+    lists["bugs"] = ["a | upgrade is allowed on a failed module | src/a.txt:1"]
+if act == "decisionreport":
+    act = "pass"
+    lists["bugs"] = ["a | upgrade is allowed on a failed module, the assumed decision D2 | src/a.txt:1"]
 if lists_harness:
     lists["bugs"] = ["harness | checks.sh run unit <path> crashes in write_json | scripts/checks.sh"]
 if act in ("bug", "bugdepart"):
@@ -636,6 +656,45 @@ def scenario_harness_bug():
           f"not in § Harness changes: {checklist}")
     check("harness-bug", not [f for f in st["features"] if (f.get("inserted_by") or "").startswith("bug:")],
           "a harness bug became a fix item")
+
+
+def scenario_not_a_bug():
+    t = make_repo({"order": order(("a", []), ("b", ["a"]), ("c", ["b"])), "b": ["bugreport"], "fix-a-1": ["notabug"]})
+    *_, r = full_run(t)
+    st = state(t)
+    checklist = open(os.path.join(t, "docs/versions/v1/checklist.md")).read()
+    check("not-a-bug", r.returncode == 0 and st["status"] == "done"
+          and statuses(t) == {"a": "passed", "b": "passed", "fix-a-1": "skipped", "c": "passed"},
+          f"{r.returncode} {statuses(t)} {st.get('exit')}")
+    check("not-a-bug", len([c for c in calls(t) if c["key"] == "fix-a-1"]) == 1, "the not-a-bug fix ran more than once")
+    check("not-a-bug", "Confirm decision D2" in checklist.split("## Needs you")[-1], f"owner item missing: {checklist}")
+    t = make_repo({"order": order(("a", []), ("b", ["a"])), "b": ["bugreport"], "fix-a-1": ["notabug-noevidence"]})
+    *_, r = full_run(t)
+    check("not-a-bug-evidence", r.returncode == 1 and statuses(t)["fix-a-1"] == "exited", f"{statuses(t)} {state(t).get('exit')}")
+    t = make_repo({"order": order(("a", [])), "a": ["notabug"]})
+    *_, r = full_run(t)
+    check("not-a-bug-ordered", r.returncode == 1 and "only a fix the run inserted" in state(t)["exit"]["reason"],
+          f"{state(t).get('exit')}")
+
+
+def scenario_bare_passed_resume():
+    t = make_repo({"order": order(("a", []), ("b", ["a"])), "b": ["bugreport"], "fix-a-1": ["cardonly", "notabug"]})
+    *_, r = full_run(t)
+    st = state(t)
+    check("bare-passed", r.returncode == 1 and "no _harness/features/fix-a-1/<version>/ folder" in st["exit"]["reason"],
+          f"{st.get('exit')}")
+    r = drive(t, "resume")
+    fix = [c for c in calls(t) if c["key"] == "fix-a-1"]
+    check("bare-passed-resume", r.returncode == 0 and statuses(t)["fix-a-1"] == "skipped" and fix[-1].get("prompt_has_card"),
+          f"{r.returncode} {statuses(t)} {fix[-1]}")
+
+
+def scenario_decision_bug_line():
+    t = make_repo({"order": order(("a", []), ("b", ["a"])), "b": ["decisionreport"]})
+    *_, r = full_run(t)
+    checklist = open(os.path.join(t, "docs/versions/v1/checklist.md")).read()
+    check("decision-line", r.returncode == 0 and "fix-a-1" not in statuses(t)
+          and "Confirm or change the decision in `a`" in checklist.split("## Needs you")[-1], f"{statuses(t)} {checklist}")
 
 
 def scenario_progress():
