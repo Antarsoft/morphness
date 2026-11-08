@@ -1,0 +1,1 @@
+`checks.sh run <check> <path>` no longer crashes. It refuses anything that isn't a check name and says how to run one test file instead. In an autonomous run, a card can report a bug in the harness itself as `- harness | what | where`. It goes to the checklist's § Harness changes, and the session is no longer restarted.

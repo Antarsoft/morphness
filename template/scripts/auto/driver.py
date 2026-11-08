@@ -301,7 +301,8 @@ def docs_tree():
 def parse_card(text):
     """A card: a header of plain `key: value` lines between --- lines, then a Markdown body. The lists the driver
     acts on are body sections with one `- ` line per item, so colons and commas in an item are just text:
-    § Owner items (a rule item starts `rule:`), § Bugs found (`- <slug> | what | where`) and § Split into
+    § Owner items (a rule item starts `rule:`), § Bugs found (`- <slug> | what | where`, or `- harness | what | where`
+    for a bug in the harness itself, which goes to the checklist's § Harness changes, not to a fix item) and § Split into
     (`- <slug> | title | depends on, comma separated`)."""
     m = re.match(r"\A---\r?\n(.*?)\r?\n---\r?\n?(.*)\Z", text, re.S)
     if not m:
@@ -336,8 +337,13 @@ def parse_card(text):
     card["bugs_found"], card["split_into"] = [], []
     for item in sections.get("bugs found", []):
         parts = [p.strip() for p in item.split("|")]
+        if len(parts) >= 2 and parts[0].strip("`").lower() in ("harness", "morphness", "kit"):
+            where = f" ({parts[2]})" if len(parts) > 2 and parts[2] else ""
+            card["v1_items"].append(f"rule: harness bug: {parts[1]}{where}")
+            continue
         if len(parts) < 2 or not SLUG.fullmatch(parts[0].strip("`")):
-            problems.append(f"bug line {item!r} is not `<feature-slug> | what | where`")
+            problems.append(f"bug line {item!r} is not `<feature-slug> | what | where` (or `harness | what | where` "
+                            "for a bug in the harness itself)")
             continue
         card["bugs_found"].append({"in": parts[0].strip("`"), "what": parts[1], "where": parts[2] if len(parts) > 2 else ""})
     for item in sections.get("split into", []):
