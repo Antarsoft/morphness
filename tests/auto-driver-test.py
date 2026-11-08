@@ -93,7 +93,7 @@ if kind == "prune":
 card = {"pass": "passed", "fakepass": "passed", "waiting": "waiting_owner", "escalate": "escalated", "split": "split",
         "splitbad": "split", "bug": "passed", "depart": "passed", "bugdepart": "passed", "nomode": "passed",
         "verdict": "passed", "verdictfail": "passed", "checkout-dev": "passed", "rate-crash": "passed",
-        "qa-denied": "passed", "qa-blocked": "passed"}[act]
+        "qa-denied": "passed", "qa-blocked": "passed", "harness-bug": "passed"}[act]
 if act == "rate-crash":
     out(True, "error_during_execution", "Implemented the 429 rate limit handler, then a test runner crashed", 1)
 if act == "checkout-dev":
@@ -103,12 +103,19 @@ if act == "checkout-dev":
     git("commit", "-q", "-m", "oops")
     out()
 lists = {"owner": [], "bugs": [], "split": []}
+if act == "harness-bug":
+    act = "pass"
+    lists_harness = True
+else:
+    lists_harness = False
 if act in ("waiting", "pass"):
     lists["owner"] = ["Sign in to the store account, e.g. App Store Connect: team ABC", "rule: decide the copy rule"]
 if act == "split":
     lists["split"] = [f"{slug}-1 | First half | -", f"{slug}-2 | Second half | -"]
 if act == "splitbad":
     lists["split"] = ["Bad_Slug | Nope | -"]
+if lists_harness:
+    lists["bugs"] = ["harness | checks.sh run unit <path> crashes in write_json | scripts/checks.sh"]
 if act in ("bug", "bugdepart"):
     lists["bugs"] = ["a-1 | total is off by one | src/a-1.txt:42"] if slug != "b" else ["a | total is off | src/a.txt:7"]
 mode = "" if act == "nomode" else "full"
@@ -616,6 +623,19 @@ def scenario_allow_rule():
                           ("go test ./sim/...", "Bash(go test:*)"), ("bash scripts/smoke.sh", "Bash(bash scripts/smoke.sh:*)"),
                           ("npm test -- src/a.test.ts", "Bash(npm test:*)"), ("WebFetch https://example.com", "WebFetch")):
         check("allow-rule", driver.allow_rule(command) == want, f"{command}: {driver.allow_rule(command)} != {want}")
+
+
+def scenario_harness_bug():
+    t = make_repo({"order": order(("a", []), ("b", [])), "a": ["harness-bug"]})
+    *_, r = full_run(t)
+    st = state(t)
+    checklist = open(os.path.join(t, "docs/versions/v1/checklist.md")).read()
+    check("harness-bug", r.returncode == 0 and statuses(t) == {"a": "passed", "b": "passed"}
+          and len([c for c in calls(t) if c["key"] == "a"]) == 1, f"{r.returncode} {statuses(t)} {st.get('exit')}")
+    check("harness-bug", "harness bug: checks.sh run unit <path> crashes" in checklist.split("## Harness changes")[-1],
+          f"not in § Harness changes: {checklist}")
+    check("harness-bug", not [f for f in st["features"] if (f.get("inserted_by") or "").startswith("bug:")],
+          "a harness bug became a fix item")
 
 
 def scenario_progress():

@@ -2139,6 +2139,9 @@ def check_end_of_task(bad, t, settings):
     r = run(["bash", "scripts/checks.sh", "run", "lint", "nosuch"], ck)
     if r.returncode != 1 or "nosuch: not run: no row" not in r.stdout or "lint: pass" not in r.stdout:
         bad(f"checks.sh run with an unknown check must record it as not run and exit 1: {r.stdout!r}")
+    r = run(["bash", "scripts/checks.sh", "run", "unit", "src/sim/tick.test.ts"], ck)
+    if r.returncode != 2 or "Traceback" in r.stderr or "is not a check name" not in r.stderr or "-- src/sim/tick.test.ts" not in r.stderr:
+        bad(f"checks.sh run with a path after the check must refuse with how to run one file, not crash: {r.returncode} {r.stderr[-300:]!r}")
     shutil.rmtree(os.path.dirname(ck))
 
 def check(name, fx, t):

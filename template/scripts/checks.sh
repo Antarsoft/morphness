@@ -359,6 +359,16 @@ def note_changes(recs):
                 write_json(os.path.join(store, k, r["check"] + ".json"), r)
 
 if mode == "run":
+    odd = [n for n in wanted if not re.fullmatch(r"[a-z0-9-]+", n)]
+    if odd:
+        # A path after the check names (run unit src/a.test.ts) is not a check. A record is for the whole check, so
+        # a run on part of it can't count; say how to run part of it instead.
+        unit = cmds.get("unit") or "<the unit command>"
+        print(f"checks.sh: {', '.join(odd)} is not a check name; run takes only named checks (harness.config.yml → "
+              f"checks, project/CONTROLS.md § Named checks), and runs each one whole. To run one test file, run the "
+              f"named command with the path (`{unit} -- {odd[0]}`) or the test runner's own form (`npx jest "
+              f"{odd[0]}`); that run is not a record for the merge gate.", file=sys.stderr)
+        sys.exit(2)
     ok, ran = True, []
     for n in wanted:
         rec = run_check(n)
