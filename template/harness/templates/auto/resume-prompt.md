@@ -8,6 +8,8 @@ What to build: %WHAT%
 
 Features it depends on, by their cards: %DEP_CARDS%
 
+%OWNER_ANSWERS%
+
 Shell commands get no prompt in this session: one outside the allow rules in `.claude/settings.json` is denied at once. So run one command per Bash call (no chains, loops or commands built from a variable), the named checks with `bash scripts/checks.sh run <check> ...`, project scripts by their relative path from the repo root (`bash scripts/<name>.sh`, never an absolute path), and use the Read, Grep, Glob, Edit and Write tools for files instead of `cat`, here-documents or `sed`. A denied chain doesn’t mean its commands are denied: try them one at a time before making any an owner item (run rule 5).
 
 Finish as the run rules say: write `_harness/auto/cards/%SLUG%.md` and commit it. Don't push, open a PR, merge or switch branches.
