@@ -74,7 +74,7 @@ Full mode only (small and light modes run no checklist, bug mode only § Plannin
 | Planning and scope | 1-8 | never: always run it |
 | Contracts and sources | 9-13 | assumes nothing about a framework, library or service |
 | UI and interaction | 14-20 | changes no screen (or the project has none) |
-| Testing | 21-24 | never: always run it |
+| Testing | 21-24, 41 | never: always run it |
 | Data | 25-28 | stores, migrates or seeds nothing: no stored data, schema change, fixture or scheduled job |
 | Security | 29-32 | adds or changes no input, route, credential, permission, limit, identity check or cross-origin code, and closes no access gap |
 | Copy, privacy and legal | 33-36 | changes no text people using the product read, no data it sends or stores about them, and no charge |

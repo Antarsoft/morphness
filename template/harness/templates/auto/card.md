@@ -32,7 +32,7 @@ How and why the plan departs from `docs/product/`, or `none`.
 
 ## Bugs found
 
-- none   (outside this plan: `- <feature-slug> | what is wrong | where`; a bug in the harness itself, its scripts or rules: `- harness | what is wrong | where`)
+- none   (outside this plan: `- <feature-slug> | what is wrong | where | kind | reproduction`, kind `behaviour`, `style`, `docs` or `decision`; only behaviour with a failing test or steps becomes a fix; a bug in the harness itself, its scripts or rules: `- harness | what is wrong | where`)
 
 ## Split into
 
