@@ -69,9 +69,9 @@ class Refuse(Exception):
 class RunExit(Exception):
     """Ends the run with status exited and the reason, from anywhere inside a step."""
 
-    def __init__(self, reason, feature=None):
+    def __init__(self, reason, feature=None, todo=""):
         super().__init__(reason)
-        self.reason, self.feature = reason, feature
+        self.reason, self.feature, self.todo = reason, feature, todo   # todo: exit.md's You need to, when known
 
 
 # ---- small helpers ---------------------------------------------------------------------------------------
@@ -384,9 +384,81 @@ def records_say_passed(st, f, card, since):
             return False, f"{v}/Plan/plan.md § Check is empty"
         return True, "plan passed with § Check"
     qa = git("show", f"{f['branch']}:{v}/QA/qa-result.md", check=False)
-    if qa_verdict(qa) != "pass":
-        return False, f"{v}/QA/qa-result.md verdict is not pass"
+    if not qa.strip():
+        return False, f"{v}/QA/qa-result.md is missing (QA never wrote it)"
+    verdict = qa_verdict(qa)
+    if verdict != "pass":
+        blocked = re.search(r"(?im)^.*\bblocked\b.*$", qa)
+        if verdict is None and blocked:
+            return False, f"QA was blocked ({blocked.group(0).strip()[:120]}) in {v}/QA/qa-result.md"
+        return False, f"{v}/QA/qa-result.md verdict is not pass ({verdict or 'no verdict found'})"
     return True, "plan and QA result agree"
+
+
+DENIED = re.compile(r"^\W*(permission to use \w+[^\n]{0,200}?(has been |was )?denied|claude requested permissions? to use|"
+                    r"[^\n]{0,40}haven't granted it)", re.I)
+
+
+def denied_commands(log):
+    """The commands a session's stream shows as refused for want of a permission, subagents' included: the result
+    lines' permission_denials, and tool results that say permission was denied (the main result line lists only
+    the main chat's denials). In the order they happened, without repeats."""
+    try:
+        lines = open(log, encoding="utf-8").read().splitlines() if log else []
+    except OSError:
+        return []
+    calls, found = {}, []
+
+    def add(tool, args):
+        what = (args or {}).get("command") or (args or {}).get("file_path") or ""
+        item = what if tool == "Bash" else f"{tool} {what}".strip()
+        if item and item not in found:
+            found.append(item)
+    for line in lines:
+        try:
+            e = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(e, dict):
+            continue
+        for d in e.get("permission_denials") or []:
+            if isinstance(d, dict):
+                add(str(d.get("tool_name", "")), d.get("tool_input"))
+        for part in (e.get("message") or {}).get("content") or [] if isinstance(e.get("message"), dict) else []:
+            if not isinstance(part, dict):
+                continue
+            if part.get("type") == "tool_use":
+                calls[part.get("id")] = (str(part.get("name", "")), part.get("input") or {})
+            elif part.get("type") == "tool_result" and part.get("is_error"):
+                body = part.get("content")
+                text = body if isinstance(body, str) else " ".join(
+                    str(b.get("text", "")) for b in body or [] if isinstance(b, dict))
+                if DENIED.search(text[:300]) and part.get("tool_use_id") in calls:
+                    add(*calls[part["tool_use_id"]])
+    return found
+
+
+def allow_rule(command):
+    """The allow rule that would let a refused command run: Bash(<command words up to its first path, option or
+    argument>:*), keeping the script for an interpreter (bash scripts/x.sh) and the tool for a runner (npx jest)."""
+    tool = re.match(r"^([A-Z]\w+)(\s|$)", command or "")
+    if tool and tool.group(1) not in ("Bash",):   # another tool (denied_commands() names it first): allow it by name
+        return tool.group(1)
+    words = re.split(r"\s+", command.strip().split("|")[0].split("&&")[0].split(";")[0].strip())
+    head = [words[0]]
+    runners = {"npx", "pnpm", "yarn", "bunx", "uv", "poetry", "pipenv"}
+    if words[0] in ("npm", "pnpm", "yarn", "bun") and len(words) > 2 and words[1] in ("run", "exec"):
+        head += words[1:3]
+    elif words[0] in runners and len(words) > 1:
+        head += words[1:2] + (words[2:3] if len(words) > 2 and (words[1] in ("run", "exec", "dlx") or words[2] == "run")
+                              else [])
+    elif words[0] in ("python", "python3") and len(words) > 2 and words[1] == "-m":
+        head += words[1:3]
+    elif words[0] in ("bash", "sh", "python", "python3", "node") and len(words) > 1:
+        head += words[1:2]
+    elif len(words) > 1 and re.fullmatch(r"[a-z][\w-]*", words[1]) and words[0] in ("go", "cargo", "npm", "git", "make"):
+        head += words[1:2]
+    return f"Bash({' '.join(head)}:*)"
 
 
 def qa_verdict(qa):
@@ -545,6 +617,7 @@ def session(st, kind, prompt, label, model="", on_branch=None):
     os.makedirs(logs, exist_ok=True)
     st["session_count"] = st.get("session_count", 0) + 1
     log = os.path.join(logs, f"{st['session_count']:04d}-{label}.jsonl")
+    st["last_log"] = log
     timeout = number("auto.session_hours", 4) * 3600
     say(f"{label}: session started ({kind}; live log {os.path.relpath(log, ROOT)})")
     stdout, stderr, code = run_streamed(cmd, env, timeout, label, log)
@@ -871,7 +944,7 @@ def cmd_run(already_checked=False):
                 raise RunExit(f"max features: {lim['max_features']} started")
             run_feature(st, f)
     except RunExit as e:
-        return finish(st, "exited", e.reason, e.feature)
+        return finish(st, "exited", e.reason, e.feature, e.todo)
     finally:
         unlock()
 
@@ -991,7 +1064,15 @@ def handle_card(st, f, card, since):
         if not ok:
             to_run_branch(st)
             f["status"] = "exited"
-            raise RunExit(f"tries used up: {f['slug']}'s card says passed but {why}", f)
+            denied = denied_commands(st.get("last_log", ""))
+            todo = ""
+            if denied:
+                rules = sorted({allow_rule(c) for c in denied})
+                why += "; commands refused with no prompt: " + "; ".join(f"`{c}`" for c in denied[:5])
+                todo = ("add " + " and ".join(f"`{r}`" for r in rules) + " to `.claude/settings.json` → "
+                        "`permissions.allow` (a session in a run gets no prompts; these commands were refused), commit "
+                        "it on the run branch, then resume")
+            raise RunExit(f"tries used up: {f['slug']}'s card says passed but {why}", f, todo)
     card_text = git("show", f"{f['branch']}:{AUTO}/cards/{f['slug']}.md")
     to_run_branch(st)
     if status in ("passed", "split"):
@@ -1232,7 +1313,7 @@ ACTIONS = [("escalated", "write how the escalated feature should go on under § 
             "/login and sign in; type /exit; then run `bash scripts/auto/run.sh resume`")]
 
 
-def finish(st, status, reason, f=None):
+def finish(st, status, reason, f=None, todo=""):
     if head_branch() != st["base"]["branch"]:
         if git("status", "--porcelain"):
             stash(st, "uncommitted work at the run's end")
@@ -1244,7 +1325,7 @@ def finish(st, status, reason, f=None):
     save_state(st)
     count = {s: sum(1 for x in st["features"] if x["status"] == s) for s in FEATURE_STATUSES}
     if status == "exited":
-        what = next((v for k, v in ACTIONS if reason.startswith(k)), "read the reason, then resume")
+        what = todo or next((v for k, v in ACTIONS if reason.startswith(k)), "read the reason, then resume")
     elif status == "done_waiting":
         what = "do the items in the version checklist's § Needs you, then run resume: the waiting features run again"
     else:

@@ -140,7 +140,15 @@ code that holds the risky behaviour, not a whole layer.
 per command in `project/CONTROLS.md` § Named checks: `Bash(<command up to its first quote, redirect or
 pipe>:*)`, one per `&&` or `;` part (`Bash(npx vitest run:*)`, `Bash(pnpm test:*)`). Never for a command that
 deploys, publishes, migrates a remote database or pushes, and never a bare interpreter or shell
-(`Bash(bash:*)`, `Bash(npx:*)`). List them in `project/SKILLS_AND_MCPS.md` § Permission rules added. The
+(`Bash(bash:*)`, `Bash(npx:*)`). For each check that runs a test runner (`unit`, the `e2e-*` checks, any other test
+check), also add the runner's own form, so an agent can run one test file or a name pattern without a prompt (the
+check's command with a path matches its own rule only when it ends where the path goes): jest `Bash(npx jest:*)`,
+vitest `Bash(npx vitest run:*)`, mocha `Bash(npx mocha:*)`, Playwright `Bash(npx playwright test:*)`, pytest
+`Bash(pytest:*)` and `Bash(python -m pytest:*)`, Go `Bash(go test:*)`, Cargo `Bash(cargo test:*)` (with pnpm,
+yarn or bun, their `exec` or `dlx` form instead of `npx`). Find the runner in the command, or in the
+`package.json` script it calls. A headless session gets no prompts, so a refused single-file run leaves QA with no
+result (learned: an autonomous run's QA was refused `npx jest <file>` and never wrote `qa-result.md`). List them in
+`project/SKILLS_AND_MCPS.md` § Permission rules added. The
 guard still runs first, and a hook ask or a `deny` rule beats an allow rule.
 
 `check_scope` (answers file only, not a config key): one row per entry in `project/CONTROLS.md`
