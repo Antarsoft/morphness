@@ -29,7 +29,7 @@ files:
   - harness/templates/bug-plan.md
   - harness.config.yml
 removed: []
-reviewed: "It adds a module folder, templates, an auto: config block that is off, lines marked module:autonomous, and a driver under scripts/auto/ that only an owner runs from a terminal. The driver refuses to start inside a Claude Code session, on a dirty tree, with auto.enabled false or a zero budget, starts sessions with --permission-prompts none and --max-budget-usd (never a mode that skips permissions), and pushes only the run and feature branches, never the integration, production or an environment branch. It changes no guard rule or settings file and makes no network call of its own beyond git push."
+reviewed: "It adds a module folder, templates, an auto: config block that is off, lines marked module:autonomous, and a driver under scripts/auto/ that only an owner runs from a terminal. The driver refuses to start inside a Claude Code session, on a dirty tree, with auto.enabled false or a zero budget, starts sessions with --permission-prompts none and --max-budget-usd (never a mode that skips permissions), and pushes only the run and feature branches, never the integration, production or an environment branch. It changes no guard rule or settings file and makes no network call of its own beyond git push. The guard rules for a run are reviewed in their own note."
 ---
 
 ## What changed
