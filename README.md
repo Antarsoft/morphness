@@ -255,6 +255,7 @@ researcher, the code scout (read, shell and its one map file) and the legal writ
 | `/morph-update` | Review what changed upstream (kit updates and lessons) and bring in what you accept, merged with your edits. |
 | `/morph-doctor` | Check wiring, flag a due prune or stuck features, and count upstream updates waiting. |
 | `/morph-module` | Add or remove an optional module (`add security`, `remove ci-cd`) on a project that already has the harness. |
+| `/morph-auto` | With the autonomous module: write the brief, review the product docs before you approve them, follow, stop or resume the run, and open its PR. |
 | `/morph-share` | Turn rules that fired into a PR to the lessons catalog. |
 
 Morphness runs in plain Claude Code (CLI, desktop, web). If you use a **Claude Project** with a
