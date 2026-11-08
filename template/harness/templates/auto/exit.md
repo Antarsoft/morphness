@@ -6,4 +6,8 @@
 - **Feature:** <slug> (<title>), <status>; last records: <plan, qa-result and card paths>
 - **Spend:** $<run total> of $<auto.budget_usd>; this feature $<cost>
 - **Progress:** <passed> passed, <waiting> waiting on you, <todo> to do
-- **Resume:** `/morph-auto resume` (fresh tries from the last commit on feature/<slug>)
+- **Resume:** `bash scripts/auto/run.sh resume` (fresh tries from the last commit on feature/<slug>)
+
+## Owner direction
+
+Only after an escalation: how the feature should go on. Resume starts its next version with it.

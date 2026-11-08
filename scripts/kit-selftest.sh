@@ -3502,6 +3502,13 @@ for path in fixtures:
                 check(f"{name} (updated from {tag})", fx, proj)
             shutil.rmtree(work_u, ignore_errors=True)
     print(f"{name}: {'ok' if len(failures) == before else str(len(failures) - before) + ' problem(s)'}")
+# ---- once: the autonomous module's driver, against a stub claude (tests/auto-driver-test.py) ----------------
+auto_test = subprocess.run([sys.executable, "-B", os.path.join(root, "tests/auto-driver-test.py")], cwd=root,
+                           capture_output=True, text=True)
+failures += [l[len("FAIL "):] for l in auto_test.stdout.splitlines() if l.startswith("FAIL ")]
+if auto_test.returncode and not any(l.startswith("FAIL ") for l in auto_test.stdout.splitlines()):
+    failures.append(f"auto: tests/auto-driver-test.py exited {auto_test.returncode}: {auto_test.stderr.strip()[-300:]!r}")
+print((auto_test.stdout.strip().splitlines() or ["auto driver self-test: no output"])[-1])
 if os.environ.get("KEEP") == "1":
     print(f"rendered copies kept in {work}")
 else:

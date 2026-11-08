@@ -4,6 +4,8 @@ Autonomous run, feature `%SLUG%` (%TITLE%), started again on branch `%BRANCH%` f
 
 Pick up from the files, not from memory: `git log --oneline %RUN_BRANCH%..HEAD`, then the feature folder (`plan.md` **Status**, `progress.md`, the last `qa-result.md`). Carry on from the first step not done; don't redo work the records show as finished. QA rounds already used on this version: %QA_ROUNDS% of `loop.qa_max_rounds`. %NEW_VERSION%
 
+What to build: %WHAT%
+
 Features it depends on, by their cards: %DEP_CARDS%
 
 Finish as the run rules say: write `_harness/auto/cards/%SLUG%.md` and commit it. Don't push, open a PR, merge or switch branches.
