@@ -366,10 +366,22 @@ def records_say_passed(st, f, card, since):
             return False, f"{v}/Plan/plan.md § Check is empty"
         return True, "plan passed with § Check"
     qa = git("show", f"{f['branch']}:{v}/QA/qa-result.md", check=False)
-    results = re.findall(r"\*\*Result:\*\*\s*(pass|fail)\b", qa)
-    if not results or results[-1] != "pass":
+    if qa_verdict(qa) != "pass":
         return False, f"{v}/QA/qa-result.md verdict is not pass"
     return True, "plan and QA result agree"
+
+
+def qa_verdict(qa):
+    """pass, fail or None for a qa-result.md. QA agents write the verdict in more than one shape: the template's
+    § Verdict with `- **Result:** pass`, a bare `**pass.**` there, or a header line `**Verdict:** pass`. The last
+    § Verdict section's first pass or fail word wins; without one, the last `**Result:**`/`**Verdict:**` line."""
+    parts = re.split(r"(?m)^#{2,3}\s*Verdict\b.*$", qa)
+    if len(parts) > 1:
+        m = re.search(r"\b(pass|fail)\b", re.split(r"(?m)^## ", parts[-1])[0], re.I)
+        if m:
+            return m.group(1).lower()
+    lines = re.findall(r"\*\*(?:Result|Verdict):\*\*\s*`?(pass|fail)\b", qa, re.I)
+    return lines[-1].lower() if lines else None
 
 
 # ---- sessions --------------------------------------------------------------------------------------------
