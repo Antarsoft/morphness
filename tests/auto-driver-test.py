@@ -12,6 +12,8 @@ import sys
 import tempfile
 import textwrap
 
+sys.dont_write_bytecode = True   # importing the driver must leave no __pycache__ in the kit template
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEMPLATE = os.path.join(ROOT, "template")
 failures = []
