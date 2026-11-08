@@ -171,6 +171,9 @@ if os.path.exists("_harness/auto/exit.md"):
     calls[-1]["saw_exit"] = True
     json.dump(calls, open(calls_file, "w"))
 calls[-1]["prompt_has_direction"] = "owner's direction" in prompt.lower()
+calls[-1]["prompt_answers"] = "Owner answers recorded since this feature started" in prompt and "done (" in prompt
+calls[-1]["already_answered"] = "already answered every item" in prompt
+calls[-1]["answer_kinds"] = [k for k in ("decision (", "answered (", "done (") if k in prompt]
 json.dump(calls, open(calls_file, "w"))
 body = "\n".join(["## Built", "", f"{slug} works.", "", "## Owner items", ""] + [f"- {i}" for i in lists["owner"] or ["none"]]
                  + ["", "## Bugs found", ""] + [f"- {i}" for i in lists["bugs"] or ["none"]]
@@ -695,6 +698,57 @@ def scenario_decision_bug_line():
     checklist = open(os.path.join(t, "docs/versions/v1/checklist.md")).read()
     check("decision-line", r.returncode == 0 and "fix-a-1" not in statuses(t)
           and "Confirm or change the decision in `a`" in checklist.split("## Needs you")[-1], f"{statuses(t)} {checklist}")
+
+
+def tick_owner_items(t):
+    """The owner ticks every item in the version checklist on the run branch and commits, as between runs."""
+    p = os.path.join(t, "docs/versions/v1/checklist.md")
+    text = open(p).read()
+    open(p, "w").write(text.replace("- [ ] ", "- [x] "))
+    subprocess.run(["git", "commit", "-qam", "owner: done"], cwd=t, check=True)
+
+
+def scenario_owner_answers():
+    t = make_repo({"order": order(("a", [])), "a": ["waiting", "pass"]})
+    full_run(t)
+    tick_owner_items(t)
+    r = drive(t, "resume")
+    a = [c for c in calls(t) if c["key"] == "a"]
+    check("owner-answers", r.returncode == 0 and statuses(t) == {"a": "passed"} and a[-1]["prompt_answers"],
+          f"{r.returncode} {statuses(t)} {a[-1]}")
+    check("owner-answers", not a[0]["prompt_answers"], "the first session got answers that didn't exist yet")
+
+
+def scenario_owner_answer_kinds():
+    t = make_repo({"order": order(("a", [])), "a": ["waiting", "pass"]})
+    full_run(t)
+    p = os.path.join(t, "docs/versions/v1/checklist.md")
+    text = open(p).read()
+    open(p, "w").write(text.replace("team ABC (from `a`)", "team ABC (from `a`): done, the team id is XYZ"))
+    v = os.path.join(t, "docs/versions/v1/v1.md")
+    text = open(v).read()
+    open(v, "w").write(text + "\n## Decisions\n\n| Date | Decision | By |\n|---|---|---|\n"
+                       "| 2026-11-08 | Upgrades stay allowed on a failed module | Owner Test |\n")
+    subprocess.run(["git", "commit", "-qam", "owner: answers"], cwd=t, check=True)
+    drive(t, "resume")
+    a = [c for c in calls(t) if c["key"] == "a"]
+    check("owner-answer-kinds", sorted(a[-1]["answer_kinds"]) == ["answered (", "decision ("], f"{a[-1]}")
+
+
+def scenario_answered_wait():
+    t = make_repo({"order": order(("a", [])), "a": ["waiting", "waiting", "pass"]})
+    full_run(t)
+    tick_owner_items(t)
+    r = drive(t, "resume")
+    a = [c for c in calls(t) if c["key"] == "a"]
+    check("answered-wait", r.returncode == 0 and statuses(t) == {"a": "passed"} and len(a) == 3 and a[2]["already_answered"],
+          f"{r.returncode} {statuses(t)} {a}")
+    t = make_repo({"order": order(("a", [])), "a": ["waiting", "waiting", "waiting"]})
+    full_run(t)
+    tick_owner_items(t)
+    drive(t, "resume")
+    check("answered-wait-once", statuses(t) == {"a": "waiting_owner"} and len([c for c in calls(t) if c["key"] == "a"]) == 3,
+          f"{statuses(t)} {len(calls(t))}")
 
 
 def scenario_progress():

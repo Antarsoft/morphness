@@ -1014,6 +1014,7 @@ def run_feature(st, f):
     if ref(branch) and not f["branch_made"]:
         raise RunExit(f"branch {branch} exists but this run didn't make it: rename or delete it, then resume", f)
     f["status"] = "running"
+    f.setdefault("start_commit", git("rev-parse", run_branch))   # owner answers count from here (owner_answers())
     save_state(st)
     render_tracker(st)
     commit(st, f"auto: {f['slug']} running")
@@ -1028,6 +1029,7 @@ def run_feature(st, f):
                   "RUN_BRANCH": run_branch, "OWNER": st["approval"]["by"], "APPROVED_AT": st["approval"]["at"],
                   "WHAT": what_to_build(st, f),
                   "DEP_CARDS": ", ".join(f"`{AUTO}/cards/{d}.md`" for d in f["depends_on"]) or "none",
+                  "OWNER_ANSWERS": answers_text(owner_answers(st, f)),
                   "WHY": f["tries"].get("resume") or "resume", "QA_ROUNDS": f["tries"].get("qa_rounds", 0),
                   "NEW_VERSION": ("The last run escalated this feature. The owner's direction: " + f["tries"]["direction"]
                                   + " Start the feature's next version folder with it in § Request.")
@@ -1047,6 +1049,7 @@ def run_feature(st, f):
                 f["status"] = "todo"
             raise
         f["sessions"] += 1
+        f["session_tip"] = git("rev-parse", branch)   # the owner's later commits on this branch are answers
         f["cost_usd"] = round(f["cost_usd"] + cost, 4)
         card_rel = f"{AUTO}/cards/{f['slug']}.md"
         committed = git("show", f"{branch}:{card_rel}", check=False)
@@ -1081,8 +1084,82 @@ def run_feature(st, f):
             say(f"{f['slug']}: crash ({problem}); starting it again from its last commit")
             f["tries"]["resume"] = f"the last session crashed: {problem}"
             continue
+        if card["status"] == "waiting_owner" and not f["tries"].get("answered_retry"):
+            answers = owner_answers(st, f)
+            if answered_already(card, answers):
+                f["tries"]["answered_retry"] = True
+                f["tries"]["resume"] = ("the last session's card waited on the owner, but the owner already answered "
+                                        "every item it lists; go on with the answers and finish the feature: "
+                                        + "; ".join(answers[:10]))
+                say(f"{f['slug']}: its card waits on items the owner already answered; starting it again with the answers")
+                continue
         handle_card(st, f, card, since)
         return
+
+
+def owner_answers(st, f):
+    """What the owner recorded since the feature started: in the owner's own commits on the run branch (every commit
+    there not made by the driver) and on the feature's branch after its last session, a new row in a version doc's
+    § Decisions table not made by an agent, an owner item ticked ([x]), or an item line the owner annotated (the
+    old line with text added). Lines in the order found, without repeats."""
+    start = f.get("start_commit")
+    vdir = config("roadmap.versions_dir", "docs/versions")
+    if not start:
+        return []
+    found, commits = [], []
+    for since, branch in ((start, st["base"]["branch"]), (f.get("session_tip"), f["branch"])):
+        if since and ref(branch):
+            commits += [c for c in git("rev-list", "--reverse", "--no-merges", f"{since}..{branch}", check=False).split()
+                        if not git("log", "-1", "--format=%s", c, check=False).startswith("auto:")]
+    for c in commits:
+        diff = git("show", "-U0", "--format=", c, "--", vdir, checklist_path(), check=False)
+        minus, current = [], ""
+        for line in diff.splitlines():
+            if line.startswith("+++ "):
+                current = line[6:] if line.startswith("+++ b/") else ""
+                minus = []
+                continue
+            if line.startswith("-") and not line.startswith("---"):
+                minus.append(re.sub(r"^-\s*-\s*\[[ xX]\]\s*", "", line).strip())
+                continue
+            if not line.startswith("+"):
+                continue
+            text = line[1:].strip()
+            item = re.match(r"^-\s*\[([ xX])\]\s*(.*)$", text)
+            row = re.match(r"^\|\s*\d{4}-\d{2}-\d{2}\s*\|(.*)\|\s*([^|]*)\|\s*$", text)
+            if row and not re.search(r"technical lead|director|autonomous|agent", row.group(2), re.I):
+                answer = f"decision ({current}): {row.group(1).strip()} (by {row.group(2).strip()})"
+            elif item and item.group(1).lower() == "x":
+                answer = f"done ({current}): {item.group(2)}"
+            elif item and any(m and item.group(2).startswith(m) and len(item.group(2)) > len(m) + 2 for m in minus):
+                answer = f"answered ({current}): {item.group(2)}"
+            else:
+                continue
+            if answer not in found:
+                found.append(answer)
+    return found
+
+
+def answers_text(answers):
+    if not answers:
+        return ""
+    return ("Owner answers recorded since this feature started (use them: a question answered here is not an owner "
+            "item, and it doesn't make the card waiting_owner): " + "; ".join(answers[:20]))
+
+
+def answered_already(card, answers):
+    """True when every owner item on a waiting_owner card is one the owner already answered (same item id, such as
+    v1-slug-2, or the same text)."""
+    if not card["v1_items"] or not answers:
+        return False
+    said = " ".join(answers).lower()
+    def norm(t):
+        return re.sub(r"[`*_]", "", re.sub(r"\s*\(from `[^`]*`\)\s*$", "", t)).strip().lower()
+    for item in card["v1_items"]:
+        ids = re.findall(r"\b[a-z0-9]+(?:-[a-z0-9]+)*-\d+\b", item.lower())
+        if not (any(i in said for i in ids) or norm(item)[:60] in re.sub(r"[`*_]", "", said)):
+            return False
+    return True
 
 
 def handle_card(st, f, card, since):

@@ -39,6 +39,7 @@ These apply only in a session the driver started: `MORPH_AUTO=1` is set and `MOR
 3. **Owner questions.** Where the harness would ask the owner:
    - A budget stop or an escalation (`failed-escalated`): write the card with `status: escalated` and stop.
    - The docs answer it: follow `docs/product/`.
+   - The owner answered it: the prompt lists what the owner recorded since the feature started (a new row of theirs in a version doc's Decisions table, an owner item they ticked or annotated in the checklist or `steps/`). Follow the answer. A question answered there is not an owner item and never a reason for `waiting_owner`; the driver gives a `waiting_owner` card whose every item is already answered one more session with the answers.
    - A reversible gap (a label, a default, an order): choose the default the docs point to, record it in the plan's § Decisions and, for a product decision, in the version doc's Decisions table marked `assumed`, and add an `assumed, confirm` item to the steps file.
    - Pricing, legal wording, data and privacy promises: draft them, mark them draft in the code, and add a steps-file item. Never present them as final.
    - An accepted risk (a threat model's § Accepted risks) or a security exception: never accept one yourself. When the plan can't go on without it, write the card with `status: waiting_owner`.
