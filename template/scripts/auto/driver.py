@@ -1199,6 +1199,25 @@ def owner_answers(st, f):
                 continue
             if answer not in found:
                 found.append(answer)
+    # A decision the owner recorded before this feature started still answers it: every owner row now in a version
+    # doc's § Decisions table on the run branch (a fix inserted after the answer otherwise asked it again).
+    run_branch = st["base"]["branch"]
+    for p in git("ls-tree", "-r", "--name-only", run_branch, "--", vdir, check=False).splitlines():
+        if not p.endswith(".md"):
+            continue
+        heading = ""
+        for line in git("show", f"{run_branch}:{p}", check=False).splitlines():
+            if line.startswith("#"):
+                heading = line.lstrip("#").strip().lower()
+                continue
+            row = re.match(r"^\|\s*\d{4}-\d{2}-\d{2}\s*\|(.*)\|\s*([^|]*)\|\s*$", line.strip())
+            if not row or not heading.startswith("decisions") or not row.group(2).strip():
+                continue
+            if re.search(r"technical lead|director|autonomous|agent", row.group(2), re.I):
+                continue
+            answer = f"decision ({p}): {row.group(1).strip()} (by {row.group(2).strip()})"
+            if answer not in found:
+                found.append(answer)
     return found
 
 
@@ -1374,6 +1393,14 @@ def insert_fix(st, bug, by=None):
         copy_v1_items(by, [f"Unconfirmed bug in `{bug['in']}` (no reproduction or failing test): {bug['what']}{at}. "
                            "Reproduce it and add it to the order as a fix, or delete the line"])
         return
+    same = next((x for x in st["features"] if x.get("inserted_by") == f"bug:{bug['in']}"
+                 and same_bug(x.get("what", ""), bug["what"])), None)
+    if same is not None:   # reported again by a later feature: the fix that exists covers it
+        say(f"  {by['slug']} reported a bug in {bug['in']} that {same['slug']} already covers ({same['status']}): {bug['what']}")
+        if same["status"] == "passed":
+            copy_v1_items(by, [f"A bug `{same['slug']}` fixed was reported again in `{bug['in']}`: {bug['what']}{at}. "
+                               "Check whether it came back"])
+        return
     target = feature(st, bug["in"])
     if target is None:
         copy_v1_items({"slug": "run"}, [f"A bug a feature found in unknown `{bug['in']}`: {bug['what']} ({bug['where']})"])
@@ -1393,6 +1420,18 @@ def insert_fix(st, bug, by=None):
         if x is not fix and bug["in"] in x["depends_on"] and x["status"] == "todo":
             x["depends_on"].append(slug)
             x.setdefault("driver_deps", []).append(slug)
+
+
+def same_bug(what, reported):
+    """True when an inserted fix's `what` starts with the reported bug's core: its text up to the first comma,
+    semicolon or bracket (at least 20 characters, else its first 60), case, backticks and spacing aside. A later
+    feature repeats the finding with a different tail ("kept as is, D2", "seen again")."""
+    def norm(t):
+        return re.sub(r"\s+", " ", re.sub(r"[`*_\"']", "", t)).strip().lower()
+    a, b = norm(what), norm(reported)
+    core = re.split(r"\s*[,;(]", b, 1)[0].strip()
+    core = core if len(core) >= 20 else b[:60]
+    return bool(core) and a.startswith(core)
 
 
 def in_harness(where):
