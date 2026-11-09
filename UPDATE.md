@@ -30,7 +30,11 @@ leaves the repo (pushing, opening a PR, installing a skill or connector).
    - **Only checking?** (a prune's upstream check, or "is our harness outdated?"): stop after the
      skill's § 2 listing. Change nothing.
 4. **Hand off.** End with the skill's § 5 report: what was applied, declined or put off, the branch
-   or PR, and any steps only the user can do.
+   or PR, and any steps only the user can do. A changed guard file (`scripts/guard.sh`, `scripts/lib/`)
+   is never written by you: in a cloud or remote session (no disk shared with the user) the merged copy
+   is committed on the update branch under `_harness/updates/<YYYY-MM-DD>/`, and on the user's own
+   machine it waits under `/tmp/morphness-update/`; the report opens with that path and the command
+   block the user runs (the skill's § 3 step 2), and the PR stays a draft until their copy is checked.
 5. **Keep the clone**, if you made one. Later updates, prunes and health checks can reuse it; delete
    a clone made in a scratch folder.
 
