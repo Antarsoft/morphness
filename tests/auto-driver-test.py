@@ -902,6 +902,40 @@ def scenario_answered_wait():
           f"{statuses(t)} {len(calls(t))}")
 
 
+def scenario_decision_before_start():
+    # an owner decision recorded before the feature started still reaches its prompt
+    t = make_repo({"order": order(("a", [])), "a": ["pass"]})
+    v = os.path.join(t, "docs/versions/v1/v1.md")
+    os.makedirs(os.path.dirname(v), exist_ok=True)
+    text = open(v).read() if os.path.exists(v) else "# v1\n"
+    open(v, "w").write(text + "\n## Decisions\n\n| Date | Decision | By |\n|---|---|---|\n"
+                       "| 2026-11-08 | Upgrades stay allowed on a failed module | Owner Test |\n"
+                       "| 2026-11-08 | Stocks are fractional (assumed) | Technical Lead (autonomous) |\n")
+    subprocess.run(["git", "add", "-A"], cwd=t, check=True)
+    subprocess.run(["git", "commit", "-qm", "owner: decision"], cwd=t, check=True)
+    r = full_run(t)[-1]
+    a = [c for c in calls(t) if c["key"] == "a"]
+    check("decision-before-start", r.returncode == 0 and a and "decision (" in a[0]["answer_kinds"], f"{r.returncode} {a}")
+
+
+def scenario_duplicate_bug():
+    # a bug a later feature reports again doesn't become a second fix
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("driver", os.path.join(TEMPLATE, "scripts/auto/driver.py"))
+    d = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(d)
+    t = make_repo({"order": order(("a", []), ("b", ["a"]), ("c", ["a"]))})
+    d.ROOT = t
+    st = {"features": [d.new_feature({"slug": s, "depends_on": [] if s == "a" else ["a"]}) for s in ("a", "b", "c")]}
+    st["features"][0]["status"] = "passed"
+    bug = {"in": "a", "what": "`total` is off by one for an empty list", "where": "src/a.txt:7", "kind": "behaviour",
+           "repro": "tests/a.test: total of [] is 1"}
+    d.insert_fix(st, dict(bug), {"slug": "b"})
+    d.insert_fix(st, dict(bug, what="total is off by one for an empty list, again"), {"slug": "c"})
+    fixes = [x["slug"] for x in st["features"] if (x.get("inserted_by") or "").startswith("bug:")]
+    check("duplicate-bug", fixes == ["fix-a-1"], f"fixes {fixes}")
+
+
 def scenario_progress():
     t = make_repo({"order": order(("a", []))})
     r = drive(t, "start")
