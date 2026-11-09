@@ -133,8 +133,8 @@
  },
  {
   "file": "template/scripts/plan-brief.sh",
-  "line": 53,
-  "endLine": 53,
+  "line": 58,
+  "endLine": 58,
   "column": 30,
   "endColumn": 51,
   "level": "info",
@@ -166,8 +166,8 @@
  },
  {
   "file": "template/scripts/guard.sh",
-  "line": 68,
-  "endLine": 68,
+  "line": 69,
+  "endLine": 69,
   "column": 1,
   "endColumn": 15,
   "level": "info",
