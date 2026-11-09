@@ -217,12 +217,38 @@ For each accepted kit update:
      the existing values alone. Show the diff before writing.
    - **New file, unedited file, removal:** as in the table.
    - **The guard's own files:** the guard denies any tool call that writes `scripts/guard.sh` or `scripts/lib/`,
-     and any Bash write to `.claude/settings.json` or `harness.config.yml`. Write the merged or new copy of a
-     guard file under `/tmp/morphness-update/` instead, show the diff, and give the owner the command to run in
-     a terminal (`cp /tmp/morphness-update/scripts/guard.sh scripts/guard.sh`); after they run it, rerun the push
-     test (render.md § 7 item 9). Change `.claude/settings.json` and `harness.config.yml` with Edit or Write: the
-     guard asks for a change that only adds, and denies one that removes a protection (the guard hook, a deny
-     rule, a `guard:` switch turned off). Hand such a change to the owner the same way, with the lines to edit.
+     and any Bash write to `.claude/settings.json` or `harness.config.yml`. Never write those guard files yourself, and
+     never `cp` them into place: the owner does, in a terminal. Write the merged or new copy where the owner can
+     reach it, show the diff, and give the owner one command block to apply it. Where it waits depends on where you run:
+     - **Same machine as the owner** (a local Claude Code session in the owner's own checkout): under
+       `/tmp/morphness-update/` (as `/tmp/morphness-update/scripts/guard.sh`, `/tmp/morphness-update/scripts/lib/<file>`).
+       The owner runs `cp /tmp/morphness-update/scripts/guard.sh scripts/guard.sh` (one `cp` per file) in that checkout.
+     - **Cloud or remote session** (a Claude Code cloud session, a Claude Projects thread, any session with no disk it
+       shares with the owner): `/tmp` is in your container and the owner can't reach it. Commit the copy on the update
+       branch under `_harness/updates/<YYYY-MM-DD>/`, at the path it replaces (`_harness/updates/<date>/scripts/guard.sh`,
+       `_harness/updates/<date>/scripts/lib/<file>`), with `guard-sh.diff` beside it (`diff -u` of the project's file and
+       the copy). The guard allows writes there (harness/GUARD.md): it is a staging folder, not the guard. Check that
+       before relying on it: `bash scripts/guard.sh <<< '{"tool_name":"Write","tool_input":{"file_path":"_harness/updates/<date>/scripts/guard.sh","content":"x"}}'`
+       exits 0. Push the branch and open the PR as a draft (on the owner's yes, § 4 step 3). The owner, in their own
+       checkout and terminal, runs:
+       ```bash
+       git fetch origin morph/update-<date> && git switch morph/update-<date> && git pull --ff-only
+       cp _harness/updates/<date>/scripts/guard.sh scripts/guard.sh   # one cp per staged file
+       git add scripts/guard.sh && git commit -m "Apply the merged guard from the Morphness update" && git push
+       ```
+       The file then reaches the project through git, like the rest of the PR. You remove the staging folder after the
+       checks in § 4 step 2, not the owner.
+     - **Telling them apart:** `CLAUDE_CODE_REMOTE` is set, `/mnt/project-files/` exists, or the repository isn't the
+       owner's checkout (a fresh clone in a container, at a path the owner never named):
+       cloud. When in doubt, use the cloud path: it works in both cases.
+   - **Settings and config the guard or the permission layer refuses:** change `.claude/settings.json` and
+     `harness.config.yml` with Edit or Write: the guard asks for a change that only adds, and denies one that removes a
+     protection (the guard hook, a deny rule, a `guard:` switch turned off), sets `env` or adds a command. When it
+     denies, or the permission layer refuses (an added allow rule, for instance), hand the change to the owner the same
+     way: the merged copy waits in the same place (`/tmp/morphness-update/` or `_harness/updates/<date>/`, named
+     `settings.json` or `harness.config.yml`, since some permission layers refuse any write under a `.claude/` folder),
+     and you give the exact line and where it goes (the key, and the line it follows), in the PR body under
+     **Needs the owner** and in the § 5 report.
 3. **Do the rest of § How to apply:** config keys, rows in `harness/README.md`, a module's
    § On install, deny rules. Adding a module the project didn't install: follow the morph-module
    skill § 2 steps 3 to 6 with `HEAD` as its source (template files from
@@ -237,7 +263,7 @@ this project's better owner per `harness/MORPHING.md` § Where a lesson lands), 
 `(lesson: <id>)`, and add its id to `_harness/morph-answers.yml` § accepted. For a superseded lesson
 the owner wants replaced, swap the rule text in place and change its provenance to the new id.
 
-Never touch `_harness/` history (features, learnings, prunes, releases); the kit's own files in that folder (the READMEs) merge like any other file. Notes skipped because their module isn't enabled aren't recorded: adding the module later takes its files from `HEAD` whole. `_harness/morph-answers.yml` may not exist yet: create it with the first answer you record. Never rewrite a
+Never touch `_harness/` history (features, learnings, prunes, releases); the kit's own files in that folder (the READMEs) merge like any other file, and `_harness/updates/` is only the staging folder of § 3 step 2. Notes skipped because their module isn't enabled aren't recorded: adding the module later takes its files from `HEAD` whole. `_harness/morph-answers.yml` may not exist yet: create it with the first answer you record. Never rewrite a
 project file's content beyond the change being applied.
 
 ## 4. Record and check
@@ -261,15 +287,28 @@ project file's content beyond the change being applied.
    When the owner declined everything and nothing was deferred, still move `commit` forward so the
    next run doesn't list the same items.
 2. **Run the self-checks** from `skills/morph-init/references/render.md` § 7 and fix what fails.
+   When a guard file was handed off (§ 3 step 2), the PR stays a draft until the owner's copy is on the
+   branch (pull it), and then you check it: `cmp` each guard file against its staged copy
+   (`_harness/updates/<date>/…` or `/tmp/morphness-update/…`), `bash -n scripts/guard.sh`, the push test
+   (render.md § 7 item 9), and one test per new guard rule the notes name (the case the note gives, fed
+   with `<<<`, gives the decision it says). When one fails, tell the owner which and stop. Only then
+   remove the staging folder (`git rm -r _harness/updates/<date>`, committed and pushed, or delete the
+   `/tmp` copies) and mark the PR ready.
 3. **Commit** the record with the last change and, on the owner's yes, push and open a PR to the
    integration branch. The PR body lists each applied note and lesson with one line, each declined
-   or deferred one, and every file that needed a merge, with how conflicts were resolved.
+   or deferred one, and every file that needed a merge, with how conflicts were resolved. When the
+   owner has steps (a guard file to copy, a settings or config line the guard refused), the body opens
+   with a **Needs the owner** section: the staged path, the full command block from § 3 step 2, and
+   each line to add with the file and the place it goes.
 4. **Clean up.** Delete the temporary copies from § 3. A clone stays where it is: the next update,
    prune or doctor run reuses it.
 
 ## 5. Report
 
-A few lines: what was applied, declined and deferred; the branch or PR; anything the owner still has
-to do by hand (an owner step from a new module, a secret, a required check); and that the skills
+When the owner has steps (a guard file to copy, a refused settings or config line), open with them:
+the staged path (`_harness/updates/<date>/…` on the branch, or `/tmp/morphness-update/…`), the full
+command block from § 3 step 2, each line to add and where, and that the PR stays a draft until you have
+checked their copy (§ 4 step 2). Then a few lines: what was applied, declined and deferred; the branch
+or PR; anything else the owner still has to do by hand (an owner step from a new module, a secret, a required check); and that the skills
 themselves update through the plugin (update the Morphness plugin from `/plugin`), not through this
 skill. Without the plugin, `UPDATE.md` always reads the newest skills from the repository.

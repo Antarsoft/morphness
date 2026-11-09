@@ -484,8 +484,9 @@ def protect(path, how, after=None):
              "so the owner does it by hand.")
     if kind == "core":
         deny(f"`{path}` is the guard itself ({how}). No tool call changes it, because one approved change could switch every "
-             "check off: the owner edits it by hand. For a kit update, write the new copy under /tmp and give the owner the "
-             f"command to run in a terminal (`cp /tmp/<file> {path}`).")
+             "check off: the owner edits it by hand. For a kit update, stage the new copy where the owner can reach it (on "
+             "their machine: /tmp/morphness-update/; in a cloud session: _harness/updates/<date>/ on the update branch) "
+             "and give the owner the `cp` command to run in a terminal (/morph-update \u00a7 3 step 2).")
     if kind in ("settings", "config"):
         if after is None:
             deny(f"`{path}` holds the guard\u2019s own settings, and the guard can\u2019t work out what this change does to it "
