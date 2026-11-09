@@ -45,6 +45,9 @@ OWNER_CALL = re.compile(r"\bD\d+\b|\bassumed\b|\bowner item\b|\bproduct decision
 BUG_KINDS = ("behaviour", "style", "docs", "decision")
 NO_REPRO = re.compile(r"(none|n/?a|-|unknown|not reproduced)?", re.I)
 BACKLOG = "_harness/HARNESS_BACKLOG.md"
+# A bug line whose `where` is in one of these is about the harness itself: never a fix feature (a fix of the harness's
+# own files reported more harness bugs, and the run inserted fixes of fixes, five deep).
+HARNESS_PATHS = ("scripts/", "harness/", "project/", ".claude/", "_harness/")
 MODES = ("full", "bug", "small", "light", "small-bug")
 FEATURE_STATUSES = ("todo", "running", "passed", "waiting_owner", "exited", "split", "skipped")
 SETTLED = ("passed", "skipped", "split")
@@ -1350,6 +1353,13 @@ def insert_fix(st, bug, by=None):
     if kind == "decision" or OWNER_CALL.search(f"{bug['what']} {bug['where']}"):   # a recorded or assumed decision
         copy_v1_items(by, [f"Confirm or change the decision in `{bug['in']}`: {bug['what']}{at}"])
         return
+    if in_harness(bug["where"]):
+        add_backlog_item(bug, by, "Harness", "fix it in the kit or the project's harness files, outside the run")
+        copy_v1_items(by, [f"rule: harness bug: {bug['what']}{at}"])
+        return
+    if bug["in"].startswith("fix-"):   # a fix never spawns a fix of itself: one level deep at most
+        add_backlog_item(bug, by, "Follow-up", f"plan it as its own feature after the run (found by `{by['slug']}`)")
+        return
     if kind == "style":
         nxt = next((x for x in st["features"] if x["status"] == "todo" and bug["in"] in x["depends_on"]), None)
         if nxt is None:
@@ -1385,14 +1395,23 @@ def insert_fix(st, bug, by=None):
             x.setdefault("driver_deps", []).append(slug)
 
 
-def add_backlog_item(bug, by):
-    """A docs bug: one item in the harness backlog, for the owner to approve like any other there."""
+def in_harness(where):
+    """True when a bug line's `where` names a path under HARNESS_PATHS (backticks, ./ and a :line ignored)."""
+    for token in re.split(r"[\s,;()]+", where or ""):
+        p = token.strip("`'\"").removeprefix("./")
+        if p.startswith(HARNESS_PATHS):
+            return True
+    return False
+
+
+def add_backlog_item(bug, by, label="Docs", change="correct the docs"):
+    """One item in the harness backlog, for the owner to approve like any other there."""
     text = read(BACKLOG, "# Harness improvement backlog\n\n## Items\n\nNone yet.\n")
     if bug["what"] in text:
         return
     n = 1 + len(re.findall(r"^### \d+\.", text, re.M))
-    item = (f"### {n}. Docs: {bug['what'][:70]} (low)\n\n- **Status:** open\n- **Problem:** {bug['what']}, found by "
-            f"`{by['slug']}` in an autonomous run.\n- **Change:** correct the docs.\n- **Files:** {bug['where'] or bug['in']}\n")
+    item = (f"### {n}. {label}: {bug['what'][:70]} (low)\n\n- **Status:** open\n- **Problem:** {bug['what']}, found by "
+            f"`{by['slug']}` in an autonomous run.\n- **Change:** {change}.\n- **Files:** {bug['where'] or bug['in']}\n")
     text = re.sub(r"^None yet\.\n?", "", text, flags=re.M).rstrip() + "\n\n" + item
     write(BACKLOG, text)
 

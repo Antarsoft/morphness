@@ -803,6 +803,39 @@ def scenario_small_bug_card():
           and "`small-bug`" in prompt, "small-bug isn't defined in the card template, MODES.md § Fixing a bug or the prompt")
 
 
+def scenario_no_fix_loops():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("driver_loops", os.path.join(TEMPLATE, "scripts/auto/driver.py"))
+    d = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(d)
+    t = make_repo({"order": order(("a", []), ("b", ["a"]))})
+    d.ROOT = t
+    st = {"features": [d.new_feature({"slug": "a"}), d.new_feature({"slug": "b", "depends_on": ["a"]}),
+                       d.new_feature({"slug": "fix-a-1", "depends_on": ["a"]}, inserted_by="bug:a")]}
+    st["features"][0]["status"] = st["features"][2]["status"] = "passed"
+    card = d.parse_card("---\nslug: fix-a-1\nstatus: passed\nmode: small-bug\nqa_rounds: 0\n---\n\n## Bugs found\n\n"
+                        "- a | handoff.sh drops the slug | `scripts/handoff.sh:12` | behaviour | bash scripts/handoff.sh x fails\n"
+                        "- a | checks.sh exits 0 on a crash | ./harness/CONTROLS.md, scripts/checks.sh:40 | behaviour | run it\n"
+                        "- fix-a-1 | the fix misses the empty list | src/a.txt:3 | behaviour | tests/a.test: total([]) is 0\n"
+                        "- a | total of one item is off | src/a.txt:7 | behaviour | tests/a.test: total([1]) is 1\n")
+    for b in card["bugs_found"]:
+        d.insert_fix(st, b, {"slug": "fix-a-1"})
+    fixes = [x["slug"] for x in st["features"] if (x.get("inserted_by") or "").startswith("bug:")]
+    backlog = open(os.path.join(t, "_harness/HARNESS_BACKLOG.md")).read()
+    checklist = open(d.path(d.checklist_path())).read()
+    check("no-fix-loops", sorted(fixes) == ["fix-a-1", "fix-a-2"], f"fix features {fixes}")
+    check("no-fix-loops", "Harness: handoff.sh drops the slug" in backlog and "Harness: checks.sh exits 0" in backlog
+          and "Follow-up: the fix misses the empty list" in backlog, f"backlog: {backlog}")
+    check("no-fix-loops", "harness bug: handoff.sh drops the slug" in checklist.split("## Harness changes")[-1],
+          f"not in § Harness changes: {checklist}")
+    check("no-fix-loops", not d.in_harness("src/scripts.ts:3") and d.in_harness("_harness/features/a/1/Plan/plan.md")
+          and d.in_harness("`.claude/settings.json`"), "in_harness misreads a path")
+    prompt = open(os.path.join(TEMPLATE, "harness/templates/auto/feature-prompt.md")).read()
+    tmpl = open(os.path.join(TEMPLATE, "harness/templates/auto/card.md")).read()
+    check("no-fix-loops", "never in a fix feature" in prompt and "goes to the harness backlog, never a fix" in tmpl,
+          "the prompt or the card template doesn't say harness bugs go to the backlog")
+
+
 def scenario_tech_edge_cases():
     r = subprocess.run(["bash", os.path.join(TEMPLATE, "scripts/doc-section.sh"),
                         os.path.join(TEMPLATE, "harness/templates/auto/tech.md"), "Interfaces between features"],
