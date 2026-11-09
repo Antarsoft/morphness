@@ -239,7 +239,7 @@ For each accepted kit update:
        The file then reaches the project through git, like the rest of the PR. You remove the staging folder after the
        checks in § 4 step 2, not the owner.
      - **Telling them apart:** `CLAUDE_CODE_REMOTE` is set, `/mnt/project-files/` exists, or the repository isn't the
-       owner's checkout (a fresh clone in a container, a path under `/home/user/` or `/workspace/` the owner never named):
+       owner's checkout (a fresh clone in a container, at a path the owner never named):
        cloud. When in doubt, use the cloud path: it works in both cases.
    - **Settings and config the guard or the permission layer refuses:** change `.claude/settings.json` and
      `harness.config.yml` with Edit or Write: the guard asks for a change that only adds, and denies one that removes a
