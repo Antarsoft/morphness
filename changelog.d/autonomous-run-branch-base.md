@@ -1,1 +1,0 @@
-In an autonomous run, the risk check and the QA hand-off measure a feature from the run branch it left, not the integration branch. A two-file fix no longer shows every feature the run already merged, so it isn't raised to full mode, and QA reviews only that feature's diff. Outside a run nothing changes.

@@ -1,1 +1,0 @@
-The guard now asks before `git grep -O` (`--open-files-in-pager`), which runs the command it names. A read-only `git grep` allow rule, such as the one the autonomous module adds, can no longer run a command with no prompt.

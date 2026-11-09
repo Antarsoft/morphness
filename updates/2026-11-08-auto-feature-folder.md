@@ -2,7 +2,7 @@
 id: 2026-11-08-auto-feature-folder
 title: An autonomous run's feature folder uses the exact slug, and a folder missing only the -<n> suffix still counts
 kind: fix
-release: unreleased
+release: v0.18.0
 applies_to: { modules: [] }
 files:
   - scripts/plan-brief.sh

@@ -2,7 +2,7 @@
 id: 2026-11-07-guard-autonomous-run
 title: During an autonomous run the guard turns asks into denies and protects the driver's files and the run branch
 kind: template
-release: unreleased
+release: v0.18.0
 applies_to: { modules: [] }
 files:
   - scripts/guard.sh

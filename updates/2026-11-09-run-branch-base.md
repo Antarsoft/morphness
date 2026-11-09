@@ -2,7 +2,7 @@
 id: 2026-11-09-run-branch-base
 title: In an autonomous run, the risk check and the QA hand-off compare a feature with the run branch
 kind: fix
-release: unreleased
+release: v0.18.0
 applies_to: { modules: [] }
 files:
   - scripts/risk-check.sh

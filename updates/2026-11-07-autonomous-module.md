@@ -2,7 +2,7 @@
 id: 2026-11-07-autonomous-module
 title: Optional autonomous module (rules and templates for an unattended run from a brief to the first version)
 kind: module
-release: unreleased
+release: v0.18.0
 applies_to: { modules: [] }
 offer_module: autonomous
 files:
