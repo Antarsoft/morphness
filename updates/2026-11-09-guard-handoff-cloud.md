@@ -13,7 +13,7 @@ reviewed: "It changes only the text of the guard's deny message for its own file
 
 ## What changed
 
-- `/morph-update` (and `UPDATE.md`) now picks where the merged guard file waits by where the agent runs. On the owner's machine it stays under `/tmp/morphness-update/` with a `cp` command. In a cloud session or a Claude Projects thread it is committed on the update branch under `_harness/updates/<YYYY-MM-DD>/` with a `guard.sh.diff`, and the owner copies it into place in their own checkout, commits and pushes.
+- `/morph-update` (and `UPDATE.md`) now picks where the merged guard file waits by where the agent runs. On the owner's machine it stays under `/tmp/morphness-update/` with a `cp` command. In a cloud session or a Claude Projects thread it is committed on the update branch under `_harness/updates/<YYYY-MM-DD>/` with a `guard-sh.diff`, and the owner copies it into place in their own checkout, commits and pushes.
 - The PR stays a draft until the agent has checked the owner's copy (`cmp`, `bash -n`, the push test, one test per new guard rule). Only then is the staging folder removed and the PR marked ready.
 - A settings or config line the guard or the permission layer refuses is handed off the same way, with the exact line and where it goes under **Needs the owner** in the PR body and at the top of the report.
 - The guard's deny message for its own files names both places, and harness/GUARD.md says the staging folder is not the guard.

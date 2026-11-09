@@ -226,7 +226,7 @@ For each accepted kit update:
      - **Cloud or remote session** (a Claude Code cloud session, a Claude Projects thread, any session with no disk it
        shares with the owner): `/tmp` is in your container and the owner can't reach it. Commit the copy on the update
        branch under `_harness/updates/<YYYY-MM-DD>/`, at the path it replaces (`_harness/updates/<date>/scripts/guard.sh`,
-       `_harness/updates/<date>/scripts/lib/<file>`), with `guard.sh.diff` beside it (`diff -u` of the project's file and
+       `_harness/updates/<date>/scripts/lib/<file>`), with `guard-sh.diff` beside it (`diff -u` of the project's file and
        the copy). The guard allows writes there (harness/GUARD.md): it is a staging folder, not the guard. Check that
        before relying on it: `bash scripts/guard.sh <<< '{"tool_name":"Write","tool_input":{"file_path":"_harness/updates/<date>/scripts/guard.sh","content":"x"}}'`
        exits 0. Push the branch and open the PR as a draft (on the owner's yes, § 4 step 3). The owner, in their own
