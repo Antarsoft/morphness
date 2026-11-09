@@ -2,7 +2,7 @@
 id: 2026-11-09-guard-git-grep-pager
 title: The guard asks before git grep -O, which runs a command
 kind: fix
-release: unreleased
+release: v0.18.0
 applies_to: { modules: [] }
 files:
   - harness/GUARD.md

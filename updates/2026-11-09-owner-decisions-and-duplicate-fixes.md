@@ -2,7 +2,7 @@
 id: 2026-11-09-owner-decisions-and-duplicate-fixes
 title: An autonomous run uses owner decisions recorded before a feature started, and inserts one fix per bug
 kind: fix
-release: unreleased
+release: v0.18.0
 applies_to: { modules: [] }
 files:
   - scripts/auto/driver.py

@@ -2,7 +2,7 @@
 id: 2026-11-08-checks-path-and-harness-bugs
 title: checks.sh refuses a path instead of crashing, and a card can report a bug in the harness
 kind: fix
-release: unreleased
+release: v0.18.0
 applies_to: { modules: [] }
 files:
   - scripts/checks.sh

@@ -2,7 +2,7 @@
 id: 2026-11-09-no-harness-fix-loops
 title: An autonomous run never inserts a fix for the harness's own files, or a fix of a fix
 kind: fix
-release: unreleased
+release: v0.18.0
 applies_to: { modules: [] }
 files:
   - scripts/auto/driver.py

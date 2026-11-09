@@ -2,7 +2,7 @@
 id: 2026-11-08-guard-project-chat-tools
 title: The guard lets the Claude Projects thread tools through
 kind: template
-release: unreleased
+release: v0.18.0
 applies_to: { modules: [] }
 files:
   - harness/GUARD.md

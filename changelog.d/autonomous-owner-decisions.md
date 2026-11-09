@@ -1,1 +1,0 @@
-In an autonomous run, a feature sees every decision the owner recorded in a version doc's § Decisions table, including ones recorded before it started, so it doesn't wait on a question the owner already answered. When a later feature reports a bug that a fix already covers, the run doesn't insert a second fix.
