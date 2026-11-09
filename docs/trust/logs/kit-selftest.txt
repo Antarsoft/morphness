@@ -3,6 +3,6 @@ go-service: ok
 monorepo-apps: ok
 nextjs-supabase: ok
 python-cli: ok
-auto driver self-test: 46 scenario(s), 0 problem(s)
+auto driver self-test: 48 scenario(s), 0 problem(s)
 rendered copies kept in <install-root>
 kit self-test: 4 sample project(s), 0 problem(s)
