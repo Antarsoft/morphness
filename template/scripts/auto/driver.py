@@ -397,11 +397,18 @@ def records_say_passed(st, f, card, since):
     if not work:
         return False, "the branch changes nothing but the card"
     mode = card["mode"]
+    base = f"_harness/features/{f['slug']}"
+    if mode == "small" and not ref_exists(f"{f['branch']}:{base}") and not near_folder(st, f):
+        if not failing_test_then_fix(st, f):
+            return False, (f"no {base}/<version>/ folder: a small-mode bug fix has no plan file, so relabel the card "
+                           "small-bug (mode: small-bug, a failing-test commit, then the fix)")
+        say(f"  warning: {f['slug']}'s card says small, but the branch is a small-mode bug fix (a failing-test commit, "
+            "then the fix, no plan file): checking it as small-bug")
+        mode = "small-bug"
     if mode in ("light", "small-bug"):
         if not config_list("checks.on_stop") or not os.path.isfile(path("scripts/checks.sh")):
             return False, f"{mode} mode leaves no record, and checks.on_stop is empty, so nothing would check it"
         return True, "checked by checks.on_stop after the merge"
-    base = f"_harness/features/{f['slug']}"
     listing = git("ls-tree", "--name-only", f"{f['branch']}:{base}", check=False).splitlines()
     versions = sorted((int(v) for v in listing if v.isdigit()), reverse=True)
     if not versions:
@@ -432,6 +439,28 @@ def records_say_passed(st, f, card, since):
             return False, f"QA was blocked ({blocked.group(0).strip()[:120]}) in {v}/QA/qa-result.md"
         return False, f"{v}/QA/qa-result.md verdict is not pass ({verdict or 'no verdict found'})"
     return True, "plan and QA result agree"
+
+
+def ref_exists(spec):
+    return subprocess.run(["git", "cat-file", "-e", spec], cwd=ROOT, capture_output=True).returncode == 0
+
+
+FAILING_TEST = re.compile(r"^WIP\([^)]*\): failing test|\bfailing test\b", re.I)
+
+
+def failing_test_then_fix(st, f):
+    """True when the feature branch has a failing-test commit (`WIP(<slug>): failing test`, harness/MODES.md
+    § Fixing a bug) followed by a commit that changes more than the run's own files: a small-mode bug fix."""
+    start = f.get("start_commit") or st["base"]["commit"]
+    commits = git("log", "--reverse", "--format=%H %s", f"{start}..{f['branch']}", check=False).splitlines()
+    first = next((i for i, c in enumerate(commits) if FAILING_TEST.search(c.split(" ", 1)[-1])), None)
+    if first is None:
+        return False
+    for c in commits[first + 1:]:
+        files = git("diff-tree", "--no-commit-id", "--name-only", "-r", c.split(" ", 1)[0], check=False).splitlines()
+        if any(p and not p.startswith(f"{AUTO}/") for p in files):
+            return True
+    return False
 
 
 def near_folder(st, f):

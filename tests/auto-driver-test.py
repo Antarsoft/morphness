@@ -107,7 +107,7 @@ card = {"pass": "passed", "fakepass": "passed", "waiting": "waiting_owner", "esc
         "splitbad": "split", "bug": "passed", "depart": "passed", "bugdepart": "passed", "nomode": "passed",
         "verdict": "passed", "verdictfail": "passed", "checkout-dev": "passed", "rate-crash": "passed",
         "qa-denied": "passed", "qa-blocked": "passed", "harness-bug": "passed", "bugreport": "passed",
-        "decisionreport": "passed", "nosuffix": "passed", "kindreport": "passed", "kindvalid": "passed"}[act]
+        "decisionreport": "passed", "nosuffix": "passed", "smallbug": "passed", "smallnotest": "passed", "kindreport": "passed", "kindvalid": "passed"}[act]
 if act == "rate-crash":
     out(True, "error_during_execution", "Implemented the 429 rate limit handler, then a test runner crashed", 1)
 if act == "checkout-dev":
@@ -153,6 +153,14 @@ if act == "nosuffix":
     # the session named its records after the slug without the driver's -<n> (fix-a-1 -> fix-a)
     act, folder = "pass", re.sub(r"-\d+$", "", slug)
 mode = "" if act == "nomode" else "full"
+if act in ("smallbug", "smallnotest"):
+    # a small-mode bug fix (no plan file) whose card says small: smallbug commits the failing test first
+    if act == "smallbug":
+        w(f"tests/{slug}.test", "expect(total([1])).toBe(1)\n")
+        git("add", "-A")
+        git("commit", "-q", "-m", f"WIP({slug}): failing test")
+    w(f"src/{slug}.txt", f"{slug} fixed\n")
+    act, mode = "pass-small", "small"
 departure = "yes" if act in ("depart", "bugdepart") else "no"
 if act in ("pass", "bug", "depart", "bugdepart", "nomode"):
     w(f"_harness/features/{folder}/1/Plan/plan.md", "# Plan\n\n**Status:** passed  \n")
@@ -206,7 +214,7 @@ def order(*rows):
     return ORDER + "".join(f"| {i} | {s} | {s.upper()} | M1 | {', '.join(d) or '-'} | low |\n" for i, (s, d) in enumerate(rows, 1))
 
 
-def make_repo(plan, budget=50, feature_budget=10):
+def make_repo(plan, budget=50, feature_budget=10, on_stop="[]"):
     t = tempfile.mkdtemp(prefix="morph-auto-")
     for rel in ("scripts/lib/config.sh", "scripts/auto", "harness/templates/auto"):
         src, dst = os.path.join(TEMPLATE, rel), os.path.join(t, rel)
@@ -221,7 +229,7 @@ def make_repo(plan, budget=50, feature_budget=10):
               versions_dir: docs/versions
             modules: [roadmap, autonomous]
             checks:
-              on_stop: []
+              on_stop: {on_stop}
             loop:
               feature_budget_usd: {feature_budget}
             auto:
@@ -244,6 +252,8 @@ def make_repo(plan, budget=50, feature_budget=10):
         ".gitignore": "_harness/auto/logs/\n",
         "stub-claude": STUB,
     }
+    if on_stop != "[]":
+        files["scripts/checks.sh"] = "#!/usr/bin/env bash\necho \"checks: $*\"\nexit 0\n"
     for rel, text in files.items():
         p = os.path.join(t, rel)
         os.makedirs(os.path.dirname(p), exist_ok=True)
@@ -775,6 +785,22 @@ def scenario_folder_without_suffix():
                         env=dict(os.environ, MORPH_AUTO_FEATURE="fix-a-1"))
     check("no-suffix-prompt", "`_harness/features/%SLUG%/<version>/`" in prompt and pb.returncode == 2
           and "plan-brief.sh fix-a-1" in pb.stderr, f"plan-brief exit {pb.returncode}: {pb.stderr}")
+
+
+def scenario_small_bug_card():
+    t = make_repo({"order": order(("a", []), ("b", ["a"])), "a": ["smallbug"]}, on_stop="[unit]")
+    *_, r = full_run(t)
+    check("small-bug-accepted", r.returncode == 0 and statuses(t) == {"a": "passed", "b": "passed"}
+          and "checking it as small-bug" in r.stdout, f"{r.returncode} {statuses(t)} {state(t).get('exit')} {r.stdout[-300:]}")
+    t = make_repo({"order": order(("a", []),), "a": ["smallnotest", "smallnotest"]}, on_stop="[unit]")
+    *_, r = full_run(t)
+    reason = (state(t).get("exit") or {}).get("reason", "")
+    check("small-bug-relabel", r.returncode == 1 and "relabel the card small-bug" in reason, f"{r.returncode} {reason}")
+    card = open(os.path.join(TEMPLATE, "harness/templates/auto/card.md")).read()
+    modes = open(os.path.join(TEMPLATE, "harness/MODES.md")).read().split("### Fixing a bug", 1)[-1].split("\n## ", 1)[0]
+    prompt = open(os.path.join(TEMPLATE, "harness/templates/auto/feature-prompt.md")).read()
+    check("small-bug-defined", "small-bug (a small-mode bug fix with no plan file" in card and "**small-bug**" in modes
+          and "`small-bug`" in prompt, "small-bug isn't defined in the card template, MODES.md § Fixing a bug or the prompt")
 
 
 def scenario_tech_edge_cases():
