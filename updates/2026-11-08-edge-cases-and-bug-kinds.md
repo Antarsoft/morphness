@@ -2,7 +2,7 @@
 id: 2026-11-08-edge-cases-and-bug-kinds
 title: Plans spell out interface edge cases, and only a reproduced behaviour bug becomes a fix feature
 kind: rule
-release: unreleased
+release: v0.18.0
 applies_to: { modules: [] }
 files:
   - harness/PLAN_CHECKLIST.md

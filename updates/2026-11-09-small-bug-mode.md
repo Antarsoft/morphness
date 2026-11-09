@@ -2,7 +2,7 @@
 id: 2026-11-09-small-bug-mode
 title: small-bug is defined, and a small card for a bug fix with no plan file no longer stops a run
 kind: fix
-release: unreleased
+release: v0.18.0
 applies_to: { modules: [] }
 files:
   - harness/MODES.md

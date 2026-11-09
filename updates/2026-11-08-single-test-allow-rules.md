@@ -2,7 +2,7 @@
 id: 2026-11-08-single-test-allow-rules
 title: Agents can run one test file without a prompt, and QA always writes a result
 kind: config
-release: unreleased
+release: v0.18.0
 applies_to: { modules: [] }
 files:
   - .claude/settings.json

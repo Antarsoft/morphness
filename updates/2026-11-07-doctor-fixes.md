@@ -2,7 +2,7 @@
 id: 2026-11-07-doctor-fixes
 title: checks.sh status says clean on a clean tree, and the prune handles an action item with an unknown status
 kind: fix
-release: unreleased
+release: v0.18.0
 applies_to: { modules: [] }
 files:
   - scripts/checks.sh
