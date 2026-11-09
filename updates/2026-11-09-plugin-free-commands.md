@@ -1,5 +1,5 @@
 ---
-id: 2026-10-28-plugin-free-commands
+id: 2026-11-09-plugin-free-commands
 title: Plugin-free instructions for doctor, module and share
 kind: rule
 release: unreleased
