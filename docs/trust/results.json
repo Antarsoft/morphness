@@ -1,8 +1,8 @@
 {
  "schema": 1,
- "generated": "2026-11-07 20:14 UTC",
- "commit": "337748214155e1e5842e6120670ac50446e9b6f6",
- "release": "v0.17.0",
+ "generated": "2026-11-09 06:51 UTC",
+ "commit": "47c0460cf6b3181b72e6ee0a2b0deed1d3af4726",
+ "release": "v0.17.0 + later commits",
  "dirty": false,
  "rows": [
   {
@@ -13,12 +13,12 @@
    "what": "Renders the template as /morph-init would for sample projects, runs its own consistency checks, replays every guard case and runs the template scripts.",
    "command": "STRICT=1 GUARD_FULL=1 scripts/kit-selftest.sh",
    "status": "pass",
-   "summary": "4 of 4 sample projects pass; 1127 guard cases replayed on each (4508 replays; per project 376 allowed, 393 asked, 358 denied, all as expected)",
+   "summary": "4 of 4 sample projects pass; 1178 guard cases replayed on each (4712 replays; per project 397 allowed, 400 asked, 381 denied, all as expected)",
    "findings": [],
    "logs": [
     "kit-selftest.txt"
    ],
-   "finished": "2026-11-07 20:13 UTC",
+   "finished": "2026-11-09 06:50 UTC",
    "notes": "Sample projects: go-service, monorepo-apps, nextjs-supabase, python-cli."
   },
   {
@@ -29,12 +29,12 @@
    "what": "Every kit change has an update note, and every note is well formed.",
    "command": "scripts/check-updates.sh",
    "status": "pass",
-   "summary": "144 update note(s) checked, 0 problem(s)",
+   "summary": "154 update note(s) checked, 0 problem(s)",
    "findings": [],
    "logs": [
     "check-updates.txt"
    ],
-   "finished": "2026-11-07 20:13 UTC"
+   "finished": "2026-11-09 06:50 UTC"
   },
   {
    "group": "own",
@@ -49,7 +49,7 @@
    "logs": [
     "check-lessons.txt"
    ],
-   "finished": "2026-11-07 20:13 UTC"
+   "finished": "2026-11-09 06:50 UTC"
   },
   {
    "group": "public",
@@ -59,7 +59,7 @@
    "what": "Config correctness of CLAUDE.md, AGENTS.md, rules, agents, settings, hooks and skills, on a rendered sample install and on the kit's skills.",
    "command": "npx agnix@0.59.0 --format json <path>",
    "status": "triaged",
-   "summary": "14 finding(s), all judged (9 informational)",
+   "summary": "14 finding(s), all judged (10 informational)",
    "findings": [
     {
      "rule": "CC-AG-010",
@@ -198,7 +198,7 @@
      "path": "skills/skills/morph-doctor/SKILL.md",
      "line": 4,
      "level": "warning",
-     "message": "SKILL.md body is about 5015 tokens; the Agent Skills spec recommends instructions under 5000 tokens",
+     "message": "SKILL.md body is about 5268 tokens; the Agent Skills spec recommends instructions under 5000 tokens",
      "triage": {
       "status": "accepted",
       "reason": "The body is just over the spec's 5000-token guide; the long reference parts already live in references/ and load only when needed."
@@ -220,8 +220,8 @@
     "agnix-install.json",
     "agnix-skills.json"
    ],
-   "finished": "2026-11-07 20:13 UTC",
-   "notes": "72 files checked. Errors and warnings need a verdict; info notes are only counted."
+   "finished": "2026-11-09 06:50 UTC",
+   "notes": "85 files checked. Errors and warnings need a verdict; info notes are only counted."
   },
   {
    "group": "public",
@@ -236,8 +236,8 @@
    "logs": [
     "shellcheck.json"
    ],
-   "finished": "2026-11-07 20:13 UTC",
-   "notes": "21 scripts. Errors and warnings need a verdict; style notes and info are only counted."
+   "finished": "2026-11-09 06:50 UTC",
+   "notes": "24 scripts. Errors and warnings need a verdict; style notes and info are only counted."
   },
   {
    "group": "public",
@@ -252,8 +252,8 @@
    "logs": [
     "gitleaks.json"
    ],
-   "finished": "2026-11-07 20:13 UTC",
-   "notes": "216 commits scanned."
+   "finished": "2026-11-09 06:50 UTC",
+   "notes": "244 commits scanned."
   },
   {
    "group": "public",
@@ -262,9 +262,17 @@
    "version": "2.12.0",
    "what": "Prompt injection, exfiltration and tool poisoning patterns in the five /morph-* skills. Static mode only, no model is called.",
    "command": "skillspector scan skills/<name> --no-llm",
-   "status": "triaged",
-   "summary": "5 finding(s), all judged",
+   "status": "untriaged",
+   "summary": "11 finding(s), 1 untriaged",
    "findings": [
+    {
+     "rule": "RP1",
+     "path": "skills/morph-doctor/SKILL.md",
+     "line": null,
+     "level": "MEDIUM",
+     "message": "",
+     "triage": null
+    },
     {
      "rule": "AS1",
      "path": "skills/morph-init/SKILL.md",
@@ -310,6 +318,61 @@
      }
     },
     {
+     "rule": "RP1",
+     "path": "skills/morph-init/SKILL.md",
+     "line": null,
+     "level": "MEDIUM",
+     "message": "",
+     "triage": {
+      "status": "false-positive",
+      "reason": "`npx vitest` is an example of a project's own test command in an allow rule, not an MCP server."
+     }
+    },
+    {
+     "rule": "RP1",
+     "path": "skills/morph-init/SKILL.md",
+     "line": null,
+     "level": "MEDIUM",
+     "message": "",
+     "triage": {
+      "status": "false-positive",
+      "reason": "`npx vitest` is an example of a project's own test command in an allow rule, not an MCP server."
+     }
+    },
+    {
+     "rule": "RP1",
+     "path": "skills/morph-init/SKILL.md",
+     "line": null,
+     "level": "MEDIUM",
+     "message": "",
+     "triage": {
+      "status": "false-positive",
+      "reason": "`npx vitest` is an example of a project's own test command in an allow rule, not an MCP server."
+     }
+    },
+    {
+     "rule": "RP1",
+     "path": "skills/morph-init/SKILL.md",
+     "line": null,
+     "level": "MEDIUM",
+     "message": "",
+     "triage": {
+      "status": "false-positive",
+      "reason": "`npx vitest` is an example of a project's own test command in an allow rule, not an MCP server."
+     }
+    },
+    {
+     "rule": "RP1",
+     "path": "skills/morph-init/SKILL.md",
+     "line": null,
+     "level": "MEDIUM",
+     "message": "",
+     "triage": {
+      "status": "false-positive",
+      "reason": "`npx vitest` is an example of a project's own test command in an allow rule, not an MCP server."
+     }
+    },
+    {
      "rule": "AR2",
      "path": "skills/morph-update/SKILL.md",
      "line": null,
@@ -322,14 +385,15 @@
     }
    ],
    "logs": [
+    "skillspector-morph-auto.json",
     "skillspector-morph-doctor.json",
     "skillspector-morph-init.json",
     "skillspector-morph-module.json",
     "skillspector-morph-share.json",
     "skillspector-morph-update.json"
    ],
-   "finished": "2026-11-07 20:14 UTC",
-   "notes": "Risk scores (0 is best): morph-doctor 0/100, morph-init 49/100, morph-module 0/100, morph-share 0/100, morph-update 20/100."
+   "finished": "2026-11-09 06:51 UTC",
+   "notes": "Risk scores (0 is best): morph-auto 0/100, morph-doctor 7/100, morph-init 54/100, morph-module 0/100, morph-share 0/100, morph-update 20/100."
   }
  ],
  "limits": [

@@ -1,6 +1,6 @@
 {
  "version": "0.59.0",
- "files_checked": 8,
+ "files_checked": 9,
  "diagnostics": [
   {
    "level": "warning",
@@ -8,7 +8,7 @@
    "file": "skills/morph-doctor/SKILL.md",
    "line": 4,
    "column": 4,
-   "message": "SKILL.md body is about 5015 tokens; the Agent Skills spec recommends instructions under 5000 tokens",
+   "message": "SKILL.md body is about 5268 tokens; the Agent Skills spec recommends instructions under 5000 tokens",
    "suggestion": "Move detail into references/ files and say when to read each one; after compaction Claude Code re-attaches only the first 5,000 tokens of an invoked skill, so keep the steps that must survive near the top",
    "category": "agent-skills",
    "rule_severity": "MEDIUM"
@@ -37,11 +37,22 @@
   },
   {
    "level": "info",
+   "rule": "AS-024",
+   "file": "skills/morph-doctor/SKILL.md",
+   "line": 76,
+   "column": 89,
+   "message": "Command runs 'jest:*)' without a pinned version",
+   "suggestion": "Pin a version (for example 'npx eslint@9.0.0') so the skill behaves the same over time",
+   "category": "agent-skills",
+   "rule_severity": "LOW"
+  },
+  {
+   "level": "info",
    "rule": "CC-SK-034",
    "file": "skills/morph-init/references/questions.md",
    "line": 1,
    "column": 1,
-   "message": "Reference file has 338 lines and no table of contents near the top (Anthropic's skill guidance asks for one above 300 lines)",
+   "message": "Reference file has 348 lines and no table of contents near the top (Anthropic's skill guidance asks for one above 300 lines)",
    "suggestion": "Add a short contents list at the top so Claude can see the whole file's scope when it previews it",
    "category": "claude-skills",
    "rule_severity": "LOW",
@@ -53,7 +64,7 @@
    "file": "skills/morph-init/references/render.md",
    "line": 1,
    "column": 1,
-   "message": "Reference file has 344 lines and no table of contents near the top (Anthropic's skill guidance asks for one above 300 lines)",
+   "message": "Reference file has 352 lines and no table of contents near the top (Anthropic's skill guidance asks for one above 300 lines)",
    "suggestion": "Add a short contents list at the top so Claude can see the whole file's scope when it previews it",
    "category": "claude-skills",
    "rule_severity": "LOW",
@@ -63,6 +74,6 @@
  "summary": {
   "errors": 0,
   "warnings": 2,
-  "info": 3
+  "info": 4
  }
 }

@@ -2,12 +2,12 @@
  "skill": {
   "name": "morph-init",
   "source": "<repo>/skills/morph-init",
-  "scanned_at": "2026-11-07T20:13:48.095632+00:00"
+  "scanned_at": "2026-11-09T06:51:26.007794+00:00"
  },
  "risk_assessment": {
-  "score": 49,
-  "severity": "MEDIUM",
-  "recommendation": "CAUTION",
+  "score": 54,
+  "severity": "HIGH",
+  "recommendation": "DO_NOT_INSTALL",
   "max_issue_severity": "HIGH"
  },
  "components": [
@@ -34,9 +34,9 @@
   {
    "path": "references/questions.md",
    "type": "markdown",
-   "lines": 338,
+   "lines": 348,
    "executable": false,
-   "size_bytes": 23411,
+   "size_bytes": 24183,
    "source_url": null,
    "source_identity": null,
    "source_digest": null
@@ -44,9 +44,9 @@
   {
    "path": "references/render.md",
    "type": "markdown",
-   "lines": 344,
+   "lines": 352,
    "executable": false,
-   "size_bytes": 29617,
+   "size_bytes": 30480,
    "source_url": null,
    "source_identity": null,
    "source_digest": null
@@ -56,7 +56,7 @@
  "issues": [
   {
    "id": "AS1",
-   "finding_id": "finding-4109a49b2ac648e6baa160d903d6b88e",
+   "finding_id": "finding-db73c63a90c14b56bfd0e8233a723241",
    "category": "Agent Snooping",
    "pattern": "Agent Config Directory Access",
    "severity": "HIGH",
@@ -88,14 +88,14 @@
   },
   {
    "id": "AS1",
-   "finding_id": "finding-05ddc71aeb0b4a30a13a9fde05b7c370",
+   "finding_id": "finding-af60ce241b794fcf8f167b8f13d9b331",
    "category": "Agent Snooping",
    "pattern": "Agent Config Directory Access",
    "severity": "HIGH",
    "confidence": 0.9,
    "location": {
     "file": "references/render.md",
-    "start_line": 240,
+    "start_line": 248,
     "end_line": null,
     "start_column": 17
    },
@@ -112,7 +112,7 @@
    "occurrences": [
     {
      "file": "references/render.md",
-     "start_line": 240,
+     "start_line": 248,
      "end_line": null,
      "start_column": 17
     }
@@ -120,14 +120,14 @@
   },
   {
    "id": "EA2",
-   "finding_id": "finding-43b5bc72f30d40479f698cfae7d6bce5",
+   "finding_id": "finding-a0231dcb3e014df5932c9089605cb82c",
    "category": "Excessive Agency",
    "pattern": "Autonomous Decision Making",
    "severity": "MEDIUM",
    "confidence": 0.85,
    "location": {
     "file": "references/questions.md",
-    "start_line": 288,
+    "start_line": 298,
     "end_line": null,
     "start_column": 31
    },
@@ -144,7 +144,7 @@
    "occurrences": [
     {
      "file": "references/questions.md",
-     "start_line": 288,
+     "start_line": 298,
      "end_line": null,
      "start_column": 31
     }
@@ -152,7 +152,7 @@
   },
   {
    "id": "RP1",
-   "finding_id": "finding-4081871dd5b54f4eacf76235cb18360b",
+   "finding_id": "finding-9bd9aa058a39495184182d8428b6da71",
    "category": "MCP Rug Pull",
    "pattern": "MCP server referenced without pinned version: 'npx vitest'.",
    "severity": "MEDIUM",
@@ -176,6 +176,156 @@
     {
      "file": "references/render.md",
      "start_line": 141,
+     "end_line": null
+    }
+   ]
+  },
+  {
+   "id": "RP1",
+   "finding_id": "finding-40df8ad192504051ae84681e7e9045b9",
+   "category": "MCP Rug Pull",
+   "pattern": "MCP server referenced without pinned version: 'npx vitest'.",
+   "severity": "MEDIUM",
+   "confidence": 0.7,
+   "location": {
+    "file": "references/render.md",
+    "start_line": 146,
+    "end_line": null
+   },
+   "finding": "npx vitest",
+   "explanation": "npx commands without a version suffix (e.g. @1.0.0) create a rug-pull risk if the upstream server is compromised and publishes a malicious update.",
+   "remediation": "Pin the version: npx @scope/server@1.2.3",
+   "code_snippet": null,
+   "intent": null,
+   "tags": [
+    "ASI16"
+   ],
+   "evidence": {},
+   "match_fingerprint": "6649a3cb9740edab54a15b4223ea395c08f96163f29327395615564af5bbcf11",
+   "occurrences": [
+    {
+     "file": "references/render.md",
+     "start_line": 146,
+     "end_line": null
+    }
+   ]
+  },
+  {
+   "id": "RP1",
+   "finding_id": "finding-489bb1cb42bf49f8b664f69e35c89ef2",
+   "category": "MCP Rug Pull",
+   "pattern": "MCP server referenced without pinned version: 'npx jest'.",
+   "severity": "MEDIUM",
+   "confidence": 0.7,
+   "location": {
+    "file": "references/render.md",
+    "start_line": 145,
+    "end_line": null
+   },
+   "finding": "npx jest",
+   "explanation": "npx commands without a version suffix (e.g. @1.0.0) create a rug-pull risk if the upstream server is compromised and publishes a malicious update.",
+   "remediation": "Pin the version: npx @scope/server@1.2.3",
+   "code_snippet": null,
+   "intent": null,
+   "tags": [
+    "ASI16"
+   ],
+   "evidence": {},
+   "match_fingerprint": "093ce412b9292027ed0153cd7e7c37e77e163cf341c2e37f2a7f21345b3dd888",
+   "occurrences": [
+    {
+     "file": "references/render.md",
+     "start_line": 145,
+     "end_line": null
+    }
+   ]
+  },
+  {
+   "id": "RP1",
+   "finding_id": "finding-3a421c62045f49368d09189d3265e984",
+   "category": "MCP Rug Pull",
+   "pattern": "MCP server referenced without pinned version: 'npx jest'.",
+   "severity": "MEDIUM",
+   "confidence": 0.7,
+   "location": {
+    "file": "references/render.md",
+    "start_line": 150,
+    "end_line": null
+   },
+   "finding": "npx jest",
+   "explanation": "npx commands without a version suffix (e.g. @1.0.0) create a rug-pull risk if the upstream server is compromised and publishes a malicious update.",
+   "remediation": "Pin the version: npx @scope/server@1.2.3",
+   "code_snippet": null,
+   "intent": null,
+   "tags": [
+    "ASI16"
+   ],
+   "evidence": {},
+   "match_fingerprint": "093ce412b9292027ed0153cd7e7c37e77e163cf341c2e37f2a7f21345b3dd888",
+   "occurrences": [
+    {
+     "file": "references/render.md",
+     "start_line": 150,
+     "end_line": null
+    }
+   ]
+  },
+  {
+   "id": "RP1",
+   "finding_id": "finding-9ed49d23a436425793d3c55fb4dd3c76",
+   "category": "MCP Rug Pull",
+   "pattern": "MCP server referenced without pinned version: 'npx mocha'.",
+   "severity": "MEDIUM",
+   "confidence": 0.7,
+   "location": {
+    "file": "references/render.md",
+    "start_line": 146,
+    "end_line": null
+   },
+   "finding": "npx mocha",
+   "explanation": "npx commands without a version suffix (e.g. @1.0.0) create a rug-pull risk if the upstream server is compromised and publishes a malicious update.",
+   "remediation": "Pin the version: npx @scope/server@1.2.3",
+   "code_snippet": null,
+   "intent": null,
+   "tags": [
+    "ASI16"
+   ],
+   "evidence": {},
+   "match_fingerprint": "4a07c4cbc9e46236e3213645c35d78c07622cbd32527eaa148802c7e8984ebb0",
+   "occurrences": [
+    {
+     "file": "references/render.md",
+     "start_line": 146,
+     "end_line": null
+    }
+   ]
+  },
+  {
+   "id": "RP1",
+   "finding_id": "finding-55014c43078345d88fcffb12d01d5404",
+   "category": "MCP Rug Pull",
+   "pattern": "MCP server referenced without pinned version: 'npx playwright'.",
+   "severity": "MEDIUM",
+   "confidence": 0.7,
+   "location": {
+    "file": "references/render.md",
+    "start_line": 146,
+    "end_line": null
+   },
+   "finding": "npx playwright",
+   "explanation": "npx commands without a version suffix (e.g. @1.0.0) create a rug-pull risk if the upstream server is compromised and publishes a malicious update.",
+   "remediation": "Pin the version: npx @scope/server@1.2.3",
+   "code_snippet": null,
+   "intent": null,
+   "tags": [
+    "ASI16"
+   ],
+   "evidence": {},
+   "match_fingerprint": "5d1e71786bcce07e288b1b7488d594b4d051d0f6efefb2c50641987706a012da",
+   "occurrences": [
+    {
+     "file": "references/render.md",
+     "start_line": 146,
      "end_line": null
     }
    ]
@@ -1259,7 +1409,7 @@
    }
   ],
   "limitations": [],
-  "findings_before_filtering": 4,
-  "findings_after_filtering": 4
+  "findings_before_filtering": 9,
+  "findings_after_filtering": 9
  }
 }
