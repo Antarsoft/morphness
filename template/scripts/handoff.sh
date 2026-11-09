@@ -18,7 +18,8 @@
 #
 # Usage: bash scripts/handoff.sh <role> <slug> [--version N] [--base <commit>]
 #   role: scout | fullstack | fullstack-bug | qa | qa-repro | closer
-#   --base: QA round 2 tests from the commit round 1 tested (default: git merge-base origin/<integration> HEAD)
+#   --base: QA round 2 tests from the commit round 1 tested (default: git merge-base origin/<integration> HEAD; in an
+#           autonomous run, the merge base with the run branch, MORPH_AUTO_BRANCH)
 # Exits 0, or 2 on a usage error or when harness/HANDOFFS.md has no block for the role.
 
 role=""; slug=""; version=1; base=""
@@ -115,6 +116,13 @@ def plan_files():
 
 integration = os.environ["INTEGRATION"]
 upstream = f"origin/{integration}" if git("rev-parse", "--verify", "-q", f"origin/{integration}") else integration
+# In an autonomous run a feature branch leaves the run branch (MORPH_AUTO_BRANCH), not the integration branch: the
+# diff and the branch's own commits start there, or every feature merged into the run counts as this change.
+run_branch = os.environ.get("MORPH_AUTO_BRANCH", "").strip() if os.environ.get("MORPH_AUTO") == "1" else ""
+if run_branch and git("rev-parse", "--verify", "-q", run_branch + "^{commit}") not in ("", git("rev-parse", "HEAD")):
+    upstream = run_branch
+else:
+    run_branch = ""
 given = os.environ["BASE"]
 merge_base = git("rev-parse", "--verify", "-q", (given or git("merge-base", upstream, "HEAD") or "-") + "^{commit}")
 if given and not merge_base:
@@ -355,7 +363,7 @@ def test_file(f):
 def own_commits():
     production = subprocess.run(["bash", "-c", ". scripts/lib/config.sh && config_get branches.production"],
                                 capture_output=True, text=True, cwd=root).stdout.strip()
-    stop = [r for b in dict.fromkeys([integration, production]) if b
+    stop = [r for b in dict.fromkeys([integration, production, run_branch]) if b
             for r in (b, f"origin/{b}") if git("rev-parse", "--verify", "-q", r)]
     if not stop:
         return None
