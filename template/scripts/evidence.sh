@@ -11,20 +11,31 @@
 #   --json       the same figures as JSON
 #   --out        also write _harness/evidence/<today>.md and .json
 #   --force      print even when more than a fifth of the folded entries could not be read
+# Exits 0 with the summary; 1 when a tool it needs is missing; 2 on an unknown option; 3 when a record
+# can't be read (not UTF-8, or most folded entries in an unknown format), with nothing written.
 
-. "$(cd "$(dirname "$0")" && pwd)/lib/config.sh" || exit 0
+for arg in "$@"; do
+  case "$arg" in
+    --json|--out|--force) ;;
+    *) echo "usage: bash scripts/evidence.sh [--json] [--out] [--force] (unknown option: $arg)" >&2; exit 2 ;;
+  esac
+done
+# awk reads harness.config.yml; without it the release and the integration branch read as empty.
+for tool in awk python3; do
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    echo "Evidence: not measured ($tool not found)"
+    exit 1
+  fi
+done
+. "$(cd "$(dirname "$0")" && pwd)/lib/config.sh" || { echo "Evidence: not measured (scripts/lib/config.sh is missing or unreadable)"; exit 1; }
 cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)" || exit 1
-
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "Evidence: not measured (python3 not found)"
-  exit 0
-fi
-export EVIDENCE_RELEASE="$(config_get installed_from.release)"
-export EVIDENCE_PRUNE_EVERY="$(config_get loop.prune_every)"
-export EVIDENCE_BRANCH="$(config_get branches.integration)"
+EVIDENCE_RELEASE="$(config_get installed_from.release)"
+EVIDENCE_PRUNE_EVERY="$(config_get loop.prune_every)"
+EVIDENCE_BRANCH="$(config_get branches.integration)"
+export EVIDENCE_RELEASE EVIDENCE_PRUNE_EVERY EVIDENCE_BRANCH
 
 python3 -I - "$@" <<'PY'
-import glob, json, os, re, statistics, subprocess, sys
+import glob, json, os, re, subprocess, sys
 from datetime import date
 
 DATE = r"\d{4}-\d{2}-\d{2}"
@@ -36,12 +47,13 @@ def read(path):
         return open(path, encoding="utf-8").read()
     except OSError:
         return ""
-
-def num(s):
-    return float(s.replace(",", ""))
+    except UnicodeDecodeError as err:
+        sys.stderr.write(f"Evidence: {path} is not valid UTF-8 (at byte {err.start}). Nothing was written. "
+                         "Save it as UTF-8 and run it again.\n")
+        sys.exit(3)
 
 # Features: the learnings files not yet folded, then the one-line entries a prune folded. Two entry
-# forms are read: the kit's `- <slug> v<n>, <date>: <verdict>, QA rounds N, ≈ $<cost>; …` and the
+# forms are read: the kit's `- <slug> v<n>, <date>: <verdict>, QA rounds N, …` and the
 # older `- **<slug> v<n>** (<date>): <verdict>; QA N; …` that projects morphed before the template
 # changed still carry. Lines that look like entries but match neither are counted as unread.
 feats, seen = [], set()
@@ -54,9 +66,11 @@ for path in sorted(glob.glob("_harness/learnings/*-v*.md")):
     text = read(path)
     head = re.search(r"^### (\S+)(?: v\d+)?.*?(" + DATE + ")", text, re.M)
     rounds = re.search(r"QA rounds:\s*(\d+)", text)
-    cost = re.search(r"\*\*Cost:\*\*\s*≈\s*\$\s*([0-9][0-9,]*(?:\.[0-9]+)?)", text)
     verdict = re.search(r"\*\*Verdict:\*\*\s*([a-z-]+)", text)
-    mode = "small" if "none (small mode)" in text else "bug" if "none (bug mode)" in text else "full"
+    # small mode says so on its Verdict line; a bug-mode fix has an Escaped line (older files: "none (bug mode)")
+    escaped_line = re.search(r"^- \*\*Escaped:\*\*(.*)$", text, re.M)
+    fixed_bug = bool(escaped_line) and not none_like(escaped_line.group(1))
+    mode = "small" if "none (small mode)" in text else "bug" if "none (bug mode)" in text or fixed_bug else "full"
     causes = {}
     m = re.search(r"\*\*Failure causes:\*\*\s*(.*)", text)
     for label, n in re.findall(r"(plan gap|implementation|environment|process)\s*×\s*(\d+)", m.group(1) if m else ""):
@@ -66,7 +80,7 @@ for path in sorted(glob.glob("_harness/learnings/*-v*.md")):
     seen.add(key)
     read_files += 1
     feats.append({"date": head.group(2) if head else "", "pass": bool(verdict) and verdict.group(1) == "pass",
-                  "rounds": int(rounds.group(1)) if rounds else 1, "cost": num(cost.group(1)) if cost else None,
+                  "rounds": int(rounds.group(1)) if rounds else 1,
                   "mode": mode, "causes": causes,
                   "escaped": 1 if esc and not none_like(esc.group(1)) else 0, "folded": False})
 
@@ -94,10 +108,9 @@ for path in ("_harness/LEARNINGS.md", "_harness/LEARNINGS-archive.md"):
             seen.add((slug, day))
             folded_seen += 1
             rounds = re.search(r"QA(?: rounds)?\s*(\d+)", rest)
-            cost = re.search(r"≈\s*\$\s*([0-9][0-9,]*(?:\.[0-9]+)?)", rest)
             feats.append({"date": day, "pass": rest.lstrip().startswith("pass"),
                           "rounds": int(rounds.group(1)) if rounds else 1,
-                          "cost": num(cost.group(1)) if cost else None, "mode": "", "causes": {}, "escaped": 0, "folded": True})
+                          "mode": "", "causes": {}, "escaped": 0, "folded": True})
 unread_entries = entry_lines - folded_seen
 feats.sort(key=lambda f: f["date"])
 
@@ -121,11 +134,10 @@ def window(f):
     return len(edges)
 
 def stats(fs):
-    costs = [f["cost"] for f in fs if f["cost"] is not None]
+    qa = [f for f in fs if f["mode"] != "small"]  # small mode runs no QA agent (harness/MODES.md § Working alone)
     return {"features": len(fs),
-            "first_time_pass": round(sum(f["pass"] and f["rounds"] == 1 for f in fs) / len(fs), 2) if fs else None,
-            "avg_qa_rounds": round(sum(f["rounds"] for f in fs) / len(fs), 2) if fs else None,
-            "avg_cost_usd": round(sum(costs) / len(costs), 2) if costs else None, "cost_measured": len(costs),
+            "first_time_pass": round(sum(f["pass"] and f["rounds"] == 1 for f in qa) / len(qa), 2) if qa else None,
+            "avg_qa_rounds": round(sum(f["rounds"] for f in qa) / len(qa), 2) if qa else None,
             "enough_data": len(fs) >= MIN_WINDOW}
 
 windows = []
@@ -230,12 +242,11 @@ for f in unfolded:
 modes = {}
 for f in unfolded:
     modes[f["mode"]] = modes.get(f["mode"], 0) + 1
-costs = [f["cost"] for f in feats if f["cost"] is not None]
 data = {
     "generated": date.today().isoformat(),
     "morphness_release": os.environ.get("EVIDENCE_RELEASE", ""),
     "first_feature": feats[0]["date"] if feats else "", "last_feature": feats[-1]["date"] if feats else "",
-    "overall": dict(allstats, median_cost_usd=round(statistics.median(costs), 2) if costs else None),
+    "overall": allstats,
     "windows": windows, "escapes_recorded": escaped,
     "failure_causes_unfolded": causes, "modes_unfolded": modes,
     "retro_items": items, "prunes": len(prunes), "rule_audit": audit, "prune_decisions": decisions,
@@ -248,9 +259,6 @@ data = {
 def pct(x):
     return "n/a" if x is None else f"{round(x * 100)}%"
 
-def usd(x):
-    return "n/a" if x is None else f"${x:.2f}"
-
 o = data["overall"]
 md = ["# Morphness evidence summary", "",
       f"Generated {data['generated']} from the project's own run records. Counts and rates only: no feature names, "
@@ -259,7 +267,6 @@ md = ["# Morphness evidence summary", "",
       + (f", Morphness release {data['morphness_release']}" if data["morphness_release"] and "{{" not in data["morphness_release"] else ""),
       f"- **Quality:** {pct(o['first_time_pass'])} passed QA first time; {o['avg_qa_rounds'] if o['avg_qa_rounds'] is not None else 'n/a'} QA rounds per feature on average",
       f"- **Escapes:** {escaped} bugs recorded as found after QA passed (counted from `Escaped` lines in learnings files not yet folded by a prune)",
-      f"- **Cost:** average {usd(o['avg_cost_usd'])}, median {usd(o['median_cost_usd'])} per feature over {o['cost_measured']} measured; estimates at API list prices",
       (f"- **Git history:** {data['git']['commits']} commits on the integration branch since the first feature, {data['git']['fix_titles']} titled fix and {data['git']['reverts']} reverts (by commit title only; titles are a convention, not a measure of escapes)"
        if data["git"] else "- **Git history:** not read (no git history or no features dated)"),
       f"- **Retro items:** {items['applied']} applied, {items['skipped']} skipped, {items['open'] + items['deferred']} open or deferred",
@@ -270,10 +277,10 @@ md = ["# Morphness evidence summary", "",
 if causes:
     md += ["Failure causes, features not yet folded: " + ", ".join(f"{k} {n}" for k, n in sorted(causes.items())), ""]
 if windows:
-    md += ["## By prune window", "", "| Window | Ends | Features | QA first time | Avg QA rounds | Avg cost |", "|---|---|---|---|---|---|"]
+    md += ["## By prune window", "", "| Window | Ends | Features | QA first time | Avg QA rounds |", "|---|---|---|---|---|"]
     for w in windows:
         few = "" if w["enough_data"] else f" (fewer than {MIN_WINDOW}: too few to read a trend)"
-        md.append(f"| {w['window']} | {w['ends']} | {w['features']}{few} | {pct(w['first_time_pass'])} | {w['avg_qa_rounds']} | {usd(w['avg_cost_usd'])} |")
+        md.append(f"| {w['window']} | {w['ends']} | {w['features']}{few} | {pct(w['first_time_pass'])} | {w['avg_qa_rounds']} |")
     md.append("")
 md += [f"Records read: {read_files} learnings files, {folded_seen} folded entries"
        + (f" ({unread_entries} entry lines not read)" if unread_entries else "")
@@ -282,7 +289,6 @@ md += ["## Read with care", "",
        "- Every figure is recorded by the project's own agents and has not been audited.",
        "- Escapes are under-counted: a bug found by a fix PR only counts once someone records its `Escaped` line.",
        "- Windows that mix different models, effort levels or feature sizes are not like for like.",
-       "- Cost is an estimate at public API prices, not a bill.",
        "- Without a control, these figures show what the process produced, not what it saved."]
 text = "\n".join(md) + "\n"
 

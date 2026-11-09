@@ -23,7 +23,7 @@
     { "name": "production", "branch": "main", "deploy": "host", "real_data": true }
   ],
   "apps": [],
-  "modules": ["roadmap", "data-access", "browser-e2e", "legal", "security"],
+  "modules": ["roadmap", "data-access", "browser-e2e", "legal", "security", "autonomous"],
   "checks": {
     "before_qa": ["install", "typecheck", "lint", "unit", "build", "e2e-targeted", "secrets", "audit"],
     "before_signoff": ["install", "typecheck", "lint", "unit", "build", "e2e-full", "secrets", "audit"]

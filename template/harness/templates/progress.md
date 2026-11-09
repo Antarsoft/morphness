@@ -20,6 +20,15 @@ Status values: `todo` | `doing` | `done`
 
 Include a final plan step **Validation** (or track below); it must be `done` before handoff.
 
+## Reproduction (bug mode with `mode.bug_repro: fullstack` only)
+
+*Delete this section otherwise. Filled before any fix, then the test is committed alone as `WIP(<slug>): failing test`.*
+
+- **Commit:** `git rev-parse --short HEAD` before the test was added.
+- **Test:** the file and test name from `plan.md` § Regression test.
+- **Command and exit code:** the command run, and its non-zero exit code.
+- **Failure:** the last lines of the failure, and whether it matches § Regression test → **Fails today because**.
+
 ## Root cause (bug mode only)
 
 *Delete this section outside bug mode. Written before the fix (`harness/MODES.md` § Bug mode, step 3); the TL checks it against the code before QA.*
@@ -32,7 +41,7 @@ Include a final plan step **Validation** (or track below); it must be `done` bef
 
 ## Validation (required before handoff)
 
-Run every `before_qa` check in `harness/CONTROLS.md` § Before Full-stack → QA handoff from the **repo root** after the implementation steps (commands: `project/CONTROLS.md`). Record each check and its **exit code** (0 = pass), one row per check CONTROLS.md requires for this feature. Do not hand to the Technical Lead until all required checks pass.
+Run every `before_qa` check in `harness/CONTROLS.md` § Before Full-stack → QA handoff from the **repo root** after the implementation steps (commands: `project/CONTROLS.md`). Record each check and its **exit code** (0 = pass), one row per check CONTROLS.md requires for this feature. The `checks.on_stop` checks get `end-of-task hook` in the Exit code column: they run when you finish, and a failure sends you back (`harness/CONTROLS.md` § End-of-task checks). Do not hand to the Technical Lead until all required checks pass.
 
 Scope each check by the diff (`harness/CONTROLS.md` § Scoping by what changed). Diff command: <paste it>
 

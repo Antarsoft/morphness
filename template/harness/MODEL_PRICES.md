@@ -4,7 +4,7 @@ What `scripts/feature-cost.sh` multiplies token counts by to estimate what a fea
 
 `/morph-init` reads the ratio between models from this table to tell the owner how the Opus preset compares with All Sonnet (relative, never dollars).
 
-Prices as of: 2026-10-06
+Prices as of: 2026-10-31
 
 The public Anthropic API list prices, in US dollars per million tokens. Kit updates refresh this table when prices change or a model is added. To use your own rates instead (Amazon Bedrock, Google Cloud, a negotiated discount), edit the numbers and the date above; `/morph-update` keeps your edits when it merges a later price update. A model that isn't listed shows as "unpriced", never as $0. A model cell ending in `(prompt > N)` is the rate for requests whose whole prompt (input plus cache) is above N tokens.
 
@@ -17,7 +17,7 @@ The public Anthropic API list prices, in US dollars per million tokens. Kit upda
 | claude-opus-4-8 | 5.00 | 25.00 | 6.25 | 10.00 | 0.50 |
 | claude-opus-4-7 | 5.00 | 25.00 | 6.25 | 10.00 | 0.50 |
 | claude-opus-4-6 | 5.00 | 25.00 | 6.25 | 10.00 | 0.50 |
-| claude-sonnet-5-5 | 2.00 | 10.00 | 2.50 | 4.00 | 0.20 |
+| claude-sonnet-5-5 | 2.00 | 10.00 | 2.50 | 4.00 | 0.10 |
 | claude-sonnet-5 | 2.00 | 10.00 | 2.50 | 4.00 | 0.20 |
 | claude-sonnet-4-6 | 3.00 | 15.00 | 3.75 | 6.00 | 0.30 |
 | claude-haiku-5-5 | 0.10 | 0.50 | 0.125 | 0.20 | 0.01 |
@@ -27,3 +27,5 @@ The public Anthropic API list prices, in US dollars per million tokens. Kit upda
 Fast mode multiplier: 2
 
 Web search per request: $0.01
+
+To check the table against Claude Code's own figure: run a short task headless with `claude -p --output-format json "<task>"`, note `session_id` and `total_cost_usd` from its result, then run `bash scripts/feature-cost.sh --session <session_id>`. The two should agree to the cent. A larger gap means a rate here is stale (compare the table with Anthropic's pricing page) or the session called a model the table doesn't list. Claude Code's figure also counts its own small background calls (session titles and the like), which aren't in the transcripts; they cost a fraction of a cent.

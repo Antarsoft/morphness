@@ -8,7 +8,15 @@
 # listed with blank columns under --all (list bullets in CLAUDE.md, AGENTS.md, .claude/rules and project/;
 # the kit's own harness/ text is not counted, it is tagged only once a retro changes it).
 # Usage: bash scripts/learned-rules.sh [--all]   (from anywhere in the repo)
+# Exits 1 when git or python3 is missing or a file it reads isn't UTF-8, 2 on an unknown option.
 
+for arg in "$@"; do
+  case "$arg" in
+    --all) ;;
+    *) echo "usage: bash scripts/learned-rules.sh [--all] (unknown option: $arg)" >&2; exit 2 ;;
+  esac
+done
+command -v git >/dev/null 2>&1 || { echo "learned-rules.sh needs git (to find the repo's top folder)" >&2; exit 1; }
 cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)" || exit 1
 command -v python3 >/dev/null 2>&1 || { echo "learned-rules.sh needs python3" >&2; exit 1; }
 read -r -d '' program <<'PY' || true
@@ -22,6 +30,8 @@ def read(path):
         return open(path, encoding="utf-8").read()
     except OSError:
         return ""
+    except UnicodeDecodeError as err:
+        sys.exit(f"learned-rules.sh: {path} is not valid UTF-8 (at byte {err.start}); save it as UTF-8 and run it again")
 
 # Fired lines: slug -> latest day. A learnings file carries the day in its heading; a folded entry
 # in LEARNINGS.md carries it on its own line.

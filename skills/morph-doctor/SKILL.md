@@ -27,12 +27,20 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
   `modules` (stale rules agents would read). Offer the fix through `/morph-module add <name>` (a
   module listed but never installed) or `/morph-module remove <name>` (a folder left behind).
 - Every agent file under `.claude/agents/` points at a body under `harness/agents/` that exists.
-- **Required tools:** `git`, `python3`, `awk` and `perl` are on PATH (`command -v`), and `bash` is the
-  shell the hooks run in (native Windows without Git Bash is not supported). Report each missing one with
-  what stops working: no `python3` makes `scripts/guard.sh` block every tool call (it fails closed; `guard.fail_open: true` lets them through) and stops the prune
-  counter and cost scripts; no `awk` stops every script that reads `harness.config.yml`; no `perl` stops
-  `/morph-module remove`; no `git` stops the process. `timeout` (or `gtimeout`) missing: say that
-  `scripts/session-start.sh` then runs without a time limit.
+- **Required tools:** `git`, `python3`, `awk`, `perl`, `grep`, `sed`, `sort`, `tr` and `wc` are on PATH
+  (`command -v`), `python3 -I -c 'import sys; print(sys.version_info >= (3, 7))'` prints `True` (a stub
+  python3, such as macOS's before the Command Line Tools are installed or the Microsoft Store alias, passes
+  `command -v` but not this), and `bash` is the shell the hooks run in (native Windows without Git Bash is
+  not supported). Report each gap with what stops working: no `python3` makes `scripts/guard.sh` block
+  every tool call (it fails closed; `guard.fail_open: true` lets them through) and stops the cost, evidence
+  and learned-rules scripts (the prune counter runs without its trial and rule-tag counts); a stub or a
+  Python older than 3.7 leaves the guard unable to check calls (a stub that fails blocks every call, one
+  that exits 0 lets every call through unchecked, an older Python misses some; `guard.fail_open` doesn't
+  apply); no `awk` makes every `harness.config.yml` setting read as
+  empty, so the guard protects no branch and the other scripts run on their defaults or stop with a
+  not-measured line; no `perl` stops `/morph-module remove`; no `grep`, `sed`, `sort`, `tr` or `wc` stops
+  the prune counter (and without `grep`, `sort` or `tr` the guard protects no branch); no `git` stops the process. Neither `timeout` nor `gtimeout` (stock macOS): say that
+  `scripts/session-start.sh` uses perl for its time limit, and runs without one when perl is missing too.
 - **Session commands:** `.git/morphness-session-commands` exists and matches the two commands in
   `scripts/session-start.sh`. A mismatch means the commands changed since this clone last ran them and
   session start is holding them: show the owner both versions and, on a yes, run
@@ -43,12 +51,42 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
   `2026-10-17-guard-hook`). `guard.mcp_writes: off`: mention once that connector writes then rely on
   the named `ask` rules alone; `guard.deploys`, `guard.publishes`, `guard.schema_pushes`, `guard.network` or `guard.installs: off` the
   same for that group (nothing asks before it runs).
+- **Guard integrity:** each finding here is the owner's to fix by hand, because the guard denies an agent's
+  write to these files. Report:
+  - `scripts/guard.sh` or a file in `scripts/lib/` that differs from the kit's copy at `installed_from.commit`
+    (`read(<commit>, template/scripts/guard.sh)` through `/morph-update` § 1's source; "not checked" when the
+    source can't be read). Name the differing lines; a project may have edited them on purpose, so ask.
+  - The guard entries in `.claude/settings.json` (PreToolUse and ConfigChange): each is `"type": "command"`,
+    runs `scripts/guard.sh` through the template's wrapper that turns any other exit into 2, with a `timeout`
+    of at least 30, and the PreToolUse `matcher` is a valid pattern that names every tool the template's does.
+    Also any `disableAllHooks` value but `false`, `defaultMode: bypassPermissions`, every `env` entry (each
+    reaches the hook), and every other hook or helper command (`statusLine`, `apiKeyHelper` …): it runs with
+    no check, so name it.
+  - Each `permissions.deny` and `permissions.ask` rule the template ships (with the branches filled in) that is
+    missing; added rules are fine.
+  - Every `guard:` switch set to `off`, any `allow_hosts` and `fail_open` set to `true`, `yes` or `on`, in one
+    line, so the owner sees what the guard no longer asks about.
 - **Permission prompts:** `.claude/settings.json` has `permissions.defaultMode` and the check allow rules
   (`/morph-init` Q14). Missing in an installed copy: say that file edits and every check command prompt in
   Claude Code's default mode, and offer to add them from the template's `.claude/settings.json` and
   `project/CONTROLS.md` (update note `2026-10-20-fewer-permission-prompts`). A project that answered no
   keeps its prompts; don't offer again. A `Bash(<interpreter>:*)` allow rule (`bash`, `sh`, `npx`, `node`,
-  `python`) lets any code through without a prompt: report it.
+  `python`) lets any code through without a prompt: report it. For each named check that runs a test runner
+  (jest, vitest, mocha, Playwright, pytest, `go test`, `cargo test`, read from the command or the `package.json`
+  script it calls), warn when no allow rule covers the runner's single-file form (`Bash(npx jest:*)`, the list in
+  `/morph-init`'s render.md § 3b): agents then can't run one test file without a prompt, and in an autonomous run
+  QA is refused with none. Offer to add the rule (update note `2026-11-08-single-test-allow-rules`).
+- **Settings, agent files and config agree:** `.claude/settings.json` → `model`, when set, is `agents.technical_lead.model`
+  (or that model's full id). Each row of `project/HARNESS_AGENTS.md` § Agents names an agent file and the `agents`
+  key its model comes from: that file exists, its `model:` is the key's value (or that model's full id) and its `effort:` is
+  the row's. Every `.claude/agents/*.md` file has a row (a trial variant too, § Trials). For each role, the row marked
+  `(default)` has the effort of the role's `default` in the config, and its rows' efforts are the role's `variants`;
+  and `permissions.defaultMode` is what the install answers asked
+  (`_harness/morph-answers.yml` → `permissions.accept_edits`: `acceptEdits` when true, no key when false;
+  skip the mode check when that file or its `permissions` key isn't there).
+  Report each difference, unless `project/HARNESS_AGENTS.md` records that the owner chose it: the main chat
+  then runs a model or mode that the config, the advice and `scripts/feature-cost.sh`'s prices don't
+  describe. Offer to change either side, the owner picks.
 - Module markers (`harness/README.md` § Modules → **Module markers**): no `module:<name>` marker
   for a module missing from `modules` (text left from a removal: offer the removal command), and every
   `<!-- module:<name> -->` opening line has its closing line.
@@ -90,7 +128,9 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
   deleteBranchOnMerge`); offer render.md § 7b step 2 when it doesn't. Flag
   `delete_merged_branches: true` with `enabled: false`: an unprotected environment branch would be
   deleted when a release PR from it merges.
-- With the ci-cd module: every path in `ci_cd` exists; the CI workflow has one step per `before_qa`
+- With the ci-cd module: `ci_cd.ci: none` (and `ci_cd.tags: none` with `release_tags: true`): ask whether
+  that was on purpose, because an install that couldn't write a workflow leaves this state; if not, offer to
+  write the accepted scaffolds (render.md § 4). Every path in `ci_cd` exists; the CI workflow has one step per `before_qa`
   check whose command matches `project/CONTROLS.md` (report each missing or differing step); no runner
   image ends in `-latest`; the CI workflow uses `pull_request`, not `pull_request_target`, lists `ready_for_review` in its
   `types` and has a `merge_group` trigger, skips drafts exactly when `ci_cd.on_drafts` is false (and the value in the `if:` line is the literal `true` or `false`, not a placeholder or other text), every `uses:` pins a full 40-character commit SHA (a version tag or branch is reported; the fix is to pin the SHA the tag points to), and reads no
@@ -105,6 +145,12 @@ dependencies, so it is not a read-only check. A row whose command is "none" or "
   command redacts (gitleaks: `--redact`); `project/CONTROLS.md` § Security paths is filled; and each
   row in § Security exceptions has a reason, an approval and a review date that hasn't passed (report
   each one past it).
+- With the autonomous module: `roadmap` is in `modules` (the run writes owner items to the version
+  checklist); `auto.branch` is none of the integration, production or environment branches;
+  `harness/templates/auto/` and `scripts/auto/` hold the files the module's § On remove lists;
+  and the `module:autonomous` approver line is in each plan template's
+  § Approval. With `auto.enabled: true`, `auto.budget_usd` and `loop.feature_budget_usd` are above 0
+  (a run refuses to start otherwise; say so, it isn't a fault).
 - `release_tags: per-package`: the versioning tool named in `project/RELEASE.md` § Versions has its
   config in the repo (`.changeset/config.json`, `nx.json` → `release`, `release-please-config.json`,
   `lerna.json`), and no Morphness tag workflow is in `ci_cd.tags`. Any other value than `true`,
@@ -141,7 +187,9 @@ From `_harness/`:
 - **Prune due:** run `bash scripts/prune-counter.sh` (when the copy lacks it, count the `*-v*.md` files
   in `_harness/learnings/`). When it prints `Prune is DUE` or `Prune proposal waiting`, say "Prune due" and point to
   `harness/SETUP.md` § Prune, naming the `proposed` file in `_harness/prunes/` waiting for the owner, or
-  "no proposal yet" (the TL writes it as its next task). Report its `Rules:`, `Checklists:` and `Project docs:` gauge lines as they are, and name the largest files when one is above 90% of its budget (`loop.rule_budget_kb`, `loop.checklist_budget_kb`, `loop.project_docs_budget_kb`). A copy whose script prints no `Rules:` line:
+  "no proposal yet" (the TL writes it as its next task). Report its `Rules:`, `Checklists:` and `Project docs:` gauge lines as they are, and name the largest files when one is above 90% of its budget (`loop.rule_budget_kb` plus `loop.owner_rules_kb`, `loop.checklist_budget_kb`, `loop.project_docs_budget_kb`). When it prints a `not measured` line (it exits
+  2, or 1 with a budget over), report that line: a missing tool or a record that isn't UTF-8 for the owner
+  to fix, not drift. A copy whose script prints neither a `Rules:` line nor a `not measured` line:
   point to `/morph-update` (update note `2026-10-17-rule-budget`). A missing script is drift worth naming: `/morph-update` adds it.
 - **Feature cost:** with `cost.track` on (or no `cost:` key), `bash scripts/feature-cost.sh` runs and
   prints a `Cost` line (in a fresh session it may say `not measured`, which is fine; a Python error
@@ -155,7 +203,8 @@ From `_harness/`:
   `applied` for more than two features.
 - **Trials:** active trials in `_harness/trials/` (the `Trial` lines `scripts/prune-counter.sh` prints) that have run their length with no decision. A copy that still keeps trials as rows in `_harness/LEARNINGS.md` § Trials: check those, and point to `/morph-update` (update note `2026-10-17-trial-files`).
 - **Stuck features:** feature folders whose `plan.md` Status is `approved` with no `progress.md`, or
-  `progress.md` marked complete with no `qa-result.md`.
+  `progress.md` marked complete with no `qa-result.md`. A small plan (`**Mode:** small`) has neither:
+  it is stuck when it stays `approved` with an empty § Check for more than a week.
 
 ## 3. Learned rules
 

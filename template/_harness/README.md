@@ -9,10 +9,8 @@ features/
   <feature-slug>/
     <version>/
       Plan/
-        feature.md
-        plan.md
-        review.md      # TL: code review findings (Full-stack xhigh only)
-        retro.md       # TL: retrospective (after QA pass or escalation)
+        plan.md        # TL: the request, the plan and its acceptance criteria
+        review.md      # TL: code review findings (risk path or Full-stack xhigh)
       Research/
         <topic>.md     # researcher: optional research before the plan
       Legal/

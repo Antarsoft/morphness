@@ -17,7 +17,7 @@
 
 **Statuses**
 
-- `tested`: something runs and can fail. It needs at least one `guard` or `selftest` proof.
+- `tested`: something runs and can fail. It needs at least one `guard` or `selftest` proof, and that proof has to name a check that runs the behaviour itself. A `selftest` proof only shows that a check of that name is in the test file, so a claim whose checks only find a sentence in the kit's text is `present`, not `tested`.
 - `present`: the mechanism is in the kit's own text (a rule, an agent, a script), and the self-test confirms it is there, but nothing runs a model to check that a session follows it.
 - `judgement`: the claim is partly a matter of opinion ("easy", "any codebase"). The entry names the closest measurable stand-in as its proofs and says in `note` what stays unproven. These are counted in the self-test summary, so the number can't grow unnoticed.
 

@@ -3,6 +3,7 @@ name: release-check
 # so findings show before the tag is made. Report only: the job never fails the PR (continue-on-error) and the
 # page it writes goes to a temporary folder, not the repo. Release PRs are the ones that bump the plugin build number.
 # Everything runs on the runner: agnix and SkillSpector use their static modes, no model is called.
+# The page that goes public is made after the tag, by release.yml.
 on:
   pull_request:
     paths: [".claude-plugin/plugin.json"]

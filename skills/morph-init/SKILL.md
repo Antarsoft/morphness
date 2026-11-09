@@ -7,7 +7,7 @@ description: Install and set up the Morphness harness in the current repository,
 
 You are installing Morphness into the repository in the current working directory. Morphness is a
 multi-agent harness: a Technical Lead in the main chat plans and delegates, a Full-stack subagent
-implements, a QA subagent validates, a read-only researcher subagent answers questions about the code or the web, a legal-writer subagent drafts legal wording, and a retro and prune
+implements, a QA subagent validates, a read-only researcher subagent answers questions about the code or the web, a code scout maps the code before a full-mode plan into a file the later agents read, a feature closer drafts the closing records after QA, a legal-writer subagent drafts legal wording, and a retro and prune
 loop changes the harness itself as the project goes. After install, the copy belongs to the project and
 is expected to change. Nothing upstream overwrites it: `/morph-update` later offers upstream kit
 updates and lessons one at a time, merged with the project's own edits.
@@ -15,7 +15,9 @@ updates and lessons one at a time, merged with the project's own edits.
 Work through the phases below in order. Ask **one question at a time**, always with a suggested answer
 the user can accept with "yes" or Enter. Skip any question whose answer you already know from the repo,
 an answers file or an earlier answer, and say what you inferred instead. Keep each question to a line or
-two, with options on short lines and your suggestion marked.
+two, with options on short lines and your suggestion marked. An install is **unattended** when an
+answers file stands in for the owner (it says they aren't there and gives the final yes): then nothing
+waits for a reply, and render.md says what to do where a step needs the owner.
 
 **Plain language.** Write every question, summary and hand-off for someone who has never used git:
 the owner may be a designer or a founder, not a developer. The first time a term like repository,
@@ -29,16 +31,30 @@ with real values filled in (repository, branch, file, folder), never a bare comm
 
 1. **Locate the Morphness source.** In order: this skill's own plugin folder (`template/` two levels up
    from this file), or a local clone the user names (INSTALL.md has the user or their agent clone it
-   first). Never download it yourself. Record the source repo URL and commit (`git rev-parse HEAD`)
-   for `installed_from`, and the release: the newest release heading in the source's `CHANGELOG.md` (`2026-10-14` or
-   `2026-10-14.2`, the first one below `## Unreleased`).
+   first). Never download it yourself. Record for `installed_from` the source repo URL, its full
+   commit (`git -C <source> rev-parse HEAD`) and the release: the release tag that commit is
+   (the newest `v*` tag that `git -C <source> tag --points-at HEAD` lists, such as `v0.15.0`), else the newest release heading in
+   the source's `CHANGELOG.md` (the first one below `## Unreleased`) with `+` and the commit's first 7
+   characters, as in `v0.15.0+ce3921d`: changes merged after that release. A source with no git
+   history of its own (`git -C <source> rev-parse --show-toplevel` isn't the source folder, as in a
+   plugin folder): commit `unknown` and the newest heading alone; `/morph-update` then starts from that
+   release's tag.
 2. **Check the target.** `git status` must be clean, apart from files `scripts/install.sh` just copied
    (ask the user to commit or stash anything else; never do it yourself). If `harness.config.yml`
-   exists and still has `{{` placeholders, the files were copied by `scripts/install.sh`: carry on and
-   skip the copy step in render.md. If it exists and is filled in, stop and suggest `/morph-update`
+   exists and still has the kit's placeholders (`grep -E '\{\{ *(project|human|morphness)\.'
+   harness.config.yml` finds one; a project's own `{{name}}` text doesn't count), the files were copied by `scripts/install.sh`: carry on; the
+   copy step in render.md then copies only what that copy left out. If it exists and is filled in but
+   the install never finished (`.claude/settings.json` is missing or its `hooks.PreToolUse` doesn't run
+   `scripts/guard.sh`, or `harness.config.yml` isn't committed yet: `git ls-files harness.config.yml`
+   prints nothing), an earlier run stopped before its end: say so, take the answers from
+   `_harness/morph-answers.yml`, and resume at render.md § 6b (with `_harness/pending/settings.json`
+   when it is there: check it again, write it, then delete it), then § 7 and § 8. The uncommitted kit
+   files are that run's work, not changes to stash. If it is filled in, wired and committed, stop and suggest `/morph-update`
    (upstream changes) or `/morph-doctor` (health check) instead: morph-init never overwrites an
    installed harness.
-   If there is no `harness.config.yml` but the repo already runs an earlier harness of this shape
+   If there is no `harness.config.yml` and `harness/SETUP.md` is byte for byte the template's, a run of
+   `scripts/install.sh` stopped during its copy: this is a plain install, and render.md § 2 finishes the copy.
+   Otherwise, if there is no `harness.config.yml` but the repo already runs an earlier harness of this shape
    (a `harness/` folder with `SETUP.md` or `PLAN_CHECKLIST.md`, a `_harness/` folder, or a
    `HARNESS_VERSION` file), this is a **migration**: say so, and follow `references/render.md`
    § Migrating an earlier harness instead of the plain copy. A no-clobber copy would skip every kit
@@ -100,13 +116,15 @@ areas, model and effort per agent, Claude Projects advice (if used), the pipelin
 module) with their owner steps, accepted skills, connectors and lessons, the list of files that
 will be created, and, when they apply, the first commit of the existing files and the repository to
 create online (render.md § 1). Ask for a final yes. Nothing is written to the target before this yes, except
-`morph-answers.yml`.
+`morph-answers.yml`. Say that the guard turns on when the install writes `.claude/settings.json`, its last
+file (render.md § 6b), so the install itself runs without its prompts, and that Claude Code asks once
+before that write (unattended, the file waits in `_harness/pending/` for the owner to move into place).
 
 ## Phase 4: Render
 
 Follow `references/render.md`: create a branch, copy `template/` without overwriting, fill placeholders,
-apply modules, merge accepted lessons, wire the accepted skills and connectors, and run the
-self-checks. Then commit on the branch and, if the user agrees, push and open a PR to the integration
+apply modules, merge accepted lessons, wire the accepted skills and connectors, write
+`.claude/settings.json` last, and run the self-checks. Then commit on the branch and, if the user agrees, push and open a PR to the integration
 branch (or to the only branch, for a single-branch flow).
 
 ## Phase 5: Hand-off

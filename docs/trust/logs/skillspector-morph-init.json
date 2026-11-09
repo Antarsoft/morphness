@@ -2,21 +2,21 @@
  "skill": {
   "name": "morph-init",
   "source": "<repo>/skills/morph-init",
-  "scanned_at": "2026-10-20T17:14:24.189843+00:00"
+  "scanned_at": "2026-11-09T06:51:26.007794+00:00"
  },
  "risk_assessment": {
-  "score": 0,
-  "severity": "LOW",
-  "recommendation": "CAUTION",
-  "max_issue_severity": "NONE"
+  "score": 54,
+  "severity": "HIGH",
+  "recommendation": "DO_NOT_INSTALL",
+  "max_issue_severity": "HIGH"
  },
  "components": [
   {
    "path": "SKILL.md",
    "type": "markdown",
-   "lines": 127,
+   "lines": 148,
    "executable": false,
-   "size_bytes": 8800,
+   "size_bytes": 11338,
    "source_url": null,
    "source_identity": null,
    "source_digest": null
@@ -26,7 +26,7 @@
    "type": "markdown",
    "lines": 85,
    "executable": false,
-   "size_bytes": 7004,
+   "size_bytes": 7097,
    "source_url": null,
    "source_identity": null,
    "source_digest": null
@@ -34,9 +34,9 @@
   {
    "path": "references/questions.md",
    "type": "markdown",
-   "lines": 314,
+   "lines": 348,
    "executable": false,
-   "size_bytes": 20798,
+   "size_bytes": 24183,
    "source_url": null,
    "source_identity": null,
    "source_digest": null
@@ -44,16 +44,293 @@
   {
    "path": "references/render.md",
    "type": "markdown",
-   "lines": 282,
+   "lines": 352,
    "executable": false,
-   "size_bytes": 21735,
+   "size_bytes": 30480,
    "source_url": null,
    "source_identity": null,
    "source_digest": null
   }
  ],
  "structured_summaries": [],
- "issues": [],
+ "issues": [
+  {
+   "id": "AS1",
+   "finding_id": "finding-db73c63a90c14b56bfd0e8233a723241",
+   "category": "Agent Snooping",
+   "pattern": "Agent Config Directory Access",
+   "severity": "HIGH",
+   "confidence": 0.9,
+   "location": {
+    "file": "references/render.md",
+    "start_line": 87,
+    "end_line": null,
+    "start_column": 18
+   },
+   "finding": "/.claude/settings.json",
+   "explanation": "Skill reads from agent configuration directories (.claude/, .codex/, .gemini/). These directories may contain API keys, personal settings, and other credentials that the skill has no legitimate need to access.",
+   "remediation": "Remove all code or instructions that access agent configuration directories (.claude/, .codex/, .gemini/). If configuration values are needed, pass them explicitly as parameters or environment variables \u2014 never read the agent's own config files.",
+   "code_snippet": "## 3. Fill placeholders\n\nEvery change \u00a7\u00a7 3 to 6 make to `.claude/settings.json` goes into \u00a7 6b's build of that file, away from\n`T`, never into `T/.claude/settings.json` itself. Replace every `{{key}}` in the copied files with its answer. Keys: `project.name`, `project.description`,\n`human.name`, `human.github` (the owner), `branches.integration`, `branches.production`, `stack.summary`,\n`stack.package_manager`, `stack.toolchain_setup`, `stack.install_cmd`, `cmd.<check-name>`, `models.tl`,\n`models.fullstack`, `models.fullstack_medium`, `models.qa`, `models.qa_medium`, `models.researcher`, `models.researcher_high`, `models.scout`, `models.closer`, `models.legal`, `morphness.repo`, `morphness.commit`, `morphness.release`,",
+   "intent": null,
+   "tags": [
+    "Agent Snooping"
+   ],
+   "evidence": {},
+   "match_fingerprint": "9a096e2d277dda90f4befa1391b4432af9c6d74a1427a31576f9885952bd7e30",
+   "occurrences": [
+    {
+     "file": "references/render.md",
+     "start_line": 87,
+     "end_line": null,
+     "start_column": 18
+    }
+   ]
+  },
+  {
+   "id": "AS1",
+   "finding_id": "finding-af60ce241b794fcf8f167b8f13d9b331",
+   "category": "Agent Snooping",
+   "pattern": "Agent Config Directory Access",
+   "severity": "HIGH",
+   "confidence": 0.9,
+   "location": {
+    "file": "references/render.md",
+    "start_line": 248,
+    "end_line": null,
+    "start_column": 17
+   },
+   "finding": "/.claude/settings.json",
+   "explanation": "Skill reads from agent configuration directories (.claude/, .codex/, .gemini/). These directories may contain API keys, personal settings, and other credentials that the skill has no legitimate need to access.",
+   "remediation": "Remove all code or instructions that access agent configuration directories (.claude/, .codex/, .gemini/). If configuration values are needed, pass them explicitly as parameters or environment variables \u2014 never read the agent's own config files.",
+   "code_snippet": "   left (`grep -cE '\\{\\{ *(project|human|branches|stack|cmd|models|morphness|ci|environments|branch_protection)\\.' <file>` prints `0`; a user's\n   own `{{\u2026}}` text, such as a status line format, stays), and `hooks.PreToolUse` runs `scripts/guard.sh`.\n   Fix the copy until all three hold.\n3. Write it to `T/.claude/settings.json` with one Write of its full text. Claude Code asks the owner\n   before any write to its own settings file, so this is the one prompt an attended install gets.\n\n**When the write is refused**, because nobody is there to answer (an unattended run: an answers file",
+   "intent": null,
+   "tags": [
+    "Agent Snooping"
+   ],
+   "evidence": {},
+   "match_fingerprint": "9a096e2d277dda90f4befa1391b4432af9c6d74a1427a31576f9885952bd7e30",
+   "occurrences": [
+    {
+     "file": "references/render.md",
+     "start_line": 248,
+     "end_line": null,
+     "start_column": 17
+    }
+   ]
+  },
+  {
+   "id": "EA2",
+   "finding_id": "finding-a0231dcb3e014df5932c9089605cb82c",
+   "category": "Excessive Agency",
+   "pattern": "Autonomous Decision Making",
+   "severity": "MEDIUM",
+   "confidence": 0.85,
+   "location": {
+    "file": "references/questions.md",
+    "start_line": 298,
+    "end_line": null,
+    "start_column": 31
+   },
+   "finding": "Auto-approve",
+   "explanation": "Skill enables autonomous high-impact decisions without human-in-the-loop verification. Critical operations (destructive commands, financial transactions, data deletion) should require explicit user confirmation.",
+   "remediation": "Add human-in-the-loop confirmation for destructive, irreversible, or high-impact operations. Never auto-execute commands that modify files, send data, or alter system state.",
+   "code_snippet": "\n\"Agents write plan files, code and harness docs inside the project all day, and run the same checks every\nfeature. Without help, Claude Code asks you about each one and you end up approving by habit, which\nhides the prompts that matter. Auto-approve file edits inside the project, and the check commands you\njust gave me? The guard's prompts (deploys, publishes, remote databases, secrets, merges, its own files)\nand the deny rules stay either way.\" Default yes for both, asked as one yes/no. No keeps the plain\nClaude Code prompts: remove `permissions.defaultMode` from `.claude/settings.json` and add no check",
+   "intent": null,
+   "tags": [
+    "Excessive Agency"
+   ],
+   "evidence": {},
+   "match_fingerprint": "2bc2097f5a24b7a009cb4f5943903c6bd4ce6a54c787f7b7b355553150219a5a",
+   "occurrences": [
+    {
+     "file": "references/questions.md",
+     "start_line": 298,
+     "end_line": null,
+     "start_column": 31
+    }
+   ]
+  },
+  {
+   "id": "RP1",
+   "finding_id": "finding-9bd9aa058a39495184182d8428b6da71",
+   "category": "MCP Rug Pull",
+   "pattern": "MCP server referenced without pinned version: 'npx vitest'.",
+   "severity": "MEDIUM",
+   "confidence": 0.7,
+   "location": {
+    "file": "references/render.md",
+    "start_line": 141,
+    "end_line": null
+   },
+   "finding": "npx vitest",
+   "explanation": "npx commands without a version suffix (e.g. @1.0.0) create a rug-pull risk if the upstream server is compromised and publishes a malicious update.",
+   "remediation": "Pin the version: npx @scope/server@1.2.3",
+   "code_snippet": null,
+   "intent": null,
+   "tags": [
+    "ASI16"
+   ],
+   "evidence": {},
+   "match_fingerprint": "6649a3cb9740edab54a15b4223ea395c08f96163f29327395615564af5bbcf11",
+   "occurrences": [
+    {
+     "file": "references/render.md",
+     "start_line": 141,
+     "end_line": null
+    }
+   ]
+  },
+  {
+   "id": "RP1",
+   "finding_id": "finding-40df8ad192504051ae84681e7e9045b9",
+   "category": "MCP Rug Pull",
+   "pattern": "MCP server referenced without pinned version: 'npx vitest'.",
+   "severity": "MEDIUM",
+   "confidence": 0.7,
+   "location": {
+    "file": "references/render.md",
+    "start_line": 146,
+    "end_line": null
+   },
+   "finding": "npx vitest",
+   "explanation": "npx commands without a version suffix (e.g. @1.0.0) create a rug-pull risk if the upstream server is compromised and publishes a malicious update.",
+   "remediation": "Pin the version: npx @scope/server@1.2.3",
+   "code_snippet": null,
+   "intent": null,
+   "tags": [
+    "ASI16"
+   ],
+   "evidence": {},
+   "match_fingerprint": "6649a3cb9740edab54a15b4223ea395c08f96163f29327395615564af5bbcf11",
+   "occurrences": [
+    {
+     "file": "references/render.md",
+     "start_line": 146,
+     "end_line": null
+    }
+   ]
+  },
+  {
+   "id": "RP1",
+   "finding_id": "finding-489bb1cb42bf49f8b664f69e35c89ef2",
+   "category": "MCP Rug Pull",
+   "pattern": "MCP server referenced without pinned version: 'npx jest'.",
+   "severity": "MEDIUM",
+   "confidence": 0.7,
+   "location": {
+    "file": "references/render.md",
+    "start_line": 145,
+    "end_line": null
+   },
+   "finding": "npx jest",
+   "explanation": "npx commands without a version suffix (e.g. @1.0.0) create a rug-pull risk if the upstream server is compromised and publishes a malicious update.",
+   "remediation": "Pin the version: npx @scope/server@1.2.3",
+   "code_snippet": null,
+   "intent": null,
+   "tags": [
+    "ASI16"
+   ],
+   "evidence": {},
+   "match_fingerprint": "093ce412b9292027ed0153cd7e7c37e77e163cf341c2e37f2a7f21345b3dd888",
+   "occurrences": [
+    {
+     "file": "references/render.md",
+     "start_line": 145,
+     "end_line": null
+    }
+   ]
+  },
+  {
+   "id": "RP1",
+   "finding_id": "finding-3a421c62045f49368d09189d3265e984",
+   "category": "MCP Rug Pull",
+   "pattern": "MCP server referenced without pinned version: 'npx jest'.",
+   "severity": "MEDIUM",
+   "confidence": 0.7,
+   "location": {
+    "file": "references/render.md",
+    "start_line": 150,
+    "end_line": null
+   },
+   "finding": "npx jest",
+   "explanation": "npx commands without a version suffix (e.g. @1.0.0) create a rug-pull risk if the upstream server is compromised and publishes a malicious update.",
+   "remediation": "Pin the version: npx @scope/server@1.2.3",
+   "code_snippet": null,
+   "intent": null,
+   "tags": [
+    "ASI16"
+   ],
+   "evidence": {},
+   "match_fingerprint": "093ce412b9292027ed0153cd7e7c37e77e163cf341c2e37f2a7f21345b3dd888",
+   "occurrences": [
+    {
+     "file": "references/render.md",
+     "start_line": 150,
+     "end_line": null
+    }
+   ]
+  },
+  {
+   "id": "RP1",
+   "finding_id": "finding-9ed49d23a436425793d3c55fb4dd3c76",
+   "category": "MCP Rug Pull",
+   "pattern": "MCP server referenced without pinned version: 'npx mocha'.",
+   "severity": "MEDIUM",
+   "confidence": 0.7,
+   "location": {
+    "file": "references/render.md",
+    "start_line": 146,
+    "end_line": null
+   },
+   "finding": "npx mocha",
+   "explanation": "npx commands without a version suffix (e.g. @1.0.0) create a rug-pull risk if the upstream server is compromised and publishes a malicious update.",
+   "remediation": "Pin the version: npx @scope/server@1.2.3",
+   "code_snippet": null,
+   "intent": null,
+   "tags": [
+    "ASI16"
+   ],
+   "evidence": {},
+   "match_fingerprint": "4a07c4cbc9e46236e3213645c35d78c07622cbd32527eaa148802c7e8984ebb0",
+   "occurrences": [
+    {
+     "file": "references/render.md",
+     "start_line": 146,
+     "end_line": null
+    }
+   ]
+  },
+  {
+   "id": "RP1",
+   "finding_id": "finding-55014c43078345d88fcffb12d01d5404",
+   "category": "MCP Rug Pull",
+   "pattern": "MCP server referenced without pinned version: 'npx playwright'.",
+   "severity": "MEDIUM",
+   "confidence": 0.7,
+   "location": {
+    "file": "references/render.md",
+    "start_line": 146,
+    "end_line": null
+   },
+   "finding": "npx playwright",
+   "explanation": "npx commands without a version suffix (e.g. @1.0.0) create a rug-pull risk if the upstream server is compromised and publishes a malicious update.",
+   "remediation": "Pin the version: npx @scope/server@1.2.3",
+   "code_snippet": null,
+   "intent": null,
+   "tags": [
+    "ASI16"
+   ],
+   "evidence": {},
+   "match_fingerprint": "5d1e71786bcce07e288b1b7488d594b4d051d0f6efefb2c50641987706a012da",
+   "occurrences": [
+    {
+     "file": "references/render.md",
+     "start_line": 146,
+     "end_line": null
+    }
+   ]
+  }
+ ],
  "suppressed_count": 0,
  "suppressed": [],
  "metadata": {
@@ -195,36 +472,6 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 33,
-    "end_line": 33,
-    "fatal": false
-   },
-   {
-    "outcome": "partial",
-    "phase": "reference_resolution",
-    "reason_code": "reference_missing",
-    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
-    "path": "SKILL.md",
-    "start_line": 34,
-    "end_line": 34,
-    "fatal": false
-   },
-   {
-    "outcome": "partial",
-    "phase": "reference_resolution",
-    "reason_code": "reference_missing",
-    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
-    "path": "SKILL.md",
-    "start_line": 35,
-    "end_line": 35,
-    "fatal": false
-   },
-   {
-    "outcome": "partial",
-    "phase": "reference_resolution",
-    "reason_code": "reference_missing",
-    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
-    "path": "SKILL.md",
     "start_line": 36,
     "end_line": 36,
     "fatal": false
@@ -245,16 +492,6 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 41,
-    "end_line": 41,
-    "fatal": false
-   },
-   {
-    "outcome": "partial",
-    "phase": "reference_resolution",
-    "reason_code": "reference_missing",
-    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
-    "path": "SKILL.md",
     "start_line": 42,
     "end_line": 42,
     "fatal": false
@@ -265,8 +502,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 52,
-    "end_line": 52,
+    "start_line": 43,
+    "end_line": 43,
     "fatal": false
    },
    {
@@ -275,8 +512,88 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 54,
-    "end_line": 54,
+    "start_line": 45,
+    "end_line": 45,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 47,
+    "end_line": 47,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 48,
+    "end_line": 48,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 50,
+    "end_line": 50,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 55,
+    "end_line": 55,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 56,
+    "end_line": 56,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 57,
+    "end_line": 57,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 58,
+    "end_line": 58,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 68,
+    "end_line": 68,
     "fatal": false
    },
    {
@@ -295,8 +612,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 78,
-    "end_line": 78,
+    "start_line": 86,
+    "end_line": 86,
     "fatal": false
    },
    {
@@ -305,8 +622,18 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 83,
-    "end_line": 83,
+    "start_line": 94,
+    "end_line": 94,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 99,
+    "end_line": 99,
     "fatal": false
    },
    {
@@ -325,16 +652,6 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 118,
-    "end_line": 118,
-    "fatal": false
-   },
-   {
-    "outcome": "partial",
-    "phase": "reference_resolution",
-    "reason_code": "reference_missing",
-    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
-    "path": "SKILL.md",
     "start_line": 119,
     "end_line": 119,
     "fatal": false
@@ -345,28 +662,68 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 122,
-    "end_line": 122,
-    "fatal": false
-   },
-   {
-    "outcome": "partial",
-    "phase": "reference_resolution",
-    "reason_code": "reference_missing",
-    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
-    "path": "SKILL.md",
-    "start_line": 126,
-    "end_line": 126,
-    "fatal": false
-   },
-   {
-    "outcome": "partial",
-    "phase": "reference_resolution",
-    "reason_code": "reference_missing",
-    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
-    "path": "SKILL.md",
     "start_line": 127,
     "end_line": 127,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 138,
+    "end_line": 138,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 139,
+    "end_line": 139,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 141,
+    "end_line": 141,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 143,
+    "end_line": 143,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 147,
+    "end_line": 147,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 148,
+    "end_line": 148,
     "fatal": false
    }
   ],
@@ -452,15 +809,15 @@
    },
    {
     "analyzer_id": "meta_analyzer",
-    "status": "not_applicable",
+    "status": "disabled",
     "planned_work": 0,
     "completed": 0,
     "partial": 0,
     "skipped": 0,
     "failed": 0,
     "unaccounted": 0,
-    "reason_code": "no_applicable_files",
-    "message": "No files matched this analyzer's applicability contract."
+    "reason_code": "disabled_by_configuration",
+    "message": "Analyzer was disabled by the requested configuration."
    },
    {
     "analyzer_id": "semantic_developer_intent",
@@ -662,9 +1019,9 @@
   "references": [
    {
     "source_path": "SKILL.md",
-    "line": 33,
-    "column": 87,
-    "evidence": "for `installed_from`, and the release: the newest release heading in the source's `CHANGELOG.md` (`2026-10-14` or",
+    "line": 36,
+    "column": 85,
+    "evidence": "(the newest `v*` tag that `git -C <source> tag --points-at HEAD` lists, such as `v0.15.0`), else the newest release heading in",
     "target_path": null,
     "status": "missing",
     "disposition": "partial",
@@ -672,9 +1029,9 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 34,
-    "column": 5,
-    "evidence": "`2026-10-14.2`, the first one below `## Unreleased`).",
+    "line": 37,
+    "column": 18,
+    "evidence": "the source's `CHANGELOG.md` (the first one below `## Unreleased`) with `+` and the commit's first 7",
     "target_path": null,
     "status": "missing",
     "disposition": "partial",
@@ -682,7 +1039,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 35,
+    "line": 42,
     "column": 72,
     "evidence": "2. **Check the target.** `git status` must be clean, apart from files `scripts/install.sh` just copied",
     "target_path": null,
@@ -692,7 +1049,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 36,
+    "line": 43,
     "column": 79,
     "evidence": "(ask the user to commit or stash anything else; never do it yourself). If `harness.config.yml`",
     "target_path": null,
@@ -702,9 +1059,69 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 37,
+    "line": 45,
+    "column": 109,
+    "evidence": "harness.config.yml` finds one; a project's own `{{name}}` text doesn't count), the files were copied by `scripts/install.sh`: carry on; the",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 47,
+    "column": 33,
+    "evidence": "the install never finished (`.claude/settings.json` is missing or its `hooks.PreToolUse` doesn't run",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 47,
+    "column": 75,
+    "evidence": "the install never finished (`.claude/settings.json` is missing or its `hooks.PreToolUse` doesn't run",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 48,
+    "column": 5,
+    "evidence": "`scripts/guard.sh`, or `harness.config.yml` isn't committed yet: `git ls-files harness.config.yml`",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 48,
+    "column": 28,
+    "evidence": "`scripts/guard.sh`, or `harness.config.yml` isn't committed yet: `git ls-files harness.config.yml`",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 50,
+    "column": 5,
+    "evidence": "`_harness/morph-answers.yml`, and resume at render.md \u00a7 6b (with `_harness/pending/settings.json`",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 50,
     "column": 70,
-    "evidence": "exists and still has `{{` placeholders, the files were copied by `scripts/install.sh`: carry on and",
+    "evidence": "`_harness/morph-answers.yml`, and resume at render.md \u00a7 6b (with `_harness/pending/settings.json`",
     "target_path": null,
     "status": "missing",
     "disposition": "partial",
@@ -712,9 +1129,9 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 41,
+    "line": 55,
     "column": 20,
-    "evidence": "If there is no `harness.config.yml` but the repo already runs an earlier harness of this shape",
+    "evidence": "If there is no `harness.config.yml` and `harness/SETUP.md` is byte for byte the template's, a run of",
     "target_path": null,
     "status": "missing",
     "disposition": "partial",
@@ -722,7 +1139,37 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 42,
+    "line": 55,
+    "column": 45,
+    "evidence": "If there is no `harness.config.yml` and `harness/SETUP.md` is byte for byte the template's, a run of",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 56,
+    "column": 5,
+    "evidence": "`scripts/install.sh` stopped during its copy: this is a plain install, and render.md \u00a7 2 finishes the copy.",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 57,
+    "column": 31,
+    "evidence": "Otherwise, if there is no `harness.config.yml` but the repo already runs an earlier harness of this shape",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 58,
     "column": 31,
     "evidence": "(a `harness/` folder with `SETUP.md` or `PLAN_CHECKLIST.md`, a `_harness/` folder, or a",
     "target_path": null,
@@ -732,7 +1179,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 42,
+    "line": 58,
     "column": 45,
     "evidence": "(a `harness/` folder with `SETUP.md` or `PLAN_CHECKLIST.md`, a `_harness/` folder, or a",
     "target_path": null,
@@ -742,7 +1189,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 43,
+    "line": 59,
     "column": 74,
     "evidence": "`HARNESS_VERSION` file), this is a **migration**: say so, and follow `references/render.md`",
     "target_path": "references/render.md",
@@ -752,7 +1199,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 52,
+    "line": 68,
     "column": 83,
     "evidence": "- From a file: the user points at a context file (a README, a brief, a filled `morph-answers.yml`",
     "target_path": null,
@@ -762,7 +1209,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 53,
+    "line": 69,
     "column": 12,
     "evidence": "from `references/questions.md` \u00a7 Answers file). Read it, map what you can, then ask only the gaps.",
     "target_path": "references/questions.md",
@@ -772,7 +1219,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 54,
+    "line": 70,
     "column": 23,
     "evidence": "- Template: write `morph-answers.yml` with every question and its suggested default, let the user edit",
     "target_path": null,
@@ -782,7 +1229,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 57,
+    "line": 73,
     "column": 65,
     "evidence": "commits is ongoing. For an ongoing project, run the scan in `references/questions.md` \u00a7 Repo scan",
     "target_path": "references/questions.md",
@@ -792,7 +1239,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 64,
+    "line": 80,
     "column": 23,
     "evidence": "Ask the questions in `references/questions.md` in order. Each question lists when to skip it, what to",
     "target_path": "references/questions.md",
@@ -802,7 +1249,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 70,
+    "line": 86,
     "column": 28,
     "evidence": "Save answers as you go to `morph-answers.yml` at the target root, so an interrupted install can resume.",
     "target_path": null,
@@ -812,7 +1259,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 74,
+    "line": 90,
     "column": 8,
     "evidence": "Using `references/catalog.md`, build three short lists from the answers:",
     "target_path": "references/catalog.md",
@@ -822,7 +1269,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 78,
+    "line": 94,
     "column": 75,
     "evidence": "so on), each with a one-line reason and whether it is project-scoped (`.mcp.json`) or a user",
     "target_path": null,
@@ -832,7 +1279,17 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 83,
+    "line": 99,
+    "column": 42,
+    "evidence": "reported, and `fired` of `features` (`lessons/README.md` \u00a7 Listing a lesson). Keep the order by",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 101,
     "column": 30,
     "evidence": "Leave out a lesson whose `evidence.source` (or a `reports` entry) names this project: it came from",
     "target_path": null,
@@ -842,7 +1299,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 91,
+    "line": 109,
     "column": 18,
     "evidence": "only items from `references/catalog.md` or that the user names. If an install command fails, say so and",
     "target_path": "references/catalog.md",
@@ -852,9 +1309,9 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 101,
+    "line": 119,
     "column": 2,
-    "evidence": "`morph-answers.yml`.",
+    "evidence": "`morph-answers.yml`. Say that the guard turns on when the install writes `.claude/settings.json`, its last",
     "target_path": null,
     "status": "missing",
     "disposition": "partial",
@@ -862,7 +1319,17 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 105,
+    "line": 119,
+    "column": 75,
+    "evidence": "`morph-answers.yml`. Say that the guard turns on when the install writes `.claude/settings.json`, its last",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 125,
     "column": 9,
     "evidence": "Follow `references/render.md`: create a branch, copy `template/` without overwriting, fill placeholders,",
     "target_path": "references/render.md",
@@ -872,7 +1339,17 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 118,
+    "line": 127,
+    "column": 2,
+    "evidence": "`.claude/settings.json` last, and run the self-checks. Then commit on the branch and, if the user agrees, push and open a PR to the integration",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 138,
     "column": 4,
     "evidence": "`harness.config.yml` \u00a7 claude_projects, and the playbook in",
     "target_path": null,
@@ -882,7 +1359,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 119,
+    "line": 139,
     "column": 4,
     "evidence": "`harness/modules/claude-projects/README.md` to paste into the project instructions. These are advice;",
     "target_path": null,
@@ -892,7 +1369,17 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 122,
+    "line": 141,
+    "column": 5,
+    "evidence": "(`scripts/feature-cost.sh`), so the model and effort choice can be judged on the project's own numbers.",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 143,
     "column": 67,
     "evidence": "- That the harness will change itself through retros and prunes (`harness/MORPHING.md`), that",
     "target_path": null,
@@ -902,7 +1389,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 126,
+    "line": 147,
     "column": 9,
     "evidence": "Delete `morph-answers.yml` from the target only if the user says so; otherwise move it to",
     "target_path": null,
@@ -912,7 +1399,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 127,
+    "line": 148,
     "column": 2,
     "evidence": "`_harness/morph-answers.yml` so the doctor and later prunes can read the original intent.",
     "target_path": null,
@@ -922,7 +1409,7 @@
    }
   ],
   "limitations": [],
-  "findings_before_filtering": 0,
-  "findings_after_filtering": 0
+  "findings_before_filtering": 9,
+  "findings_after_filtering": 9
  }
 }

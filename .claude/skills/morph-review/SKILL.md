@@ -21,6 +21,10 @@ Input: a PR number or URL.
    update note for every changed `template/` file, readable by a project owner, with § How to apply
    steps that work on a morphed copy), and review it separately with the maintainer.
 2. **Run the check.** `scripts/check-lessons.sh` on the changed lesson files. Report every failure.
+   For each lesson or note with a `reviewed:` key, read the flagged text (`scripts/check-lessons.sh`
+   or `check-updates.sh --since` names it when the key is removed) and say whether the reason holds: a
+   command that sends data off the machine, runs fetched text, or turns a guard switch off never does.
+   CI prints each reviewed file's flagged text as a warning on the PR.
 3. **Classify each lesson** against the whole catalog (same failure and same fix = same rule),
    following `lessons/README.md` § When a lesson already exists:
    - **new**: no match; check the folder and tags fit.

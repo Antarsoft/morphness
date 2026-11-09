@@ -5,20 +5,43 @@
 # features each count the others that merged first, and files a prune folded on the integration
 # branch don't come back from a branch cut before it. The gauge adds up the files Claude Code loads
 # into every session (CLAUDE.md, the files it imports with `@`, and each .claude/rules/*.md without a
-# `paths:` line) against loop.rule_budget_kb, and the plan checklists and project/*.md against theirs.
+# `paths:` line) against loop.rule_budget_kb plus loop.owner_rules_kb (the owner's own text kept at install),
+# with a token estimate and the agent and skill descriptions Claude Code also loads, and the plan
+# checklists and project/*.md against their budgets.
 # Each active trial (_harness/trials/*.md) gets a line with how many of its features have run.
+# With loop.retro_every above 1 it also prints `Retro decisions: N/<retro_every> features with open items`, and
+# `Retro decisions are DUE: <files>` once N reaches it (harness/SETUP.md § Retrospective → Batched decisions).
 # Exits 1 when a size budget is over and no prune proposal is open: the hand-off waits for the
-# proposal (harness/SETUP.md § Prune). Every other case exits 0.
+# proposal (harness/SETUP.md § Prune). Exits 2 when it can't measure all of it, with a "not measured"
+# line saying why (a tool it needs is missing, a record it reads isn't UTF-8), or on an unknown option
+# (usage on stderr). Exit 1 wins over 2: the not-measured line is printed and the proposal still waits.
+# Otherwise 0.
 # Usage: bash scripts/prune-counter.sh [--prune]   (from anywhere in the repo; read-only)
 #   --prune  also print what a prune reads (harness/SETUP.md § Prune): one trend line for the window
 #            (rework rounds, QA fails, cost), each trial's numbers, and every rule tagged
 #            `(from <slug>, <date>)` with the features finished since it landed
 
-. "$(cd "$(dirname "$0")" && pwd)/lib/config.sh" || exit 1
-cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)" || exit 1
+for arg in "$@"; do
+  case "$arg" in
+    --prune) ;;
+    *) echo "usage: bash scripts/prune-counter.sh [--prune] (unknown option: $arg)" >&2; exit 2 ;;
+  esac
+done
+# Without these the gauges print blank and the budget checks silently pass: stop instead.
+missing=""
+for tool in awk cat dirname git grep head ls sed sort tr wc; do
+  command -v "$tool" >/dev/null 2>&1 || missing="$missing $tool"
+done
+if [ -n "$missing" ]; then
+  echo "Prune counter: not measured (missing:$missing; install them and run it again)"
+  exit 2
+fi
+. "$(cd "$(dirname "$0")" && pwd)/lib/config.sh" || { echo "Prune counter: not measured (scripts/lib/config.sh is missing or unreadable)"; exit 2; }
+cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)" || { echo "Prune counter: not measured (cannot enter the project folder)"; exit 2; }
 
 threshold="$(config_get loop.prune_every)"
 case "$threshold" in ''|*[!0-9]*) threshold=10 ;; esac
+threshold=$((10#$threshold))   # 08 and 09 are decimal, not a bad octal number
 # A window under 8 features leaves most rules "too new to judge" (landed in the last 3 features) and
 # decides trials before their escapes show; above 30 a prune comes too late to matter.
 if [ "$threshold" -lt 8 ]; then
@@ -51,7 +74,16 @@ count="$(printf '%s\n' "$files" | grep . | sort -u | wc -l | tr -d ' ')"
 
 # Always-loaded rule files and their size.
 budget="$(config_get loop.rule_budget_kb)"
-case "$budget" in ''|*[!0-9]*) budget=36 ;; esac
+case "$budget" in ''|*[!0-9]*) budget=16 ;; esac
+budget=$((10#$budget))
+# The owner's own always-loaded text kept at install (/morph-init sets it): its own allowance on top.
+obudget="$(config_get loop.owner_rules_kb)"
+case "$obudget" in
+  '') obudget=0 ;;
+  *[!0-9]*) echo "(loop.owner_rules_kb is not a whole number of KB: $obudget; counting 0)" >&2; obudget=0 ;;
+esac
+obudget=$((10#$obudget))
+total=$((budget + obudget))
 loaded="$(
   { [ -f CLAUDE.md ] && echo CLAUDE.md && sed -n 's/^@\([^ ]*\).*/\1/p' CLAUDE.md
     for f in .claude/rules/*.md; do
@@ -64,38 +96,88 @@ loaded="$(
 )"
 bytes="$(printf '%s\n' "$loaded" | awk '{ s += $1 } END { print s + 0 }')"
 kb() { awk -v b="$1" 'BEGIN { printf "%.1f", b / 1024 }'; }
+# About 4 bytes per token for English text: an estimate, not a tokenizer count.
+tok() { awk -v b="$1" 'BEGIN { printf "%.1fk", b / 4 / 1000 }'; }
+# Claude Code also puts each subagent's and each skill's `description:` into every session.
+desc="$(for f in .claude/agents/*.md .claude/skills/*/SKILL.md; do
+    [ -f "$f" ] && awk 'NR == 1 && $0 != "---" { exit } NR > 1 && $0 == "---" { exit }
+      /^description:/ { on = 1; sub(/^description:[ \t]*/, ""); printf "%s", $0; next }
+      on && /^[ \t]/ { printf "%s", $0; next } on && /^[ \t]*$/ { next } { on = 0 }' "$f"
+  done 2>/dev/null | wc -c | tr -d ' ')"
 
 # The plan checklists, read before every full-mode approval: retros grow them fastest.
 cbudget="$(config_get loop.checklist_budget_kb)"
 case "$cbudget" in ''|*[!0-9]*) cbudget=36 ;; esac
+cbudget=$((10#$cbudget))
 cbytes="$(cat harness/PLAN_CHECKLIST.md project/PLAN_CHECKLIST.md 2>/dev/null | wc -c | tr -d ' ')"
 
 # The project fact docs (project/*.md), read before planning: they grow as features add facts.
 dbudget="$(config_get loop.project_docs_budget_kb)"
 case "$dbudget" in ''|*[!0-9]*) dbudget=48 ;; esac
+dbudget=$((10#$dbudget))
 dbytes="$(cat project/*.md 2>/dev/null | wc -c | tr -d ' ')"
 
 echo "Prune counter: $count/$threshold"
-echo "Rules: $(kb "$bytes")/$budget KB always loaded"
+if [ "$obudget" -gt 0 ]; then allowance="$budget kit + $obudget for your own text; "; else allowance=""; fi
+echo "Rules: $(kb "$bytes")/$total KB always loaded (${allowance}≈$(tok "$bytes") tokens; agent and skill descriptions add $(kb "$desc") KB, ≈$(tok "$desc") tokens)"
 echo "Checklists: $(kb "$cbytes")/$cbudget KB"
 echo "Project docs: $(kb "$dbytes")/$dbudget KB"
+# Batched retro decisions (loop.retro_every above 1): the learnings files with an action item still `open` or
+# `deferred` (its Status column, the second to last; `open (batched)` counts too), not counting a row whose Note says
+# `human decides` (the owner has it). A file that was there where this branch left the integration branch is read
+# from the integration branch, where a batch may have decided it since; a file only there is read from there too.
+retro_every="$(config_get loop.retro_every)"
+case "$retro_every" in
+  '') retro_every=1 ;;
+  *[!0-9]*|0) echo "(loop.retro_every is $retro_every; it takes 1 to 5, so 1 is used)" >&2; retro_every=1 ;;
+esac
+retro_every=$((10#$retro_every))
+if [ "$retro_every" -gt 5 ]; then
+  echo "(loop.retro_every is $retro_every; the allowed range is 1 to 5, so 5 is used)" >&2; retro_every=5
+fi
+if [ "$retro_every" -gt 1 ]; then
+  pending=""
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    p="_harness/learnings/$f"
+    if [ -n "$integration" ] && [ -n "${base:-}" ] && git cat-file -e "$base:$p" 2>/dev/null \
+      && git cat-file -e "origin/$integration:$p" 2>/dev/null; then body="$(git show "origin/$integration:$p" 2>/dev/null)"
+    elif [ -f "$p" ]; then body="$(cat "$p")"
+    elif [ -n "$integration" ]; then body="$(git show "origin/$integration:$p" 2>/dev/null)"
+    else body=""; fi
+    if printf '%s\n' "$body" | sed 's/\\|//g' | grep -v -i 'human decides' \
+      | grep -q -E '^[[:space:]]*\|.*\|[[:space:]]*`?(open|deferred)( \([^)|]*\))?`?[[:space:]]*\|[^|]*\|[[:space:]]*$'; then
+      pending="$pending${pending:+, }$p"
+    fi
+  done <<EOF_FILES
+$(printf '%s\n' "$files" | grep . | sort -u)
+EOF_FILES
+  npending=0
+  [ -n "$pending" ] && npending="$(printf '%s\n' "$pending" | tr ',' '\n' | grep -c .)"
+  echo "Retro decisions: $npending/$retro_every features with open items"
+  if [ "$npending" -ge "$retro_every" ]; then
+    echo "Retro decisions are DUE: $pending (decide every open item in them now: harness/SETUP.md § Retrospective → Batched decisions)"
+  fi
+fi
 # A proposal still open (proposed: the owner hasn't decided; approved: decided, cuts not applied yet):
 # the hand-off names it instead of writing another. A declined one is closed by prune step 6 (fold, reset).
 waiting=""
-for f in $(ls _harness/prunes/*.md 2>/dev/null | grep -E '/[0-9]{4}-[0-9]{2}-[0-9]{2}[^/]*\.md$' | sort); do
+# The glob sorts by name and keeps names with spaces whole.
+for f in _harness/prunes/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.md; do
+  [ -f "$f" ] || continue
   if grep -q -E '^\*\*Status:\*\*[[:space:]]*proposed[[:space:]]*$' "$f"; then waiting="$f"
   elif grep -q -E '^\*\*Status:\*\*[[:space:]]*approved[[:space:]]*$' "$f"; then waiting="$f (approved, cuts not applied yet)"
   fi
 done
 due=""
 over=0
-if [ "$bytes" -gt $((budget * 1024)) ] || [ "$cbytes" -gt $((cbudget * 1024)) ] || [ "$dbytes" -gt $((dbudget * 1024)) ]; then over=1; fi
+if [ "$bytes" -gt $((total * 1024)) ] || [ "$cbytes" -gt $((cbudget * 1024)) ] || [ "$dbytes" -gt $((dbudget * 1024)) ]; then over=1; fi
 if [ -f harness/TECHNICAL_LEAD.md ] && [ "$(wc -c < harness/TECHNICAL_LEAD.md)" -gt 20480 ]; then over=1; fi
 if [ "$count" -ge "$threshold" ]; then
   due="Prune is DUE"
-elif [ "$bytes" -gt $((budget * 1024)) ]; then
+elif [ "$bytes" -gt $((total * 1024)) ]; then
   largest="$(printf '%s\n' "$loaded" | head -n 3 | while read -r b f; do printf '%s %s KB, ' "$f" "$(kb "$b")"; done)"
-  due="Prune is DUE (always-loaded rules are over loop.rule_budget_kb; largest: ${largest%, })"
+  due="Prune is DUE (always-loaded rules are over loop.rule_budget_kb plus loop.owner_rules_kb; largest: ${largest%, })"
 elif [ "$cbytes" -gt $((cbudget * 1024)) ]; then
   due="Prune is DUE (the plan checklists are over loop.checklist_budget_kb)"
 elif [ "$dbytes" -gt $((dbudget * 1024)) ]; then
@@ -120,23 +202,38 @@ fi
 
 # Trials, and with --prune the trend, trial numbers and rule tags. A file that is only on the
 # integration branch is read from there.
-command -v python3 >/dev/null 2>&1 || exit "$rc"
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "Prune counter: trials and rule tags not measured (python3 not found; install it and run it again)"
+  [ "$rc" = 1 ] && exit 1
+  exit 2
+fi
 read -r -d '' program <<'PY' || true
 import glob, re, sys
 
 prune = "--prune" in sys.argv[1:]
 DATE = r"\d{4}-\d{2}-\d{2}"
 
+def not_utf8(path, err):
+    print(f"Prune counter: trials and rule tags not measured ({path} is not valid UTF-8 at byte {err.start}; save it as UTF-8 and run it again)")
+    sys.exit(2)
+
 def read(path):
     try:
         return open(path, encoding="utf-8").read()
     except OSError:
         return ""
+    except UnicodeDecodeError as err:
+        not_utf8(path, err)
 
 # Learnings files: date, rework rounds (QA rounds after the first), whether QA failed, cost, trial.
 features = []
-for chunk in sys.stdin.read().split("\036")[1:]:
-    name, _, text = chunk.partition("\n")
+for chunk in sys.stdin.buffer.read().split(b"\036")[1:]:
+    name, _, raw = chunk.partition(b"\n")
+    name = name.decode("utf-8", "replace")
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError as err:
+        not_utf8("_harness/learnings/" + name, err)
     heading = re.search(r"^### .*?(" + DATE + ")", text, re.M)
     rounds = re.search(r"QA rounds:\s*(\d+)", text)
     cost = re.search(r"\*\*Cost:\*\*\s*≈\s*\$\s*([0-9][0-9,]*(?:\.[0-9]+)?)", text)
@@ -222,4 +319,10 @@ printf '%s\n' "$files" | grep . | sort -u | while read -r f; do
   elif [ -n "$integration" ]; then git show "origin/$integration:_harness/learnings/$f" 2>/dev/null
   fi
 done | python3 -I -c "$program" "$@"
+py=$?   # a pipeline's status is its last command's: python's
+if [ "$py" -ne 0 ]; then
+  [ "$py" -eq 2 ] || echo "Prune counter: trials and rule tags not measured (the python part failed with exit $py; the error is above)"
+  [ "$rc" = 1 ] && exit 1
+  exit 2
+fi
 exit "$rc"

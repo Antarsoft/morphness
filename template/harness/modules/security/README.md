@@ -4,7 +4,7 @@ Optional. Enable it in `harness.config.yml` → `modules` when the product has s
 
 ## What counts as a security feature
 
-The Technical Lead sets `plan.md` § Security → **Security feature: yes** when the change does one of these, judged by what it does, the same way [harness/MODES.md](../../MODES.md) § Small mode judges a change:
+The Technical Lead sets `plan.md` § Security → **Security feature: yes** when the change does one of these, judged by what it does, not by which files it touches:
 
 - **Changes who can sign in, or who can read or change data:** sign-in, sign-up, password or key reset, tokens and sessions, roles and permissions, invitations, impersonation, access rules, anything that lets one account reach another's data.
 - **Moves money:** checkout, subscriptions, refunds, credits or balances, payment webhooks, the price a customer is charged.
@@ -52,7 +52,7 @@ Rules for both:
 
 ## Security review before QA
 
-For a plan with **Security feature: yes**, the Technical Lead (for a bug plan: its **Security review before QA: yes**) runs the security review in [harness/SETUP.md](../../SETUP.md) § Code review before QA (step 2, then steps 3 to 5) after dev completes and before QA, whatever the plan's effort: `/security-review` with a brief naming the files to read in full, at least 15 tool calls, the count recorded in `Plan/review.md`. Without the `security-review` skill, a read-only subagent with the same brief does it and `review.md` says so; the review is never skipped. The code review in step 1 stays for `xhigh` plans. The brief also names the plan's § Security, so the review checks each mitigation is in the code.
+For a plan with **Security feature: yes**, the Technical Lead (for a bug plan: its **Security review before QA: yes**) runs the security review in [harness/SETUP.md](../../SETUP.md) § Code review before QA (step 2, then steps 3 to 5) after dev completes and before QA, whatever the plan's effort: `/security-review` with a brief naming the files to read in full, at least 15 tool calls, the count recorded in `Plan/review.md`. Without the `security-review` skill, a read-only subagent with the same brief does it and `review.md` says so; the review is never skipped. The code review in step 1 stays for plans on a risk path or at `xhigh`. The brief also names the plan's § Security, so the review checks each mitigation is in the code.
 
 QA confirms each `fix` item from `review.md` as usual, and that every mitigation's acceptance criterion passed.
 
@@ -66,14 +66,14 @@ Agents can't do these; they go in `project/RELEASE.md` § Manual steps, and morp
 
 ## On install
 
-- Fill the `secrets` and `audit` rows in [project/CONTROLS.md](../../../project/CONTROLS.md) § Named checks from the stack (check each tool is installed with its version command; a missing tool is an owner step above, and the row still gets its command). Add both names to `harness.config.yml` → `checks.before_qa` and `checks.before_signoff`, and a § Check scope row `| audit | paths | <the dependency manifests and lockfile> |`.
+- Fill the `secrets` and `audit` rows in [project/CONTROLS.md](../../../project/CONTROLS.md) § Named checks from the stack (check each tool is installed with its version command; a missing tool is an owner step above, and the row still gets its command). Add both names to `harness.config.yml` → `checks.before_qa` and `checks.before_signoff`, and `secrets` to `checks.on_stop`, and a § Check scope row `| audit | paths | <the dependency manifests and lockfile> |`.
 - Fill § Security paths (the auth, payment and user-data code and the database tables that hold personal data) and leave § Security exceptions at "None.".
 - Suggest behaviours, not layers, for `risk_areas` when the scan finds them and they aren't listed: "who can read or change people's data", "payments", "secrets" (the same wording as morph-init's Q12a).
 - With the `ci-cd` module, add the two steps to CI (the module's rule: one step per `before_qa` check, word for word).
 
 ## On remove
 
-When the project doesn't choose this module, morph-init deletes this folder and the items below. The clause that names the module in the always-loaded Technical Lead rule (`harness/TECHNICAL_LEAD.md`, the "xhigh, or, with the `security` module" bullet), the Full-stack and QA body lines, and the matching lines in `harness/SETUP.md` and `harness/HANDOFFS.md` are marked and go with the command below; the bullet then reads "When the plan's Full-stack effort is `xhigh`, run …".
+When the project doesn't choose this module, morph-init deletes this folder and the items below. The clause that names the module in the Technical Lead rule (`harness/TECHNICAL_LEAD.md`, the "Code review before QA: yes …, or, with the `security` module" bullet), the Full-stack and QA body lines, and the matching lines in `harness/SETUP.md` and `harness/HANDOFFS.md` are marked and go with the command below; the bullet then reads "When the plan says **Code review before QA: yes** (a full or bug plan on a risk path, or Full-stack `xhigh`), run …".
 
 **Delete these files:** none outside this folder.
 
@@ -81,7 +81,7 @@ When the project doesn't choose this module, morph-init deletes this folder and 
 
 **Delete or reword these lines** (unmarked: always-loaded, config or code-block text):
 
-- `harness.config.yml` → `checks`: remove `secrets` and `audit` from `before_qa` and `before_signoff`, if listed.
+- `harness.config.yml` → `checks`: remove `secrets` and `audit` from `before_qa`, `before_signoff` and `on_stop`, if listed.
 - `project/CONTROLS.md` § Check scope: the `audit` row, if any.
 
 **Unlink:** every Markdown link left pointing into `harness/modules/security/` becomes plain text, or goes with its line (`/morph-doctor` fails on a broken link). Find them with `grep -rn 'modules/security' --include='*.md' . | grep -v '^./harness/modules/'`.

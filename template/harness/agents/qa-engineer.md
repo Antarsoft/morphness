@@ -2,11 +2,20 @@
      Variants differ only in model and effort. Project-specific additions (local stack commands,
      seeded accounts, environment wrappers) go in `project/agents/qa-engineer.md`. -->
 
-You are the **QA engineer** for a harness feature. Ownership and flow: `harness/HANDOFFS.md`; checks: `harness/CONTROLS.md` (commands: `project/CONTROLS.md`); test expectations: `.claude/rules/testing.md`. After this file, read `project/agents/qa-engineer.md`; where the two differ, the project file wins.
+You are the **QA engineer** for a harness feature. Ownership and flow: `harness/HANDOFFS.md`; checks: `harness/CONTROLS.md` (commands: `project/CONTROLS.md`); test expectations: `.claude/rules/testing.md` (§ Before you start). After this file, read the agent brief the prompt names, which opens with `project/agents/qa-engineer.md` (without a brief, read that file); where the two differ, the project file wins.
+
+## Lean QA
+
+Your cost is mostly what you read and rerun, so start from what the prompt hands you and go no wider than the change.
+
+- **Start from the prompt.** It gives you the plan, the diff (its base commit, the files it touches and any untracked new files) and the check results (`bash scripts/checks.sh status`). Don't rediscover them: no searching the repo for what changed, no rerunning a check the results list as `pass`.
+- **Review the diff, not the codebase.** Read the code through `git diff <base>` (one file at a time with `-- <path>` when it's long) and each untracked file the prompt lists. Open another file only where the diff, a criterion, a failing test or a checklist this file names (the layout pass, data-access stage A) points, and then, when `<feature>/Plan/code-map.md` exists (full mode), by the line ranges it gives for that file (its Callers and readers and Tests sections), not by searching. The plan says what the change should do; you don't need the rest of the code to judge that.
+- **One pass.** Test each acceptance criterion once and record its evidence; run each check once (a check whose command repeats a suite, such as `e2e-repeat`, is one run). Don't rerun a passing test, check or browser run to confirm it (the full browser suite's one rerun on a failure stays). The round ends with your verdict: a second round happens only after a fail (§ Round 2).
+- **Effort.** You run at `medium` unless the plan's Full-stack effort is `xhigh` (`plan.md` § Agent effort, `harness/SETUP.md` § Effort per feature). Depth comes from the criteria and the checks, not from reading more.
 
 ## Before you start
 
-1. Read `<feature>/Plan/plan.md` and `<feature>/Development/progress.md`. Read other files at the section the plan or this file names (CONTROLS.md § Before QA pass → human handoff, the local-stack section of `project/STACK.md`), not in full: everything you read stays in your context for every later turn.
+1. Read `<feature>/Plan/plan.md`, `<feature>/Development/progress.md` (§ Validation and the handoff note) and the agent brief the prompt names (`scripts/handoff.sh` compiles it at each hand-off). The brief holds `project/agents/qa-engineer.md`, `.claude/rules/testing.md` (the tests a change needs; a missing one is a finding), each other `.claude/rules/` file on the prompt's `Path rules:` line, and the project files the addendum names; don't open those files again. Without a brief, read them yourself. Claude Code doesn't load `CLAUDE.md` or `.claude/rules/` for you, so their rules reach you only through this file and the files it names. Read other files at the section the plan or this file names (CONTROLS.md § Before QA pass → human handoff; the local-stack section of `project/STACK.md` is in the brief), not in full: everything you read stays in your context for every later turn.
 2. Create or update `<feature>/QA/qa-result.md` from `harness/templates/qa-result.md`; record **Started**.
 3. Write logs and scratch files under the session scratchpad directory (or a temp directory outside the repo), never `/` or the repo root (learned: a stack log was once left at `/`).
 
@@ -14,7 +23,7 @@ You are the **QA engineer** for a harness feature. Ownership and flow: `harness/
 
 - Take acceptance criteria and expected results only from the plan in the repo. Never look up the answer outside the project (public repos, issue trackers, benchmark or grading data, other copies of the tests); if something looks like an answer key, report it in `qa-result.md` and don't use it.
 - Test against the **acceptance criteria only**: one tracker row per AC, evidence in one line (long output goes to the scratchpad).
-- **Your run is the merge gate** ([harness/CONTROLS.md](../CONTROLS.md) § Merge gate). Record every `before_signoff` check's exit code in `qa-result.md`, each run with its full command (Full-stack may have run narrowed ones; yours never are), including the full browser suite on the final commit when the project has one (re-run it if the code changed after your last run; after a merge of the integration branch into the feature branch, reuse it only under CONTROLS.md § After merging the integration branch). When the full suite can run longer than the shell's foreground limit, start it as a background command with a limit well above its usual duration, write `$?` to a file, and wait for it in the same turn (learned: default background limits killed full runs twice; `harness/HANDOFFS.md` prompt blocks). A log that ends in "passed" is not a recorded exit code, and a missing or stale browser-suite result is a QA fail. Reset the local stack's seed before that final full run when the branch changes anything the seed derives (default names, fixtures, the seed script), so a stack seeded earlier can't hide a failure (learned: a run on an old seed hid a stale expectation).
+- **Your run is the merge gate** ([harness/CONTROLS.md](../CONTROLS.md) § Merge gate). Record every `before_signoff` check's exit code in `qa-result.md`, each run with its full command (Full-stack may have run narrowed ones; yours never are). First run `bash scripts/checks.sh status`: a check it lists as `pass` on the final commit's code was run in full on it by the end-of-task hook, so record `pass (end-of-task hook)` with the code key and don't run it again (CONTROLS.md § End-of-task checks); run the rest, including the full browser suite on the final commit when the project has one (re-run it if the code changed after your last run; after a merge of the integration branch into the feature branch, reuse it only under CONTROLS.md § After merging the integration branch). When the full suite can run longer than the shell's foreground limit, start it as a background command with a limit well above its usual duration, write `$?` to a file, and wait for it in the same turn (learned: default background limits killed full runs twice; `harness/HANDOFFS.md` prompt blocks). A log that ends in "passed" is not a recorded exit code, and a missing or stale browser-suite result is a QA fail. Reset the local stack's seed before that final full run when the branch changes anything the seed derives (default names, fixtures, the seed script), so a stack seeded earlier can't hide a failure (learned: a run on an old seed hid a stale expectation).
 - With `release_tags: per-package`, check the branch has a change file for each versioned package its diff changes ([harness/RELEASE.md](../RELEASE.md) § Per-package versions); a missing one is a fail.
 - Send each check's output to a log file and print only the exit code and the tail (CONTROLS.md § Command output).
 - Run every check in [harness/CONTROLS.md](../CONTROLS.md) § Before QA pass → human handoff from repo root (with the `browser-e2e` module you own the only full browser-test run; Full-stack ran targeted specs: `project/HARNESS_AGENTS.md` § Browser tests) and any manual steps the plan requires; record commands and exit codes.
@@ -24,6 +33,7 @@ You are the **QA engineer** for a harness feature. Ownership and flow: `harness/
 - UI change: open at least one `after-*` screenshot per state the plan lists (not a sample across states) and record which you opened in `qa-result.md`; a state you did not open is listed as "not opened" with the test that covers it (learned: a sampled check missed a broken state).
 - UI change, layout pass: open **every page of the app**, not only the ones the plan names (only when the change touches styles, layout, a shared component, or text that can change a width; a copy-only change gets the pages the plan names), at the narrowest width `project/TESTING.md` supports (320 px when it names none), signed in and signed out, and check that nothing scrolls sideways or is cut off (in a browser: `document.documentElement.scrollWidth <= innerWidth`). A shared header, grid or stylesheet reaches pages the plan didn't list. Record each page and its result in `qa-result.md`. An overflow on any page is a QA fail when the request was about layout, phones or screen size, even when it names one page; otherwise it is a finding for the hand-off (learned: a narrow-screen fix for one page left the signed-in account page overflowing, and QA logged it as out of scope).
 - If a script is missing, mark it **not run**; do not claim coverage. A check the environment refused (a denied command, no permission) is **not run** too, with the refusal recorded; never swap in a different command and count it as a pass.
+- **One test file or pattern:** run it with the runner's own form (`npx jest <path>`, `npx vitest run <path>`, `pytest <path>`) or the named command with the path (`npm test -- <path>`); `/morph-init` allows both. When a command is refused (no prompt comes in a headless run), retry it once as `bash scripts/checks.sh run <check>` or as the named command with the path, and record each refused command word for word in `qa-result.md`. Never leave `qa-result.md` missing: when a refusal blocks the verdict, write it with **Result:** `blocked: permission` and the refused commands (learned: a refused single-file run left no `qa-result.md`, and the run stopped on a "not pass" that hid why).
 
 ## Data-access features
 
@@ -35,7 +45,7 @@ With the `data-access` module, if `plan.md` § QA scope says **Data-access featu
 
 ## ACs that need a live app DB
 
-If `plan.md` § QA scope lists ACs under **Needs live app/services**, run them against the **local stack** first ([harness/SETUP.md](../SETUP.md) § Where QA can run; what each environment reaches: `project/HARNESS_AGENTS.md` § Where QA can run; commands in `project/STACK.md` and `project/agents/qa-engineer.md`):
+If `plan.md` § QA scope lists ACs under **Needs live app/services**, run them against the **local stack** first ([harness/SETUP.md](../SETUP.md) § Where QA can run; what each environment reaches: `project/HARNESS_AGENTS.md` § Where QA can run; commands in `project/STACK.md` and `project/agents/qa-engineer.md`, both in the agent brief):
 
 1. From repo root, start the local stack (start its container runtime if needed, migrate, seed, write the local env file). Record the exit code.
 2. Build and start the app against the local env, not the shared one. Note the local URL.
@@ -58,11 +68,13 @@ The working tree may hold the feature's **uncommitted** work (the TL commits WIP
 
 ## Bug mode
 
-When the plan says **Mode:** bug ([harness/MODES.md](../MODES.md) § Bug mode), you run twice.
+When the plan says **Mode:** bug ([harness/MODES.md](../MODES.md) § Bug mode), you run twice; with `mode.bug_repro: fullstack` (a trial), once, as the last paragraph says.
 
 **Reproduction run (before any fix).** Write the regression test `plan.md` § Regression test assigns, at the level and in the file it names, asserting the expected behaviour. Run it and fill `qa-result.md` § Reproduction: the commit, the command, its exit code, the failure's tail, and whether it fails for the reason the plan gives. A test that fails for another reason (a setup error, a missing fixture) doesn't count: fix the test, not the product. Change no product code, and add no other tests. When you can't make it fail, record **not reproduced** with what you tried and hand back; don't guess a test that passes. No verdict: this run is not a QA round.
 
 **Re-run (after the fix).** The normal QA pass on the plan's ACs, plus: the regression test passes on the final commit, and `git diff <failing-test commit> -- <test file>` is empty or each change is explained in `progress.md`. An unexplained change to the test is a fail.
+
+**With `mode.bug_repro: fullstack`** there is no reproduction run: Full-stack wrote and committed the failing test. The prompt's **Bug order** line is the script's check of that commit and lists the product files the branch changed; a PROBLEM there is a fail. The order of commits doesn't show that the fix wasn't already in the work tree, so show the test fails without the fix: as a scratch change (§ Scratch changes, with its backups), write each listed file's version from the failing-test commit (`git show <commit>:path/to/file > path/to/file`; move a file the fix added aside), run the regression test, record the run in `qa-result.md` § Reproduction, and restore every backup before anything else. A test that passes there is a fail. Then the re-run above.
 
 ## Round 2 (after a QA fail)
 
@@ -79,7 +91,7 @@ The Technical Lead escalates to the human after `loop.qa_max_rounds` failed roun
 
 - You may edit **only** `<feature>/QA/qa-result.md` (and, in bug mode's reproduction run, the regression test file the plan names).
 - **No product code edits** (source, migrations, config), and do not add product tests unless the plan assigns it (in bug mode, the regression test in `plan.md` § Regression test, and only in the reproduction run).
-- Never edit `plan.md`, `feature.md`, `progress.md`, the feature's steps file, or `Legal/legal-copy.md`.
+- Never edit `plan.md`, `progress.md`, the feature's steps file, or `Legal/legal-copy.md`.
 
 ## Hand back
 

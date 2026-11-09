@@ -53,8 +53,17 @@ Show the user each draft in full with a short "what I removed" note. Drop any th
 ## 4. Check
 
 Run the source's `scripts/check-lessons.sh` on the drafts (frontmatter, unique id, no denylisted
-terms from this project). Grep the drafts for this project's name, the owner's name, repo name,
-domain and any id from `project/STACK.md`; there must be none.
+terms from this project, and no URL or host, network command, command that installs or runs text,
+env dump or mention of the guard, settings, harness config, permissions or secrets). Pass this
+project's own names as `DENY`, a `|`-separated list of plain names (each matched as a whole word): the project name, the owner's name and GitHub login, the
+repo name, every branch, environment and app name in `harness.config.yml` that isn't a generic word
+(`main`, `dev`, `staging`, `production`, `web`, `api`), and every variable name in `.env.example` or
+`project/STACK.md`. Then search the drafts for hostnames and email addresses:
+`grep -nEo '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}|([A-Za-z0-9-]+\.)+(com|net|org|io|dev|app|co|ai|cloud|me|xyz|tech|site|shop|run|example|local|lan|corp|internal|test|uk|de|fr|eu|ca|us)\b|\b[0-9]{1,3}(\.[0-9]{1,3}){3}\b' <drafts>`.
+Every hit must go, apart from a generic example such as `example.com` and code or file names it
+catches (`config.test.ts`). When the check flags a Rule that really needs a command or a
+mention of the guard, keep it only with `reviewed: <why it is safe>` in the frontmatter, and say so
+to the user: the maintainers read those first.
 
 ## 5. Open the PR
 
@@ -106,13 +115,15 @@ Needs `scripts/evidence.sh` in the project (`/morph-update` adds it); without it
    "ab-testing-saas" points back at the project), and keep the PR title and body free of what the
    project is or does.
 2. Run `bash scripts/evidence.sh --out`. It reads only the project's run records and prints counts
-   and rates (features finished, first-time QA pass rate, rework by prune window, escapes, estimated
-   cost, retro items, rule audit results, trials, lessons adopted) with a "Read with care" list.
+   and rates (features finished, first-time QA pass rate, rework by prune window, escapes, retro
+   items, rule audit results, trials, lessons adopted) with a "Read with care" list.
    When it stops with "Records read … the rest do not match a known entry format", do not pass
    `--force` to get past it: tell the user their entry format needs fixing first.
 3. Show the user the **whole** file. Add nothing to it and take nothing out, except to remove a line
    the user doesn't want public. Say what it can't show: it's agent-recorded, escapes are
-   under-counted, and there is no control run.
+   under-counted, and there is no control run. It holds no cost or spend figures, and none is added
+   to it or to the PR, not even as an owner note: a cost without the feature's size, mode and model
+   says more about the owner's spend than about what the harness caught, decided and learned.
 4. Grep it for the project's name, the owner's name, repo name, domain and any id from
    `project/STACK.md`; for an anonymous share there must be none.
 5. Only on the user's yes, open it as its own PR, never in the lessons PR. With a showcase row

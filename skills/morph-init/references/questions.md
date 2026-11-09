@@ -16,7 +16,7 @@ Read, without running project code:
 - An earlier harness, if any: `.claude/agents/*.md` (model and effort per agent, extra variants),
   `.claude/rules/*.md`, `project/*.md`, the agent table and trials in its agents doc, and its
   checklists. Its values are the suggestions for Q5, Q6, Q6b, Q9 to Q13, including defaults that differ
-  from the advised ones (for example QA at `medium` by default).
+  from the advised ones (for example QA at `high` by default).
 
 Look for manifests in workspace packages too (`apps/*/`, `packages/*/`, or the globs in
 `pnpm-workspace.yaml`, the `workspaces` field, `go.work` and similar): in a monorepo the framework is
@@ -69,7 +69,7 @@ then a table of named checks (`install`, `typecheck`, `lint`, `unit`, `build`, `
 project doesn't have (render.md § 3b then leaves it out). A new project with no tooling yet gets "none" for all and a note that the first
 feature should add them. Also ask: "Any other checks agents should run (a migrations check, a
 security scan)?" and add each as a named check. Follow-up: "Which must pass before QA, and which before sign-off?" Suggest
-`before_qa`: everything but e2e; `before_signoff`: everything. → `cmd.*`, `checks.*`
+`before_qa`: everything but `e2e-full` (with the browser-e2e module, `e2e-targeted` and `e2e-repeat` stay in it: the Full-stack engineer runs them before every QA handoff, module README § On install); `before_signoff`: everything. The end-of-task hook (`checks.on_stop`) gets the fast ones the project has among `typecheck`, `lint` and `unit` (plus `secrets` with the security module); ask only when `unit` usually takes more than a few minutes, and then leave it out. It runs them with no prompt, so it stays empty when the owner answers Q14 with `allow_checks: false` (they chose a prompt for each check command). → `cmd.*`, `checks.*`
 
 Follow-up when the stack has a tool that can narrow a check to what changed (a monorepo runner such as
 Turborepo, Nx or pnpm filters; a test runner's changed-files mode such as `vitest --changed`,
@@ -167,6 +167,16 @@ tools. Yes unlocks the roadmap module and two follow-ups: the file paths (sugges
 and `docs/versions/`), and the first version's id and goal (suggest `v1` and the project description;
 for an ongoing project, the next release the README or tags point to). → `roadmap.*`
 
+## Q8b. Autonomous run
+
+Skip unless Q8 was yes. "Do you want the option of an unattended run? You write a short brief,
+approve the product docs it turns into once, and the harness then builds the first version
+feature by feature on its own branch, writing down everything only you can do. It runs from a
+terminal on your machine and stops at a budget you set." Default no: suggest yes only for a new
+product the owner wants built from a brief. Yes adds the autonomous module, switched off with no
+budget (`auto.enabled: false`); `/morph-auto start` sets it up when the owner wants a run.
+→ `modules`
+
 ## Q9. Data
 
 Skip when the stack has no database. "Agents never write to shared remote databases. Do you want the
@@ -231,10 +241,10 @@ the owner's install; the check is recorded as not run until then. → `modules`,
 "Which models should the agents use?" Offer two presets, then show the table for the one picked
 and ask "Keep it?" (any cell can change).
 
-- **All Sonnet (default, cheaper):** Sonnet in every role below except the legal writer. With the
+- **All Sonnet (default, cheaper):** Sonnet in every role below except the legal writer, the code scout and the feature closer (Haiku: one maps the code before a plan, the other drafts the closing records the Technical Lead checks). With the
   plan, QA and checks around it, it holds up well at about half the cost.
 - **Opus for planning and building:** Opus for the Technical Lead, Full-stack (high and xhigh) and
-  the high researcher; Sonnet elsewhere. For projects where a missed edge case is costly and cost
+  the high researcher; Sonnet elsewhere, Haiku for the code scout and the feature closer. For projects where a missed edge case is costly and cost
   matters less.
 
 Say how the two compare on cost, in relative terms only, never as dollars: "All Sonnet = 1x. The Opus
@@ -242,7 +252,7 @@ preset costs roughly 1.5x to 2x per feature: only the Technical Lead, Full-stack
 change, and Opus is about twice Sonnet per token at the list prices in `harness/MODEL_PRICES.md`
 (read the ratio from that table, don't quote it from memory). A rough comparison, not a quote: real
 cost depends on the feature, the codebase and how many QA rounds it takes. `xhigh` effort costs
-noticeably more than `high`, which is why it is only for risky cores." Then add: "After every feature
+noticeably more than `high`, which is why it is only for sign-in, secrets and money." Then add: "After every feature
 the hand-off shows what it actually cost on your project (`scripts/feature-cost.sh`); after about three
 features the prune shows your own average, and you can switch presets then." Leave this paragraph out
 when `cost.track` is off.
@@ -250,18 +260,19 @@ when `cost.track` is off.
 | Role | Model (All Sonnet / Opus preset) | Effort |
 |------|-------|--------|
 | Technical Lead (main chat) | sonnet / opus | high |
-| Full-stack | sonnet / opus (sonnet for the medium variant) | high by default; medium in small mode; xhigh for risky cores |
-| QA | sonnet / sonnet | high by default; medium in small mode |
+| Full-stack | sonnet / opus (sonnet for the medium variant) | high by default; xhigh for sign-in, secrets and money |
+| QA | sonnet / sonnet | medium by default; high when Full-stack is xhigh |
 | Researcher (read-only, research mode) | sonnet / sonnet (opus for the high variant) | medium by default; high for architecture or risk areas |
+| Code scout (maps the code to `Plan/code-map.md` before a full-mode plan) | haiku / haiku | medium |
+| Feature closer (drafts the closing records after a QA pass) | haiku / haiku | medium |
 | Legal writer | fable (opus if fable isn't available) | high |
 
-12a. "Which areas are risky enough that changing how they behave needs the full process?" Suggest
-behaviours found in the scan: who can read or change data (access rules, sign-in), money, deleting
-data, schema migrations, secrets. Don't suggest whole layers such as "public API routes" or
-"response shapes": almost every change touches one, so listing them sends routine work to full mode.
-Say that a small, fully specified change inside
-one of them (a new field, a limit) still uses small mode when it leaves the risky behaviour alone.
-→ `risk_areas`
+12a. "Which areas are risky enough that every change to them gets the full process (plan, build,
+QA)?" Suggest behaviours found in the scan: who can read or change data (access rules, sign-in),
+money, deleting data, schema migrations, secrets. Then propose the paths that hold each one, from the
+scan, as narrow as the code allows. Say that `scripts/risk-check.sh` sends every change to one of
+these paths to full mode, however small, so whole layers such as "public API routes" or "response
+shapes" send routine work there. → `risk_areas`, and the paths to `project/CONTROLS.md` § Risk paths
 
 For a migration, show the earlier harness's agents table instead of the advised one, with the
 differences marked, and keep its extra variants (a trial variant stays, with its trial).
@@ -300,7 +311,7 @@ humans: [{ name: "", github: "", role: owner }]
 environment: [claude-code-cli]
 stack: { summary: "", package_manager: "", toolchain_setup: "", install_cmd: "" }
 cmd: { install: "", typecheck: "", lint: "", unit: "", build: "", e2e-targeted: "", e2e-full: "", e2e-repeat: "", secrets: "", audit: "" }  # plus any extra named checks; secrets and audit with the security module
-checks: { before_qa: [], before_signoff: [] }
+checks: { before_qa: [], before_signoff: [], on_stop: [] }   # on_stop: the fast checks the end-of-task hook runs
 check_scope:   # Q5 follow-up; one entry per check Full-stack may narrow; [] = every check runs in full
   - { check: unit, scope: affected, command: "" }   # scope: full | affected (command) | paths (paths: [globs])
 apps: []        # Q4 follow-up, monorepos only; deploy keys are environment names (Q6b)
@@ -325,8 +336,10 @@ legal: { sources: [docs/LEGAL.md] }
 risk_areas: []
 agents: { technical_lead: { model: opus, effort: high },
           fullstack: { model: opus, medium_model: sonnet, default: high },
-          qa: { model: sonnet, medium_model: sonnet, default: high },
+          qa: { model: sonnet, medium_model: sonnet, default: medium },
           researcher: { model: sonnet, high_model: opus, default: medium },
+          scout: { model: haiku, effort: medium },
+          closer: { model: haiku, effort: medium },
           legal_writer: { model: fable, effort: high } }
 claude_projects: { coordinator: { model: sonnet, effort: medium }, feature_threads: { model: sonnet, effort: high },
                    one_shot_threads: { model: sonnet, effort: medium } }

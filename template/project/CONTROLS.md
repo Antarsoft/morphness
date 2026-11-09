@@ -1,6 +1,6 @@
 # Controls: this project's commands
 
-The handoff rules (who runs which checks, when, and how the output is logged) are in [harness/CONTROLS.md](../harness/CONTROLS.md). This file maps each **named check** in `harness.config.yml` → `checks` to the command that runs it here, and lists the paths that need the full browser suite. Kit docs name the checks; only this file names the commands.
+The handoff rules (who runs which checks, when, and how the output is logged) are in [harness/CONTROLS.md](../harness/CONTROLS.md). This file maps each **named check** in `harness.config.yml` → `checks` to the command that runs it here, and lists the paths that need the full browser suite and the risk paths that need full mode. Kit docs name the checks; only this file names the commands.
 
 ## Named checks
 
@@ -11,7 +11,7 @@ The handoff rules (who runs which checks, when, and how the output is logged) ar
 | `lint` | `{{cmd.lint}}` | yes |
 | `unit` | `{{cmd.unit}}` | yes |
 | `build` | `{{cmd.build}}` | yes |
-| `e2e-targeted` | `{{cmd.e2e-targeted}}` followed by the specs: the plan's **Targeted e2e specs**, plus the smoke and accessibility specs and every spec the diff adds or edits | yes, for features touching pages, auth or the public API | <!-- module:browser-e2e -->
+| `e2e-targeted` | `{{cmd.e2e-targeted}}` followed by the specs: the plan's **Targeted e2e specs**, plus the smoke and accessibility specs and every spec the diff adds or edits | yes | <!-- module:browser-e2e -->
 | `e2e-full` | `{{cmd.e2e-full}}` | QA, once on the final commit; Full-stack when the plan says `full` or the diff touches a cross-cutting path | <!-- module:browser-e2e -->
 | `e2e-repeat` | `{{cmd.e2e-repeat}}` | yes, when a new or changed browser test uses a fake clock, hover or focus timing: five runs, record the pass count | <!-- module:browser-e2e -->
 | `secrets` | `{{cmd.secrets}}` | yes; the output is redacted and never pasted | <!-- module:security -->
@@ -25,6 +25,14 @@ How Full-stack narrows each `before_qa` check to what the branch changed ([harne
 | Check | Scope | Scoped command, or the paths that trigger it |
 |-------|-------|----------------------------------------------|
 <!-- morph-init: fill one row per check that can be narrowed, from the stack's own tooling. Scope is `full`, `affected` (a scoped command) or `paths` (globs; the check runs in full only when the diff touches one). Examples: "| `unit` | `affected` | `pnpm --filter '...[origin/dev]' test` |", "| `unit` | `affected` | `npx vitest run --changed origin/dev` |", "| `unit` | `affected` | `npx jest --changedSince=origin/dev` |", "| `typecheck` | `affected` | `npx turbo run typecheck --filter=...[origin/dev]` |", "| `integration` | `paths` | `src/api/`, `db/` |". Keep `typecheck` and `build` at `full` unless the tool computes affected packages itself (a file's change can break its importers). With no tool that scopes, write "None: every check runs in full." -->
+
+## End-of-task checks
+
+How the end-of-task hook runs the `checks.on_stop` checks here ([harness/CONTROLS.md](../harness/CONTROLS.md) § End-of-task checks). The hook reads this file as committed on the integration branch, so a change here takes effect once it merges.
+
+**Run through:** none
+
+<!-- morph-init: fill when project/agents/qa-engineer.md names a wrapper that keeps commands on the local stack, or § Shared resources names a lock command, write it here in backticks, the way the check's command follows it. Example: "**Run through:** `scripts/local-env.sh`" or "**Run through:** `flock /tmp/<project>-stack.lock`". Otherwise leave "none". -->
 
 ## Command output
 
@@ -44,6 +52,16 @@ tail -n 30 "$SCRATCH/logs/<check>.log"
 A change to any of these paths can break pages or flows it doesn't name, so it gets `e2e-full` from Full-stack and a full (not scoped) QA round 2.
 
 <!-- morph-init: fill the list. Typical entries: shared packages, the database schema and migrations, the auth and session code, request middleware, the root layout, framework config, the browser-test fixtures and config, the root manifest and lockfile. Example: "`src/db/`, `migrations/`, `src/auth/`, `src/middleware.ts`, `package.json`, the lockfile". -->
+
+## Risk paths
+
+A change to any of these paths always gets full mode (plan, Full-stack and QA), however small: `bash scripts/risk-check.sh` reads this list ([harness/MODES.md](../harness/MODES.md) § Choosing mode). One bullet per risk area, its paths in backticks, `.gitignore` style: a pattern with a slash is from the repo root, one without matches in any folder, `**` crosses folders. Keep each to the code that holds the risky behaviour, not a whole layer: every path listed here sends every change to it to full mode. One exception: a new `.sql` migration that only adds, or a database test, in an area named for the database runs in small mode with the database tests and one review ([harness/MODES.md](../harness/MODES.md) § Additive migration). With `mode.risk_by: change` (a trial), an ordering or paging edit to a file here can run in small mode with one review ([harness/MODES.md](../harness/MODES.md) § Contained change), except in an area named for sign-in, secrets, money or the database.
+
+- **Database schema and migrations:** `**/migrations/`, `*.sql`, `schema.prisma`
+- **Sign-in, sessions and access rules:** `**/auth/`, `auth.*`, `**/session/`, `**/sessions/`, `session.*`, `middleware.*`, `**/policies/`
+- **Money:** `**/billing/`, `**/payments/`, `**/checkout/`, `**/stripe/`
+
+<!-- morph-init: fill one bullet per entry in harness.config.yml → risk_areas that the rows above don't cover, with the paths that hold it from the repo scan, and narrow or drop the rows above to fit this repo. Example: "- **Public API keys:** `src/api/keys/`". -->
 
 <!-- module:security -->
 ## Security paths
@@ -75,7 +93,7 @@ Steps QA runs by hand when the UI changed, picking the ones that apply.
 
 ## Documentation paths
 
-The list is [harness/CONTROLS.md](../harness/CONTROLS.md) § Documentation paths. This project's changes to it:
+The list is [harness/CONTROLS.md](../harness/CONTROLS.md) § Documentation paths. This project's changes to it are set in `harness.config.yml` (`checks.doc_paths_add`, `checks.doc_paths_remove`), where `scripts/checks.sh` reads them; list them here too, with why:
 
 - None.
 

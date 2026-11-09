@@ -9,7 +9,7 @@
 **Created:** YYYY-MM-DD  
 **Updated:** YYYY-MM-DD
 
-This short plan replaces `feature.md` and the full plan. The sections the agents rely on keep their names, so Full-stack and QA read it like any plan. A fix that turns out to need more than § Fix limit allows gets a full plan, with this file linked.
+This short plan replaces the full plan. The sections the agents rely on keep their names, so Full-stack and QA read it like any plan. A fix that turns out to need more than § Fix limit allows gets a full plan, with this file linked.
 
 ## Symptom
 
@@ -36,12 +36,13 @@ The `file:line` of each function on the path the TL read itself, and the suspect
 
 ## Regression test
 
-Written by **QA** before any fix (`harness/MODES.md` § Bug mode, step 2). QA adds only this test.
+Written by **QA** before any fix (`harness/MODES.md` § Bug mode, step 2; with `mode.bug_repro: fullstack`, by Full-stack as its first commit). The commit holds only this test; tests for the same-pattern places go in later commits, in a file of their own.
 
 - **Level:** unit | integration | browser e2e: one-line reason (the lowest level that shows the symptom).
 - **File:** the test file path (new or existing).
 - **Asserts:** what the test checks, as the expected behaviour above.
 - **Fails today because:** the failure QA should see (the error, the wrong value), so a red test for another reason doesn't count.
+- **Edge inputs:** the inputs next to the symptom that the fix must also get right, those that apply, each one in the test (one `n/a: <reason>` line when none apply): equal values (two items with the same sort key or timestamp), none, one, exactly at a limit or page edge, a last page that is not full. When the bug is in an order (a sort, paging, "the latest"), the order ends with a unique key such as the id, so items with equal values keep one order every time. Only the reported case must fail before the fix; the edge cases may pass.
 - When no automated test can reach the bug (a third-party console, a device), say why; QA records a manual reproduction instead and AC 1 and 2 use it.
 
 ## Fix limit
@@ -70,9 +71,9 @@ The fix is the smallest change that makes the regression test pass.
 
 `harness/SETUP.md` § Effort per feature; the human approves it with the plan.
 
-- **Full-stack:** medium | high | xhigh: one-line reason (a bug in a `risk_areas` entry is never `medium`).
-- **QA:** medium | high: one-line reason. The same variant writes the regression test and runs the re-run.
-- **Code review before QA:** yes (Full-stack xhigh) | no.
+- **Full-stack:** medium | high | xhigh: one-line reason (a fix that touches a risk path, `bash scripts/risk-check.sh` printing full, is never `medium`).
+- **QA:** medium | high (high only when Full-stack is xhigh): one-line reason. The same variant writes the regression test and runs the re-run.
+- **Code review before QA:** yes (the risk check named a risk path, or Full-stack xhigh) | yes, with the security review (it also touches sign-in, access rules, secrets, money, a public API, or deleting or sharing people's data) | no.
 - **Security review before QA:** yes when the fix changes who can sign in or read or change data, moves money, handles secrets, or deletes or shares people's data (`harness/modules/security/README.md`) | no. <!-- module:security -->
 
 ## Acceptance criteria
@@ -95,6 +96,7 @@ Full-stack **must** pass the `before_qa` checks in `harness/CONTROLS.md` § Befo
 
 - **Approver:**
 - **Date:**
+- In a driver-started autonomous run (`MORPH_AUTO=1`), the Technical Lead approves: **Approver:** `Technical Lead (autonomous mode); product doc approved by <owner> on <date>` (`harness/modules/autonomous/README.md` § Run rules). <!-- module:autonomous -->
 
 ## Decisions
 

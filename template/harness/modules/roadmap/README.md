@@ -66,7 +66,7 @@ The Technical Lead's checks ([project/CONTROLS.md](../../../project/CONTROLS.md)
 
 ## On remove
 
-When the project doesn't choose this module, morph-init deletes this folder and the items below, and creates no `docs/ROADMAP.md` or `docs/versions/`. Steps files then live in the feature folder (`_harness/features/<slug>/<version>/steps.md`). Sentences that say "with the roadmap module" or "roadmap module on/off" (the Technical Lead rule and `.claude/rules/harness.md`, `AGENTS.md`, `harness/SETUP.md` § After QA pass and § Prune, `harness/STRATEGY.md`, `harness/HANDOFFS.md`, `harness/RELEASE.md`, checklist item 2, the plan, steps and prune templates, and the "One next version" row of `harness/CONTROLS.md`) stay as they are.
+When the project doesn't choose this module, morph-init deletes this folder and the items below, and creates no `docs/ROADMAP.md` or `docs/versions/`. Steps files then live in the feature folder (`_harness/features/<slug>/<version>/steps.md`). Sentences that say "with the roadmap module" or "roadmap module on/off" (the Technical Lead rule, `AGENTS.md`, `harness/SETUP.md` § After QA pass and § Prune, `harness/STRATEGY.md`, `harness/HANDOFFS.md`, `harness/RELEASE.md`, checklist item 2, the plan, steps and prune templates, and the "One next version" row of `harness/CONTROLS.md`) stay as they are.
 
 **Delete these files:**
 

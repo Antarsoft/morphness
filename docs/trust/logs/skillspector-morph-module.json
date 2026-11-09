@@ -2,7 +2,7 @@
  "skill": {
   "name": "morph-module",
   "source": "<repo>/skills/morph-module",
-  "scanned_at": "2026-10-20T17:14:30.443694+00:00"
+  "scanned_at": "2026-11-09T06:51:31.577501+00:00"
  },
  "risk_assessment": {
   "score": 0,
@@ -14,9 +14,9 @@
   {
    "path": "SKILL.md",
    "type": "markdown",
-   "lines": 102,
+   "lines": 105,
    "executable": false,
-   "size_bytes": 7726,
+   "size_bytes": 8139,
    "source_url": null,
    "source_identity": null,
    "source_digest": null
@@ -205,8 +205,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 46,
-    "end_line": 46,
+    "start_line": 48,
+    "end_line": 48,
     "fatal": false
    },
    {
@@ -215,8 +215,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 49,
-    "end_line": 49,
+    "start_line": 51,
+    "end_line": 51,
     "fatal": false
    },
    {
@@ -225,18 +225,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 50,
-    "end_line": 50,
-    "fatal": false
-   },
-   {
-    "outcome": "partial",
-    "phase": "reference_resolution",
-    "reason_code": "reference_missing",
-    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
-    "path": "SKILL.md",
-    "start_line": 60,
-    "end_line": 60,
+    "start_line": 52,
+    "end_line": 52,
     "fatal": false
    },
    {
@@ -255,8 +245,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 70,
-    "end_line": 70,
+    "start_line": 64,
+    "end_line": 64,
     "fatal": false
    },
    {
@@ -265,8 +255,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 75,
-    "end_line": 75,
+    "start_line": 72,
+    "end_line": 72,
     "fatal": false
    },
    {
@@ -275,18 +265,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 78,
-    "end_line": 78,
-    "fatal": false
-   },
-   {
-    "outcome": "partial",
-    "phase": "reference_resolution",
-    "reason_code": "reference_missing",
-    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
-    "path": "SKILL.md",
-    "start_line": 79,
-    "end_line": 79,
+    "start_line": 77,
+    "end_line": 77,
     "fatal": false
    },
    {
@@ -305,6 +285,16 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
+    "start_line": 81,
+    "end_line": 81,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
     "start_line": 82,
     "end_line": 82,
     "fatal": false
@@ -315,8 +305,8 @@
     "reason_code": "reference_missing",
     "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
     "path": "SKILL.md",
-    "start_line": 83,
-    "end_line": 83,
+    "start_line": 84,
+    "end_line": 84,
     "fatal": false
    },
    {
@@ -327,6 +317,26 @@
     "path": "SKILL.md",
     "start_line": 85,
     "end_line": 85,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 86,
+    "end_line": 86,
+    "fatal": false
+   },
+   {
+    "outcome": "partial",
+    "phase": "reference_resolution",
+    "reason_code": "reference_missing",
+    "message": "A local path-like reference does not match any bundled artifact, such as a file the skill writes at runtime.",
+    "path": "SKILL.md",
+    "start_line": 88,
+    "end_line": 88,
     "fatal": false
    }
   ],
@@ -634,7 +644,7 @@
     "source_path": "SKILL.md",
     "line": 21,
     "column": 5,
-    "evidence": "1. `harness.config.yml` exists with no `{{` placeholders; otherwise suggest `/morph-init` and stop.",
+    "evidence": "1. `harness.config.yml` exists with none of the kit's placeholders (`grep -E '\\{\\{ *(project|human|morphness)\\.' harness.config.yml` prints nothing); otherwise ",
     "target_path": null,
     "status": "missing",
     "disposition": "partial",
@@ -644,7 +654,7 @@
     "source_path": "SKILL.md",
     "line": 29,
     "column": 33,
-    "evidence": "clone, use the tag named by `installed_from.release`. Without a clone, use this plugin's own",
+    "evidence": "clone, use the tag named by `installed_from.release` (without a `+<commit>` suffix). Without a clone, use this plugin's own",
     "target_path": null,
     "status": "missing",
     "disposition": "partial",
@@ -662,7 +672,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 46,
+    "line": 48,
     "column": 5,
     "evidence": "`harness/README.md` \u00a7 Modules \u2192 **Module markers**) into `T`'s copy of the same file, keeping the",
     "target_path": null,
@@ -672,7 +682,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 49,
+    "line": 51,
     "column": 39,
     "evidence": "`{{key}}` in the copied text from `harness.config.yml` and `project/*` (morph-init",
     "target_path": null,
@@ -682,7 +692,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 50,
+    "line": 52,
     "column": 5,
     "evidence": "`references/render.md` \u00a7 3 lists the keys); a `<!-- morph-init: fill \u2026 -->` comment is filled in step 5.",
     "target_path": null,
@@ -692,18 +702,8 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 60,
+    "line": 62,
     "column": 5,
-    "evidence": "`project/CONTROLS.md`, add its deny and ask rules to `.claude/settings.json`, and copy the pipeline",
-    "target_path": null,
-    "status": "missing",
-    "disposition": "partial",
-    "reference_kind": "quoted_or_code"
-   },
-   {
-    "source_path": "SKILL.md",
-    "line": 60,
-    "column": 58,
     "evidence": "`project/CONTROLS.md`, add its deny and ask rules to `.claude/settings.json`, and copy the pipeline",
     "target_path": null,
     "status": "missing",
@@ -713,6 +713,16 @@
    {
     "source_path": "SKILL.md",
     "line": 62,
+    "column": 58,
+    "evidence": "`project/CONTROLS.md`, add its deny and ask rules to `.claude/settings.json`, and copy the pipeline",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 64,
     "column": 5,
     "evidence": "`project/RELEASE.md` \u00a7 Manual steps.",
     "target_path": null,
@@ -722,7 +732,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 70,
+    "line": 72,
     "column": 45,
     "evidence": "1. **Work in flight.** List features whose `plan.md` **Status** is not `passed` and whose plan uses",
     "target_path": null,
@@ -732,7 +742,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 75,
+    "line": 77,
     "column": 20,
     "evidence": "the command in `harness/README.md` \u00a7 Modules \u2192 **Module markers** (`m=<name>`), delete or reword the",
     "target_path": null,
@@ -742,7 +752,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 78,
+    "line": 80,
     "column": 23,
     "evidence": "`checks`, rows in `project/CONTROLS.md` \u00a7 Named checks and \u00a7 Check scope, rows in",
     "target_path": null,
@@ -752,7 +762,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 79,
+    "line": 81,
     "column": 5,
     "evidence": "`project/STACK.md`), the rules it added to `.claude/settings.json`, and its module key in",
     "target_path": null,
@@ -762,7 +772,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 79,
+    "line": 81,
     "column": 48,
     "evidence": "`project/STACK.md`), the rules it added to `.claude/settings.json`, and its module key in",
     "target_path": null,
@@ -772,9 +782,9 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 80,
+    "line": 82,
     "column": 5,
-    "evidence": "`harness.config.yml` (`ci_cd`, `claude_projects`, `roadmap.enabled: false`, `legal_writer`).",
+    "evidence": "`harness.config.yml` (`ci_cd`, `claude_projects`, `roadmap.enabled: false`, `legal_writer`, `auto`).",
     "target_path": null,
     "status": "missing",
     "disposition": "partial",
@@ -782,7 +792,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 82,
+    "line": 84,
     "column": 56,
     "evidence": "that holds the project's facts or runs on its own (`docs/ROADMAP.md` and `docs/versions/`,",
     "target_path": null,
@@ -792,7 +802,7 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 83,
+    "line": 85,
     "column": 5,
     "evidence": "`docs/LEGAL.md`, the pipeline files in `.github/workflows/`, browser-test specs and fixtures, the",
     "target_path": null,
@@ -802,7 +812,17 @@
    },
    {
     "source_path": "SKILL.md",
-    "line": 85,
+    "line": 86,
+    "column": 64,
+    "evidence": "secrets tool's config and ignore file, an autonomous run's `docs/brief.md`, `docs/product/` and",
+    "target_path": null,
+    "status": "missing",
+    "disposition": "partial",
+    "reference_kind": "quoted_or_code"
+   },
+   {
+    "source_path": "SKILL.md",
+    "line": 88,
     "column": 66,
     "evidence": "A pipeline file that stays is the project's own from now on: `project/CONTROLS.md` \u00a7 CI still",
     "target_path": null,

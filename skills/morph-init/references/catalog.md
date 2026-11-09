@@ -41,8 +41,8 @@ say which are missing.
 
 | Skill | Used by | Why | When it's missing |
 |-------|---------|-----|-------------------|
-| `code-review` | `harness/SETUP.md` § Code review before QA (`xhigh` Full-stack work) | Finds bugs outside the acceptance criteria before QA spends a round on them. | The TL runs the same read-only review as a subagent and marks it in `Plan/review.md` (SETUP § Code review before QA). Suggest updating Claude Code. |
-| `security-review` | Same section, when the plan touches a `risk_areas` entry | A deeper pass on auth, ownership and input handling. | Same fallback, briefed with the security files to read in full. |
+| `code-review` | `harness/SETUP.md` § Code review before QA (risk-path and `xhigh` Full-stack work) | Finds bugs outside the acceptance criteria before QA spends a round on them. | The TL runs the same read-only review as a subagent and marks it in `Plan/review.md` (SETUP § Code review before QA). Suggest updating Claude Code. |
+| `security-review` | Same section, when the change touches sign-in, access rules, secrets, money, a public API, or deleting or sharing people's data | A deeper pass on auth, ownership and input handling. | Same fallback, briefed with the security files to read in full. |
 
 For any other stack, suggest `find-skills` and say there's no vetted entry yet; offer to search with
 it after install rather than guessing a repo name.
@@ -56,7 +56,7 @@ it after install rather than guessing a repo name.
 | Supabase | Supabase | user connector | Read-only checks on remote (list tables, advisors, logs) in data-access stage B. Account-wide: record the project ref to target in `project/STACK.md`. |
 | Error tracking in use (Sentry, PostHog, etc.) | That vendor's connector | user connector | Lets the TL and QA read real errors when planning a fix. |
 | Hosting, DNS, storage or app builds with an official MCP (Vercel, Cloudflare, Expo, etc.) | That vendor's connector | user connector | Read deploy status and logs, and let the Technical Lead do setup work (create a project, set a non-secret variable, add a domain) instead of handing it to you. Every write is asked in chat first, one approved action at a time. |
-| Issue tracker (Linear, Jira, GitHub Issues) | That vendor's connector | user connector | Lets the TL pull the ask and acceptance notes straight into `feature.md`. |
+| Issue tracker (Linear, Jira, GitHub Issues) | That vendor's connector | user connector | Lets the TL pull the ask and acceptance notes straight into `plan.md` § Request. |
 
 A remote connector (such as Context7's hosted server) can't be pinned: its text comes from the vendor's
 server at each call. Say so when suggesting it.

@@ -8,6 +8,16 @@
 **Created:** YYYY-MM-DD  
 **Updated:** YYYY-MM-DD
 
+## Request
+
+The owner's ask, in their words where they gave them (they may draft this section). A few lines each, and only the ones the ask gives; the plan's own sections turn them into steps and criteria.
+
+- **What we want:**
+- **Why:**
+- **Success looks like:**
+- **Constraints:** deadlines, platforms, out-of-scope hints
+- **Links:** tickets, screenshots, prior art
+
 ## Summary
 
 One paragraph, human-readable.
@@ -55,10 +65,13 @@ Each framework or library behaviour the plan depends on, with the source that co
 
 1. Step: technical detail for the Full-stack engineer (exact files and functions, contracts, limits, error messages and UI wording).
 
+The project fact docs the change makes untrue (what the product does and holds: `project/PROJECT.md` and the domain docs) are steps too, written with the code, each with an acceptance criterion naming the fact the doc must state, so QA checks it. Rule and process docs (`project/CONTROLS.md` risk paths, `project/TESTING.md`, `project/PLAN_CHECKLIST.md`) stay with the Technical Lead.
+
 ## References
 
 - **Greps:** the commands from the TL's pre-approval checklist (`harness/PLAN_CHECKLIST.md`, `project/PLAN_CHECKLIST.md`) with hit counts, or "n/a", one line per item (`K<n>` kit, `P<n>` project) or one "n/a" line for a group that doesn't apply (`K14–K20 n/a: <reason>`). A plan with no Greps record is not ready for approval.
 - Each reference as `file § section` or `file:line`, never a whole file: agents read what the plan names and carry it in their context for the whole run.
+- **Code map:** `Plan/code-map.md` at commit `<short sha>` (full mode; the code scout wrote it, and the Full-stack engineer, the review and QA read the code by its line ranges).
 
 ## QA scope
 
@@ -68,7 +81,7 @@ Each framework or library behaviour the plan depends on, with the source that co
 - **Needs live app/services:** none | AC #s: ACs that only pass if the running app reaches its database or other services (login, data-backed screens, API calls, queues). QA runs them only where those are reachable; elsewhere it marks them `deferred: local` and they go into the steps file. Where QA can run: `harness/SETUP.md` § Where QA can run.
 - **Apps touched:** n/a (no `apps` in `harness.config.yml`) | the app names whose folders the change touches, from `apps`; a change to a shared package lists every app that depends on it (`project/STACK.md` § Apps)
 - **Checks:** scoped (default: Full-stack narrows `before_qa` by the diff, `harness/CONTROLS.md` § Scoping by what changed) | full (with the reason, for a change whose reach the diff doesn't show, such as a renamed export used by generated code or a config read at runtime)
-- **Targeted e2e specs:** n/a (browser-e2e module off) | none (no screen, auth or public API change) | full (the change is cross-cutting: `harness/CONTROLS.md` § Cross-cutting paths) | spec paths (with `apps`, from each touched app's `e2e` folder). Full-stack also runs the always-run specs and every spec it adds or edits; QA runs the full suite.
+- **Targeted e2e specs:** n/a (browser-e2e module off) | none (only the always-run specs) | full (the change is cross-cutting: `harness/CONTROLS.md` § Cross-cutting paths) | spec paths (with `apps`, from each touched app's `e2e` folder). Full-stack also runs the always-run specs and every spec it adds or edits; QA runs the full suite.
 - **Login needed:** none | AC #s and which user (default: the seeded local user in `project/STACK.md`; never a user on a shared remote environment).
 - **Build-time env:** none | variables that must be set when QA builds the app, and whether QA must rebuild.
 - **Third-party console:** none | each console screen the human must use and its precondition, listed in the human steps.
@@ -79,10 +92,10 @@ Each framework or library behaviour the plan depends on, with the source that co
 
 Pick per feature; the human approves it with the plan. Levels and criteria: `harness/SETUP.md` § Effort per feature; subagent names: `project/HARNESS_AGENTS.md`.
 
-- **Full-stack:** medium | high | xhigh (or a trial variant from `_harness/trials/`): one-line reason. A `medium` plan names the file it copies.
-- **QA:** medium | high: one-line reason.
-- **Code review before QA:** yes (Full-stack xhigh) | no. See `harness/SETUP.md` § Code review before QA.
-- **Security review before QA:** yes (Security feature: yes, or Full-stack xhigh on a risk area) | no. <!-- module:security -->
+- **Full-stack:** medium | high | xhigh (or a trial variant from `_harness/trials/`): one-line reason. A `medium` plan names the file it copies; `xhigh` is for sign-in, secrets and money only.
+- **QA:** medium | high (high only when Full-stack is xhigh): one-line reason.
+- **Code review before QA:** yes (the risk check named a risk path, or Full-stack xhigh) | yes, with the security review (it also touches sign-in, access rules, secrets, money, a public API, or deleting or sharing people's data) | no. See `harness/SETUP.md` § Code review before QA.
+- **Security review before QA:** yes (Security feature: yes, whatever the line above says) | no. <!-- module:security -->
 
 ## Acceptance criteria
 
@@ -114,6 +127,7 @@ The **Status** line at the top records whether the plan is approved; this sectio
 
 - **Approver:**
 - **Date:**
+- In a driver-started autonomous run (`MORPH_AUTO=1`), the Technical Lead approves: **Approver:** `Technical Lead (autonomous mode); product doc approved by <owner> on <date>` (`harness/modules/autonomous/README.md` § Run rules). <!-- module:autonomous -->
 
 ## Decisions
 

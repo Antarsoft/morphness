@@ -43,7 +43,7 @@ Agents can't do these; they go in `project/RELEASE.md` § Manual steps, and morp
 
 ## Technical Lead
 
-- A plan that changes a pipeline file names it in the plan and puts the pipeline in **Cross-cutting paths**. A change to the deploy or migrations workflow is a `risk_areas` entry (`CI/CD`), so it never runs at `medium` effort.
+- A plan that changes a pipeline file names it in the plan and puts the pipeline in **Cross-cutting paths**. The deploy and migrations workflows are on the `CI/CD` row of [project/CONTROLS.md](../../../project/CONTROLS.md) § Risk paths, so a change to them gets full mode and never runs at `medium` effort.
 - When a feature adds or renames a named check, the plan's steps include the CI step.
 - In the steps file, list any secret, environment or required check the feature needs from the owner.
 
@@ -53,7 +53,7 @@ Agents can't do these; they go in `project/RELEASE.md` § Manual steps, and morp
 - The deploy workflow is offered when an entry in `environments` has `deploy: workflow` and the repo has none. In the deploy and migrations scaffolds, `{{environments.names}}` is the comma-separated names in order, `{{environments.first}}` the first name, and the branch guard gets one `case` line per environment.
 - Copy the accepted scaffolds to `.github/workflows/` without overwriting (a project's existing workflow is kept and described instead), fill their `{{…}}` keys and `# morph-init: fill` lines, and record the paths in `harness.config.yml` → `ci_cd`. A pipeline the owner declined is `none` there and has no file.
 - Fill [project/CONTROLS.md](../../../project/CONTROLS.md) § CI (each workflow, its trigger, its jobs, and whether it is a required gate) and [project/RELEASE.md](../../../project/RELEASE.md) § Where things deploy, § Manual steps (the owner steps above), § Production migrations and § Rollback from the chosen pipelines.
-- Add `.github/workflows/` (or `.gitlab-ci.yml`) to [project/CONTROLS.md](../../../project/CONTROLS.md) § Cross-cutting paths, and `CI/CD` to `harness.config.yml` → `risk_areas` when a deploy or migrations workflow was added.
+- Add `.github/workflows/` (or `.gitlab-ci.yml`) to [project/CONTROLS.md](../../../project/CONTROLS.md) § Cross-cutting paths, and, when a deploy or migrations workflow was added, `CI/CD` to `harness.config.yml` → `risk_areas` and a `- **CI/CD:**` row with those workflow files to § Risk paths.
 - Add to `.claude/settings.json` → `deny`: `Bash(gh workflow run*)`, `Bash(gh run rerun*)`, `Bash(gh secret*)`, `Bash(gh variable*)`, `Bash(gh api*environments*)` (GitLab: `Bash(glab ci run*)`, `Bash(glab variable*)`), plus the write tools of any hosting connector that deploys. Add to `ask`: `Bash(gh api*rulesets*)` and `Bash(gh api*protection*)`. These two are `ask`, not `deny`, because `/morph-init` and `/morph-doctor` apply the branch protection with `gh api` after the owner's yes ([harness/RELEASE.md](../../RELEASE.md) § Branch protection), and a deny can't be approved past. The rule is unchanged: no feature agent touches rulesets or protection, and the prompt makes the owner see any such call. List them in `project/SKILLS_AND_MCPS.md` § Permission rules added for this project.
 
 ## On remove

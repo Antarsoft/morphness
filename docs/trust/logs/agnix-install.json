@@ -1,29 +1,138 @@
 {
  "version": "0.59.0",
- "files_checked": 58,
+ "files_checked": 76,
  "diagnostics": [
   {
-   "level": "warning",
-   "rule": "CDX-AG-005",
-   "file": "<install-root>/nextjs-supabase/AGENTS.md",
-   "line": 33,
+   "level": "error",
+   "rule": "CC-AG-010",
+   "file": "<install-root>/nextjs-supabase/.claude/agents/researcher-high.md",
+   "line": 1,
    "column": 1,
-   "message": "AGENTS.md references missing file `QA/qa-result.md`",
-   "suggestion": "Remove the reference or create the file - Codex will fail to open it during a session",
-   "category": "codex",
-   "rule_severity": "MEDIUM",
-   "applies_to_tool": "codex"
+   "message": "Unknown tool 'MultiEdit' in disallowedTools list. Known tools: Agent, Artifact, AskUserQuestion, Bash, CronCreate, CronDelete, CronList, Edit, EndConversation, EnterPlanMode, EnterWorktree, ExitPlanMode, ExitWorktree, Glob, Grep, LSP, ListAgents, ListMcpResourcesTool, Monitor, MultiTool, NotebookEdit, PowerShell, PushNotification, Read, ReadMcpResourceTool, RemoteTrigger, ReportFindings, ScheduleWakeup, SendFeedback, SendMessage, SendUserFile, ShareOnboardingGuide, Skill, StatusBarMessageTool, SubagentHandback, Task, TaskCreate, TaskGet, TaskList, TaskOutput, TaskStop, TaskUpdate, TodoRead, TodoWrite, ToolSearch, WaitForMcpServers, WebFetch, WebSearch, Workflow, Write",
+   "suggestion": "Use a known Claude Code tool name or a valid MCP tool (mcp__<server> or mcp__<server>__<tool>, case-sensitive lowercase prefix, no glob in the server segment)",
+   "category": "claude-agents",
+   "rule_severity": "HIGH",
+   "applies_to_tool": "claude-code"
+  },
+  {
+   "level": "error",
+   "rule": "CC-AG-010",
+   "file": "<install-root>/nextjs-supabase/.claude/agents/researcher.md",
+   "line": 1,
+   "column": 1,
+   "message": "Unknown tool 'MultiEdit' in disallowedTools list. Known tools: Agent, Artifact, AskUserQuestion, Bash, CronCreate, CronDelete, CronList, Edit, EndConversation, EnterPlanMode, EnterWorktree, ExitPlanMode, ExitWorktree, Glob, Grep, LSP, ListAgents, ListMcpResourcesTool, Monitor, MultiTool, NotebookEdit, PowerShell, PushNotification, Read, ReadMcpResourceTool, RemoteTrigger, ReportFindings, ScheduleWakeup, SendFeedback, SendMessage, SendUserFile, ShareOnboardingGuide, Skill, StatusBarMessageTool, SubagentHandback, Task, TaskCreate, TaskGet, TaskList, TaskOutput, TaskStop, TaskUpdate, TodoRead, TodoWrite, ToolSearch, WaitForMcpServers, WebFetch, WebSearch, Workflow, Write",
+   "suggestion": "Use a known Claude Code tool name or a valid MCP tool (mcp__<server> or mcp__<server>__<tool>, case-sensitive lowercase prefix, no glob in the server segment)",
+   "category": "claude-agents",
+   "rule_severity": "HIGH",
+   "applies_to_tool": "claude-code"
   },
   {
    "level": "warning",
-   "rule": "PE-004",
-   "file": "<install-root>/nextjs-supabase/AGENTS.md",
+   "rule": "CC-SET-036",
+   "file": "<install-root>/nextjs-supabase/.claude/settings.json",
+   "line": 27,
+   "column": 7,
+   "message": "Allow rule 'Bash(bash scripts/feature-cost.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+   "suggestion": "Allow the specific commands instead, for example Bash(npm run test) or Bash(devbox run npm test).",
+   "category": "claude-settings",
+   "rule_severity": "MEDIUM",
+   "applies_to_tool": "claude-code"
+  },
+  {
+   "level": "warning",
+   "rule": "CC-SET-036",
+   "file": "<install-root>/nextjs-supabase/.claude/settings.json",
+   "line": 28,
+   "column": 7,
+   "message": "Allow rule 'Bash(bash scripts/prune-counter.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+   "suggestion": "Allow the specific commands instead, for example Bash(npm run test) or Bash(devbox run npm test).",
+   "category": "claude-settings",
+   "rule_severity": "MEDIUM",
+   "applies_to_tool": "claude-code"
+  },
+  {
+   "level": "warning",
+   "rule": "CC-SET-036",
+   "file": "<install-root>/nextjs-supabase/.claude/settings.json",
+   "line": 29,
+   "column": 7,
+   "message": "Allow rule 'Bash(bash scripts/evidence.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+   "suggestion": "Allow the specific commands instead, for example Bash(npm run test) or Bash(devbox run npm test).",
+   "category": "claude-settings",
+   "rule_severity": "MEDIUM",
+   "applies_to_tool": "claude-code"
+  },
+  {
+   "level": "warning",
+   "rule": "CC-SET-036",
+   "file": "<install-root>/nextjs-supabase/.claude/settings.json",
+   "line": 30,
+   "column": 7,
+   "message": "Allow rule 'Bash(bash scripts/learned-rules.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+   "suggestion": "Allow the specific commands instead, for example Bash(npm run test) or Bash(devbox run npm test).",
+   "category": "claude-settings",
+   "rule_severity": "MEDIUM",
+   "applies_to_tool": "claude-code"
+  },
+  {
+   "level": "warning",
+   "rule": "CC-SET-036",
+   "file": "<install-root>/nextjs-supabase/.claude/settings.json",
+   "line": 32,
+   "column": 7,
+   "message": "Allow rule 'Bash(bash scripts/risk-check.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+   "suggestion": "Allow the specific commands instead, for example Bash(npm run test) or Bash(devbox run npm test).",
+   "category": "claude-settings",
+   "rule_severity": "MEDIUM",
+   "applies_to_tool": "claude-code"
+  },
+  {
+   "level": "warning",
+   "rule": "CC-SET-036",
+   "file": "<install-root>/nextjs-supabase/.claude/settings.json",
+   "line": 33,
+   "column": 7,
+   "message": "Allow rule 'Bash(bash scripts/plan-brief.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+   "suggestion": "Allow the specific commands instead, for example Bash(npm run test) or Bash(devbox run npm test).",
+   "category": "claude-settings",
+   "rule_severity": "MEDIUM",
+   "applies_to_tool": "claude-code"
+  },
+  {
+   "level": "warning",
+   "rule": "CC-SET-036",
+   "file": "<install-root>/nextjs-supabase/.claude/settings.json",
+   "line": 34,
+   "column": 7,
+   "message": "Allow rule 'Bash(bash scripts/handoff.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+   "suggestion": "Allow the specific commands instead, for example Bash(npm run test) or Bash(devbox run npm test).",
+   "category": "claude-settings",
+   "rule_severity": "MEDIUM",
+   "applies_to_tool": "claude-code"
+  },
+  {
+   "level": "warning",
+   "rule": "CC-SET-036",
+   "file": "<install-root>/nextjs-supabase/.claude/settings.json",
    "line": 35,
-   "column": 11,
-   "message": "Ambiguous term 'usually' creates unclear instruction",
-   "suggestion": "Replace the hedge with a condition Claude can check (e.g., 'when the change touches src/api/'), or state the rule without it",
-   "category": "prompt-engineering",
-   "rule_severity": "MEDIUM"
+   "column": 7,
+   "message": "Allow rule 'Bash(bash scripts/doc-section.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+   "suggestion": "Allow the specific commands instead, for example Bash(npm run test) or Bash(devbox run npm test).",
+   "category": "claude-settings",
+   "rule_severity": "MEDIUM",
+   "applies_to_tool": "claude-code"
+  },
+  {
+   "level": "warning",
+   "rule": "CC-SET-036",
+   "file": "<install-root>/nextjs-supabase/.claude/settings.json",
+   "line": 36,
+   "column": 7,
+   "message": "Allow rule 'Bash(bash scripts/checks.sh:*)' approves an interpreter with any arguments, which runs arbitrary code; Claude Code drops wildcarded interpreters when auto mode starts",
+   "suggestion": "Allow the specific commands instead, for example Bash(npm run test) or Bash(devbox run npm test).",
+   "category": "claude-settings",
+   "rule_severity": "MEDIUM",
+   "applies_to_tool": "claude-code"
   },
   {
    "level": "warning",
@@ -109,8 +218,8 @@
   }
  ],
  "summary": {
-  "errors": 0,
-  "warnings": 3,
+  "errors": 2,
+  "warnings": 10,
   "info": 6
  }
 }

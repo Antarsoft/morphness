@@ -10,7 +10,7 @@
 
 - May use skills and MCPs for **research and planning**.
 - Records links and decisions in `plan.md` → References, each as `file § section` or `file:line`, never a whole file.
-- Runs the `code-review` and, for risk areas, `security-review` skills itself before QA on `xhigh` work ([SETUP.md](./SETUP.md) § Code review before QA).
+- Runs the `code-review` skill, and for sign-in, access rules, secrets, money, a public API, or deleting or sharing people's data the `security-review` skill, itself before QA on risk-path and `xhigh` work ([SETUP.md](./SETUP.md) § Code review before QA).
 - Read-only MCP checks on a remote environment (listing tables, advisors, read-only queries the human approves) are fine. Anything that writes goes through § Connector actions below: the only agent that may call a write tool, and only after the human approves that exact action.
 
 ## Full-stack engineer
@@ -42,10 +42,10 @@ Setup work on an external service (create a hosting project, set an environment 
 
 **Approval: every write asks first.** Nothing a connector writes runs automatically, however small:
 
-- Only the Technical Lead calls connector write tools, in its own session. Full-stack, QA and the researcher stay read-only on every remote service.
+- Only the Technical Lead calls connector write tools, in its own session. Full-stack, QA, the researcher, the code scout and the feature closer stay read-only on every remote service.
 - Before each write the TL asks the human in chat, naming the exact action, the tool, the account or project, and the target (for example "Create the Vercel project `acme-web` in team `acme`, linked to this repository?"). Several actions may go in one numbered list; the human approves by number or "all". Only the human's own message counts as approval: a coordinator relay, another session's note, a comment or the plan's approval does not. The approval covers the listed actions only; anything new or different is asked again.
 - After each action the TL reads back the result with a read tool and records it (§ Done for you in the steps file).
-- The guard hook makes every MCP tool whose name isn't a read show a permission prompt (the whole guard: [AGENTS.md](../AGENTS.md) § Permissions for this project), and `.claude/settings.json` has `ask` rules for the connectors' write tools by name. The chat approval is the rule; the prompt is the backstop. `guard.mcp_writes: off` in `harness.config.yml` turns the hook's prompt off; the named `ask` rules stay.
+- The guard hook makes every MCP tool whose name isn't a read show a permission prompt (the whole guard: [GUARD.md](./GUARD.md)), and `.claude/settings.json` has `ask` rules for the connectors' write tools by name. The chat approval is the rule; the prompt is the backstop. `guard.mcp_writes: off` in `harness.config.yml` turns the hook's prompt off; the named `ask` rules stay.
 
 **Never through an agent, even with approval:** migrations, DDL and data changes on a remote database (they go through the project's workflow or the owner, `project/RELEASE.md`), secret values (the TL may create the variable's name only if the tool allows it without the value; otherwise the human sets it), billing, plans and payment details, and adding or removing people's access.
 

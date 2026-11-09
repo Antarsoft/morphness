@@ -7,8 +7,6 @@
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",
-      "WebFetch(domain:api.github.com)",
-      "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(gh api --method GET repos/antarsoft/morphness/*)",
       "Bash(curl -fsSL https://api.github.com/repos/antarsoft/morphness/*)",
       "Bash(curl -fsSL https://raw.githubusercontent.com/antarsoft/morphness/*)",
@@ -30,7 +28,12 @@
       "Bash(bash scripts/prune-counter.sh:*)",
       "Bash(bash scripts/evidence.sh:*)",
       "Bash(bash scripts/learned-rules.sh:*)",
-      "Bash(cat > /tmp/*)"
+      "Bash(cat > /tmp/*)",
+      "Bash(bash scripts/risk-check.sh:*)",
+      "Bash(bash scripts/plan-brief.sh:*)",
+      "Bash(bash scripts/handoff.sh:*)",
+      "Bash(bash scripts/doc-section.sh:*)",
+      "Bash(bash scripts/checks.sh:*)"
     ],
     "deny": [
       "Read(./**/.env)",
@@ -140,11 +143,12 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash|Read|Edit|MultiEdit|Write|NotebookEdit|Grep|mcp__.*",
+        "matcher": "Bash|Read|Edit|MultiEdit|Write|NotebookEdit|Grep|WebFetch|mcp__.*",
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/guard.sh\""
+            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/guard.sh\"; rc=$?; [ \"$rc\" = 0 ] || [ \"$rc\" = 2 ] || { echo \"Blocked: scripts/guard.sh is missing or failed (exit $rc), so the call can't be checked. The guard fails closed: restore the file in a terminal (git checkout -- scripts/guard.sh), then retry.\" >&2; exit 2; }; exit \"$rc\"",
+            "timeout": 60
           }
         ]
       }
@@ -154,7 +158,31 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/guard.sh\""
+            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/guard.sh\"; rc=$?; [ \"$rc\" = 0 ] || [ \"$rc\" = 2 ] || { echo \"Blocked: scripts/guard.sh is missing or failed (exit $rc), so the call can't be checked. The guard fails closed: restore the file in a terminal (git checkout -- scripts/guard.sh), then retry.\" >&2; exit 2; }; exit \"$rc\"",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/checks.sh\" hook",
+            "timeout": 900
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "fullstack-engineer.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/checks.sh\" hook",
+            "timeout": 900
           }
         ]
       }

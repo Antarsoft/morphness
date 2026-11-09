@@ -77,7 +77,7 @@ roadmap:
   file: docs/ROADMAP.md
   versions_dir: docs/versions
 
-# Optional modules under harness/modules/: claude-projects, data-access, browser-e2e, legal, roadmap, ci-cd, security
+# Optional modules under harness/modules/: claude-projects, data-access, browser-e2e, legal, roadmap, ci-cd, security, autonomous
 # Add or remove one on a live project with /morph-module add|remove <name>.
 modules: [roadmap]
 
@@ -85,6 +85,16 @@ modules: [roadmap]
 checks:
   before_qa: [install, typecheck, lint, unit, build]
   before_signoff: [install, typecheck, lint, unit, build, e2e-full]
+  # on_stop: the checks scripts/checks.sh runs as code when a task ends (harness/CONTROLS.md § End-of-task checks):
+  # a pass costs no model turn, a failure sends the agent back. Keep it to fast checks; [] turns the hook off.
+  on_stop: [typecheck, lint, unit]
+  stop_retries: 2   # times in a row one failure sends the agent back before the turn ends with it on record
+  # doc_paths_add / doc_paths_remove: this project's changes to the documentation-only list (harness/CONTROLS.md
+  # § Documentation paths): folders ending in `/`, or single files, from the repository root. A removed path is
+  # always checked as code (a docs site whose markdown is compiled into pages); an added one is skipped like
+  # documentation. Here and not in a document, so an agent can't switch a check off by editing one.
+  doc_paths_add: []
+  doc_paths_remove: []
 
 # true: CI on the PR is a required gate. false: QA/qa-result.md on the final commit is the gate.
 ci_gate: false
@@ -102,17 +112,32 @@ ci_cd:
   migrations: none
   tags: none
 
-# Areas where a change to their behaviour gets full mode, never medium effort (e.g. auth, billing, migrations). When a security review runs before QA: `harness/SETUP.md` § Code review before QA.
-# A fully specified change that alters none of that behaviour still uses small mode (harness/MODES.md § Small mode).
+# Areas where a change gets full mode, never medium Full-stack effort (e.g. auth, billing, migrations). The paths that
+# hold each one are in project/CONTROLS.md § Risk paths, which scripts/risk-check.sh reads. When a security
+# review runs before QA: `harness/SETUP.md` § Code review before QA.
 risk_areas: []
+
+# How scripts/risk-check.sh picks the mode for a change (harness/MODES.md § Choosing mode).
+mode:
+  plain_max_files: 6      # a change to more files than this (documentation not counted) gets full mode
+  force: auto             # auto lets the script decide; full or plain makes every change run that way
+  bug_repro: qa           # bug mode's failing test: qa (a QA reproduction run before the fix) | fullstack (a trial:
+                          # Full-stack writes and commits it first, QA runs once; harness/MODES.md § Bug mode)
+  risk_by: file           # file: a change to a risk path is full mode | change (a trial): an ordering or paging edit
+                          # (order, sort, limit, range calls only) runs in small mode with one code review
+                          # (harness/MODES.md § Contained change)
+  contained_max_lines: 10 # with risk_by: change, the most lines (added and removed) a contained change makes in a file
+  risk_terms: []          # with risk_by: change, the project's own words that make a change not contained, one line (e.g. [org_id])
 
 agents:
   # Default: Sonnet in every role, at about half the cost of Opus; the plan, QA and checks carry the quality.
   # The "Opus for planning and building" preset sets technical_lead and fullstack to opus and researcher's high_model to opus.
   technical_lead: { model: sonnet, effort: high }
   fullstack: { model: sonnet, medium_model: sonnet, default: high, variants: [medium, high, xhigh] }
-  qa: { model: sonnet, medium_model: sonnet, default: high, variants: [medium, high] }
+  qa: { model: sonnet, medium_model: sonnet, default: medium, variants: [medium, high] }   # high when Full-stack is xhigh
   researcher: { model: sonnet, high_model: sonnet, default: medium, variants: [medium, high] }   # read-only; research mode and research before a plan
+  scout: { model: haiku, effort: medium }   # code scout: maps the code before a full-mode plan into Plan/code-map.md, the one file it writes
+  closer: { model: haiku, effort: medium }   # feature closer: drafts the closing records after QA; the Technical Lead checks and decides
   legal_writer: { model: fable, effort: high }   # use opus if fable isn't available to you
 
 # Advisory only: Claude Projects settings can't be set from a repo.
@@ -130,8 +155,8 @@ cost: { track: true, prices: harness/MODEL_PRICES.md }
 
 # The guard hook (scripts/guard.sh, wired in .claude/settings.json) runs before tool calls. It always
 # blocks secret and credential files (also behind `@` and `<`), a bare `env` or `printenv`, pushes to environment
-# branches, force-pushes, code-host secrets and the remote database writes listed in AGENTS.md
-# § Permissions for this project: no switch. The asks below show a permission prompt (the owner
+# branches, force-pushes, code-host secrets and the remote database writes listed in
+# harness/GUARD.md: no switch. The asks below show a permission prompt (the owner
 # answers it); `off` skips that group's prompt, and the settings.json rules still apply. A hook ask
 # beats an allow rule, so `off` is the only way to run these without a prompt, for instance
 # `prisma db push` on a local stack.
@@ -153,20 +178,50 @@ cost: { track: true, prices: harness/MODEL_PRICES.md }
 #                  ssh, scp, sftp, rsync to or from another machine, nc, socat, telnet, ftp
 #   installs       a package runner (npx, bunx, pnpm dlx, uvx) downloading a package that isn't installed in the
 #                  project, unless it is a common dev tool, and `skills add`
+#   plan_reads     a cost rule, on unless off: while a full-mode plan is written, the main chat reads source
+#                  files over 80 lines by the code scout's line ranges (Read with offset and limit, sed -n),
+#                  not whole (a Read without a range, cat, nl, less ...); a deny, not an ask
 #   fail_open      true lets calls through when python3 is missing; by default a guard that can't run
 #                  (no python3, no config reader, unreadable input, a crash) blocks the call
 # A command with --dry-run or --help passes in every group. What the guard denies, asks and does not see:
-# AGENTS.md § Permissions for this project.
-guard: { mcp_writes: ask, pr_writes: allow, deploys: ask, publishes: ask, schema_pushes: ask, network: ask, installs: ask }
+# harness/GUARD.md.
+guard: { mcp_writes: ask, pr_writes: allow, deploys: ask, publishes: ask, schema_pushes: ask, network: ask, installs: ask, plan_reads: on }
 
 loop:
   retro_max_items: 3      # usual action items per retro (soft: more with one line why, none is fine)
+  retro_every: 1          # features whose action items the Technical Lead decides together: 1 = at each feature's close;
+                          # 2 to 5 batches them (an Escaped line's item and an item the owner decides are decided at once)
   prune_every: 10         # learnings files between prunes (8 to 30; below 8 the prune has too few rules old enough to judge)
-  rule_budget_kb: 36      # always-loaded rule files (CLAUDE.md, AGENTS.md, .claude/rules/); over it, a prune is due
+  rule_budget_kb: 16      # always-loaded rule files (CLAUDE.md, AGENTS.md, .claude/rules/ without paths:); over it, a prune is due
+  owner_rules_kb: 0       # your own always-loaded text kept at install, on top of rule_budget_kb (/morph-init sets it)
   checklist_budget_kb: 36 # harness/PLAN_CHECKLIST.md plus project/PLAN_CHECKLIST.md; over it, a prune is due
   project_docs_budget_kb: 48 # project/*.md fact docs; over it, a prune is due
   qa_max_rounds: 2        # QA rework rounds before escalating to the owner
   feature_budget_usd: 0   # soft cap per feature in dollars at API list prices (feature-cost.sh); 0 = off. Over it, the Technical Lead stops and asks you
+
+# Autonomous module (harness/modules/autonomous/README.md): an unattended run from docs/brief.md to the first
+# version on its own branch. Read only by scripts/auto/run.sh and /morph-auto; nothing here applies outside a run.
+#   enabled          true lets /morph-auto start a run; false (the default) refuses
+#   budget_usd       hard cap for the whole run at API list prices; 0 refuses to start. loop.feature_budget_usd must be
+#                    above 0 too, and each session gets --max-budget-usd at 1.5 times it
+#   max_features     features a run may start; max_hours: wall-clock hours before it exits
+#   crash_retries    restarts of a crashed feature session before the run exits
+#   director_model   the session that writes docs/product/ and the order; last_try_model: Full-stack after a QA fail or a crash
+#   ledger_kb        size of _harness/auto/ledger.md before the director compacts it
+#   usage_wait_minutes  wait after a usage limit, doubling up to 4 hours; the try doesn't count
+#   session_hours    wall-clock limit for one session; past it the session is stopped and counts as a crash
+auto:
+  enabled: false
+  branch: auto/v1
+  budget_usd: 0
+  max_features: 30
+  max_hours: 24
+  crash_retries: 1
+  director_model: opus
+  last_try_model: opus
+  ledger_kb: 8
+  usage_wait_minutes: 30
+  session_hours: 4
 
 # Where /morph-update, /morph-doctor and the prune's upstream check read Morphness from.
 # github: release notes and template text straight from installed_from.repo on GitHub (read-only,
@@ -176,11 +231,14 @@ updates: { source: github }
 
 # Where this copy came from upstream. Written by /morph-init, updated by /morph-update.
 # commit: the Morphness commit the kit was last synced to (the base for merging kit updates).
-# release: the Morphness release that commit belongs to. updates: kit update notes (updates/ in
-# Morphness) this project applied, declined or put off; deferred ones keep their own base commit.
+# release: the Morphness release that commit belongs to (`v0.15.0+ce3921d`: taken from the default
+# branch after that release). updates: kit update notes (updates/ in Morphness) this project
+# applied, declined or put off; deferred ones keep their own base commit. lessons: community lessons
+# this project declined or put off (accepted ones are in _harness/morph-answers.yml).
 # Nothing upstream changes this copy on its own: /morph-update offers each update for your yes.
 installed_from:
   repo: "{{morphness.repo}}"
   commit: "{{morphness.commit}}"
   release: "{{morphness.release}}"
   updates: { applied: [], declined: [], deferred: [] }   # deferred entries: { id: <note id>, base: <commit> }
+  lessons: { declined: [], deferred: [] }   # lesson ids

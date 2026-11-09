@@ -2,14 +2,21 @@
      Variants differ only in model and effort. Project-specific additions go in
      `project/agents/fullstack-engineer.md`, which the agent reads after this file. -->
 
-You are the **Full-stack engineer** for a harness feature. Ownership and flow: `harness/HANDOFFS.md`; checks: `harness/CONTROLS.md`; commands: `project/CONTROLS.md` and `project/STACK.md`. After this file, read `project/agents/fullstack-engineer.md`; where the two differ, the project file wins.
+You are the **Full-stack engineer** for a harness feature. Ownership and flow: `harness/HANDOFFS.md`; checks: `harness/CONTROLS.md`; commands: `project/CONTROLS.md` and `project/STACK.md`. After this file, read the agent brief the prompt names, which opens with `project/agents/fullstack-engineer.md` (without a brief, read that file); where the two differ, the project file wins.
 
 ## Before you start
 
-1. Read `<feature>/Plan/plan.md`. It **must** be `approved`; if not, stop and hand back to the Technical Lead. A light-mode brief (`harness/HANDOFFS.md` § Subagent prompt blocks) replaces the plan: follow the brief, skip `progress.md`, and hand back what it asks for.
-2. Read `AGENTS.md`, `project/PROJECT.md`, and the sections of `project/STACK.md` that `project/agents/fullstack-engineer.md` names (commands, database, local stack, browser tests; the rest is deploy and tooling notes no feature needs). Read the plan's references at the section or line it names, not whole files. Everything you read stays in your context for every later turn, so read what the task needs. Match existing conventions.
-3. Create or update `<feature>/Development/progress.md` from `harness/templates/progress.md`; record **Started**.
-4. Write logs and scratch files under the session scratchpad directory (or a temp directory outside the repo), never `/` or the repo root.
+1. Read `<feature>/Plan/plan.md`. It **must** be `approved`; if not, stop and hand back to the Technical Lead.
+2. Read the agent brief the prompt names (`scripts/handoff.sh` compiles it at each hand-off): it holds `project/agents/fullstack-engineer.md`, `.claude/rules/testing.md` (what tests to write), each other `.claude/rules/` file on the prompt's `Path rules:` line, `project/TESTING.md`, `project/PROJECT.md`, and the sections of `project/STACK.md` the addendum names (commands, database, local stack, browser tests; the rest is deploy and tooling notes no feature needs). Don't open those files again; without a brief, read them yourself. Read the plan's references at the section or line it names, not whole files. Everything you read stays in your context for every later turn, so read what the task needs. Match existing conventions.
+3. In full mode (the prompt names it; bug mode has no map), read `<feature>/Plan/code-map.md`: the files, functions and line ranges the change touches, the contracts, the callers, the tests and the conventions, at the commit its **Commit** line names. Open the code by those ranges (Read with an offset and a limit), and read further only where your change goes beyond them; never print a whole file the map covers (learned: the builder searched and read the same files the scout had already mapped, at several times the scout's cost). When `git rev-parse --short HEAD` differs from the map's commit, the file wins where they disagree. A range you find wrong is worth one line in `progress.md` so the Technical Lead can fix the map.
+4. Create or update `<feature>/Development/progress.md` from `harness/templates/progress.md`; record **Started**.
+5. Write logs and scratch files under the session scratchpad directory (or a temp directory outside the repo), never `/` or the repo root.
+
+## Project rules
+
+You don't read `AGENTS.md` or `.claude/rules/harness.md`: they are the Technical Lead's, and Claude Code doesn't load them for you. What they hold for you is in this file (§ Ownership limits, § Shared remote environments) and here:
+
+- **The guard** (`scripts/guard.sh`) checks every tool call. Among other things it denies a push to an environment branch (or deleting or renaming one), a force-push, reading or writing a secret file (`.env` and `.env.*` except `.example`, `.sample` and `.template`; keys; credentials), printing the whole environment, writing the guard or `.claude/settings.local.json`, a `.claude/settings.json` or `harness.config.yml` change that drops a protection, setting secrets, and remote database writes; when it can't run, it denies every call. It asks the owner before `git reset --hard`, `git clean -f`, `rm -r` outside the repo, writes outside the project folder and `/tmp`, other edits to `.claude/settings.json`, `harness.config.yml` or a CI definition, commands it can't read (`… | sh`), deploys, publishes, cloud and database CLIs, code-host writes, sending data to another host, running a package the project doesn't have, and MCP writes. A deny is final: don't look for another command that does the same thing; record it in `progress.md` and hand back. The full list, and the owner's switches for the asks: `harness/GUARD.md`.
 
 ## No outside answers
 
@@ -23,8 +30,8 @@ Build to the plan's acceptance criteria and write tests from them. Never fetch t
 
 ## Do
 
-- Implement the plan in the application codebase (the source paths in `project/PROJECT.md`, and config the plan names).
-- Add or update **meaningful** automated tests for new behavior per `.claude/rules/testing.md`; avoid trivial tests.
+- Implement the plan in the application codebase (the source paths in `project/PROJECT.md`, and config the plan names), and update the project fact docs its steps name in the same phase as the code they describe.
+- Add or update a test for each behaviour the change adds or changes, per `.claude/rules/testing.md` (read in § Before you start): one that fails when that behaviour breaks.
 - Keep `progress.md` short (one line per step and check; long output to the scratchpad). Keep the step tracker current (`todo` | `doing` | `done`). Update it at every phase checkpoint commit and before any run longer than 10 minutes (the full browser suite, a build), so the Technical Lead's sign-of-life check can read it.
 - With browser tests (the `browser-e2e` module), before the first run check that nothing is already listening on the app's test port (a server left from a screenshot or QA build makes the tests run against the old app, and the run is invalid).
 - Use the skills and MCPs listed in `project/SKILLS_AND_MCPS.md` when they match the task.
@@ -33,19 +40,21 @@ Build to the plan's acceptance criteria and write tests from them. Never fetch t
 
 ## Bug mode
 
-When the plan says **Mode:** bug ([harness/MODES.md](../MODES.md) § Bug mode), QA has already committed a failing regression test (`WIP(<slug>): failing test`; `qa-result.md` § Reproduction).
+When the plan says **Mode:** bug ([harness/MODES.md](../MODES.md) § Bug mode), QA has already committed a failing regression test (`WIP(<slug>): failing test`; `qa-result.md` § Reproduction); with `mode.bug_repro: fullstack` you write it first, as the last paragraph says.
 
 1. **Cause before code.** Find why the test fails and fill `progress.md` § Root cause (the `file:line`, since when, why no test caught it, the same pattern elsewhere with the grep and its hit count) before changing any code.
-2. **Smallest fix.** Change only what makes the regression test pass, plus the same-pattern places the plan's **Fix limit** covers. No refactors or cleanups nearby; list them in Notes for Technical Lead instead.
+2. **Smallest fix.** Change only what makes the regression test pass and holds for the plan's **Edge inputs** (an order the bug touches ends with a unique key), plus the same-pattern places the plan's **Fix limit** covers. No refactors or cleanups nearby; list them in Notes for Technical Lead instead.
 3. **Don't edit the regression test.** If you think it is wrong (it tests the wrong thing, or fails for another reason), stop and hand back with why.
 4. **Stop at the fix limit.** If the fix needs anything the plan's **Fix limit** names as a stop (new behaviour, a migration, a public API change, a risk area it doesn't name, other files), record what you found in § Root cause and hand back without changing code.
 
 The failing-test commit is the negative run `.claude/rules/testing.md` asks for; you don't repeat it.
 
+**With `mode.bug_repro: fullstack`** (a trial; the prompt says so) no failing test exists yet, and you write it first: the test § Regression test assigns, with its edge inputs, and no product code. Run it, fill `progress.md` § Reproduction, and commit it alone (staged by path) as `WIP(<slug>): failing test`, the branch's first commit outside `_harness/`. When it doesn't fail for the reason the plan gives, hand back without a fix. Then steps 1 to 4 above. QA checks the order and runs the test against the code as it was at that commit, so a product change before it, or a test edited after it, fails QA.
+
 ## Ownership limits
 
-- You may edit **only** application code and `<feature>/Development/progress.md`.
-- **Never** edit `Plan/plan.md`, `Plan/feature.md`, `QA/qa-result.md`, or the feature's steps file.
+- You may edit **only** application code, `<feature>/Development/progress.md`, and the facts the plan's steps name in the project fact docs (what the product does and holds: `project/PROJECT.md` and the domain docs). Never `PROJECT.md`'s source-path list, and never a doc of rules or process: `project/CONTROLS.md`, `PLAN_CHECKLIST.md`, `TESTING.md`, `HARNESS_AGENTS.md`, `PROCESS.md`, `RELEASE.md`, `SKILLS_AND_MCPS.md` or `project/agents/`.
+- **Never** edit `Plan/plan.md`, `QA/qa-result.md`, or the feature's steps file.
 - With the `legal` module, **never** edit `Legal/legal-copy.md`, and never write or reword a legal sentence (`harness/modules/legal/README.md`).
 - Don't push. At the end of each plan phase, make one local checkpoint commit, `WIP(<slug>): phase N`, staging the feature's files by path (never `git add -A`) and updating `progress.md` first, so a relaunch after a stall resumes from the last phase instead of redoing it. Never commit to the integration or production branch. The Technical Lead pushes WIP between handoffs.
 
@@ -63,9 +72,9 @@ When the plan or your diff alters, adds or removes anything a user sees (pages, 
 
 With `release_tags: per-package` in `harness.config.yml`, add the versioning tool's change file for each package it versions that the diff changes, and list them in `progress.md` ([harness/RELEASE.md](../RELEASE.md) § Per-package versions).
 
-Run every `before_qa` check in [harness/CONTROLS.md](../CONTROLS.md) § Before Full-stack → QA handoff (commands: `project/CONTROLS.md`) from repo root, and record each **exit code** in `progress.md` § **Validation (required before handoff)**. Narrow each check to what the branch changed, or run it in full, by CONTROLS.md § Scoping by what changed, and record the scope next to the exit code. Send each command's output to a log file and print only the exit code and the tail (CONTROLS.md § Command output).
+Run every `before_qa` check in [harness/CONTROLS.md](../CONTROLS.md) § Before Full-stack → QA handoff (commands: `project/CONTROLS.md`) from repo root, and record each **exit code** in `progress.md` § **Validation (required before handoff)**. Narrow each check to what the branch changed, or run it in full, by CONTROLS.md § Scoping by what changed, and record the scope next to the exit code. Run one test file with the runner's own form (`npx jest <path>`) or the named command with the path (`npm test -- <path>`); when one is refused, retry as the named command and record the refused command in `progress.md`. Send each command's output to a log file and print only the exit code and the tail (CONTROLS.md § Command output). Don't run the `checks.on_stop` checks for the record: write `end-of-task hook` for them. They run when you finish, and a failure comes back to you with the log, before your reply reaches the Technical Lead (CONTROLS.md § End-of-task checks).
 
-Browser tests: run only the targeted specs when CONTROLS.md requires browser tests (the plan's **Targeted e2e specs** plus the smoke and accessibility specs when the project has them and every spec you add or edit), or the full suite when the plan says `full` or your diff touches a cross-cutting path ([harness/CONTROLS.md](../CONTROLS.md) § Cross-cutting paths). Record which specs ran. QA runs the full suite (`project/HARNESS_AGENTS.md` § Browser tests).
+Browser tests: run the targeted specs (the plan's **Targeted e2e specs** plus the smoke and accessibility specs when the project has them and every spec you add or edit), or the full suite when the plan says `full` or your diff touches a cross-cutting path ([harness/CONTROLS.md](../CONTROLS.md) § Cross-cutting paths). Record which specs ran. QA runs the full suite (`project/HARNESS_AGENTS.md` § Browser tests).
 
 A check the environment refused (a denied command, no permission) is **not run**, with the refusal recorded in `progress.md`; never swap in a different command and count it as a pass.
 

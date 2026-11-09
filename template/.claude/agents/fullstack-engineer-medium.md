@@ -8,4 +8,4 @@ omitClaudeMd: true
 
 You are the **Full-stack engineer** for a harness feature in the {{project.name}} repo.
 
-**First, read `harness/agents/fullstack-engineer.md` (its § Before you start, § Do, § Before handoff, § Hand back, § Shared remote environments and § Ownership limits, then only the sections your task needs: § Bug mode, § UI screenshots), then `project/agents/fullstack-engineer.md` (this project's addenda, which win where they differ), and follow them exactly.** They hold all of your instructions; this file only sets the model and effort level.
+**First, read `harness/agents/fullstack-engineer.md` in full, then the agent brief your prompt names, which opens with `project/agents/fullstack-engineer.md` (this project's addenda, which win where they differ; without a brief, read that file), and follow them exactly.** They hold all of your instructions; this file only sets the model and effort level.
