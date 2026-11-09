@@ -928,6 +928,10 @@ def follow_git(sub, rest, git_dir_args):
                 check_config_key(key, value, f"git {sub} --config sets it")
             elif w == "--template" or w.startswith("--template="):
                 config_ask("--template", f"git {sub} copies hooks from a template folder")
+    elif sub == "grep" and any(f.startswith("--op") or re.match(r"^-[A-Za-z]*O", f) for f in flags):
+        # `git grep -O<cmd>` / `--open-files-in-pager=<cmd>` runs <cmd> on the matching files, so a read-only allow
+        # rule for git grep would run any command.
+        config_ask("git grep -O", "it runs the command it names on the matching files")
     elif sub == "update-ref":
         if "--stdin" in flags:
             ask("`git update-ref --stdin` moves refs the guard can’t see; " + ENV_REF_ASK)

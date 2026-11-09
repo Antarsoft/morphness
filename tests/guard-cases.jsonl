@@ -1176,3 +1176,7 @@
 {"expect": "ask", "tool": "mcp__hearthbot__switch_model", "input": {}}
 {"expect": "ask", "tool": "mcp__slack__post_message", "input": {"text": "x"}}
 {"expect": "ask", "tool": "mcp__other__no_reply_needed", "input": {}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git grep -Osh TODO"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git grep --open-files-in-pager=touch TODO"}}
+{"expect": "ask", "tool": "Bash", "input": {"command": "git grep -nO TODO"}}
+{"expect": "pass", "tool": "Bash", "input": {"command": "git grep -n TODO -- src"}}
