@@ -23,7 +23,8 @@
 #          `~ <file>: …` lines and a `Needs:` line (harness/MODES.md § Contained change). A file named but not
 #          changed yet is full, with a note to make the change first and run this again.
 # The files: the ones named on the command line (what a plan will change), plus what the branch has
-# changed so far (its commits since it left the integration branch, uncommitted changes, new files).
+# changed so far (its commits since it left the integration branch, uncommitted changes, new files). In an
+# autonomous run (MORPH_AUTO=1) a feature branch is compared with the run branch (MORPH_AUTO_BRANCH) it left instead.
 # The owner's word wins over the paths: --force full|plain, or mode.force in harness.config.yml.
 # When it can't decide (no file named and none changed, the integration branch missing, no python3,
 # an unknown option), it prints
@@ -129,7 +130,11 @@ if git("rev-parse", "--git-dir") is not None:
     if git("rev-parse", "-q", "--verify", "HEAD") is None:
         base = EMPTY_TREE  # no commit yet: everything in the folder is the change
     else:
-        for ref in (f"origin/{integ}", integ, "origin/HEAD"):
+        # In an autonomous run a feature branch leaves the run branch, not the integration branch: compare with
+        # the run branch there, or every feature merged into the run so far counts as this change.
+        run = (os.environ.get("MORPH_AUTO_BRANCH") or "").strip() if os.environ.get("MORPH_AUTO") == "1" else ""
+        on_run = bool(run) and git("rev-parse", "-q", "--verify", run + "^{commit}") not in (None, git("rev-parse", "HEAD"))
+        for ref in ([run] if on_run else []) + [f"origin/{integ}", integ, "origin/HEAD"]:
             if git("rev-parse", "-q", "--verify", ref + "^{commit}"):
                 base = (git("merge-base", "HEAD", ref) or "").strip() or None
                 if base:

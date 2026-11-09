@@ -35,7 +35,7 @@ One feature runs at a time. The run branch is never pushed to an environment bra
 These apply only in a session the driver started: `MORPH_AUTO=1` is set and `MORPH_AUTO_FEATURE` names this feature. They replace every owner approval and owner ask in the harness, and its push, PR, merge and branch steps. Everything else applies as written.
 
 1. **Plans.** After the plan checklist passes, the Technical Lead approves the plan itself: **Status** `approved`, and in § Approval **Approver:** `Technical Lead (autonomous mode); product doc approved by <owner> on <date>` (the feature prompt gives both). A plan never departs from `docs/product/` without saying so on the card (`departure: yes`).
-2. **Branch only.** Work on `feature/<slug>` (the driver made it from the run branch, not the integration branch), commit there, and stop. No PR, no push, no merge (a batched retro's merge of the integration branch included), no checkout of another branch: the driver does those.
+2. **Branch only.** Work on `feature/<slug>` (the driver made it from the run branch, not the integration branch), commit there, and stop. In a run, `scripts/risk-check.sh` and `scripts/handoff.sh` compare the feature branch with the run branch it left (`MORPH_AUTO_BRANCH`), so the mode, the QA diff and the bug-order check see only this feature's change; read the diff with `git diff $(git merge-base <run branch> HEAD)` the same way. No PR, no push, no merge (a batched retro's merge of the integration branch included), no checkout of another branch: the driver does those.
 3. **Owner questions.** Where the harness would ask the owner:
    - A budget stop or an escalation (`failed-escalated`): write the card with `status: escalated` and stop.
    - The docs answer it: follow `docs/product/`.

@@ -2733,6 +2733,24 @@ def check(name, fx, t):
     code, out = risk()
     if code or "- src/auth/café token.ts:" not in out:
         bad(f"risk-check.sh after a committed file with an accent and a space printed {out!r} (exit {code})")
+    # In an autonomous run a feature branch is judged against the run branch it left, not the integration branch
+    auto_env = dict(os.environ, MORPH_AUTO="1", MORPH_AUTO_BRANCH="selftest-run")
+    for cmd in (["branch", "selftest-run"], ["checkout", "-q", "-b", "selftest-run-feature"]):
+        run(["git", *cmd], rk)
+    write(os.path.join(rk, "src/lib/one.ts"), "export const one = 1;\n")
+    for cmd in (["add", "src"], [*git_id, "commit", "-q", "-m", "one"]):
+        run(["git", *cmd], rk)
+    r = run(["bash", os.path.join(rk, "scripts/risk-check.sh")], rk, env=auto_env)
+    if r.returncode or not r.stdout.startswith("Mode: plain (1 file"):
+        bad(f"risk-check.sh in an autonomous run on a one-file feature branch printed {r.stdout!r} (exit {r.returncode}): "
+            "it must compare with the run branch (MORPH_AUTO_BRANCH)")
+    code, out = risk()
+    if code or not out.startswith("Mode: full\n"):
+        bad(f"risk-check.sh outside a run on the same branch printed {out!r} (exit {code}): it compares with {integ}")
+    run(["git", "checkout", "-q", "selftest-run"], rk)
+    r = run(["bash", os.path.join(rk, "scripts/risk-check.sh")], rk, env=auto_env)
+    if r.returncode or not r.stdout.startswith("Mode: full\n"):
+        bad(f"risk-check.sh in a run on the run branch itself printed {r.stdout!r}: it must fall back to {integ}")
     run(["git", "branch", "-D", integ], rk)
     code, out = risk("README.md")
     if code != 2 or not out.startswith("Mode: full (risk check: "):
