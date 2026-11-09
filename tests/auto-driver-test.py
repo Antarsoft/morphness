@@ -799,7 +799,7 @@ def scenario_small_bug_card():
     card = open(os.path.join(TEMPLATE, "harness/templates/auto/card.md")).read()
     modes = open(os.path.join(TEMPLATE, "harness/MODES.md")).read().split("### Fixing a bug", 1)[-1].split("\n## ", 1)[0]
     prompt = open(os.path.join(TEMPLATE, "harness/templates/auto/feature-prompt.md")).read()
-    check("small-bug-defined", "small-bug is a small-mode bug fix with no plan file" in card and "**small-bug**" in modes
+    check("small-bug-defined", "small-bug (a small-mode bug fix with no plan file" in card and "**small-bug**" in modes
           and "`small-bug`" in prompt, "small-bug isn't defined in the card template, MODES.md § Fixing a bug or the prompt")
 
 
