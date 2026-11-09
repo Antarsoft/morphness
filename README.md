@@ -258,6 +258,8 @@ researcher, the code scout (read, shell and its one map file) and the legal writ
 | `/morph-auto` | With the autonomous module: write the brief, review the product docs before you approve them, follow, stop or resume the run, and open its PR. |
 | `/morph-share` | Turn rules that fired into a PR to the lessons catalog. |
 
+No plugin, or a Claude Projects thread where `/plugin` can't be typed? Each command has a root file an agent can follow: [INSTALL.md](INSTALL.md), [UPDATE.md](UPDATE.md), [DOCTOR.md](DOCTOR.md), [MODULE.md](MODULE.md), [SHARE.md](SHARE.md).
+
 Morphness runs in plain Claude Code (CLI, desktop, web). If you use a **Claude Project** with a
 coordinator and threads, the `claude-projects` module adds a playbook for the Project instructions
 and advised settings (coordinator sonnet · medium, feature threads sonnet · high).
