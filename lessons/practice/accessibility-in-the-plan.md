@@ -23,4 +23,4 @@ A control's label didn't contain its visible text; text on a new warning backgro
 
 ## How to check
 
-both strings in the AC; the new state named in the a11y test list. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+both strings in the AC; the new state named in the a11y test list. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

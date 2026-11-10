@@ -23,4 +23,4 @@ Raw resets left a new timestamp set; seeded keys contained a character the new f
 
 ## How to check
 
-one grep per value and folder, every hit in the steps. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+one grep per value and folder, every hit in the steps. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

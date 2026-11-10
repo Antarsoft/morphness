@@ -23,4 +23,4 @@ A dropped unique id opened a cross-account path; a literal fallback copied one r
 
 ## How to check
 
-the trigger and match are named; every fallback is scoped to the entity. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+the trigger and match are named; every fallback is scoped to the entity. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

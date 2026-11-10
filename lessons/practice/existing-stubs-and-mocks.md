@@ -23,4 +23,4 @@ A spec stubbed the very route the new test needed; a mocked impossible rejection
 
 ## How to check
 
-grep the spec's route and module mocks. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+grep the spec's route and module mocks. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

@@ -23,4 +23,4 @@ A planned data file came out 5 % over budget; another plan spent a shared budget
 
 ## How to check
 
-the measured numbers and their commands are in the plan. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+the measured numbers and their commands are in the plan. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

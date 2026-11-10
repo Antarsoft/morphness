@@ -23,4 +23,4 @@ Draft copy said "only the account id" while labels were sent too; a storage inve
 
 ## How to check
 
-the diff and the payload table are in the plan. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+the diff and the payload table are in the plan. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

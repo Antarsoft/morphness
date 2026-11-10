@@ -23,4 +23,4 @@ A wrapper breakout passed validation of the wrapped form only; an auth wrapper a
 
 ## How to check
 
-both validations are steps; the library behavior is cited. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+both validations are steps; the library behavior is cited. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

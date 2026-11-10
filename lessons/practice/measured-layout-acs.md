@@ -26,4 +26,4 @@ A table was 2 px too wide only on CI's browser build; a size AC asked for a box 
 
 ## How to check
 
-worst-case input, viewports and measurement method are in the AC. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+worst-case input, viewports and measurement method are in the AC. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

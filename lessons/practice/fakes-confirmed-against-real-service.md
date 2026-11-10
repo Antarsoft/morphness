@@ -23,4 +23,4 @@ Three bugs passed every check because the checks ran against fakes that answered
 
 ## How to check
 
-The plan has a cited line per platform variable and per fake answer the code branches on; the QA record shows one live preview run. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+The plan has a cited line per platform variable and per fake answer the code branches on; the QA record shows one live preview run. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

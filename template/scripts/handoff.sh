@@ -274,7 +274,7 @@ def agent_brief(kind):
     said = ("(The project files and sections this list names are below in this brief, so don't open them; read "
             "anything else it names yourself.)")
     srcs = [(addendum, None, (("Read before you start", said),)), (".claude/rules/testing.md", None, ())]
-    srcs += [(r, None, ()) for r in rules]
+    srcs += [(r, None, ()) for r in rules if r != ".claude/rules/testing.md"]   # already above, once is enough
     if kind == "fullstack":
         srcs += [("project/TESTING.md", None, ()), ("project/PROJECT.md", None, ())]
     whole = {rel for rel, names, _ in srcs}

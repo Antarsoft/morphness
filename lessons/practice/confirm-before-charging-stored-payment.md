@@ -23,4 +23,4 @@ An upgrade button charged the saved card at once with no confirmation.
 
 ## How to check
 
-the three are in the plan with sources. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+the three are in the plan with sources. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

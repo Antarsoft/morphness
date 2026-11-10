@@ -23,4 +23,4 @@ A guessed product choice is rework after approval.
 
 ## How to check
 
-no "TBD" or guessed value in the plan's copy, limits or names. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+no "TBD" or guessed value in the plan's copy, limits or names. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

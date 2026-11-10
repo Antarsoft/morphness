@@ -23,4 +23,4 @@ A looser filter let non-matches fill the limit; a daily job kept up to a day of 
 
 ## How to check
 
-the query condition, the worst-case age and the unique key are in the plan. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+the query condition, the worst-case age and the unique key are in the plan. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

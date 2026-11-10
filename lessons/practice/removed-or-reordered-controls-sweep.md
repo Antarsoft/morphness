@@ -23,4 +23,4 @@ Specs used other labels of the same group; a test counted the options; a test su
 
 ## How to check
 
-one grep per label, helper, list and count. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+one grep per label, helper, list and count. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

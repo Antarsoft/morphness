@@ -7,6 +7,7 @@ in_template: true
 tags: { stack: [], service: [], area: [contracts, vendors] }
 evidence: { fired: 2, features: 153, source: "Twinpage prune audits" }
 added: 2026-10-12
+reviewed: "seed checklist wording already in the kit; this change only moves where the Greps record lives"
 ---
 
 # Third-party facts
@@ -23,4 +24,4 @@ A planned schedule was rejected by the vendor's plan tier; a platform default ch
 
 ## How to check
 
-each vendor fact cites the line read or the human step. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+each vendor fact cites the line read or the human step. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

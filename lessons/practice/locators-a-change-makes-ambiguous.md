@@ -23,4 +23,4 @@ New disclosures broke heading counts; an empty status region broke two page-wide
 
 ## How to check
 
-each locator grep and its hits. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+each locator grep and its hits. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

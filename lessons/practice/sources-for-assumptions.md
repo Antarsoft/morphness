@@ -23,4 +23,4 @@ Claims inferred from comments, greps or memory were wrong several times; a frame
 
 ## How to check
 
-every claim in the plan has a `file:line`, a doc source or the marker. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+every claim in the plan has a `file:line`, a doc source or the marker. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

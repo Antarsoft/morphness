@@ -23,4 +23,4 @@ An hourly schedule was rejected at deployment by the account's tier; a CI estima
 
 ## How to check
 
-the tier cite and the measured timing. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+the tier cite and the measured timing. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

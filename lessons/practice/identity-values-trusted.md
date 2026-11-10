@@ -23,4 +23,4 @@ With email confirmation off, anyone could sign up with a victim's email.
 
 ## How to check
 
-source, verifier and setting are named with a cite. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+source, verifier and setting are named with a cite. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

@@ -23,4 +23,4 @@ A note told customers to save an address "while you test", which locked it for g
 
 ## How to check
 
-one row per new note or instruction with what the customer can do next. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+one row per new note or instruction with what the customer can do next. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

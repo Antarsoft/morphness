@@ -23,4 +23,4 @@ A copied pipeline drifted from the original; a client timer kept a "still open" 
 
 ## How to check
 
-the shared function or the server read is named with `file:line`. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+the shared function or the server read is named with `file:line`. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

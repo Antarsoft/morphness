@@ -23,4 +23,4 @@ An example copied from an older plan had a different result under the current co
 
 ## How to check
 
-the run results are in Greps or the plan's reference table. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+the run results are in Greps or the plan's reference table. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

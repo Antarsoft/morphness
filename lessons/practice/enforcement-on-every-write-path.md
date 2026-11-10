@@ -7,6 +7,7 @@ in_template: true
 tags: { stack: [], service: [], area: [security] }
 evidence: { fired: 3, features: 153, source: "Twinpage prune audits" }
 added: 2026-10-12
+reviewed: "seed checklist wording already in the kit; this change only moves where the Greps record lives"
 ---
 
 # Enforcement on every write path
@@ -23,4 +24,4 @@ A direct API path bypassed a limit; a code review found an editor save path the 
 
 ## How to check
 
-grep every writer of the affected data; each is on the Enforcement line. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+grep every writer of the affected data; each is on the Enforcement line. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

@@ -23,4 +23,4 @@ A strength label read "Strong" while its data loaded; a banner promised a later 
 
 ## How to check
 
-one row per state with copy, values and the no-shift AC. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+one row per state with copy, values and the no-shift AC. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

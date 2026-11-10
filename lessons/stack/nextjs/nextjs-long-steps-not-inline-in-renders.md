@@ -10,6 +10,7 @@ reports:
   - { fired: 2, features: 14, source: "prune audits", added: 2026-10-20 }
   - { fired: 1, features: 14, source: "prune audits", added: 2026-10-21 }
 status: active
+reviewed: "seed checklist wording already in the kit; this change only moves where the Greps record lives"
 ---
 
 # Steps that take minutes don't run inline in a page render
@@ -24,4 +25,4 @@ Two features ran a push or a commit inline in page renders; code and security re
 
 ## How to check
 
-The plan names the claim/wait rule and the stored start time, and a test covers each case. Grep the changed pages for awaited long calls in the render path. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+The plan names the claim/wait rule and the stored start time, and a test covers each case. Grep the changed pages for awaited long calls in the render path. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

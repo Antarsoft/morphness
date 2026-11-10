@@ -10,6 +10,7 @@ reports:
   - { fired: unknown, features: 153, source: "Twinpage prune audits", added: 2026-10-12 }
   - { fired: 1, features: 14, source: "prune audits", added: 2026-10-21 }
 added: 2026-10-12
+reviewed: "seed checklist wording already in the kit; this change only moves where the Greps record lives"
 ---
 
 # Prerequisites only a human can set
@@ -26,4 +27,4 @@ A first production release failed five times on setup that no plan had listed. I
 
 ## How to check
 
-one human step per console screen and production setting, and each vendor call in the plan says where its key comes from. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+one human step per console screen and production setting, and each vendor call in the plan says where its key comes from. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

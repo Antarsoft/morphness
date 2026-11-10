@@ -23,4 +23,4 @@ Two message panels differed by their text; a viewport comparison failed because 
 
 ## How to check
 
-each layout-stability AC names the boxes it measures and the coordinate space. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+each layout-stability AC names the boxes it measures and the coordinate space. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.
