@@ -40,10 +40,10 @@ Whether dev or QA is running is visible from `progress.md` and `qa-result.md`; t
 With the default `loop.qa_max_rounds: 2`:
 
 1. Dev complete → **QA round 1**.
-2. **Fail** → Full-stack (the same variant) addresses the issues in `qa-result.md` → **QA round 2** (a `## Round 2` section in `qa-result.md`). Round 2 is scoped to the failed and affected ACs unless the rework touches a cross-cutting path ([agents/qa-engineer.md](./agents/qa-engineer.md) § Round 2, [CONTROLS.md](./CONTROLS.md) § Cross-cutting paths).
+2. **Fail** → a new Full-stack run, one effort step up (`medium` → `high` → `xhigh`, within `agents.fullstack.variants`; `xhigh` stays `xhigh`), addresses the issues in `qa-result.md`. Its prompt is the block `bash scripts/handoff.sh fullstack <slug>` prints (`fullstack-bug` for a bug plan), plus one line: read `Development/progress.md` and `QA/qa-result.md` first, fix the failed items on the existing branch, keep what passed, and update `progress.md`. A new run starts from the plan and the brief, not from the first run's long context. QA keeps the plan's variant → **QA round 2** (a `## Round 2` section in `qa-result.md`). Round 2 is scoped to the failed and affected ACs unless the rework touches a cross-cutting path ([agents/qa-engineer.md](./agents/qa-engineer.md) § Round 2, [CONTROLS.md](./CONTROLS.md) § Cross-cutting paths).
 3. **Fail** again → `failed-escalated` → human; **no** further QA round on the same version.
 
-A different limit in `harness.config.yml` changes only the count; the last allowed fail always escalates.
+A different limit in `harness.config.yml` changes only the count; the last allowed fail always escalates. Each further rework round steps up once more, up to `xhigh` (the learnings file's **Cost** line records each round's effort). The plan's effort, not the rework's, decides QA's level and whether the code review before QA runs. The reason for the step: a failed round often means the work was harder than the plan's effort allowed, and more effort on one agent is expected to fix that more often than another round at the same level.
 
 ---
 
@@ -182,7 +182,7 @@ flowchart TD
   VF --> RT[Tech Lead: learnings file]
   RT --> H2[Human: ship decision]
   V -->|fail| R{Rounds left?}
-  R -->|yes| FS
+  R -->|yes, one effort step up| FS
   R -->|no| RT2[Tech Lead: learnings file]
   RT2 --> H3[Human: new version]
   H3 --> TL

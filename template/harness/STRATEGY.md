@@ -72,7 +72,7 @@ With the roadmap module on, the steps file lives next to the version checklist i
 - Set lifecycle **status** ([SETUP.md](./SETUP.md) § Lifecycle status).
 - Run [PLAN_CHECKLIST.md](./PLAN_CHECKLIST.md) and seek **human approval** on `plan.md` before delegating to the Full-stack engineer.
 - After dev completes, delegate to the QA engineer (on a risk path or for `xhigh` Full-stack work, after the read-only review in [SETUP.md](./SETUP.md) § Code review before QA).
-- After the QA verdict: if **pass**, hand to the human; if **fail**, re-delegate to the same Full-stack variant with `qa-result.md` (at most `loop.qa_max_rounds` QA rounds per version; the Tech Lead enforces this, QA does not track the count).
+- After the QA verdict: if **pass**, hand to the human; if **fail**, delegate a new Full-stack run one effort step up with `qa-result.md` ([SETUP.md](./SETUP.md) § QA iteration) (at most `loop.qa_max_rounds` QA rounds per version; the Tech Lead enforces this, QA does not track the count).
 - On the last allowed QA **fail**, set `failed-escalated` and hand to the human; further work uses a **new version** folder.
 - After QA **pass**, write the steps file (or none) and set the plan to `passed` ([SETUP.md](./SETUP.md) § After QA pass) before handing to the human.
 - After the QA pass hand-off (or on `failed-escalated`), write the feature's own learnings file in `_harness/learnings/`, with the retro inside it ([SETUP.md](./SETUP.md) § Retrospective).
