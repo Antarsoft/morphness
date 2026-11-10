@@ -1501,6 +1501,8 @@ def check_plan_brief(bad, t, settings):
                           ("handoff.sh scout", "the next step's handoff.sh call"), ("Files: " + sample, "the files it was made for")):
             if want not in (r.stdout if want.startswith("handoff") else text):
                 bad(f"plan-brief.sh's brief has no {why} ({want!r})")
+        if "### Model of the Technical Lead" in text or "### Split large features by risk" not in text:
+            bad("plan-brief.sh's brief keeps SETUP.md § Model of the Technical Lead, set at install, or lost the subsection after it")
         if plan_tpl not in text or "doc-section: this print is" in text:
             bad("plan-brief.sh's brief doesn't hold the plan template whole, or carries doc-section's size warning")
         if "Read it with the Read tool" not in r.stdout or len(r.stdout) > 2000:
