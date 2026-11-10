@@ -1,0 +1,1 @@
+QA-fail rework now runs as a new Full-stack run one effort step up (`medium` to `high`, `high` to `xhigh`) instead of going back to the same variant. QA round 2 keeps the plan's QA variant, and the round limit is unchanged.

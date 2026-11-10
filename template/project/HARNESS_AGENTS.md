@@ -25,7 +25,7 @@ Subagents are defined in `.claude/agents/`. Each file sets only `model`, `effort
 
 <!-- morph-init: fill the default marks from harness.config.yml → agents (advised models: all `sonnet` by default; the Opus preset sets the Technical Lead, Full-stack (high and xhigh) and the high researcher to `opus`; code scout and feature closer `haiku` in both presets; legal writer `fable`, fallback `opus`), and write the same models into the config, the agent files and `.claude/settings.json`. Drop the legal writer row when the legal module is off. -->
 
-Pass the absolute feature folder path (and the `plan.md` / `progress.md` paths) in the prompt. QA-fail rework goes to the same Full-stack variant as the first round.
+Pass the absolute feature folder path (and the `plan.md` / `progress.md` paths) in the prompt. QA-fail rework goes to a new Full-stack run one effort step up from the first round (`harness/SETUP.md` § QA iteration).
 
 ## Technical Lead model
 
