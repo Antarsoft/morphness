@@ -22,12 +22,12 @@
 1. `Status:` (lifecycle, values in [SETUP.md](./SETUP.md) § Lifecycle status) and `Steps file:` (set at QA pass: the steps file path or `none`)
 2. Title, feature slug, version, created and updated dates (and **Ships in** with the roadmap module)
 3. Summary (one paragraph)
+3a. Acceptance criteria (numbered, testable: the end goal, written before the steps)
 4. Out of scope
 4a. Framework assumptions (each behaviour the plan relies on, with its source; "already used in this repo" needs the `file:line`; checked before approval)
 4b. Inputs and client code: **New inputs**, **Client imports** and **Enforcement** ("None" when there are none)
 5. Implementation steps (phases optional)
 6. References (links, paths; **Greps** from the TL's pre-approval checklist)
-7. Acceptance criteria (numbered, testable)
 7a. QA scope: **UI change**, **Legal wording**, **Data-access feature**, **Needs live app/services** (which ACs need the running app to reach its database or other services), **Login needed**, **Build-time env**, **By connector**, **Human steps**
 7b. Agent effort: Full-stack and QA level with a reason, and **Code review before QA**
 8. Open questions (suggested defaults)

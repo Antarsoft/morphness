@@ -22,6 +22,14 @@ The owner's ask, in their words where they gave them (they may draft this sectio
 
 One paragraph, human-readable.
 
+## Acceptance criteria
+
+The end goal, as checks an agent can run: what the change must do when it is done. Write them before the steps; each step below serves one or more of them.
+
+1. Given … when … then …
+
+How to word them: the plan checklist items the plan runs (K7 and K20 in particular). Full-stack **must** pass the `before_qa` checks in `harness/CONTROLS.md` § Before Full-stack → QA handoff before QA; record them in `progress.md`.
+
 ## Out of scope
 
 - (When another plan is built in parallel: the shared files and functions it owns, harness/HANDOFFS.md § Parallel plans.)
@@ -96,24 +104,6 @@ Pick per feature; the human approves it with the plan. Levels and criteria: `har
 - **QA:** medium | high (high only when Full-stack is xhigh): one-line reason.
 - **Code review before QA:** yes (the risk check named a risk path, or Full-stack xhigh) | yes, with the security review (it also touches sign-in, access rules, secrets, money, a public API, or deleting or sharing people's data) | no. See `harness/SETUP.md` § Code review before QA.
 - **Security review before QA:** yes (Security feature: yes, whatever the line above says) | no. <!-- module:security -->
-
-## Acceptance criteria
-
-1. Given … when … then …
-
-Writing testable ACs:
-
-- An AC that a value must not reach the client says where it is checked ("not in the rendered page text and not in any attribute outside inline scripts"). Frameworks put route data in inline scripts, so a whole-page grep can fail for reasons the feature can't change. If the value must not reach the client at all, say so, and say which payload is checked.
-- A number taken from a design review or earlier notes (a size, a count, a timing) gets an AC that measures it before anything is changed to fix it. Notes can be wrong.
-- A control that is hidden or disabled in some state still has neighbouring help text and labels: the plan names what they say in that state.
-- A flow that opens or reuses a window, tab or session gets an AC for its second use in a row (same tab, after a reload), not only the first.
-- An AC that needs a UI element opened or rendered names the screen that renders it today; if none does, the AC is unit-level or moves to the phase that adds the element.
-- An AC about overflow, wrapping or truncation names the element it measures, the worst-case input (the schema maximum, both unbroken and with spaces) and the viewport widths, and the plan's test data includes it; short seed data never reaches the bug. A layout with columns next to fixed chrome computes the width each column gets at every breakpoint it names, and "nothing is cut off" is asserted with box measurements, never with text content.
-- A plan that names a design token or theme mechanism cites its definition with `file:line`; a token that does not exist yet is added in the plan's steps.
-- An AC that scans "every new and changed file" lists the files it knowingly leaves out and the phase or feature that migrates them.
-- An AC about motion, focus or scroll behaviour asserts the computed result in a browser, not class names.
-
-Full-stack **must** pass the `before_qa` checks in `harness/CONTROLS.md` § Before Full-stack → QA handoff before QA; record them in `progress.md`.
 
 ## Open questions
 

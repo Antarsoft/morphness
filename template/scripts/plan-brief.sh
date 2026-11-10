@@ -4,7 +4,7 @@
 # step). It runs scripts/risk-check.sh on the files the change will touch and prints its answer. On
 # `Mode: full` it writes the brief to _harness/features/<slug>/<version>/Plan/brief.md:
 #   the risk check's output; harness/MODES.md § Full harness (--bug: and § Bug mode); .claude/rules/testing.md;
-#   harness/SETUP.md § Effort per feature and § Where QA can run; the plan checklist's rules and the groups that always
+#   harness/SETUP.md § Effort per feature (less § Model of the Technical Lead) and § Where QA can run; the plan checklist's rules and the groups that always
 #   run, with project/PLAN_CHECKLIST.md (--bug: § Planning and scope only); the plan template (--bug: bug-plan.md).
 # The brief is a copy, made again on each run: it is never edited, and a one-line .gitignore next to it keeps it
 # out of commits. Read it with the Read tool, which isn't cut at this size (a print this big would be).
@@ -96,7 +96,9 @@ parts = [
     "## Risk check\n\nFiles: " + (", ".join(os.environ["FILES"].split()) or "none") + "\n\n```\n" + os.environ["RISK"].strip() + "\n```",
     sections("harness/MODES.md", *(["Full harness", "Bug mode"] if bug else ["Full harness"])),
     "## .claude/rules/testing.md\n\n" + body(".claude/rules/testing.md"),
-    sections("harness/SETUP.md", "Effort per feature", "Where QA can run"),
+    # the Technical Lead's own model is set at install, not per plan, so the brief leaves that subsection out
+    re.sub(r"^### Model of the Technical Lead\n.*?(?=^#{2,3} |^---$|\Z)", "",
+           sections("harness/SETUP.md", "Effort per feature", "Where QA can run"), flags=re.S | re.M),
     "# Plan checklist: the groups that always run\n\n"
     + ("Bug mode runs § Planning and scope only (harness/TECHNICAL_LEAD.md § Before asking for approval)."
        if bug else
