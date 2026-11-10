@@ -23,4 +23,4 @@ Approved items assigned to a feature landed nowhere because no plan picked them 
 
 ## How to check
 
-grep the touched paths and the slug over those files. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+grep the touched paths and the slug over those files. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

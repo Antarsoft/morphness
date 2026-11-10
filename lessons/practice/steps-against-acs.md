@@ -23,4 +23,4 @@ A status-code contradiction between steps and ACs cost a QA round.
 
 ## How to check
 
-one pass with each AC beside the step that implements it. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+one pass with each AC beside the step that implements it. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

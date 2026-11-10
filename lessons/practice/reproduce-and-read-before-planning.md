@@ -23,4 +23,4 @@ Half of a planned item already existed; timing bugs only showed with slow respon
 
 ## How to check
 
-the plan cites the reproduction and the `file:line` of the cause or of the existing code. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+the plan cites the reproduction and the `file:line` of the cause or of the existing code. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

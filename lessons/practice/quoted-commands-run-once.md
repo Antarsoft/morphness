@@ -7,6 +7,7 @@ in_template: true
 tags: { stack: [], service: [], area: [planning, tooling] }
 evidence: { fired: 1, features: 153, source: "Twinpage prune audits" }
 added: 2026-10-12
+reviewed: "seed checklist wording already in the kit; this change only moves where the Greps record lives"
 ---
 
 # Quoted commands
@@ -23,4 +24,4 @@ A command that looked right failed on the installed tool version; a denied comma
 
 ## How to check
 
-each quoted command has a run result or the marker. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+each quoted command has a run result or the marker. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

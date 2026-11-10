@@ -23,4 +23,4 @@ An unmeasured cut-off showed a "leading" label in about a third of null runs.
 
 ## How to check
 
-the measured rate and the component's `file:line` are in the plan. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+the measured rate and the component's `file:line` are in the plan. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

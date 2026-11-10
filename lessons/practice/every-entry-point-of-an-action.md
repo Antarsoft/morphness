@@ -23,4 +23,4 @@ One page disabled the action without its precondition while another did not.
 
 ## How to check
 
-grep the action's call sites; each is in the plan. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+grep the action's call sites; each is in the plan. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

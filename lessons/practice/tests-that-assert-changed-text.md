@@ -23,4 +23,4 @@ Renamed defaults left tests stale, while a seeded legacy row correctly kept the 
 
 ## How to check
 
-the grep per string and the classified hit list are in Greps. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+the grep per string and the classified hit list are in Greps. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

@@ -7,6 +7,7 @@
 | `Plan/plan.md` | Technical Lead | Tech Lead until approved; then frozen except Status, Steps file, Approval, Open questions, Decisions, and a small plan's § Check (at QA pass the feature closer sets Status and Steps file, and the Technical Lead checks them) | Includes acceptance criteria |
 | Steps file | Technical Lead (the feature closer drafts it) | Technical Lead, after checking the draft; the human ticks items | The human's steps after QA pass, or none (§ Steps file below; [SETUP.md](./SETUP.md) § After QA pass, step 4) |
 | `Plan/code-map.md` | Code scout | Code scout writes it once; the Technical Lead may add a § Technical Lead notes section (a range it found wrong, a caller the map missed); nobody else | The code the change touches, by `path:start-end` at a commit; the Full-stack engineer, the code review and QA read the code by its ranges ([agents/code-scout.md](./agents/code-scout.md)) |
+| `Plan/greps.md` | Technical Lead | Technical Lead only | The **Greps** record of the pre-approval checklist, one line per item ([PLAN_CHECKLIST.md](./PLAN_CHECKLIST.md) § How to use it); no agent after the Technical Lead needs it |
 | `Plan/review.md` | Technical Lead | Technical Lead only | Pre-QA code review findings: plans on a risk path or at Full-stack `xhigh` ([SETUP.md](./SETUP.md) § Code review before QA) |
 | `Legal/legal-copy.md` | Legal writer | Legal writer only | Exact legal sentences and their checks; only when the plan says **Legal wording: yes** ([modules/legal/](./modules/legal/README.md)) | <!-- module:legal -->
 | `_harness/research/<date>-<slug>.md`, `Research/<topic>.md` | Technical Lead | TL, all of it: above the first line and below the second (§ Check, § Decision, § How it went) in its own words, and between the two lines the sections of the researcher's reply, word for word (the researcher has no edit tools; [templates/research.md](./templates/research.md)) | One question with cited findings ([MODES.md](./MODES.md) § Research mode) |
@@ -27,7 +28,7 @@
 4a. Framework assumptions (each behaviour the plan relies on, with its source; "already used in this repo" needs the `file:line`; checked before approval)
 4b. Inputs and client code: **New inputs**, **Client imports** and **Enforcement** ("None" when there are none)
 5. Implementation steps (phases optional)
-6. References (links, paths; **Greps** from the TL's pre-approval checklist)
+6. References (links, paths; where the **Greps** record from the TL's pre-approval checklist is: `Plan/greps.md`)
 7a. QA scope: **UI change**, **Legal wording**, **Data-access feature**, **Needs live app/services** (which ACs need the running app to reach its database or other services), **Login needed**, **Build-time env**, **By connector**, **Human steps**
 7b. Agent effort: Full-stack and QA level with a reason, and **Code review before QA**
 8. Open questions (suggested defaults)

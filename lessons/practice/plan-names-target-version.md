@@ -23,4 +23,4 @@ Scope drifts between versions when no plan says where it ships.
 
 ## How to check
 
-grep the roadmap for the next-version marker; it matches exactly once. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+grep the roadmap for the next-version marker; it matches exactly once. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

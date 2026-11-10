@@ -23,4 +23,4 @@ Stale doc lines reached QA; a second spelling was missed; a sitemap listed pages
 
 ## How to check
 
-the greps and their counts are in Greps; every hit is accounted for. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+the greps and their counts are in Greps; every hit is accounted for. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

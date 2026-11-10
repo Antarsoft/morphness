@@ -23,4 +23,4 @@ A builder stopped on a plan that still said pending; a decision left in chat was
 
 ## How to check
 
-§ Decisions matches the chat; Status reads approved before delegating. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+§ Decisions matches the chat; Status reads approved before delegating. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

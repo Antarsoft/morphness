@@ -23,4 +23,4 @@ Two threads negotiating the same line crossed messages; naming the other plan's 
 
 ## How to check
 
-list the open plans and the files they share (`git diff --name-only origin/<integration>...<branch>`). Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+list the open plans and the files they share (`git diff --name-only origin/<integration>...<branch>`). Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

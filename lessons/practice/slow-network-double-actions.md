@@ -23,4 +23,4 @@ Local saves are instant, so a late answer reopening a step only showed on a slow
 
 ## How to check
 
-the ACs exist and name how the request is held. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+the ACs exist and name how the request is held. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

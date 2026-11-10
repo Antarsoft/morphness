@@ -23,4 +23,4 @@ A cancel left a helper tab open because the ACs checked the message sent, not wh
 
 ## How to check
 
-one AC per exit path plus the repeat use. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+one AC per exit path plus the repeat use. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

@@ -23,4 +23,4 @@ An independent review found a sentence that contradicted the refund policy; a co
 
 ## How to check
 
-the legal-copy file is linked and each rule above has a grep or "n/a". Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+the legal-copy file is linked and each rule above has a grep or "n/a". Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

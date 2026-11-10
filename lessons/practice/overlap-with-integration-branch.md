@@ -7,6 +7,7 @@ in_template: true
 tags: { stack: [], service: [], area: [planning, git] }
 evidence: { fired: 1, features: 153, source: "Twinpage prune audits" }
 added: 2026-10-12
+reviewed: "seed checklist wording already in the kit; this change only moves where the Greps record lives"
 ---
 
 # Overlap with the integration branch
@@ -23,4 +24,4 @@ Parallel work merged mid-build broke a contract the plan had changed.
 
 ## How to check
 
-the log output and the re-grep hit counts are in Greps. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+the log output and the re-grep hit counts are in Greps. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

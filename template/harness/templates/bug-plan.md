@@ -55,7 +55,7 @@ The fix is the smallest change that makes the regression test pass.
 
 ## References
 
-- **Greps:** `harness/PLAN_CHECKLIST.md` § Planning and scope (K1 to K8) always, K5 with the reproduction above; other groups only when the fix area needs them, else one "n/a" line per group (`K14–K20 n/a: <reason>`).
+- **Greps:** in `Plan/greps.md`, next to this file: `harness/PLAN_CHECKLIST.md` § Planning and scope (K1 to K8) always, K5 with the reproduction above; other groups only when the fix area needs them, else one "n/a" line per group (`K14–K20 n/a: <reason>`).
 - Each reference as `file § section` or `file:line`.
 
 ## QA scope

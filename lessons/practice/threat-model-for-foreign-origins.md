@@ -23,4 +23,4 @@ Trust rules written into the plan became tests that caught forged messages.
 
 ## How to check
 
-the threat-model line and one test per rule. Record the result in `plan.md` § References → **Greps**, or "n/a" with a reason.
+the threat-model line and one test per rule. Record the result in `Plan/greps.md` (the **Greps** record), or "n/a" with a reason.

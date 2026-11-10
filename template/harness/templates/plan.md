@@ -71,13 +71,13 @@ Each framework or library behaviour the plan depends on, with the source that co
 
 ### Phase 1 (optional)
 
-1. Step: technical detail for the Full-stack engineer (exact files and functions, contracts, limits, error messages and UI wording).
+1. Step: technical detail for the Full-stack engineer (exact files and functions, contracts, limits, error messages and UI wording). Name existing code by `file:line` and say the change in words; write out only the text that must ship as written (a policy expression, an error message, UI copy). The builder, the review and QA each read this file whole on every turn.
 
 The project fact docs the change makes untrue (what the product does and holds: `project/PROJECT.md` and the domain docs) are steps too, written with the code, each with an acceptance criterion naming the fact the doc must state, so QA checks it. Rule and process docs (`project/CONTROLS.md` risk paths, `project/TESTING.md`, `project/PLAN_CHECKLIST.md`) stay with the Technical Lead.
 
 ## References
 
-- **Greps:** the commands from the TL's pre-approval checklist (`harness/PLAN_CHECKLIST.md`, `project/PLAN_CHECKLIST.md`) with hit counts, or "n/a", one line per item (`K<n>` kit, `P<n>` project) or one "n/a" line for a group that doesn't apply (`K14–K20 n/a: <reason>`). A plan with no Greps record is not ready for approval.
+- **Greps:** `Plan/greps.md`, next to this file: the commands from the TL's pre-approval checklist (`harness/PLAN_CHECKLIST.md`, `project/PLAN_CHECKLIST.md`) with hit counts, or "n/a", one line per item (`K<n>` kit, `P<n>` project) or one "n/a" line for a group that doesn't apply (`K14–K20 n/a: <reason>`). It is the Technical Lead's evidence for approval, kept out of this file because every agent after it reads the plan whole. A plan with no Greps record is not ready for approval.
 - Each reference as `file § section` or `file:line`, never a whole file: agents read what the plan names and carry it in their context for the whole run.
 - **Code map:** `Plan/code-map.md` at commit `<short sha>` (full mode; the code scout wrote it, and the Full-stack engineer, the review and QA read the code by its line ranges).
 
