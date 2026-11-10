@@ -10,7 +10,7 @@ reports:
   - { fired: 2, features: 14, source: "prune audits", added: 2026-10-20 }
   - { fired: 1, features: 14, source: "prune audits", added: 2026-10-21 }
 status: active
-reviewed: "seed checklist wording already in the kit; this change only moves where the Greps record lives"
+reviewed: "'git push' names a step a render waits on, not a command to run; this change only moves where the Greps record lives"
 ---
 
 # Steps that take minutes don't run inline in a page render

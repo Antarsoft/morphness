@@ -1,6 +1,6 @@
 # Plan checklist (before asking for approval)
 
-The Technical Lead runs this checklist on every `plan.md` before asking the owner to approve it. It lives here, not in `harness/TECHNICAL_LEAD.md`, so it is read once per plan instead of being loaded into every session; the rule links to it and requires the **Greps** record in `plan.md`.
+The Technical Lead runs this checklist on every `plan.md` before asking the owner to approve it. It lives here, not in `harness/TECHNICAL_LEAD.md`, so it is read once per plan instead of being loaded into every session; the rule links to it and requires the **Greps** record in `Plan/greps.md`.
 
 These are the seed principles: each one comes from a failure that reached a builder, a reviewer or QA on an earlier project, generalized so it holds on any stack. This project's own items (stack-specific greps, paths, vendors) live in [project/PLAN_CHECKLIST.md](../project/PLAN_CHECKLIST.md); run both files. Retros add items to either file and prunes audit them ([SETUP.md](./SETUP.md) § Retrospective and § Prune; [MORPHING.md](./MORPHING.md) says which file a new item belongs in). The community catalog of lessons that can be added one at a time is described in [MORPHING.md](./MORPHING.md).
 

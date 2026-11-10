@@ -27,7 +27,7 @@ The Full-stack engineer, the code review and QA each read `plan.md` whole and ca
 
 ## How to apply
 
-Merge the files from the kit. In a morphed `project/PLAN_CHECKLIST.md` or `harness/PLAN_CHECKLIST.md`, change each "record in `plan.md` § References → **Greps**" to "record in `Plan/greps.md`", including items you added. Plans already written keep their Greps record where it is.
+Merge the files from the kit. Then find every place that still sends the record into the plan, items your project added and installed lessons included: `grep -rn 'References → \*\*Greps' harness project` (and the role addenda under `project/agents/`). Change each "in `plan.md` § References → **Greps**" to "in `Plan/greps.md`", and the opening paragraph of `harness/PLAN_CHECKLIST.md`, which names where the record lives. Plans already written keep their Greps record where it is.
 
 ## Skip if
 
