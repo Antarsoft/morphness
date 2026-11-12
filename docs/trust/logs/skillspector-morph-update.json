@@ -2,7 +2,7 @@
  "skill": {
   "name": "morph-update",
   "source": "<repo>/skills/morph-update",
-  "scanned_at": "2026-11-09T06:51:42.946080+00:00"
+  "scanned_at": "2026-11-09T17:20:55.001022+00:00"
  },
  "risk_assessment": {
   "score": 20,
@@ -26,7 +26,7 @@
  "issues": [
   {
    "id": "AR2",
-   "finding_id": "finding-68711c42d24a4d2e9be29bce4c198d05",
+   "finding_id": "finding-d3f5a9ff730a4b089fb7aed27f4344fe",
    "category": "Anti-Refusal",
    "pattern": "Anti-Refusal Statement",
    "severity": "HIGH",

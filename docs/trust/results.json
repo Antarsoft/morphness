@@ -1,8 +1,8 @@
 {
  "schema": 1,
- "generated": "2026-11-09 06:51 UTC",
- "commit": "47c0460cf6b3181b72e6ee0a2b0deed1d3af4726",
- "release": "v0.17.0 + later commits",
+ "generated": "2026-11-09 17:20 UTC",
+ "commit": "5fb51a29c68a16988ef7b61b252ed2122025f7ef",
+ "release": "v0.18.0",
  "dirty": false,
  "rows": [
   {
@@ -13,12 +13,12 @@
    "what": "Renders the template as /morph-init would for sample projects, runs its own consistency checks, replays every guard case and runs the template scripts.",
    "command": "STRICT=1 GUARD_FULL=1 scripts/kit-selftest.sh",
    "status": "pass",
-   "summary": "4 of 4 sample projects pass; 1178 guard cases replayed on each (4712 replays; per project 397 allowed, 400 asked, 381 denied, all as expected)",
+   "summary": "4 of 4 sample projects pass; 1182 guard cases replayed on each (4728 replays; per project 398 allowed, 403 asked, 381 denied, all as expected)",
    "findings": [],
    "logs": [
     "kit-selftest.txt"
    ],
-   "finished": "2026-11-09 06:50 UTC",
+   "finished": "2026-11-09 17:20 UTC",
    "notes": "Sample projects: go-service, monorepo-apps, nextjs-supabase, python-cli."
   },
   {
@@ -29,12 +29,12 @@
    "what": "Every kit change has an update note, and every note is well formed.",
    "command": "scripts/check-updates.sh",
    "status": "pass",
-   "summary": "154 update note(s) checked, 0 problem(s)",
+   "summary": "157 update note(s) checked, 0 problem(s)",
    "findings": [],
    "logs": [
     "check-updates.txt"
    ],
-   "finished": "2026-11-09 06:50 UTC"
+   "finished": "2026-11-09 17:20 UTC"
   },
   {
    "group": "own",
@@ -49,7 +49,7 @@
    "logs": [
     "check-lessons.txt"
    ],
-   "finished": "2026-11-09 06:50 UTC"
+   "finished": "2026-11-09 17:20 UTC"
   },
   {
    "group": "public",
@@ -220,7 +220,7 @@
     "agnix-install.json",
     "agnix-skills.json"
    ],
-   "finished": "2026-11-09 06:50 UTC",
+   "finished": "2026-11-09 17:20 UTC",
    "notes": "85 files checked. Errors and warnings need a verdict; info notes are only counted."
   },
   {
@@ -236,7 +236,7 @@
    "logs": [
     "shellcheck.json"
    ],
-   "finished": "2026-11-09 06:50 UTC",
+   "finished": "2026-11-09 17:20 UTC",
    "notes": "24 scripts. Errors and warnings need a verdict; style notes and info are only counted."
   },
   {
@@ -252,8 +252,8 @@
    "logs": [
     "gitleaks.json"
    ],
-   "finished": "2026-11-09 06:50 UTC",
-   "notes": "244 commits scanned."
+   "finished": "2026-11-09 17:20 UTC",
+   "notes": "250 commits scanned."
   },
   {
    "group": "public",
@@ -392,7 +392,7 @@
     "skillspector-morph-share.json",
     "skillspector-morph-update.json"
    ],
-   "finished": "2026-11-09 06:51 UTC",
+   "finished": "2026-11-09 17:20 UTC",
    "notes": "Risk scores (0 is best): morph-auto 0/100, morph-doctor 7/100, morph-init 54/100, morph-module 0/100, morph-share 0/100, morph-update 20/100."
   }
  ],
