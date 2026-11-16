@@ -89,8 +89,8 @@
  },
  {
   "file": "template/scripts/risk-check.sh",
-  "line": 49,
-  "endLine": 49,
+  "line": 50,
+  "endLine": 50,
   "column": 3,
   "endColumn": 24,
   "level": "info",
@@ -144,8 +144,8 @@
  },
  {
   "file": "template/scripts/handoff.sh",
-  "line": 43,
-  "endLine": 43,
+  "line": 44,
+  "endLine": 44,
   "column": 3,
   "endColumn": 24,
   "level": "info",

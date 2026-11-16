@@ -19,7 +19,7 @@
    "file": "skills/morph-update/SKILL.md",
    "line": 4,
    "column": 4,
-   "message": "SKILL.md body is about 5653 tokens; the Agent Skills spec recommends instructions under 5000 tokens",
+   "message": "SKILL.md body is about 6629 tokens; the Agent Skills spec recommends instructions under 5000 tokens",
    "suggestion": "Move detail into references/ files and say when to read each one; after compaction Claude Code re-attaches only the first 5,000 tokens of an invoked skill, so keep the steps that must survive near the top",
    "category": "agent-skills",
    "rule_severity": "MEDIUM"
