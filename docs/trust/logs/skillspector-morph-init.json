@@ -2,7 +2,7 @@
  "skill": {
   "name": "morph-init",
   "source": "<repo>/skills/morph-init",
-  "scanned_at": "2026-11-09T06:51:26.007794+00:00"
+  "scanned_at": "2026-11-16T06:45:36.046614+00:00"
  },
  "risk_assessment": {
   "score": 54,
@@ -56,7 +56,7 @@
  "issues": [
   {
    "id": "AS1",
-   "finding_id": "finding-db73c63a90c14b56bfd0e8233a723241",
+   "finding_id": "finding-1dfc3f7498784ff389e113126b37a03c",
    "category": "Agent Snooping",
    "pattern": "Agent Config Directory Access",
    "severity": "HIGH",
@@ -88,7 +88,7 @@
   },
   {
    "id": "AS1",
-   "finding_id": "finding-af60ce241b794fcf8f167b8f13d9b331",
+   "finding_id": "finding-8e7713a414e44cb1b6db95ac7c13d85c",
    "category": "Agent Snooping",
    "pattern": "Agent Config Directory Access",
    "severity": "HIGH",
@@ -120,7 +120,7 @@
   },
   {
    "id": "EA2",
-   "finding_id": "finding-a0231dcb3e014df5932c9089605cb82c",
+   "finding_id": "finding-371dbe78e7b94500b0002cd04d1168d2",
    "category": "Excessive Agency",
    "pattern": "Autonomous Decision Making",
    "severity": "MEDIUM",
@@ -152,7 +152,7 @@
   },
   {
    "id": "RP1",
-   "finding_id": "finding-9bd9aa058a39495184182d8428b6da71",
+   "finding_id": "finding-0e1c5d48892f42059c68df681ccf4e4a",
    "category": "MCP Rug Pull",
    "pattern": "MCP server referenced without pinned version: 'npx vitest'.",
    "severity": "MEDIUM",
@@ -182,7 +182,7 @@
   },
   {
    "id": "RP1",
-   "finding_id": "finding-40df8ad192504051ae84681e7e9045b9",
+   "finding_id": "finding-fa71c5cd5fab43eb9468ad728e4db339",
    "category": "MCP Rug Pull",
    "pattern": "MCP server referenced without pinned version: 'npx vitest'.",
    "severity": "MEDIUM",
@@ -212,7 +212,7 @@
   },
   {
    "id": "RP1",
-   "finding_id": "finding-489bb1cb42bf49f8b664f69e35c89ef2",
+   "finding_id": "finding-7fffed4925f049f6b564d7e9dc5777c4",
    "category": "MCP Rug Pull",
    "pattern": "MCP server referenced without pinned version: 'npx jest'.",
    "severity": "MEDIUM",
@@ -242,7 +242,7 @@
   },
   {
    "id": "RP1",
-   "finding_id": "finding-3a421c62045f49368d09189d3265e984",
+   "finding_id": "finding-4e37d8c2b81a44909bf44f42dc7a6662",
    "category": "MCP Rug Pull",
    "pattern": "MCP server referenced without pinned version: 'npx jest'.",
    "severity": "MEDIUM",
@@ -272,7 +272,7 @@
   },
   {
    "id": "RP1",
-   "finding_id": "finding-9ed49d23a436425793d3c55fb4dd3c76",
+   "finding_id": "finding-e12482b7a1924f08834044f58eea6897",
    "category": "MCP Rug Pull",
    "pattern": "MCP server referenced without pinned version: 'npx mocha'.",
    "severity": "MEDIUM",
@@ -302,7 +302,7 @@
   },
   {
    "id": "RP1",
-   "finding_id": "finding-55014c43078345d88fcffb12d01d5404",
+   "finding_id": "finding-984741ab05ac49e6bdc857e4b42c8e0e",
    "category": "MCP Rug Pull",
    "pattern": "MCP server referenced without pinned version: 'npx playwright'.",
    "severity": "MEDIUM",

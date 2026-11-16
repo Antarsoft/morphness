@@ -1,8 +1,8 @@
 {
  "schema": 1,
- "generated": "2026-11-09 06:51 UTC",
- "commit": "47c0460cf6b3181b72e6ee0a2b0deed1d3af4726",
- "release": "v0.17.0 + later commits",
+ "generated": "2026-11-16 06:45 UTC",
+ "commit": "1446bcf5b04ea7f507b82de7069e3f6954bd3f84",
+ "release": "v0.18.0 + later commits",
  "dirty": false,
  "rows": [
   {
@@ -13,12 +13,12 @@
    "what": "Renders the template as /morph-init would for sample projects, runs its own consistency checks, replays every guard case and runs the template scripts.",
    "command": "STRICT=1 GUARD_FULL=1 scripts/kit-selftest.sh",
    "status": "pass",
-   "summary": "4 of 4 sample projects pass; 1178 guard cases replayed on each (4712 replays; per project 397 allowed, 400 asked, 381 denied, all as expected)",
+   "summary": "4 of 4 sample projects pass; 1187 guard cases replayed on each (4748 replays; per project 402 allowed, 403 asked, 382 denied, all as expected)",
    "findings": [],
    "logs": [
     "kit-selftest.txt"
    ],
-   "finished": "2026-11-09 06:50 UTC",
+   "finished": "2026-11-16 06:45 UTC",
    "notes": "Sample projects: go-service, monorepo-apps, nextjs-supabase, python-cli."
   },
   {
@@ -29,12 +29,12 @@
    "what": "Every kit change has an update note, and every note is well formed.",
    "command": "scripts/check-updates.sh",
    "status": "pass",
-   "summary": "154 update note(s) checked, 0 problem(s)",
+   "summary": "162 update note(s) checked, 0 problem(s)",
    "findings": [],
    "logs": [
     "check-updates.txt"
    ],
-   "finished": "2026-11-09 06:50 UTC"
+   "finished": "2026-11-16 06:45 UTC"
   },
   {
    "group": "own",
@@ -49,7 +49,7 @@
    "logs": [
     "check-lessons.txt"
    ],
-   "finished": "2026-11-09 06:50 UTC"
+   "finished": "2026-11-16 06:45 UTC"
   },
   {
    "group": "public",
@@ -209,7 +209,7 @@
      "path": "skills/skills/morph-update/SKILL.md",
      "line": 4,
      "level": "warning",
-     "message": "SKILL.md body is about 5653 tokens; the Agent Skills spec recommends instructions under 5000 tokens",
+     "message": "SKILL.md body is about 6629 tokens; the Agent Skills spec recommends instructions under 5000 tokens",
      "triage": {
       "status": "accepted",
       "reason": "The body is just over the spec's 5000-token guide; the long reference parts already live in references/ and load only when needed."
@@ -220,7 +220,7 @@
     "agnix-install.json",
     "agnix-skills.json"
    ],
-   "finished": "2026-11-09 06:50 UTC",
+   "finished": "2026-11-16 06:45 UTC",
    "notes": "85 files checked. Errors and warnings need a verdict; info notes are only counted."
   },
   {
@@ -236,7 +236,7 @@
    "logs": [
     "shellcheck.json"
    ],
-   "finished": "2026-11-09 06:50 UTC",
+   "finished": "2026-11-16 06:45 UTC",
    "notes": "24 scripts. Errors and warnings need a verdict; style notes and info are only counted."
   },
   {
@@ -252,8 +252,8 @@
    "logs": [
     "gitleaks.json"
    ],
-   "finished": "2026-11-09 06:50 UTC",
-   "notes": "244 commits scanned."
+   "finished": "2026-11-16 06:45 UTC",
+   "notes": "255 commits scanned."
   },
   {
    "group": "public",
@@ -263,7 +263,7 @@
    "what": "Prompt injection, exfiltration and tool poisoning patterns in the five /morph-* skills. Static mode only, no model is called.",
    "command": "skillspector scan skills/<name> --no-llm",
    "status": "untriaged",
-   "summary": "11 finding(s), 1 untriaged",
+   "summary": "12 finding(s), 2 untriaged",
    "findings": [
     {
      "rule": "RP1",
@@ -382,6 +382,14 @@
       "status": "false-positive",
       "reason": "\"with no warning\" describes the output when there is no newer release; it is not an instruction to ignore safety checks."
      }
+    },
+    {
+     "rule": "TM1",
+     "path": "skills/morph-update/SKILL.md",
+     "line": null,
+     "level": "HIGH",
+     "message": "",
+     "triage": null
     }
    ],
    "logs": [
@@ -392,8 +400,8 @@
     "skillspector-morph-share.json",
     "skillspector-morph-update.json"
    ],
-   "finished": "2026-11-09 06:51 UTC",
-   "notes": "Risk scores (0 is best): morph-auto 0/100, morph-doctor 7/100, morph-init 54/100, morph-module 0/100, morph-share 0/100, morph-update 20/100."
+   "finished": "2026-11-16 06:45 UTC",
+   "notes": "Risk scores (0 is best): morph-auto 0/100, morph-doctor 7/100, morph-init 54/100, morph-module 0/100, morph-share 0/100, morph-update 41/100."
   }
  ],
  "limits": [
