@@ -2,7 +2,7 @@
  "skill": {
   "name": "morph-doctor",
   "source": "<repo>/skills/morph-doctor",
-  "scanned_at": "2026-11-09T06:51:13.031454+00:00"
+  "scanned_at": "2026-11-23T07:57:17.263816+00:00"
  },
  "risk_assessment": {
   "score": 7,
@@ -26,7 +26,7 @@
  "issues": [
   {
    "id": "RP1",
-   "finding_id": "finding-7210c4d5b40b4cb9a368446cf01dd105",
+   "finding_id": "finding-d6eb489b7e56445c891c3b799c611b18",
    "category": "MCP Rug Pull",
    "pattern": "MCP server referenced without pinned version: 'npx jest'.",
    "severity": "MEDIUM",
